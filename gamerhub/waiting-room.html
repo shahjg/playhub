@@ -125,6 +125,26 @@
             border-color: #667eea;
         }
 
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+        }
+
         .player-name {
             font-weight: 600;
             font-size: 1.1rem;
@@ -257,14 +277,19 @@
     </footer>
 
     <script>
-      const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+        const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL);
 
-        // Get room code from URL
+        // Get room info from URL and localStorage
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('code');
         const playerName = localStorage.getItem('playerName');
         const isHost = localStorage.getItem('isHost') === 'true';
+        const gameType = localStorage.getItem('gameType') || 'imposter';
+
+        console.log('Room Code:', roomCode);
+        console.log('Player Name:', playerName);
+        console.log('Is Host:', isHost);
 
         // Display room code
         document.getElementById('roomCode').textContent = roomCode;
@@ -276,39 +301,53 @@
 
         // Socket connection
         socket.on('connect', () => {
-            console.log('Connected to server');
+            console.log('Connected to server, socket ID:', socket.id);
             
-            // If not host, we need to rejoin the room
+            // Rejoin room on connection
             if (!isHost) {
+                console.log('Rejoining room as non-host');
                 socket.emit('join-room', {
                     roomCode: roomCode,
                     playerName: playerName
                 });
+            } else {
+                console.log('Connected as host');
+                // Host should already be in room from lobby
+                // Just request current room state
+                socket.emit('get-room-state', { roomCode: roomCode });
             }
         });
 
-        // Player joined
-        socket.on('player-joined', (data) => {
-            updatePlayersList(data.room.players);
+        // Room created (for host reconnection)
+        socket.on('room-created', (data) => {
+            console.log('Room created event:', data);
+            if (data.success) {
+                updatePlayersList(data.room.players);
+            }
         });
 
         // Room joined successfully
         socket.on('room-joined', (data) => {
-            updatePlayersList(data.room.players);
+            console.log('Room joined event:', data);
+            if (data.success) {
+                updatePlayersList(data.room.players);
+            }
         });
 
-        // Room created (for host)
-        socket.on('room-created', (data) => {
+        // Player joined (broadcast to all in room)
+        socket.on('player-joined', (data) => {
+            console.log('Player joined event:', data);
             updatePlayersList(data.room.players);
         });
 
         // Player disconnected
         socket.on('player-disconnected', (data) => {
-            console.log(`${data.playerName} disconnected`);
+            console.log('Player disconnected:', data.playerName);
         });
 
         // New host assigned
         socket.on('new-host', (data) => {
+            console.log('New host assigned:', data);
             if (socket.id === data.hostId) {
                 document.getElementById('startSection').style.display = 'block';
                 alert(`You are now the host!`);
@@ -317,28 +356,59 @@
 
         // Game started
         socket.on('game-started', (data) => {
+            console.log('Game started!', data);
             // Redirect to game page
             window.location.href = `game-imposter.html?code=${roomCode}`;
         });
 
+        // Error handling
+        socket.on('error', (data) => {
+            console.error('Socket error:', data);
+            alert(data.message);
+        });
+
+        socket.on('join-error', (data) => {
+            console.error('Join error:', data);
+            alert(`Error joining room: ${data.message}`);
+        });
+
         function updatePlayersList(players) {
+            console.log('Updating players list:', players);
+            
             const playersList = document.getElementById('playersList');
             const playerCountBadge = document.getElementById('playerCountBadge');
             const startBtn = document.getElementById('startBtn');
             const minPlayersWarning = document.getElementById('minPlayersWarning');
             
+            if (!players || players.length === 0) {
+                console.warn('No players to display');
+                return;
+            }
+
             playersList.innerHTML = '';
             
-            players.forEach(player => {
+            players.forEach((player, index) => {
                 const playerItem = document.createElement('div');
                 playerItem.className = `player-item ${player.isHost ? 'host' : ''}`;
                 
+                const playerInfo = document.createElement('div');
+                playerInfo.className = 'player-info';
+                
+                // Player number
+                const playerNumber = document.createElement('div');
+                playerNumber.className = 'player-number';
+                playerNumber.textContent = index + 1;
+                
+                // Player name
                 const playerNameSpan = document.createElement('span');
                 playerNameSpan.className = 'player-name';
                 playerNameSpan.textContent = player.name;
                 
-                playerItem.appendChild(playerNameSpan);
+                playerInfo.appendChild(playerNumber);
+                playerInfo.appendChild(playerNameSpan);
+                playerItem.appendChild(playerInfo);
                 
+                // Host badge
                 if (player.isHost) {
                     const badge = document.createElement('span');
                     badge.className = 'player-badge';
@@ -366,6 +436,7 @@
 
         function startGame() {
             if (confirm('Start the game now?')) {
+                console.log('Starting game...');
                 socket.emit('start-game', {
                     roomCode: roomCode
                 });
@@ -375,6 +446,11 @@
         // Handle browser close/refresh
         window.addEventListener('beforeunload', () => {
             socket.disconnect();
+        });
+
+        // Debug: Log all socket events
+        socket.onAny((eventName, ...args) => {
+            console.log('Socket event:', eventName, args);
         });
     </script>
 </body>
