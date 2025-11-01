@@ -6,9 +6,7 @@
     <title>Waiting Room - PlayHub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -18,131 +16,200 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #fafbff;
-            color: #1a1a1a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
-        h1, h2, h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
+        /* Animated Background Blobs */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.5;
+            z-index: 0;
+            animation: float 20s infinite ease-in-out;
         }
 
-        .container {
-            max-width: 700px;
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 107, 107, 0.4);
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(78, 205, 196, 0.4);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 5s;
+        }
+
+        .blob-3 {
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 195, 113, 0.4);
+            top: 50%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -50px) scale(1.1); }
+            66% { transform: translate(-50px, 50px) scale(0.9); }
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 4px solid #000;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+            padding: 1rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 40px;
-            flex: 1;
-        }
-
-        nav {
-            padding: 30px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #1a1a1a;
-            margin-bottom: 40px;
         }
 
-        .logo-nav {
+        .logo {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.1rem;
-            letter-spacing: 2px;
-            color: #1a1a1a;
+            font-size: 2rem;
+            color: #000;
             text-decoration: none;
+            letter-spacing: 2px;
         }
 
-        .waiting-content {
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .waiting-room-card {
+            background: rgba(255, 255, 255, 0.98);
+            border: 4px solid #000;
+            border-radius: 20px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
             text-align: center;
-            padding: 40px 0;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
         }
 
         .room-code-display {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
-            border: 4px solid #4a3575;
-            box-shadow: 8px 8px 0 #4a3575;
-            margin-bottom: 40px;
-            display: inline-block;
+            text-align: center;
+            margin-bottom: 2rem;
         }
 
         .room-code-label {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
         }
 
         .room-code {
-            font-size: 4rem;
             font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 8px;
+            font-size: 3rem;
+            color: #667eea;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
         }
 
-        .waiting-message {
-            font-size: 1.3rem;
-            color: #666;
-            margin-bottom: 40px;
+        .player-count {
+            text-align: center;
+            font-size: 1.2rem;
             font-weight: 600;
+            color: #666;
+            margin-bottom: 1.5rem;
         }
 
         /* Players List */
         .players-section {
-            background: white;
-            border: 3px solid #1a1a1a;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 5px 5px 0 #e0e0e0;
+            margin-bottom: 2rem;
         }
 
-        .players-section h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
+        .section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
         }
 
         .players-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
         }
 
         .player-item {
+            background: #f8f9fa;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 1rem;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding: 15px 20px;
-            background: #f9f9f9;
-            border: 2px solid #e0e0e0;
-            transition: all 0.2s ease;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .player-item:hover {
+            transform: translateX(5px);
         }
 
         .player-item.host {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
         .player-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 1rem;
         }
 
         .player-number {
-            background: #667eea;
-            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
             width: 35px;
             height: 35px;
+            background: #000;
+            color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
+        }
+
+        .player-item.host .player-number {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .player-name {
@@ -151,146 +218,179 @@
         }
 
         .player-badge {
-            background: #667eea;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 4px;
+            background: #ffd700;
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 1px;
+            border: 2px solid #000;
         }
 
-        .player-count {
-            text-align: center;
-            color: #999;
-            font-weight: 600;
-            margin-top: 15px;
-            font-size: 0.95rem;
-        }
-
-        /* Start Button */
+        /* Start Section */
         .start-section {
-            margin: 30px 0;
+            text-align: center;
+        }
+
+        .min-players-warning {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #856404;
+            font-weight: 600;
         }
 
         .start-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 18px 60px;
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.5rem;
             letter-spacing: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 1rem 3rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 3px solid transparent;
-            box-shadow: 5px 5px 0 #4a3575;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
             width: 100%;
         }
 
         .start-btn:hover:not(:disabled) {
-            transform: translate(2px, -2px);
-            box-shadow: 3px 3px 0 #4a3575;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .start-btn:active:not(:disabled) {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
         }
 
         .start-btn:disabled {
-            opacity: 0.5;
+            background: #ccc;
             cursor: not-allowed;
-        }
-
-        .min-players-warning {
-            color: #ff6b9d;
-            font-weight: 600;
-            margin-top: 15px;
-            font-size: 0.95rem;
+            opacity: 0.6;
         }
 
         /* Footer */
         footer {
-            background: #1a1a1a;
+            background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 30px 0;
-            margin-top: auto;
             text-align: center;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 10;
         }
 
-        .footer-bottom {
-            opacity: 0.6;
-            font-size: 0.9rem;
+        /* Scrollbar Styling */
+        .players-list::-webkit-scrollbar {
+            width: 8px;
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 0 20px;
+        .players-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .players-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .players-list::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .waiting-room-card {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
             }
 
             .room-code {
-                font-size: 3rem;
-                letter-spacing: 4px;
+                font-size: 2rem;
             }
 
-            .room-code-display {
-                padding: 30px 25px;
+            .player-name {
+                font-size: 1rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <nav>
-            <a href="index.html" class="logo-nav">PLAYHUB</a>
-        </nav>
+    <!-- Animated Background -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
 
-        <div class="waiting-content">
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">PLAYHUB</a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="waiting-room-card">
+            <h1>WAITING ROOM</h1>
+            
             <div class="room-code-display">
-                <div class="room-code-label">ROOM CODE</div>
+                <div class="room-code-label">Room Code:</div>
                 <div class="room-code" id="roomCode">------</div>
             </div>
 
-            <p class="waiting-message" id="waitingMessage">Waiting for players...</p>
+            <div class="player-count" id="playerCountDisplay">0/15 Players</div>
 
-            <!-- Players List -->
             <div class="players-section">
-                <h2>Players</h2>
-                <p class="player-count" id="playerCountDisplay" style="margin-bottom: 20px; margin-top: 0; font-size: 1.2rem; color: #667eea;">0/15 Players</p>
+                <div class="section-title">Players in Lobby</div>
                 <div class="players-list" id="playersList">
-                    <!-- Players will be added here dynamically -->
+                    <div class="loading">Connecting...</div>
                 </div>
-                <p class="player-count">Minimum 3 players required</p>
             </div>
 
-            <!-- Start Game Button (only for host) -->
             <div class="start-section" id="startSection" style="display: none;">
+                <div class="min-players-warning" id="minPlayersWarning">
+                    ⚠️ Need at least 3 players to start
+                </div>
                 <button class="start-btn" id="startBtn" onclick="startGame()" disabled>
-                    Start Game
+                    START GAME
                 </button>
-                <p class="min-players-warning" id="minPlayersWarning">
-                    Need at least 3 players to start
-                </p>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
     <footer>
-        <div class="footer-bottom">
-            © 2024 PlayHub. All games free forever.
-        </div>
+        <div>© 2024 PlayHub. All games free forever.</div>
     </footer>
+
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
     <script>
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL);
 
-        // Get room info from URL and localStorage
+        // Get room code from URL
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('code');
         const playerName = localStorage.getItem('playerName');
         const isHost = localStorage.getItem('isHost') === 'true';
-        const gameType = localStorage.getItem('gameType') || 'imposter';
 
-        console.log('Room Code:', roomCode);
-        console.log('Player Name:', playerName);
-        console.log('Is Host:', isHost);
+        console.log('Waiting room initialized:', { roomCode, playerName, isHost });
 
         // Display room code
         document.getElementById('roomCode').textContent = roomCode;
@@ -304,22 +404,29 @@
         socket.on('connect', () => {
             console.log('Connected to server, socket ID:', socket.id);
             
-            // Rejoin room on connection
-            if (!isHost) {
-                console.log('Rejoining room as non-host');
-                socket.emit('join-room', {
-                    roomCode: roomCode,
-                    playerName: playerName
-                });
-            } else {
-                console.log('Connected as host');
-                // Host should already be in room from lobby
-                // Just request current room state
-                socket.emit('get-room-state', { roomCode: roomCode });
-            }
+            // Request room state to get current players
+            socket.emit('get-room-state', { roomCode: roomCode });
         });
 
-        // Room created (for host reconnection)
+        // Connection error
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            document.getElementById('playersList').innerHTML = '<div class="loading">Connection error. Retrying...</div>';
+        });
+
+        // Player joined (when someone NEW joins the room)
+        socket.on('player-joined', (data) => {
+            console.log('Player joined event:', data);
+            updatePlayersList(data.room.players);
+        });
+
+        // Room joined successfully (when YOU join as a player)
+        socket.on('room-joined', (data) => {
+            console.log('Room joined event:', data);
+            updatePlayersList(data.room.players);
+        });
+
+        // Room created (for host when they create the room)
         socket.on('room-created', (data) => {
             console.log('Room created event:', data);
             if (data.success) {
@@ -327,7 +434,7 @@
             }
         });
 
-        // Room state received
+        // Room state received (response to get-room-state request)
         socket.on('room-state', (data) => {
             console.log('Room state received:', data);
             if (data.success) {
@@ -335,23 +442,10 @@
             }
         });
 
-        // Room joined successfully
-        socket.on('room-joined', (data) => {
-            console.log('Room joined event:', data);
-            if (data.success) {
-                updatePlayersList(data.room.players);
-            }
-        });
-
-        // Player joined (broadcast to all in room)
-        socket.on('player-joined', (data) => {
-            console.log('Player joined event:', data);
-            updatePlayersList(data.room.players);
-        });
-
         // Player disconnected
         socket.on('player-disconnected', (data) => {
-            console.log('Player disconnected:', data.playerName);
+            console.log('Player disconnected:', data);
+            updatePlayersList(data.room.players);
         });
 
         // New host assigned
@@ -359,14 +453,13 @@
             console.log('New host assigned:', data);
             if (socket.id === data.hostId) {
                 document.getElementById('startSection').style.display = 'block';
-                alert(`You are now the host!`);
+                alert('You are now the host!');
             }
         });
 
         // Game started
         socket.on('game-started', (data) => {
-            console.log('Game started!', data);
-            // Redirect to game page
+            console.log('Game started, redirecting...');
             window.location.href = `game-imposter.html?code=${roomCode}`;
         });
 
@@ -378,9 +471,10 @@
 
         socket.on('join-error', (data) => {
             console.error('Join error:', data);
-            alert(`Error joining room: ${data.message}`);
+            alert(`Error: ${data.message}`);
         });
 
+        // Update players list UI
         function updatePlayersList(players) {
             console.log('Updating players list:', players);
             
@@ -391,11 +485,14 @@
             
             if (!players || players.length === 0) {
                 console.warn('No players to display');
+                playersList.innerHTML = '<div class="loading">Waiting for players...</div>';
                 return;
             }
 
+            // Clear the list
             playersList.innerHTML = '';
             
+            // Add each player
             players.forEach((player, index) => {
                 const playerItem = document.createElement('div');
                 playerItem.className = `player-item ${player.isHost ? 'host' : ''}`;
@@ -428,10 +525,10 @@
                 playersList.appendChild(playerItem);
             });
 
-            // Update player count display (X/15 format)
+            // Update player count display
             playerCountDisplay.textContent = `${players.length}/15 Players`;
 
-            // Enable/disable start button based on player count
+            // Enable/disable start button based on player count (only if user is host)
             if (isHost) {
                 if (players.length >= 3) {
                     startBtn.disabled = false;
@@ -443,8 +540,9 @@
             }
         }
 
+        // Start game function
         function startGame() {
-            if (confirm('Start the game now?')) {
+            if (confirm('Start the game now? All players will be taken to the game screen.')) {
                 console.log('Starting game...');
                 socket.emit('start-game', {
                     roomCode: roomCode
