@@ -50,10 +50,27 @@ io.on('connection', (socket) => {
 
   // CREATE ROOM
   socket.on('create-room', (data) => {
-    const { playerName, gameType } = data;
-    const roomCode = generateRoomCode();
+    const { playerName, gameType, roomCode: existingRoomCode } = data;
+    
+    // Use existing room code if provided (for host reconnection), otherwise generate new one
+    const roomCode = existingRoomCode || generateRoomCode();
     
     console.log(`Creating room: ${roomCode} for player: ${playerName}`);
+    
+    // Check if room already exists with this code
+    const existingRoom = rooms.get(roomCode);
+    if (existingRoom && !existingRoomCode) {
+      // Room code collision (rare), generate a new one
+      console.log(`Room ${roomCode} already exists, generating new code`);
+      const newRoomCode = generateRoomCode();
+      return socket.emit('create-room', { playerName, gameType, roomCode: newRoomCode });
+    }
+    
+    // If room exists and we're reconnecting, clear it and recreate
+    if (existingRoom && existingRoomCode) {
+      console.log(`Recreating existing room: ${roomCode}`);
+      rooms.delete(roomCode);
+    }
     
     // Create new room
     const newRoom = {
@@ -220,7 +237,7 @@ io.on('connection', (socket) => {
     
     // Randomly select imposter
     const imposterIndex = Math.floor(Math.random() * room.players.length);
-const imposterId = room.players[imposterIndex].id;  // ✅ NO SPACE!
+    const imposterId = room.players[imposterIndex].id;
     
     // Assign roles to all players
     room.players.forEach((player, index) => {
