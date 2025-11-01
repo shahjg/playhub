@@ -235,50 +235,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // KICK PLAYER
-  socket.on('kick-player', (data) => {
-    const { roomCode, playerId } = data;
-    const room = rooms.get(roomCode);
-    const kicker = players.get(socket.id);
-    
-    if (!room || !kicker) {
-      socket.emit('error', { message: 'Invalid room or player' });
-      return;
-    }
-    
-    // Only host can kick
-    if (!kicker.isHost) {
-      socket.emit('error', { message: 'Only host can kick players' });
-      return;
-    }
-    
-    // Can't kick yourself
-    if (playerId === socket.id) {
-      socket.emit('error', { message: 'Cannot kick yourself' });
-      return;
-    }
-    
-    // Find and remove player
-    const kickedPlayer = room.players.find(p => p.id === playerId);
-    if (kickedPlayer) {
-      room.players = room.players.filter(p => p.id !== playerId);
-      players.delete(playerId);
-      
-      // Notify kicked player
-      io.to(playerId).emit('kicked', {
-        message: 'You have been removed from the room by the host'
-      });
-      
-      // Notify all remaining players
-      io.to(roomCode).emit('player-kicked', {
-        playerName: kickedPlayer.name,
-        room: room
-      });
-      
-      console.log(`Player ${kickedPlayer.name} kicked from room ${roomCode}`);
-    }
-  });
-
   // START GAME
   socket.on('start-game', (data) => {
     const { roomCode } = data;
@@ -331,4 +287,193 @@ io.on('connection', (socket) => {
     
     // Randomly select imposter
     const imposterIndex = Math.floor(Math.random() * room.players.length);
-    const imposterId = room.players[imposterIndex
+    const imposterId = room.players[imposterIndex].id;
+    
+    // Assign roles to all players
+    room.players.forEach((player, index) => {
+      const isImposter = index === imposterIndex;
+      
+      // Send role to each player privately
+      io.to(player.id).emit('role-assigned', {
+        role: isImposter ? 'imposter' : 'player',
+        word: isImposter ? null : word,
+        isImposter: isImposter
+      });
+    });
+    
+    // Store game data
+    room.gameData = {
+      word: word,
+      imposterId: imposterId,
+      clues: [],
+      votes: {},
+      phase: 'clue-giving' // phases: clue-giving, voting, results
+    };
+    
+    // Start clue-giving phase
+    io.to(room.code).emit('clue-phase-start', {
+      timeLimit: 60 // seconds
+    });
+  }
+
+  // SUBMIT CLUE (for Imposter game)
+  socket.on('submit-clue', (data) => {
+    const { roomCode, clue } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    
+    if (!room || !player) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Add clue to game data
+    room.gameData.clues.push({
+      playerId: socket.id,
+      playerName: player.playerName,
+      clue: clue
+    });
+    
+    // Notify all players about new clue
+    io.to(roomCode).emit('clue-submitted', {
+      playerName: player.playerName,
+      clue: clue,
+      totalClues: room.gameData.clues.length,
+      totalPlayers: room.players.length
+    });
+    
+    // If all players submitted clues, start voting phase
+    if (room.gameData.clues.length === room.players.length) {
+      room.gameData.phase = 'voting';
+      io.to(roomCode).emit('voting-phase-start', {
+        clues: room.gameData.clues,
+        players: room.players
+      });
+    }
+  });
+
+  // SUBMIT VOTE (for Imposter game)
+  socket.on('submit-vote', (data) => {
+    const { roomCode, votedPlayerId } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    
+    if (!room || !player) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Record vote
+    room.gameData.votes[socket.id] = votedPlayerId;
+    
+    // Notify all players about vote count
+    io.to(roomCode).emit('vote-counted', {
+      totalVotes: Object.keys(room.gameData.votes).length,
+      totalPlayers: room.players.length
+    });
+    
+    // If all players voted, show results
+    if (Object.keys(room.gameData.votes).length === room.players.length) {
+      calculateImposterResults(room);
+    }
+  });
+
+  // Calculate voting results for Imposter game
+  function calculateImposterResults(room) {
+    const voteCounts = {};
+    
+    // Count votes for each player
+    Object.values(room.gameData.votes).forEach(votedPlayerId => {
+      voteCounts[votedPlayerId] = (voteCounts[votedPlayerId] || 0) + 1;
+    });
+    
+    // Find player with most votes
+    let maxVotes = 0;
+    let votedOutPlayerId = null;
+    
+    Object.entries(voteCounts).forEach(([playerId, votes]) => {
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        votedOutPlayerId = playerId;
+      }
+    });
+    
+    // Determine if imposter was caught
+    const imposterCaught = votedOutPlayerId === room.gameData.imposterId;
+    const imposterPlayer = room.players.find(p => p.id === room.gameData.imposterId);
+    const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
+    
+    room.gameData.phase = 'results';
+    
+    // Send results to all players
+    io.to(room.code).emit('game-results', {
+      imposterCaught: imposterCaught,
+      imposter: imposterPlayer,
+      votedOut: votedOutPlayer,
+      word: room.gameData.word,
+      voteCounts: voteCounts
+    });
+  }
+
+  // DISCONNECT
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    
+    const player = players.get(socket.id);
+    if (player) {
+      const room = rooms.get(player.roomCode);
+      if (room) {
+        // Check if disconnecting player is the host
+        if (player.isHost) {
+          console.log(`Host disconnected from room ${player.roomCode}, closing room`);
+          
+          // Notify all other players that host left
+          socket.to(player.roomCode).emit('host-left', {
+            message: 'The host has left. Game disconnected.'
+          });
+          
+          // Remove all players from the room
+          room.players.forEach(p => {
+            if (p.id !== socket.id) {
+              players.delete(p.id);
+              // Disconnect their sockets
+              const playerSocket = io.sockets.sockets.get(p.id);
+              if (playerSocket) {
+                playerSocket.leave(player.roomCode);
+              }
+            }
+          });
+          
+          // Delete the room
+          rooms.delete(player.roomCode);
+          console.log(`Room ${player.roomCode} deleted (host left)`);
+        } else {
+          // Regular player disconnected
+          // Remove player from room
+          room.players = room.players.filter(p => p.id !== socket.id);
+          
+          // If room is now empty, delete it
+          if (room.players.length === 0) {
+            rooms.delete(player.roomCode);
+            console.log(`Room ${player.roomCode} deleted (empty)`);
+          } else {
+            // Notify remaining players
+            io.to(player.roomCode).emit('player-disconnected', {
+              playerName: player.playerName,
+              room: room
+            });
+          }
+        }
+      }
+      
+      players.delete(socket.id);
+    }
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+});
