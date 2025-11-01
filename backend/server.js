@@ -80,6 +80,19 @@ io.on('connection', (socket) => {
     console.log(`Room created: ${roomCode} by ${playerName}`);
   });
 
+  // GET ROOM STATE (for reconnections and host initial load)
+  socket.on('get-room-state', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room) {
+      socket.emit('room-state', {
+        success: true,
+        room: room
+      });
+    }
+  });
+
   // JOIN ROOM
   socket.on('join-room', (data) => {
     const { roomCode, playerName } = data;
