@@ -251,7 +251,8 @@
 
             <!-- Players List -->
             <div class="players-section">
-                <h2>Players <span id="playerCountBadge">(0)</span></h2>
+                <h2>Players</h2>
+                <p class="player-count" id="playerCountDisplay" style="margin-bottom: 20px; margin-top: 0; font-size: 1.2rem; color: #667eea;">0/15 Players</p>
                 <div class="players-list" id="playersList">
                     <!-- Players will be added here dynamically -->
                 </div>
@@ -326,6 +327,14 @@
             }
         });
 
+        // Room state received
+        socket.on('room-state', (data) => {
+            console.log('Room state received:', data);
+            if (data.success) {
+                updatePlayersList(data.room.players);
+            }
+        });
+
         // Room joined successfully
         socket.on('room-joined', (data) => {
             console.log('Room joined event:', data);
@@ -376,7 +385,7 @@
             console.log('Updating players list:', players);
             
             const playersList = document.getElementById('playersList');
-            const playerCountBadge = document.getElementById('playerCountBadge');
+            const playerCountDisplay = document.getElementById('playerCountDisplay');
             const startBtn = document.getElementById('startBtn');
             const minPlayersWarning = document.getElementById('minPlayersWarning');
             
@@ -419,8 +428,8 @@
                 playersList.appendChild(playerItem);
             });
 
-            // Update player count
-            playerCountBadge.textContent = `(${players.length})`;
+            // Update player count display (X/15 format)
+            playerCountDisplay.textContent = `${players.length}/15 Players`;
 
             // Enable/disable start button based on player count
             if (isHost) {
