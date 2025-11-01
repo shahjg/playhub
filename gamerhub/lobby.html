@@ -204,6 +204,45 @@
             border-color: #667eea;
         }
 
+        /* Name Input Section */
+        .name-input-section {
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 40px 30px;
+            box-shadow: 5px 5px 0 #e0e0e0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .name-input-section::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .name-input-section h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 3px solid #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 15px;
+        }
+
+        .name-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         /* Join Room Input */
         .join-input {
             display: none;
@@ -231,16 +270,15 @@
             border-color: #667eea;
         }
 
-        /* Coming Soon Badge */
-        .coming-soon {
-            display: inline-block;
-            background: #ff6b9d;
-            color: white;
-            padding: 8px 20px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 30px;
+        .error-message {
+            color: #ff6b9d;
+            font-weight: 600;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
         }
 
         /* Footer */
@@ -294,6 +332,10 @@
                 font-size: 2rem;
             }
         }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -313,11 +355,22 @@
             <h1 class="game-title" id="gameTitle">GAME LOBBY</h1>
             <p class="game-subtitle">Choose an option to get started</p>
 
-            <div class="coming-soon">GAME IN DEVELOPMENT</div>
+            <!-- Name Input Section -->
+            <div class="name-input-section" id="nameSection">
+                <h3>Enter Your Name</h3>
+                <input 
+                    type="text" 
+                    class="name-input" 
+                    id="playerNameInput" 
+                    placeholder="Your name..."
+                    maxlength="20"
+                >
+                <p class="error-message" id="nameError">Please enter your name!</p>
+            </div>
 
             <div class="lobby-actions">
                 <!-- Create Room -->
-                <div class="action-card" onclick="createRoom()">
+                <div class="action-card" onclick="showCreateRoom()">
                     <h3>CREATE ROOM</h3>
                     <p>Start a new game and invite friends with a room code</p>
                     <button class="action-btn">Create New Room</button>
@@ -338,6 +391,7 @@
                             maxlength="6"
                         >
                         <button class="action-btn" onclick="joinRoom()">Join Game</button>
+                        <p class="error-message" id="joinError"></p>
                     </div>
                 </div>
             </div>
@@ -395,42 +449,50 @@
 
         socket.on('room-created', (data) => {
             if (data.success) {
-                // Store room code and redirect to waiting room
+                // Store room info and redirect
                 localStorage.setItem('roomCode', data.roomCode);
                 localStorage.setItem('playerName', document.getElementById('playerNameInput').value);
                 localStorage.setItem('isHost', 'true');
+                localStorage.setItem('gameType', gameId);
                 window.location.href = `waiting-room.html?code=${data.roomCode}`;
             }
         });
 
         socket.on('room-joined', (data) => {
             if (data.success) {
-                // Store room code and redirect to waiting room
+                // Store room info and redirect
                 localStorage.setItem('roomCode', data.room.code);
                 localStorage.setItem('playerName', document.getElementById('playerNameInput').value);
                 localStorage.setItem('isHost', 'false');
+                localStorage.setItem('gameType', gameId);
                 window.location.href = `waiting-room.html?code=${data.room.code}`;
             }
         });
 
         socket.on('join-error', (data) => {
-            alert(`Error: ${data.message}`);
+            const errorEl = document.getElementById('joinError');
+            errorEl.textContent = data.message;
+            errorEl.classList.add('show');
         });
 
         socket.on('connect_error', (error) => {
             console.error('Connection error:', error);
-            alert('Cannot connect to server. Make sure the backend is running!');
+            const errorEl = document.getElementById('joinError');
+            errorEl.textContent = 'Cannot connect to server. Make sure the backend is running!';
+            errorEl.classList.add('show');
         });
 
-        function createRoom() {
-            const playerName = prompt('Enter your name:');
-            if (!playerName || playerName.trim() === '') {
-                alert('Please enter a valid name!');
+        function showCreateRoom() {
+            const playerName = document.getElementById('playerNameInput').value.trim();
+            const nameError = document.getElementById('nameError');
+            
+            if (!playerName) {
+                nameError.classList.add('show');
+                document.getElementById('playerNameInput').focus();
                 return;
             }
-
-            // Store player name for later
-            document.getElementById('playerNameInput').value = playerName;
+            
+            nameError.classList.remove('show');
 
             // Connect and create room
             if (!socket.connected) {
@@ -438,7 +500,7 @@
             }
 
             socket.emit('create-room', {
-                playerName: playerName.trim(),
+                playerName: playerName,
                 gameType: gameId || 'imposter'
             });
         }
@@ -452,20 +514,25 @@
         }
 
         function joinRoom() {
+            const playerName = document.getElementById('playerNameInput').value.trim();
+            const nameError = document.getElementById('nameError');
             const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-            if (roomCode.length === 0) {
-                alert('Please enter a room code!');
+            const joinError = document.getElementById('joinError');
+            
+            if (!playerName) {
+                nameError.classList.add('show');
+                document.getElementById('playerNameInput').focus();
                 return;
             }
-
-            const playerName = prompt('Enter your name:');
-            if (!playerName || playerName.trim() === '') {
-                alert('Please enter a valid name!');
+            
+            if (!roomCode) {
+                joinError.textContent = 'Please enter a room code!';
+                joinError.classList.add('show');
                 return;
             }
-
-            // Store player name for later
-            document.getElementById('playerNameInput').value = playerName;
+            
+            nameError.classList.remove('show');
+            joinError.classList.remove('show');
 
             // Connect and join room
             if (!socket.connected) {
@@ -474,7 +541,7 @@
 
             socket.emit('join-room', {
                 roomCode: roomCode,
-                playerName: playerName.trim()
+                playerName: playerName
             });
         }
 
@@ -484,9 +551,16 @@
                 joinRoom();
             }
         });
-    </script>
-    <!-- Hidden input to store player name -->
-    <input type="hidden" id="playerNameInput">
 
+        // Allow Enter key on name input
+        document.getElementById('playerNameInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const joinInput = document.getElementById('joinInput');
+                if (joinInput.classList.contains('active')) {
+                    document.getElementById('roomCodeInput').focus();
+                }
+            }
+        });
+    </script>
 </body>
 </html>
