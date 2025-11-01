@@ -1,822 +1,479 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waiting Room - PlayHub</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors');
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
+const app = express();
+const server = http.createServer(app);
 
-        /* Animated Background Blobs */
-        .blob {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.5;
-            z-index: 0;
-            animation: float 20s infinite ease-in-out;
-        }
+// CORS configuration for frontend
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
-        .blob-1 {
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 107, 107, 0.4);
-            top: -100px;
-            left: -100px;
-            animation-delay: 0s;
-        }
+app.use(cors());
+app.use(express.json());
 
-        .blob-2 {
-            width: 400px;
-            height: 400px;
-            background: rgba(78, 205, 196, 0.4);
-            bottom: -150px;
-            right: -150px;
-            animation-delay: 5s;
-        }
+console.log('Frontend URL:', process.env.FRONTEND_URL);
 
-        .blob-3 {
-            width: 250px;
-            height: 250px;
-            background: rgba(255, 195, 113, 0.4);
-            top: 50%;
-            left: 50%;
-            animation-delay: 10s;
-        }
+// In-memory storage (replace with database later)
+const rooms = new Map(); // roomCode -> room data
+const players = new Map(); // socketId -> player data
 
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(50px, -50px) scale(1.1); }
-            66% { transform: translate(-50px, 50px) scale(0.9); }
-        }
+// Generate random 6-character room code
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  // Check if code already exists
+  if (rooms.has(code)) {
+    return generateRoomCode();
+  }
+  return code;
+}
 
-        /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 4px solid #000;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-            padding: 1rem 2rem;
-            position: relative;
-            z-index: 10;
-        }
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', rooms: rooms.size, players: players.size });
+});
 
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+// Socket.io connection handler
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
 
-        .logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #000;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
+  // CREATE ROOM
+  socket.on('create-room', (data) => {
+    const { playerName, gameType, roomCode: existingRoomCode } = data;
+    
+    // Use existing room code if provided (for host reconnection), otherwise generate new one
+    const roomCode = existingRoomCode || generateRoomCode();
+    
+    console.log(`Creating room: ${roomCode} for player: ${playerName}`);
+    
+    // Check if room already exists with this code
+    const existingRoom = rooms.get(roomCode);
+    if (existingRoom && !existingRoomCode) {
+      // Room code collision (rare), generate a new one
+      console.log(`Room ${roomCode} already exists, generating new code`);
+      const newRoomCode = generateRoomCode();
+      return socket.emit('create-room', { playerName, gameType, roomCode: newRoomCode });
+    }
+    
+    // If room exists and we're reconnecting, clear it and recreate
+    if (existingRoom && existingRoomCode) {
+      console.log(`Recreating existing room: ${roomCode}`);
+      rooms.delete(roomCode);
+    }
+    
+    // Create new room
+    const newRoom = {
+      code: roomCode,
+      gameType: gameType,
+      hostId: socket.id,
+      players: [{
+        id: socket.id,
+        name: playerName,
+        isHost: true,
+        joinedAt: new Date()
+      }],
+      gameState: 'waiting',
+      createdAt: new Date()
+    };
+    
+    rooms.set(roomCode, newRoom);
+    players.set(socket.id, {
+      roomCode: roomCode,
+      playerName: playerName,
+      isHost: true
+    });
+    
+    // Join socket room
+    socket.join(roomCode);
+    
+    // Send success response to creator
+    socket.emit('room-created', {
+      success: true,
+      roomCode: roomCode,
+      room: newRoom
+    });
+    
+    console.log(`Room created: ${roomCode} by ${playerName}`);
+  });
 
-        /* Main Container */
-        .container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            position: relative;
-            z-index: 1;
-        }
+  // GET ROOM STATE (for reconnections and host initial load)
+  socket.on('get-room-state', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room) {
+      socket.emit('room-state', {
+        success: true,
+        room: room
+      });
+    }
+  });
 
-        .waiting-room-card {
-            background: rgba(255, 255, 255, 0.98);
-            border: 4px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            padding: 2.5rem;
-            max-width: 600px;
-            width: 100%;
-        }
+  // JOIN ROOM
+  socket.on('join-room', (data) => {
+    const { roomCode, playerName } = data;
+    
+    console.log(`Player ${playerName} attempting to join room: ${roomCode}`);
+    
+    // Check if room exists
+    const room = rooms.get(roomCode);
+    if (!room) {
+      console.log(`Room ${roomCode} not found`);
+      socket.emit('join-error', { message: 'Room not found' });
+      return;
+    }
+    
+    // FIXED: Check if name is already taken IN THIS SPECIFIC ROOM ONLY
+    const nameExists = room.players.some(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (nameExists) {
+      console.log(`Name ${playerName} already taken in room ${roomCode}`);
+      socket.emit('join-error', { message: 'Name already taken' });
+      return;
+    }
+    
+    // Check if room is full (max 15 players)
+    if (room.players.length >= 15) {
+      console.log(`Room ${roomCode} is full`);
+      socket.emit('join-error', { message: 'Room is full' });
+      return;
+    }
+    
+    // Add player to room
+    const newPlayer = {
+      id: socket.id,
+      name: playerName,
+      isHost: false,
+      joinedAt: new Date()
+    };
+    
+    room.players.push(newPlayer);
+    
+    // Store player info
+    players.set(socket.id, {
+      roomCode: roomCode,
+      playerName: playerName,
+      isHost: false
+    });
+    
+    // Join socket room
+    socket.join(roomCode);
+    
+    // Notify player they joined successfully
+    socket.emit('room-joined', {
+      success: true,
+      roomCode: roomCode,
+      room: room
+    });
+    
+    // Notify all other players in the room
+    socket.to(roomCode).emit('player-joined', {
+      player: newPlayer,
+      room: room
+    });
+    
+    console.log(`Player ${playerName} joined room ${roomCode}. Total players: ${room.players.length}`);
+  });
 
-        h1 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 0.5rem;
-            letter-spacing: 2px;
-        }
+  // KICK PLAYER
+  socket.on('kick-player', (data) => {
+    const { roomCode, playerId } = data;
+    const room = rooms.get(roomCode);
+    const kicker = players.get(socket.id);
+    
+    if (!room || !kicker) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Only host can kick
+    if (!kicker.isHost) {
+      socket.emit('error', { message: 'Only host can kick players' });
+      return;
+    }
+    
+    // Can't kick yourself
+    if (playerId === socket.id) {
+      socket.emit('error', { message: 'Cannot kick yourself' });
+      return;
+    }
+    
+    // Find and remove player
+    const kickedPlayer = room.players.find(p => p.id === playerId);
+    if (kickedPlayer) {
+      room.players = room.players.filter(p => p.id !== playerId);
+      players.delete(playerId);
+      
+      // Notify kicked player with specific message
+      io.to(playerId).emit('kicked', {
+        message: 'You have been kicked by the host'
+      });
+      
+      // Disconnect the kicked player's socket
+      const kickedSocket = io.sockets.sockets.get(playerId);
+      if (kickedSocket) {
+        kickedSocket.disconnect(true);
+      }
+      
+      // Notify all remaining players
+      io.to(roomCode).emit('player-kicked', {
+        playerName: kickedPlayer.name,
+        room: room
+      });
+      
+      console.log(`Player ${kickedPlayer.name} kicked from room ${roomCode}`);
+    }
+  });
 
-        .game-title {
-            text-align: center;
-            color: #667eea;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-            letter-spacing: 1px;
-            margin-bottom: 0.5rem;
-        }
+  // START GAME
+  socket.on('start-game', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+    
+    // Check if socket is the host
+    const player = players.get(socket.id);
+    if (!player || !player.isHost) {
+      socket.emit('error', { message: 'Only host can start the game' });
+      return;
+    }
+    
+    // Check minimum players (3 for most games)
+    if (room.players.length < 3) {
+      socket.emit('error', { message: 'Need at least 3 players to start' });
+      return;
+    }
+    
+    // Initialize game based on game type
+    if (room.gameType === 'imposter') {
+      initImposterGame(room);
+    }
+    // Add other game types here
+    
+    room.gameState = 'playing';
+    
+    // Notify all players to start
+    io.to(roomCode).emit('game-started', {
+      roomCode: roomCode,
+      gameType: room.gameType
+    });
+    
+    console.log(`Game started in room ${roomCode}`);
+  });
 
-        .how-to-play-btn {
-            display: block;
-            margin: 0 auto 1.5rem;
-            background: #ffd700;
-            color: #000;
-            border: 3px solid #000;
-            border-radius: 20px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-        }
+  // Initialize Imposter game
+  function initImposterGame(room) {
+    const words = [
+      'Pizza', 'Ocean', 'Mountain', 'Guitar', 'Coffee', 'Rainbow', 'Dinosaur', 'Robot',
+      'Sunset', 'Laptop', 'Basketball', 'Chocolate', 'Spaceship', 'Dragon', 'Camera',
+      'Volcano', 'Unicorn', 'Thunder', 'Waterfall', 'Moonlight', 'Butterfly', 'Castle'
+    ];
+    
+    const word = words[Math.floor(Math.random() * words.length)];
+    
+    // Randomly select imposter
+    const imposterIndex = Math.floor(Math.random() * room.players.length);
+    const imposterId = room.players[imposterIndex].id;
+    
+    // Assign roles to all players
+    room.players.forEach((player, index) => {
+      const isImposter = index === imposterIndex;
+      
+      // Send role to each player privately
+      io.to(player.id).emit('role-assigned', {
+        role: isImposter ? 'imposter' : 'player',
+        word: isImposter ? null : word,
+        isImposter: isImposter
+      });
+    });
+    
+    // Store game data
+    room.gameData = {
+      word: word,
+      imposterId: imposterId,
+      clues: [],
+      votes: {},
+      phase: 'clue-giving' // phases: clue-giving, voting, results
+    };
+    
+    // Start clue-giving phase
+    io.to(room.code).emit('clue-phase-start', {
+      timeLimit: 60 // seconds
+    });
+  }
 
-        .how-to-play-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
-        }
+  // SUBMIT CLUE (for Imposter game)
+  socket.on('submit-clue', (data) => {
+    const { roomCode, clue } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    
+    if (!room || !player) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Add clue to game data
+    room.gameData.clues.push({
+      playerId: socket.id,
+      playerName: player.playerName,
+      clue: clue
+    });
+    
+    // Notify all players about new clue
+    io.to(roomCode).emit('clue-submitted', {
+      playerName: player.playerName,
+      clue: clue,
+      totalClues: room.gameData.clues.length,
+      totalPlayers: room.players.length
+    });
+    
+    // If all players submitted clues, start voting phase
+    if (room.gameData.clues.length === room.players.length) {
+      room.gameData.phase = 'voting';
+      io.to(roomCode).emit('voting-phase-start', {
+        clues: room.gameData.clues,
+        players: room.players
+      });
+    }
+  });
 
-        .room-code-display {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
+  // SUBMIT VOTE (for Imposter game)
+  socket.on('submit-vote', (data) => {
+    const { roomCode, votedPlayerId } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    
+    if (!room || !player) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Record vote
+    room.gameData.votes[socket.id] = votedPlayerId;
+    
+    // Notify all players about vote count
+    io.to(roomCode).emit('vote-counted', {
+      totalVotes: Object.keys(room.gameData.votes).length,
+      totalPlayers: room.players.length
+    });
+    
+    // If all players voted, show results
+    if (Object.keys(room.gameData.votes).length === room.players.length) {
+      calculateImposterResults(room);
+    }
+  });
 
-        .room-code-label {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
+  // Calculate voting results for Imposter game
+  function calculateImposterResults(room) {
+    const voteCounts = {};
+    
+    // Count votes for each player
+    Object.values(room.gameData.votes).forEach(votedPlayerId => {
+      voteCounts[votedPlayerId] = (voteCounts[votedPlayerId] || 0) + 1;
+    });
+    
+    // Find player with most votes
+    let maxVotes = 0;
+    let votedOutPlayerId = null;
+    
+    Object.entries(voteCounts).forEach(([playerId, votes]) => {
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        votedOutPlayerId = playerId;
+      }
+    });
+    
+    // Determine if imposter was caught
+    const imposterCaught = votedOutPlayerId === room.gameData.imposterId;
+    const imposterPlayer = room.players.find(p => p.id === room.gameData.imposterId);
+    const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
+    
+    room.gameData.phase = 'results';
+    
+    // Send results to all players
+    io.to(room.code).emit('game-results', {
+      imposterCaught: imposterCaught,
+      imposter: imposterPlayer,
+      votedOut: votedOutPlayer,
+      word: room.gameData.word,
+      voteCounts: voteCounts
+    });
+  }
 
-        .room-code {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
-            color: #667eea;
-            letter-spacing: 4px;
-            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
-        }
-
-        .player-count {
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        /* Players List */
-        .players-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            letter-spacing: 1px;
-        }
-
-        .players-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .player-item {
-            background: #f8f9fa;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: transform 0.2s;
-        }
-
-        .player-item:hover {
-            transform: translateX(5px);
-        }
-
-        .player-item.host {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .player-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex: 1;
-        }
-
-        .player-number {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            width: 35px;
-            height: 35px;
-            background: #000;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .player-item.host .player-number {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .player-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .player-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .player-badge {
-            background: #ffd700;
-            color: #000;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            border: 2px solid #000;
-        }
-
-        .kick-btn {
-            background: #ff4757;
-            color: white;
-            border: 2px solid #000;
-            border-radius: 5px;
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .kick-btn:hover {
-            background: #ff3838;
-            transform: scale(1.05);
-        }
-
-        /* Start Section */
-        .start-section {
-            text-align: center;
-        }
-
-        .min-players-warning {
-            background: #fff3cd;
-            border: 3px solid #ffc107;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            color: #856404;
-            font-weight: 600;
-        }
-
-        .start-btn {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: 4px solid #000;
-            border-radius: 10px;
-            padding: 1rem 3rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .start-btn:hover:not(:disabled) {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .start-btn:active:not(:disabled) {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .start-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 2rem;
-            border: 4px solid #000;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            animation: slideDown 0.3s;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
+  // DISCONNECT
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    
+    const player = players.get(socket.id);
+    if (player) {
+      const room = rooms.get(player.roomCode);
+      if (room) {
+        // Check if disconnecting player is the host
+        if (player.isHost) {
+          console.log(`Host disconnected from room ${player.roomCode}, closing room`);
+          
+          // Notify all other players that host left
+          socket.to(player.roomCode).emit('host-left', {
+            message: 'The host has left. Game disconnected.'
+          });
+          
+          // Remove all players from the room
+          room.players.forEach(p => {
+            if (p.id !== socket.id) {
+              players.delete(p.id);
+              // Disconnect their sockets
+              const playerSocket = io.sockets.sockets.get(p.id);
+              if (playerSocket) {
+                playerSocket.leave(player.roomCode);
+              }
             }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            letter-spacing: 2px;
-            color: #667eea;
-        }
-
-        .modal-body {
-            line-height: 1.8;
-            color: #333;
-        }
-
-        .modal-body h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.3rem;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: 1px;
-        }
-
-        .modal-body ul {
-            margin-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .modal-body li {
-            margin-bottom: 0.5rem;
-        }
-
-        .close-modal-btn {
-            margin-top: 1.5rem;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            background: #667eea;
-            color: white;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .close-modal-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        /* Footer */
-        footer {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            text-align: center;
-            padding: 1.5rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Scrollbar Styling */
-        .players-list::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .players-list::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .players-list::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
-
-        .players-list::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
-        }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .waiting-room-card {
-                padding: 1.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .room-code {
-                font-size: 2rem;
-            }
-
-            .player-name {
-                font-size: 1rem;
-            }
-
-            .modal-content {
-                margin: 10% auto;
-                padding: 1.5rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Animated Background -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-
-    <!-- Header -->
-    <header>
-        <div class="header-content">
-            <a href="index.html" class="logo">PLAYHUB</a>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <div class="container">
-        <div class="waiting-room-card">
-            <h1>WAITING ROOM</h1>
-            <div class="game-title" id="gameTitle">IMPOSTER</div>
-            <button class="how-to-play-btn" onclick="showHowToPlay()">❓ How to Play</button>
-            
-            <div class="room-code-display">
-                <div class="room-code-label">Room Code:</div>
-                <div class="room-code" id="roomCode">------</div>
-            </div>
-
-            <div class="player-count" id="playerCountDisplay">0/15 Players</div>
-
-            <div class="players-section">
-                <div class="section-title">Players in Lobby</div>
-                <div class="players-list" id="playersList">
-                    <div class="loading">Connecting...</div>
-                </div>
-            </div>
-
-            <div class="start-section" id="startSection" style="display: none;">
-                <div class="min-players-warning" id="minPlayersWarning">
-                    ⚠️ Need at least 3 players to start
-                </div>
-                <button class="start-btn" id="startBtn" onclick="startGame()" disabled>
-                    START GAME
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- How to Play Modal -->
-    <div id="howToPlayModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">HOW TO PLAY IMPOSTER</div>
-            <div class="modal-body">
-                <p><strong>Objective:</strong> Find the imposter before it's too late!</p>
-                
-                <h3>Game Setup:</h3>
-                <ul>
-                    <li>One player is randomly selected as the <strong>Imposter</strong></li>
-                    <li>All other players receive the same secret word</li>
-                    <li>The Imposter doesn't know the word</li>
-                </ul>
-
-                <h3>How to Play:</h3>
-                <ul>
-                    <li><strong>Phase 1:</strong> Everyone gives a one-word clue about the secret word</li>
-                    <li>The Imposter must blend in without knowing the word!</li>
-                    <li><strong>Phase 2:</strong> Vote on who you think is the Imposter</li>
-                </ul>
-
-                <h3>Winning:</h3>
-                <ul>
-                    <li><strong>Players win</strong> if they correctly vote out the Imposter</li>
-                    <li><strong>Imposter wins</strong> if an innocent player is voted out</li>
-                </ul>
-            </div>
-            <button class="close-modal-btn" onclick="closeHowToPlay()">GOT IT!</button>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        <div>© 2024 PlayHub. All games free forever.</div>
-    </footer>
-
-    <!-- Socket.io Client -->
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
-    <script>
-        const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-        const socket = io(BACKEND_URL);
-
-        // Get room code from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('code');
-        const playerName = localStorage.getItem('playerName');
-        const isHost = localStorage.getItem('isHost') === 'true';
-
-        console.log('Waiting room initialized:', { roomCode, playerName, isHost });
-
-        // Display room code
-        document.getElementById('roomCode').textContent = roomCode;
-
-        // Show start button if host
-        if (isHost) {
-            document.getElementById('startSection').style.display = 'block';
-        }
-
-        // Socket connection
-        socket.on('connect', () => {
-            console.log('Connected to server, socket ID:', socket.id);
-            console.log('Is host?', isHost, 'Player name:', playerName);
-            
-            // Host needs to rejoin their room after page redirect
-            if (isHost) {
-                console.log('Host rejoining room...');
-                socket.emit('create-room', {
-                    playerName: playerName,
-                    gameType: 'imposter',
-                    roomCode: roomCode
-                });
-            } else {
-                // Regular player joins the room
-                console.log('Player joining room...');
-                socket.emit('join-room', {
-                    roomCode: roomCode,
-                    playerName: playerName
-                });
-            }
-        });
-
-        // Connection error
-        socket.on('connect_error', (error) => {
-            console.error('Connection error:', error);
-            document.getElementById('playersList').innerHTML = '<div class="loading">Connection error. Retrying...</div>';
-        });
-
-        // Player joined (when someone NEW joins the room)
-        socket.on('player-joined', (data) => {
-            console.log('Player joined event:', data);
-            updatePlayersList(data.room.players);
-        });
-
-        // Room joined successfully (when YOU join as a player)
-        socket.on('room-joined', (data) => {
-            console.log('Room joined event:', data);
-            updatePlayersList(data.room.players);
-        });
-
-        // Room created (for host when they create the room)
-        socket.on('room-created', (data) => {
-            console.log('Room created event:', data);
-            if (data.success) {
-                updatePlayersList(data.room.players);
-            }
-        });
-
-        // Room state received (response to get-room-state request)
-        socket.on('room-state', (data) => {
-            console.log('Room state received:', data);
-            if (data.success) {
-                updatePlayersList(data.room.players);
-            }
-        });
-
-        // Player disconnected
-        socket.on('player-disconnected', (data) => {
-            console.log('Player disconnected:', data);
-            updatePlayersList(data.room.players);
-        });
-
-        // Player kicked
-        socket.on('player-kicked', (data) => {
-            console.log('Player kicked:', data);
-            updatePlayersList(data.room.players);
-        });
-
-        // You were kicked!
-        socket.on('kicked', (data) => {
-            alert('❌ ' + data.message);
-            window.location.href = 'party-games.html';
-        });
-
-        // Host left, game disconnected
-        socket.on('host-left', (data) => {
-            alert('⚠️ ' + data.message);
-            window.location.href = 'party-games.html';
-        });
-
-        // New host assigned
-        socket.on('new-host', (data) => {
-            console.log('New host assigned:', data);
-            if (socket.id === data.hostId) {
-                document.getElementById('startSection').style.display = 'block';
-                alert('You are now the host!');
-            }
-        });
-
-        // Game started
-        socket.on('game-started', (data) => {
-            console.log('Game started, redirecting...');
-            window.location.href = `game-imposter.html?code=${roomCode}`;
-        });
-
-        // Error handling
-        socket.on('error', (data) => {
-            console.error('Socket error:', data);
-            alert(data.message);
-        });
-
-        socket.on('join-error', (data) => {
-            console.error('Join error:', data);
-            alert(`Error: ${data.message}`);
-        });
-
-        // Update players list UI
-        function updatePlayersList(players) {
-            console.log('Updating players list:', players);
-            
-            const playersList = document.getElementById('playersList');
-            const playerCountDisplay = document.getElementById('playerCountDisplay');
-            const startBtn = document.getElementById('startBtn');
-            const minPlayersWarning = document.getElementById('minPlayersWarning');
-            
-            if (!players || players.length === 0) {
-                console.warn('No players to display');
-                playersList.innerHTML = '<div class="loading">Waiting for players...</div>';
-                return;
-            }
-
-            // Clear the list
-            playersList.innerHTML = '';
-            
-            // Add each player
-            players.forEach((player, index) => {
-                const playerItem = document.createElement('div');
-                playerItem.className = `player-item ${player.isHost ? 'host' : ''}`;
-                
-                const playerInfo = document.createElement('div');
-                playerInfo.className = 'player-info';
-                
-                // Player number
-                const playerNumber = document.createElement('div');
-                playerNumber.className = 'player-number';
-                playerNumber.textContent = index + 1;
-                
-                // Player name
-                const playerNameSpan = document.createElement('span');
-                playerNameSpan.className = 'player-name';
-                playerNameSpan.textContent = player.name;
-                
-                playerInfo.appendChild(playerNumber);
-                playerInfo.appendChild(playerNameSpan);
-                playerItem.appendChild(playerInfo);
-                
-                // Player actions (badges and kick button)
-                const playerActions = document.createElement('div');
-                playerActions.className = 'player-actions';
-                
-                // Host badge
-                if (player.isHost) {
-                    const badge = document.createElement('span');
-                    badge.className = 'player-badge';
-                    badge.textContent = 'HOST';
-                    playerActions.appendChild(badge);
-                }
-                
-                // Kick button (only for host, not for themselves)
-                if (isHost && !player.isHost) {
-                    const kickBtn = document.createElement('button');
-                    kickBtn.className = 'kick-btn';
-                    kickBtn.textContent = 'KICK';
-                    kickBtn.onclick = () => kickPlayer(player.id, player.name);
-                    playerActions.appendChild(kickBtn);
-                }
-                
-                playerItem.appendChild(playerActions);
-                playersList.appendChild(playerItem);
+          });
+          
+          // Delete the room
+          rooms.delete(player.roomCode);
+          console.log(`Room ${player.roomCode} deleted (host left)`);
+        } else {
+          // Regular player disconnected
+          // Remove player from room
+          room.players = room.players.filter(p => p.id !== socket.id);
+          
+          // If room is now empty, delete it
+          if (room.players.length === 0) {
+            rooms.delete(player.roomCode);
+            console.log(`Room ${player.roomCode} deleted (empty)`);
+          } else {
+            // Notify remaining players
+            io.to(player.roomCode).emit('player-disconnected', {
+              playerName: player.playerName,
+              room: room
             });
-
-            // Update player count display
-            playerCountDisplay.textContent = `${players.length}/15 Players`;
-
-            // Enable/disable start button based on player count (only if user is host)
-            if (isHost) {
-                if (players.length >= 3) {
-                    startBtn.disabled = false;
-                    minPlayersWarning.style.display = 'none';
-                } else {
-                    startBtn.disabled = true;
-                    minPlayersWarning.style.display = 'block';
-                }
-            }
+          }
         }
+      }
+      
+      players.delete(socket.id);
+    }
+  });
+});
 
-        // Kick player function
-        function kickPlayer(playerId, playerName) {
-            if (confirm(`Kick ${playerName} from the room?`)) {
-                console.log('Kicking player:', playerId);
-                socket.emit('kick-player', {
-                    roomCode: roomCode,
-                    playerId: playerId
-                });
-            }
-        }
-
-        // Start game function
-        function startGame() {
-            if (confirm('Start the game now? All players will be taken to the game screen.')) {
-                console.log('Starting game...');
-                socket.emit('start-game', {
-                    roomCode: roomCode
-                });
-            }
-        }
-
-        // How to Play modal functions
-        function showHowToPlay() {
-            document.getElementById('howToPlayModal').style.display = 'block';
-        }
-
-        function closeHowToPlay() {
-            document.getElementById('howToPlayModal').style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('howToPlayModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        // Handle browser close/refresh
-        window.addEventListener('beforeunload', () => {
-            socket.disconnect();
-        });
-
-        // Debug: Log all socket events
-        socket.onAny((eventName, ...args) => {
-            console.log('Socket event:', eventName, args);
-        });
-    </script>
-</body>
-</html>
+// Start server
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+});
