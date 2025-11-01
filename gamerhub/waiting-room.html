@@ -121,6 +121,34 @@
             letter-spacing: 2px;
         }
 
+        .game-title {
+            text-align: center;
+            color: #667eea;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .how-to-play-btn {
+            display: block;
+            margin: 0 auto 1.5rem;
+            background: #ffd700;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .how-to-play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        }
+
         .room-code-display {
             text-align: center;
             margin-bottom: 2rem;
@@ -193,6 +221,7 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex: 1;
         }
 
         .player-number {
@@ -206,6 +235,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .player-item.host .player-number {
@@ -217,6 +247,12 @@
             font-size: 1.1rem;
         }
 
+        .player-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
         .player-badge {
             background: #ffd700;
             color: #000;
@@ -225,6 +261,23 @@
             font-size: 0.8rem;
             font-weight: 700;
             border: 2px solid #000;
+        }
+
+        .kick-btn {
+            background: #ff4757;
+            color: white;
+            border: 2px solid #000;
+            border-radius: 5px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .kick-btn:hover {
+            background: #ff3838;
+            transform: scale(1.05);
         }
 
         /* Start Section */
@@ -271,6 +324,98 @@
             background: #ccc;
             cursor: not-allowed;
             opacity: 0.6;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 4px solid #000;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            color: #667eea;
+        }
+
+        .modal-body {
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .modal-body h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .modal-body ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-body li {
+            margin-bottom: 0.5rem;
+        }
+
+        .close-modal-btn {
+            margin-top: 1.5rem;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            background: #667eea;
+            color: white;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .close-modal-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
         }
 
         /* Footer */
@@ -326,6 +471,11 @@
             .player-name {
                 font-size: 1rem;
             }
+
+            .modal-content {
+                margin: 10% auto;
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
@@ -346,6 +496,8 @@
     <div class="container">
         <div class="waiting-room-card">
             <h1>WAITING ROOM</h1>
+            <div class="game-title" id="gameTitle">IMPOSTER</div>
+            <button class="how-to-play-btn" onclick="showHowToPlay()">❓ How to Play</button>
             
             <div class="room-code-display">
                 <div class="room-code-label">Room Code:</div>
@@ -369,6 +521,37 @@
                     START GAME
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div id="howToPlayModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">HOW TO PLAY IMPOSTER</div>
+            <div class="modal-body">
+                <p><strong>Objective:</strong> Find the imposter before it's too late!</p>
+                
+                <h3>Game Setup:</h3>
+                <ul>
+                    <li>One player is randomly selected as the <strong>Imposter</strong></li>
+                    <li>All other players receive the same secret word</li>
+                    <li>The Imposter doesn't know the word</li>
+                </ul>
+
+                <h3>How to Play:</h3>
+                <ul>
+                    <li><strong>Phase 1:</strong> Everyone gives a one-word clue about the secret word</li>
+                    <li>The Imposter must blend in without knowing the word!</li>
+                    <li><strong>Phase 2:</strong> Vote on who you think is the Imposter</li>
+                </ul>
+
+                <h3>Winning:</h3>
+                <ul>
+                    <li><strong>Players win</strong> if they correctly vote out the Imposter</li>
+                    <li><strong>Imposter wins</strong> if an innocent player is voted out</li>
+                </ul>
+            </div>
+            <button class="close-modal-btn" onclick="closeHowToPlay()">GOT IT!</button>
         </div>
     </div>
 
@@ -411,7 +594,7 @@
                 socket.emit('create-room', {
                     playerName: playerName,
                     gameType: 'imposter',
-                    roomCode: roomCode  // Pass existing room code
+                    roomCode: roomCode
                 });
             } else {
                 // Regular player joins the room
@@ -461,6 +644,24 @@
         socket.on('player-disconnected', (data) => {
             console.log('Player disconnected:', data);
             updatePlayersList(data.room.players);
+        });
+
+        // Player kicked
+        socket.on('player-kicked', (data) => {
+            console.log('Player kicked:', data);
+            updatePlayersList(data.room.players);
+        });
+
+        // You were kicked!
+        socket.on('kicked', (data) => {
+            alert('❌ ' + data.message);
+            window.location.href = 'party-games.html';
+        });
+
+        // Host left, game disconnected
+        socket.on('host-left', (data) => {
+            alert('⚠️ ' + data.message);
+            window.location.href = 'party-games.html';
         });
 
         // New host assigned
@@ -529,14 +730,28 @@
                 playerInfo.appendChild(playerNameSpan);
                 playerItem.appendChild(playerInfo);
                 
+                // Player actions (badges and kick button)
+                const playerActions = document.createElement('div');
+                playerActions.className = 'player-actions';
+                
                 // Host badge
                 if (player.isHost) {
                     const badge = document.createElement('span');
                     badge.className = 'player-badge';
                     badge.textContent = 'HOST';
-                    playerItem.appendChild(badge);
+                    playerActions.appendChild(badge);
                 }
                 
+                // Kick button (only for host, not for themselves)
+                if (isHost && !player.isHost) {
+                    const kickBtn = document.createElement('button');
+                    kickBtn.className = 'kick-btn';
+                    kickBtn.textContent = 'KICK';
+                    kickBtn.onclick = () => kickPlayer(player.id, player.name);
+                    playerActions.appendChild(kickBtn);
+                }
+                
+                playerItem.appendChild(playerActions);
                 playersList.appendChild(playerItem);
             });
 
@@ -555,6 +770,17 @@
             }
         }
 
+        // Kick player function
+        function kickPlayer(playerId, playerName) {
+            if (confirm(`Kick ${playerName} from the room?`)) {
+                console.log('Kicking player:', playerId);
+                socket.emit('kick-player', {
+                    roomCode: roomCode,
+                    playerId: playerId
+                });
+            }
+        }
+
         // Start game function
         function startGame() {
             if (confirm('Start the game now? All players will be taken to the game screen.')) {
@@ -562,6 +788,23 @@
                 socket.emit('start-game', {
                     roomCode: roomCode
                 });
+            }
+        }
+
+        // How to Play modal functions
+        function showHowToPlay() {
+            document.getElementById('howToPlayModal').style.display = 'block';
+        }
+
+        function closeHowToPlay() {
+            document.getElementById('howToPlayModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('howToPlayModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
             }
         }
 
