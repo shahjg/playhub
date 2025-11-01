@@ -220,7 +220,7 @@ io.on('connection', (socket) => {
     
     // Randomly select imposter
     const imposterIndex = Math.floor(Math.random() * room.players.length);
-    const imposte rId = room.players[imposterIndex].id;
+const imposterId = room.players[imposterIndex].id;  // ✅ NO SPACE!
     
     // Assign roles to all players
     room.players.forEach((player, index) => {
