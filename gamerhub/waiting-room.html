@@ -403,9 +403,24 @@
         // Socket connection
         socket.on('connect', () => {
             console.log('Connected to server, socket ID:', socket.id);
+            console.log('Is host?', isHost, 'Player name:', playerName);
             
-            // Request room state to get current players
-            socket.emit('get-room-state', { roomCode: roomCode });
+            // Host needs to rejoin their room after page redirect
+            if (isHost) {
+                console.log('Host rejoining room...');
+                socket.emit('create-room', {
+                    playerName: playerName,
+                    gameType: 'imposter',
+                    roomCode: roomCode  // Pass existing room code
+                });
+            } else {
+                // Regular player joins the room
+                console.log('Player joining room...');
+                socket.emit('join-room', {
+                    roomCode: roomCode,
+                    playerName: playerName
+                });
+            }
         });
 
         // Connection error
