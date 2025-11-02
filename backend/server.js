@@ -7,16 +7,18 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS configuration
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://playhub-puce.vercel.app';
 app.use(cors({
-    origin: FRONTEND_URL,
-    methods: ['GET', 'POST']
+    origin: ['https://playhub-puce.vercel.app', 'http://localhost:5500'],
+    methods: ['GET', 'POST'],
+    credentials: true
 }));
 
 const io = new Server(server, {
     cors: {
-        origin: FRONTEND_URL,
-        methods: ['GET', 'POST']
+        origin: ['https://playhub-puce.vercel.app', 'http://localhost:5500'],
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
