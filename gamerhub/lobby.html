@@ -338,11 +338,11 @@
             isConnected = false;
         });
 
-        // Room created successfully
+        // Room created successfully - FIXED TO MATCH BACKEND
         socket.on('room-created', (data) => {
             console.log('Room created successfully:', data);
             
-            if (data.success) {
+            if (data.roomCode) {
                 const roomCode = data.roomCode;
                 const playerName = document.getElementById('createName').value.trim();
                 
@@ -351,19 +351,19 @@
                 localStorage.setItem('playerName', playerName);
                 localStorage.setItem('isHost', 'true');
                 
-                // Redirect to waiting room
-                window.location.href = `waiting-room.html?code=${roomCode}`;
+                // Redirect to waiting room with correct URL parameters
+                window.location.href = `waiting-room.html?room=${roomCode}&name=${playerName}&host=true`;
             } else {
                 showError('Failed to create room. Please try again.');
                 hideLoading();
             }
         });
 
-        // Room joined successfully
+        // Room joined successfully - FIXED TO MATCH BACKEND
         socket.on('room-joined', (data) => {
             console.log('Room joined successfully:', data);
             
-            if (data.success) {
+            if (data.roomCode) {
                 const roomCode = data.roomCode;
                 const playerName = document.getElementById('joinName').value.trim();
                 
@@ -372,19 +372,12 @@
                 localStorage.setItem('playerName', playerName);
                 localStorage.setItem('isHost', 'false');
                 
-                // Redirect to waiting room
-                window.location.href = `waiting-room.html?code=${roomCode}`;
+                // Redirect to waiting room with correct URL parameters
+                window.location.href = `waiting-room.html?room=${roomCode}&name=${playerName}&host=false`;
             } else {
                 showError('Failed to join room. Please try again.');
                 hideLoading();
             }
-        });
-
-        // Join error
-        socket.on('join-error', (data) => {
-            console.error('Join error:', data);
-            showError(data.message || 'Failed to join room');
-            hideLoading();
         });
 
         // General error
