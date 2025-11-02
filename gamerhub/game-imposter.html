@@ -199,6 +199,32 @@
             margin: 2rem 0;
         }
 
+        /* Word reminder during clue phase */
+        .word-reminder {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1.5rem auto;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .word-display-small {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #667eea;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .imposter-reminder {
+            font-size: 1.3rem;
+            color: #ff4757;
+            font-weight: 700;
+            padding: 1rem;
+        }
+
         .role-instruction {
             font-size: 1.2rem;
             line-height: 1.6;
@@ -385,6 +411,55 @@
             background: #ccc;
             cursor: not-allowed;
             opacity: 0.6;
+        }
+
+        /* Skip Round Section */
+        .skip-round-section {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 215, 0, 0.1);
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+        }
+
+        .skip-round-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            background: #ffd700;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .skip-round-btn:hover:not(:disabled) {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .skip-round-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .skip-round-btn.voted {
+            background: #4caf50;
+            color: white;
+        }
+
+        .skip-votes {
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #666;
+            font-size: 1.1rem;
         }
 
         /* Results Phase */
@@ -632,8 +707,16 @@
             <!-- Clue Giving Phase -->
             <div id="cluePhase" class="hidden">
                 <div class="phase-indicator">
-                    <div class="phase-title">GIVE YOUR CLUE</div>
+                    <div class="phase-title">ROUND <span id="currentRound">1</span> - GIVE YOUR CLUE</div>
                     <div class="phase-subtitle">One word only - help others find the imposter!</div>
+                </div>
+
+                <!-- Always show word during clue phase -->
+                <div id="cluePhaseWord" class="word-reminder">
+                    <div id="cluePhaseWordDisplay" class="word-display-small">WORD</div>
+                    <div id="cluePhaseImposterDisplay" class="imposter-reminder hidden">
+                        🎭 You're the Imposter - Blend in!
+                    </div>
                 </div>
 
                 <div class="timer" id="clueTimer">60</div>
@@ -671,18 +754,26 @@
             <!-- Voting Phase -->
             <div id="votingPhase" class="hidden">
                 <div class="phase-indicator">
-                    <div class="phase-title">VOTE FOR THE IMPOSTER</div>
+                    <div class="phase-title">ROUND <span id="votingRound">1</span> - VOTE FOR THE IMPOSTER</div>
                     <div class="phase-subtitle">Who do you think is suspicious?</div>
                 </div>
 
                 <div class="timer" id="votingTimer">45</div>
 
                 <div class="voting-section">
-                    <div class="voting-instructions">
-                        🔍 Click on a player to vote them out
+                    <div class="voting-instructions" id="votingInstructions">
+                        🔍 Vote to eliminate a player OR skip to the next round
                     </div>
 
                     <div class="players-voting-grid" id="votingGrid"></div>
+
+                    <!-- Skip Round Option (only for rounds 1 & 2) -->
+                    <div id="skipRoundSection" class="skip-round-section">
+                        <button class="skip-round-btn" id="skipRoundBtn" onclick="voteToSkip()">
+                            ⏭️ SKIP TO NEXT ROUND
+                        </button>
+                        <div class="skip-votes" id="skipVotesDisplay">0 votes to skip</div>
+                    </div>
 
                     <button class="submit-vote-btn" id="submitVoteBtn" onclick="submitVote()" disabled>
                         CAST YOUR VOTE
@@ -748,6 +839,9 @@
         let totalPlayers = 0;
         let allClues = [];
         let allPlayers = [];
+        let currentRound = 1;
+        let hasVotedToSkip = false;
+        let skipVoteCount = 0;
 
         // Display room code
         document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
@@ -790,7 +884,29 @@
         // Clue phase started
         socket.on('clue-phase-start', (data) => {
             console.log('Clue phase started:', data);
-            showCluePhase(data.timeLimit || 60);
+            showCluePhase(data.timeLimit || 60, data.round || 1);
+        });
+
+        // Skip vote counted
+        socket.on('skip-vote-counted', (data) => {
+            console.log('Skip vote counted:', data);
+            updateSkipVotes(data.skipVotes, data.totalPlayers);
+        });
+
+        // Round skipped - start next round
+        socket.on('round-skipped', (data) => {
+            console.log('Round skipped, starting round', data.round);
+            alert(`Majority voted to skip! Starting Round ${data.round}...`);
+            
+            // Reset clues for new round
+            allClues = [];
+            document.getElementById('cluesList').innerHTML = '';
+            
+            // Show role reveal briefly, then start new clue phase
+            showRoleReveal();
+            setTimeout(() => {
+                showCluePhase(60, data.round);
+            }, 3000);
         });
 
         // Clue submitted by someone
@@ -816,7 +932,7 @@
             allClues = data.clues;
             allPlayers = data.players;
             totalPlayers = data.players.length;
-            showVotingPhase();
+            showVotingPhase(data.round || 1);
         });
 
         // Vote counted
@@ -865,9 +981,23 @@
         }
 
         // Show clue phase
-        function showCluePhase(timeLimit) {
+        function showCluePhase(timeLimit, round = 1) {
             hideAllPhases();
             document.getElementById('cluePhase').classList.remove('hidden');
+            
+            // Update round display
+            currentRound = round;
+            document.getElementById('currentRound').textContent = round;
+            
+            // Always show the word/role reminder
+            if (isImposter) {
+                document.getElementById('cluePhaseWordDisplay').classList.add('hidden');
+                document.getElementById('cluePhaseImposterDisplay').classList.remove('hidden');
+            } else {
+                document.getElementById('cluePhaseWordDisplay').textContent = myWord;
+                document.getElementById('cluePhaseWordDisplay').classList.remove('hidden');
+                document.getElementById('cluePhaseImposterDisplay').classList.add('hidden');
+            }
             
             // Start timer
             startTimer('clueTimer', timeLimit);
@@ -940,9 +1070,31 @@
         }
 
         // Show voting phase
-        function showVotingPhase() {
+        function showVotingPhase(round = 1) {
             hideAllPhases();
             document.getElementById('votingPhase').classList.remove('hidden');
+            
+            // Update round display
+            currentRound = round;
+            document.getElementById('votingRound').textContent = round;
+            
+            // Reset vote states
+            hasVotedToSkip = false;
+            skipVoteCount = 0;
+            
+            // Show/hide skip option based on round
+            const skipSection = document.getElementById('skipRoundSection');
+            const votingInstructions = document.getElementById('votingInstructions');
+            
+            if (round < 3) {
+                // Rounds 1 & 2: Can skip
+                skipSection.style.display = 'block';
+                votingInstructions.textContent = '🔍 Vote to eliminate a player OR skip to the next round';
+            } else {
+                // Round 3: Must vote, can't skip
+                skipSection.style.display = 'none';
+                votingInstructions.textContent = '🔍 FINAL ROUND - You must vote for someone!';
+            }
             
             // Build voting grid
             buildVotingGrid();
@@ -988,6 +1140,35 @@
             cardElement.classList.add('selected');
             selectedVotePlayerId = playerId;
             document.getElementById('submitVoteBtn').disabled = false;
+        }
+
+        // Vote to skip to next round
+        function voteToSkip() {
+            if (hasVotedToSkip) {
+                alert('You already voted to skip!');
+                return;
+            }
+
+            console.log('Voting to skip round');
+            
+            socket.emit('vote-skip', {
+                roomCode: roomCode
+            });
+
+            // Update UI
+            hasVotedToSkip = true;
+            const skipBtn = document.getElementById('skipRoundBtn');
+            skipBtn.disabled = true;
+            skipBtn.classList.add('voted');
+            skipBtn.textContent = '✓ VOTED TO SKIP';
+        }
+
+        // Update skip vote count
+        function updateSkipVotes(count, total) {
+            skipVoteCount = count;
+            const skipDisplay = document.getElementById('skipVotesDisplay');
+            const majority = Math.ceil(total / 2);
+            skipDisplay.textContent = `${count}/${majority} votes needed to skip`;
         }
 
         // Submit vote
