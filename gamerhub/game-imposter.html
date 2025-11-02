@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imposter - PlayHub</title>
+    <title>Imposter Game - PlayHub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -18,644 +16,1093 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #fafbff;
-            color: #1a1a1a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
-        h1, h2, h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
+        /* Animated Background Blobs */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.5;
+            z-index: 0;
+            animation: float 20s infinite ease-in-out;
         }
 
-        .container {
-            max-width: 800px;
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 107, 107, 0.4);
+            top: -100px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(78, 205, 196, 0.4);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 5s;
+        }
+
+        .blob-3 {
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 195, 113, 0.4);
+            top: 50%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -50px) scale(1.1); }
+            66% { transform: translate(-50px, 50px) scale(0.9); }
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 4px solid #000;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+            padding: 1rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 40px;
-            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        nav {
-            padding: 30px 0;
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: #000;
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        .room-code-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: #667eea;
+            letter-spacing: 2px;
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 3px solid #1a1a1a;
-            margin-bottom: 40px;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
         }
 
-        .logo-nav {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.1rem;
-            letter-spacing: 2px;
-            color: #1a1a1a;
-        }
-
-        .game-content {
-            padding: 40px 0;
+        .game-card {
+            background: rgba(255, 255, 255, 0.98);
+            border: 4px solid #000;
+            border-radius: 20px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            padding: 2.5rem;
+            max-width: 800px;
+            width: 100%;
+            min-height: 500px;
         }
 
         /* Phase Indicator */
         .phase-indicator {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 2rem;
         }
 
         .phase-title {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: #667eea;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
         }
 
-        .phase-description {
-            font-size: 1.1rem;
+        .phase-subtitle {
             color: #666;
+            font-size: 1.1rem;
         }
 
-        /* Role Card */
+        /* Timer */
+        .timer {
+            background: #000;
+            color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            text-align: center;
+            margin: 0 auto 2rem;
+            max-width: 200px;
+            letter-spacing: 3px;
+        }
+
+        .timer.warning {
+            background: #ff4757;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Role Reveal */
+        .role-reveal {
+            text-align: center;
+            padding: 2rem;
+        }
+
         .role-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px;
-            border-radius: 16px;
-            text-align: center;
-            margin-bottom: 40px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 4px solid #000;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            margin: 2rem auto;
+            max-width: 500px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
         }
 
         .role-card.imposter {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #ff4757 0%, #c23616 100%);
         }
 
-        .role-card h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-
-        .role-card .word {
-            font-size: 3.5rem;
+        .role-title {
             font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 4px;
-            margin: 20px 0;
+            font-size: 3rem;
+            letter-spacing: 3px;
+            margin-bottom: 1rem;
         }
 
-        .role-card .instruction {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-top: 20px;
+        .word-display {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            letter-spacing: 5px;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+            margin: 2rem 0;
         }
 
-        /* Clue Section */
+        .role-instruction {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-top: 1.5rem;
+        }
+
+        /* Clue Giving Phase */
         .clue-section {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-top: 2rem;
         }
 
         .clue-input-container {
-            margin-top: 20px;
+            text-align: center;
+            margin: 2rem 0;
         }
 
-        .clue-input-container label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-        }
-
-        .clue-input-container input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1.1rem;
+        .clue-input {
             font-family: 'Inter', sans-serif;
+            font-size: 1.5rem;
+            padding: 1rem 1.5rem;
+            border: 3px solid #000;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            text-transform: uppercase;
+            font-weight: 700;
         }
 
-        .clue-input-container input:focus {
+        .clue-input:focus {
             outline: none;
             border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
         }
 
         .submit-clue-btn {
-            background: #667eea;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 1rem 3rem;
             cursor: pointer;
-            margin-top: 15px;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
             transition: all 0.2s;
+            margin-top: 1rem;
         }
 
-        .submit-clue-btn:hover {
-            background: #5568d3;
+        .submit-clue-btn:hover:not(:disabled) {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
         }
 
         .submit-clue-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
+            opacity: 0.6;
         }
 
         /* Clues Display */
         .clues-list {
-            margin-top: 30px;
-        }
-
-        .clues-list h3 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
         .clue-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #f5f7ff;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            background: #f8f9fa;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
         }
 
         .clue-player {
-            font-weight: 600;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
         }
 
-        .clue-text {
-            font-size: 1.2rem;
+        .clue-word {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
             color: #667eea;
-            font-weight: 700;
-        }
-
-        /* Voting Section */
-        .voting-section {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .voting-section h3 {
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .player-vote-list {
-            display: grid;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .vote-option {
-            background: #f5f7ff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 1.2rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .vote-option:hover {
-            border-color: #667eea;
-            background: #eef1ff;
-        }
-
-        .vote-option.selected {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
-
-        .confirm-vote-btn {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 18px 60px;
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 2px;
-            cursor: pointer;
-            margin-top: 30px;
-            width: 100%;
-            transition: all 0.3s;
-        }
-
-        .confirm-vote-btn:hover {
-            background: #45a049;
-        }
-
-        .confirm-vote-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* Results Section */
-        .results-section {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .results-section h2 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-
-        .results-section.winner {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-        }
-
-        .results-section.loser {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-        }
-
-        .vote-results {
-            margin-top: 30px;
-            text-align: left;
-        }
-
-        .vote-result-item {
-            padding: 15px;
-            background: #f5f7ff;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-        }
-
-        .play-again-btn {
-            background: #1a1a1a;
-            color: white;
-            border: none;
-            padding: 18px 60px;
-            border-radius: 12px;
-            font-size: 1.3rem;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 2px;
-            cursor: pointer;
-            margin-top: 30px;
-            transition: all 0.3s;
-        }
-
-        .play-again-btn:hover {
-            background: #333;
-        }
-
-        .hidden {
-            display: none;
+            letter-spacing: 1px;
         }
 
         .waiting-message {
             text-align: center;
-            font-size: 1.3rem;
             color: #666;
-            padding: 40px;
-            background: white;
-            border-radius: 12px;
+            font-size: 1.2rem;
+            font-style: italic;
+            margin-top: 2rem;
         }
 
+        /* Voting Phase */
+        .voting-section {
+            margin-top: 2rem;
+        }
+
+        .voting-instructions {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .players-voting-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .vote-player-card {
+            background: #f8f9fa;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .vote-player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            background: #fff;
+        }
+
+        .vote-player-card.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .vote-player-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .vote-player-clue {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .vote-player-card.selected .vote-player-clue {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .submit-vote-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: #ff4757;
+            color: white;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 1rem 3rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .submit-vote-btn:hover:not(:disabled) {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .submit-vote-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Results Phase */
+        .results-section {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .result-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 4px solid #000;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .result-banner.imposter-wins {
+            background: linear-gradient(135deg, #ff4757 0%, #c23616 100%);
+        }
+
+        .result-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            letter-spacing: 3px;
+            margin-bottom: 1rem;
+        }
+
+        .result-message {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin: 1rem 0;
+        }
+
+        .revealed-word {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            letter-spacing: 5px;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+            margin: 2rem 0;
+        }
+
+        .imposter-reveal {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .imposter-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .play-again-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: #ffd700;
+            color: #000;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 1rem 3rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            margin-top: 2rem;
+        }
+
+        .play-again-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Vote Counts Display */
+        .vote-results {
+            margin: 2rem 0;
+        }
+
+        .vote-result-item {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vote-result-name {
+            font-weight: 700;
+        }
+
+        .vote-result-count {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            padding: 3rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Progress Indicator */
+        .progress-indicator {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .progress-bar {
+            background: #f0f0f0;
+            border: 2px solid #000;
+            border-radius: 10px;
+            height: 30px;
+            margin: 1rem auto;
+            max-width: 400px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                padding: 0 20px;
+            .game-card {
+                padding: 1.5rem;
             }
 
-            .role-card .word {
+            .role-title {
+                font-size: 2rem;
+            }
+
+            .word-display {
                 font-size: 2.5rem;
             }
 
-            .phase-title {
-                font-size: 2rem;
+            .clues-list {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             }
+
+            .players-voting-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo-nav">PLAYHUB</div>
-    </nav>
+    <!-- Animated Background -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
 
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">PLAYHUB</a>
+            <div class="room-code-header" id="roomCodeHeader">ROOM: ------</div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
     <div class="container">
-        <div class="game-content">
-            <!-- Loading Phase -->
-            <div id="loadingPhase">
-                <div class="waiting-message">
-                    <h2>Loading game...</h2>
-                    <p>Please wait while we set everything up!</p>
-                </div>
+        <div class="game-card">
+            <!-- Loading State -->
+            <div id="loadingPhase" class="loading">
+                <div class="spinner"></div>
+                <p>Connecting to game...</p>
             </div>
 
             <!-- Role Reveal Phase -->
-            <div id="rolePhase" class="hidden">
+            <div id="roleRevealPhase" class="hidden">
                 <div class="phase-indicator">
-                    <h1 class="phase-title">Your Role</h1>
-                    <p class="phase-description">Memorize your word or role!</p>
+                    <div class="phase-title">ROLE REVEAL</div>
+                    <div class="phase-subtitle">Remember your role!</div>
                 </div>
 
-                <div class="role-card" id="roleCard">
-                    <h2 id="roleTitle">Your Word</h2>
-                    <div class="word" id="wordDisplay">PIZZA</div>
-                    <p class="instruction" id="roleInstruction">
-                        Give a one-word clue about this word without being too obvious!
-                    </p>
+                <div class="role-reveal">
+                    <div id="roleCard" class="role-card">
+                        <div class="role-title" id="roleTitle">YOUR ROLE</div>
+                        <div id="wordSection" class="hidden">
+                            <p>Your secret word is:</p>
+                            <div class="word-display" id="wordDisplay">WORD</div>
+                        </div>
+                        <div id="imposterSection" class="hidden">
+                            <p style="font-size: 1.5rem;">🎭</p>
+                            <p>You don't know the word!</p>
+                        </div>
+                        <div class="role-instruction" id="roleInstruction"></div>
+                    </div>
                 </div>
 
-                <button class="submit-clue-btn" onclick="startCluePhase()">Ready!</button>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <p style="color: #666; font-size: 1.1rem;">Game starting soon...</p>
+                </div>
             </div>
 
-            <!-- Clue Phase -->
+            <!-- Clue Giving Phase -->
             <div id="cluePhase" class="hidden">
                 <div class="phase-indicator">
-                    <h1 class="phase-title">Give Your Clue</h1>
-                    <p class="phase-description">One word only! Make it count.</p>
+                    <div class="phase-title">GIVE YOUR CLUE</div>
+                    <div class="phase-subtitle">One word only - help others find the imposter!</div>
                 </div>
 
+                <div class="timer" id="clueTimer">60</div>
+
                 <div class="clue-section">
-                    <div class="clue-input-container">
-                        <label for="clueInput">Your One-Word Clue:</label>
-                        <input type="text" id="clueInput" placeholder="Enter one word..." maxlength="20">
-                        <button class="submit-clue-btn" id="submitClueBtn" onclick="submitClue()">Submit Clue</button>
+                    <div id="clueInputSection" class="clue-input-container">
+                        <input 
+                            type="text" 
+                            id="clueInput" 
+                            class="clue-input" 
+                            placeholder="TYPE YOUR CLUE" 
+                            maxlength="20"
+                        >
+                        <br>
+                        <button class="submit-clue-btn" id="submitClueBtn" onclick="submitClue()">
+                            SUBMIT CLUE
+                        </button>
                     </div>
 
-                    <div class="clues-list" id="cluesList">
-                        <h3>Clues So Far (<span id="clueCount">0</span>/<span id="totalPlayers">0</span>)</h3>
-                        <div id="cluesContainer">
-                            <!-- Clues will appear here -->
-                        </div>
+                    <div id="clueWaitingSection" class="hidden">
+                        <p class="waiting-message">✓ Clue submitted! Waiting for other players...</p>
                     </div>
+
+                    <div class="progress-indicator" id="clueProgress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="clueProgressFill" style="width: 0%">0/0</div>
+                        </div>
+                        <p>Players who submitted clues</p>
+                    </div>
+
+                    <div class="clues-list" id="cluesList"></div>
                 </div>
             </div>
 
             <!-- Voting Phase -->
             <div id="votingPhase" class="hidden">
                 <div class="phase-indicator">
-                    <h1 class="phase-title">Vote for the Imposter</h1>
-                    <p class="phase-description">Who do you think doesn't know the word?</p>
+                    <div class="phase-title">VOTE FOR THE IMPOSTER</div>
+                    <div class="phase-subtitle">Who do you think is suspicious?</div>
                 </div>
 
+                <div class="timer" id="votingTimer">45</div>
+
                 <div class="voting-section">
-                    <h3>Select a Player</h3>
-                    <div class="player-vote-list" id="voteList">
-                        <!-- Vote options will appear here -->
+                    <div class="voting-instructions">
+                        🔍 Click on a player to vote them out
                     </div>
-                    <button class="confirm-vote-btn" id="confirmVoteBtn" onclick="confirmVote()" disabled>Confirm Vote</button>
+
+                    <div class="players-voting-grid" id="votingGrid"></div>
+
+                    <button class="submit-vote-btn" id="submitVoteBtn" onclick="submitVote()" disabled>
+                        CAST YOUR VOTE
+                    </button>
+
+                    <div class="progress-indicator" id="voteProgress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="voteProgressFill" style="width: 0%">0/0</div>
+                        </div>
+                        <p>Players who voted</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Results Phase -->
             <div id="resultsPhase" class="hidden">
-                <div class="results-section" id="resultsCard">
-                    <h2 id="resultsTitle">Game Over!</h2>
-                    <p id="resultsMessage"></p>
+                <div class="results-section">
+                    <div id="resultBanner" class="result-banner">
+                        <div class="result-title" id="resultTitle">GAME OVER</div>
+                        <div class="result-message" id="resultMessage"></div>
+                        
+                        <div class="imposter-reveal">
+                            <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">The Imposter was:</p>
+                            <div class="imposter-name" id="imposterName">PLAYER</div>
+                        </div>
 
-                    <div class="vote-results" id="voteResults">
-                        <!-- Vote tallies will appear here -->
+                        <p style="font-size: 1.2rem; margin: 1rem 0;">The secret word was:</p>
+                        <div class="revealed-word" id="revealedWord">WORD</div>
+
+                        <div class="vote-results" id="voteResults"></div>
                     </div>
 
-                    <button class="play-again-btn" onclick="playAgain()">Play Again</button>
+                    <button class="play-again-btn" onclick="returnToLobby()">
+                        RETURN TO LOBBY
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('room');
-        const playerName = urlParams.get('name');
+    <!-- Footer -->
+    <footer>
+        <div>© 2024 PlayHub. All games free forever.</div>
+    </footer>
 
-        // Connect to backend - YOUR RAILWAY URL IS ALREADY HERE!
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script>
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-        const socket = io(BACKEND_URL, {
-            transports: ['websocket', 'polling']
-        });
+        const socket = io(BACKEND_URL);
+
+        // Get room code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('code');
+        const playerName = localStorage.getItem('playerName');
 
         // Game state
         let myRole = null;
         let myWord = null;
+        let isImposter = false;
+        let selectedVotePlayerId = null;
+        let totalPlayers = 0;
+        let allClues = [];
         let allPlayers = [];
-        let selectedVote = null;
+
+        // Display room code
+        document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
+
+        console.log('Game initialized:', { roomCode, playerName });
 
         // Socket connection
         socket.on('connect', () => {
-            console.log('Connected to server');
+            console.log('Connected to game server');
         });
 
-        // CRITICAL: Listen for role assignment
+        // Role assigned
         socket.on('role-assigned', (data) => {
             console.log('Role assigned:', data);
+            
             myRole = data.role;
+            isImposter = data.isImposter;
             myWord = data.word;
-            allPlayers = data.players;
 
-            // Show role phase
-            showRolePhase();
+            showRoleReveal();
+
+            // Auto-start clue phase after 5 seconds
+            setTimeout(() => {
+                // Server should send clue-phase-start, but if not, we handle it
+            }, 5000);
         });
 
-        // Listen for clue submissions
+        // Clue phase started
+        socket.on('clue-phase-start', (data) => {
+            console.log('Clue phase started:', data);
+            showCluePhase(data.timeLimit || 60);
+        });
+
+        // Clue submitted by someone
         socket.on('clue-submitted', (data) => {
             console.log('Clue submitted:', data);
-            updateCluesList(data.clues, data.totalPlayers);
+            
+            // Add to clues list if not already there
+            if (!allClues.find(c => c.playerName === data.playerName)) {
+                allClues.push({
+                    playerName: data.playerName,
+                    clue: data.clue
+                });
+            }
+
+            updateCluesDisplay();
+            updateClueProgress(data.totalClues, data.totalPlayers);
+            totalPlayers = data.totalPlayers;
         });
 
-        // Listen for all clues submitted
-        socket.on('all-clues-submitted', (data) => {
-            console.log('All clues submitted, moving to voting');
-            setTimeout(() => {
-                showVotingPhase(data.players);
-            }, 2000);
+        // Voting phase started
+        socket.on('voting-phase-start', (data) => {
+            console.log('Voting phase started:', data);
+            allClues = data.clues;
+            allPlayers = data.players;
+            totalPlayers = data.players.length;
+            showVotingPhase();
         });
 
-        // Listen for game results
+        // Vote counted
+        socket.on('vote-counted', (data) => {
+            console.log('Vote counted:', data);
+            updateVoteProgress(data.totalVotes, data.totalPlayers);
+        });
+
+        // Game results
         socket.on('game-results', (data) => {
             console.log('Game results:', data);
             showResults(data);
         });
 
-        // Show role phase
-        function showRolePhase() {
-            document.getElementById('loadingPhase').classList.add('hidden');
-            document.getElementById('rolePhase').classList.remove('hidden');
+        // Error handling
+        socket.on('error', (data) => {
+            console.error('Socket error:', data);
+            alert(data.message);
+        });
+
+        // Show role reveal phase
+        function showRoleReveal() {
+            hideAllPhases();
+            document.getElementById('roleRevealPhase').classList.remove('hidden');
 
             const roleCard = document.getElementById('roleCard');
             const roleTitle = document.getElementById('roleTitle');
-            const wordDisplay = document.getElementById('wordDisplay');
+            const wordSection = document.getElementById('wordSection');
+            const imposterSection = document.getElementById('imposterSection');
             const roleInstruction = document.getElementById('roleInstruction');
 
-            if (myRole === 'imposter') {
+            if (isImposter) {
                 roleCard.classList.add('imposter');
-                roleTitle.textContent = 'You are the IMPOSTER!';
-                wordDisplay.textContent = '???';
-                roleInstruction.textContent = 'You don\'t know the word! Try to blend in with your clue.';
+                roleTitle.textContent = '🎭 THE IMPOSTER';
+                imposterSection.classList.remove('hidden');
+                wordSection.classList.add('hidden');
+                roleInstruction.textContent = 'Try to blend in! Give a clue that sounds like you know the word, but be careful not to be too obvious.';
             } else {
-                roleTitle.textContent = 'Your Word Is...';
-                wordDisplay.textContent = myWord.toUpperCase();
-                roleInstruction.textContent = 'Give a one-word clue about this word without being too obvious!';
+                roleCard.classList.remove('imposter');
+                roleTitle.textContent = '🔍 INVESTIGATOR';
+                wordSection.classList.remove('hidden');
+                imposterSection.classList.add('hidden');
+                document.getElementById('wordDisplay').textContent = myWord;
+                roleInstruction.textContent = 'Give a one-word clue that relates to your word, but don\'t make it too obvious for the imposter!';
             }
         }
 
-        // Start clue phase
-        function startCluePhase() {
-            document.getElementById('rolePhase').classList.add('hidden');
+        // Show clue phase
+        function showCluePhase(timeLimit) {
+            hideAllPhases();
             document.getElementById('cluePhase').classList.remove('hidden');
-            document.getElementById('totalPlayers').textContent = allPlayers.length;
+            
+            // Start timer
+            startTimer('clueTimer', timeLimit);
         }
 
         // Submit clue
         function submitClue() {
             const clueInput = document.getElementById('clueInput');
-            const clue = clueInput.value.trim();
+            const clue = clueInput.value.trim().toUpperCase();
 
             if (!clue) {
                 alert('Please enter a clue!');
                 return;
             }
 
-            // Check if it's one word
+            // Check if it's a single word
             if (clue.split(' ').length > 1) {
                 alert('Only one word allowed!');
                 return;
             }
 
-            // Send clue to server
+            console.log('Submitting clue:', clue);
+            
             socket.emit('submit-clue', {
                 roomCode: roomCode,
-                playerName: playerName,
                 clue: clue
             });
 
-            // Disable input
-            clueInput.disabled = true;
-            document.getElementById('submitClueBtn').disabled = true;
-            clueInput.value = 'Submitted: ' + clue;
+            // Hide input, show waiting message
+            document.getElementById('clueInputSection').classList.add('hidden');
+            document.getElementById('clueWaitingSection').classList.remove('hidden');
+
+            // Add own clue to display
+            allClues.push({
+                playerName: playerName,
+                clue: clue
+            });
+            updateCluesDisplay();
         }
 
-        // Update clues list
-        function updateCluesList(clues, totalPlayers) {
-            const cluesContainer = document.getElementById('cluesContainer');
-            const clueCount = document.getElementById('clueCount');
+        // Update clues display
+        function updateCluesDisplay() {
+            const cluesList = document.getElementById('cluesList');
+            cluesList.innerHTML = '';
 
-            cluesContainer.innerHTML = '';
-            clueCount.textContent = clues.length;
-
-            clues.forEach(clue => {
+            allClues.forEach(clueData => {
                 const clueItem = document.createElement('div');
                 clueItem.className = 'clue-item';
-                clueItem.innerHTML = `
-                    <span class="clue-player">${clue.playerName}</span>
-                    <span class="clue-text">${clue.clue}</span>
-                `;
-                cluesContainer.appendChild(clueItem);
+                
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'clue-player';
+                playerDiv.textContent = clueData.playerName;
+                
+                const clueDiv = document.createElement('div');
+                clueDiv.className = 'clue-word';
+                clueDiv.textContent = clueData.clue;
+                
+                clueItem.appendChild(playerDiv);
+                clueItem.appendChild(clueDiv);
+                cluesList.appendChild(clueItem);
             });
+        }
+
+        // Update clue progress
+        function updateClueProgress(current, total) {
+            const progressFill = document.getElementById('clueProgressFill');
+            const percentage = (current / total) * 100;
+            progressFill.style.width = percentage + '%';
+            progressFill.textContent = `${current}/${total}`;
         }
 
         // Show voting phase
-        function showVotingPhase(players) {
-            document.getElementById('cluePhase').classList.add('hidden');
+        function showVotingPhase() {
+            hideAllPhases();
             document.getElementById('votingPhase').classList.remove('hidden');
+            
+            // Build voting grid
+            buildVotingGrid();
+            
+            // Start timer
+            startTimer('votingTimer', 45);
+        }
 
-            const voteList = document.getElementById('voteList');
-            voteList.innerHTML = '';
+        // Build voting grid
+        function buildVotingGrid() {
+            const votingGrid = document.getElementById('votingGrid');
+            votingGrid.innerHTML = '';
 
-            players.forEach(player => {
-                const voteOption = document.createElement('div');
-                voteOption.className = 'vote-option';
-                voteOption.textContent = player.name;
-                voteOption.onclick = () => selectVote(player.name, voteOption);
-                voteList.appendChild(voteOption);
+            allPlayers.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'vote-player-card';
+                card.onclick = () => selectVotePlayer(player.id, card);
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'vote-player-name';
+                nameDiv.textContent = player.name;
+                
+                // Find their clue
+                const playerClue = allClues.find(c => c.playerName === player.name);
+                const clueDiv = document.createElement('div');
+                clueDiv.className = 'vote-player-clue';
+                clueDiv.textContent = playerClue ? `Clue: "${playerClue.clue}"` : 'No clue submitted';
+                
+                card.appendChild(nameDiv);
+                card.appendChild(clueDiv);
+                votingGrid.appendChild(card);
             });
         }
 
-        // Select vote
-        function selectVote(playerName, element) {
-            // Remove previous selection
-            document.querySelectorAll('.vote-option').forEach(opt => {
-                opt.classList.remove('selected');
+        // Select player to vote for
+        function selectVotePlayer(playerId, cardElement) {
+            // Remove selection from all cards
+            document.querySelectorAll('.vote-player-card').forEach(card => {
+                card.classList.remove('selected');
             });
 
-            // Select new
-            element.classList.add('selected');
-            selectedVote = playerName;
-            document.getElementById('confirmVoteBtn').disabled = false;
+            // Select this card
+            cardElement.classList.add('selected');
+            selectedVotePlayerId = playerId;
+            document.getElementById('submitVoteBtn').disabled = false;
         }
 
-        // Confirm vote
-        function confirmVote() {
-            if (!selectedVote) {
-                alert('Please select a player!');
+        // Submit vote
+        function submitVote() {
+            if (!selectedVotePlayerId) {
+                alert('Please select a player to vote for!');
                 return;
             }
 
+            console.log('Submitting vote for:', selectedVotePlayerId);
+            
             socket.emit('submit-vote', {
                 roomCode: roomCode,
-                playerName: playerName,
-                votedFor: selectedVote
+                votedPlayerId: selectedVotePlayerId
             });
 
-            document.getElementById('confirmVoteBtn').disabled = true;
-            document.getElementById('confirmVoteBtn').textContent = 'Vote Submitted!';
+            // Disable voting
+            document.getElementById('submitVoteBtn').disabled = true;
+            document.getElementById('submitVoteBtn').textContent = 'VOTE SUBMITTED ✓';
+            document.querySelectorAll('.vote-player-card').forEach(card => {
+                card.style.pointerEvents = 'none';
+            });
+        }
+
+        // Update vote progress
+        function updateVoteProgress(current, total) {
+            const progressFill = document.getElementById('voteProgressFill');
+            const percentage = (current / total) * 100;
+            progressFill.style.width = percentage + '%';
+            progressFill.textContent = `${current}/${total}`;
         }
 
         // Show results
         function showResults(data) {
-            document.getElementById('votingPhase').classList.add('hidden');
+            hideAllPhases();
             document.getElementById('resultsPhase').classList.remove('hidden');
 
-            const resultsCard = document.getElementById('resultsCard');
-            const resultsTitle = document.getElementById('resultsTitle');
-            const resultsMessage = document.getElementById('resultsMessage');
+            const resultBanner = document.getElementById('resultBanner');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            const imposterName = document.getElementById('imposterName');
+            const revealedWord = document.getElementById('revealedWord');
             const voteResults = document.getElementById('voteResults');
 
-            // Determine winner
-            const votedPlayer = data.votedPlayer;
-            const wasImposter = data.votedPlayerWasImposter;
+            // Set imposter name and word
+            imposterName.textContent = data.imposter.name.toUpperCase();
+            revealedWord.textContent = data.word.toUpperCase();
 
-            if (wasImposter) {
-                resultsTitle.textContent = 'Players Win!';
-                resultsMessage.textContent = `${votedPlayer} was the imposter! Great detective work!`;
-                resultsCard.classList.add('winner');
+            // Set result based on outcome
+            if (data.imposterCaught) {
+                resultBanner.classList.remove('imposter-wins');
+                resultTitle.textContent = '🎉 INVESTIGATORS WIN!';
+                resultMessage.textContent = `${data.votedOut.name} was voted out and they were the imposter!`;
             } else {
-                resultsTitle.textContent = 'Imposter Wins!';
-                resultsMessage.textContent = `${votedPlayer} was innocent! The imposter got away!`;
-                resultsCard.classList.add('loser');
+                resultBanner.classList.add('imposter-wins');
+                resultTitle.textContent = '🎭 IMPOSTER WINS!';
+                resultMessage.textContent = `${data.votedOut.name} was voted out, but they were innocent!`;
             }
 
-            // Show vote tallies
-            voteResults.innerHTML = '<h3>Vote Results:</h3>';
-            for (const [player, votes] of Object.entries(data.voteTally)) {
-                const voteItem = document.createElement('div');
-                voteItem.className = 'vote-result-item';
-                voteItem.textContent = `${player}: ${votes} vote${votes !== 1 ? 's' : ''}`;
-                voteResults.appendChild(voteItem);
-            }
-
-            // Show the actual word
-            const wordReveal = document.createElement('p');
-            wordReveal.style.marginTop = '30px';
-            wordReveal.style.fontSize = '1.5rem';
-            wordReveal.style.fontWeight = 'bold';
-            wordReveal.textContent = `The word was: ${data.actualWord}`;
-            resultsMessage.after(wordReveal);
+            // Show vote counts
+            voteResults.innerHTML = '<p style="margin-bottom: 1rem; font-size: 1.2rem;">Vote Results:</p>';
+            
+            // Sort by vote count
+            const sortedVotes = Object.entries(data.voteCounts).sort((a, b) => b[1] - a[1]);
+            
+            sortedVotes.forEach(([playerId, votes]) => {
+                const player = allPlayers.find(p => p.id === playerId);
+                if (player) {
+                    const voteItem = document.createElement('div');
+                    voteItem.className = 'vote-result-item';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'vote-result-name';
+                    nameSpan.textContent = player.name;
+                    
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'vote-result-count';
+                    countSpan.textContent = `${votes} vote${votes !== 1 ? 's' : ''}`;
+                    
+                    voteItem.appendChild(nameSpan);
+                    voteItem.appendChild(countSpan);
+                    voteResults.appendChild(voteItem);
+                }
+            });
         }
 
-        // Play again
-        function playAgain() {
-            window.location.href = `party-games.html`;
+        // Timer function
+        function startTimer(elementId, seconds) {
+            const timerElement = document.getElementById(elementId);
+            let timeLeft = seconds;
+
+            const interval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+
+                if (timeLeft <= 10) {
+                    timerElement.classList.add('warning');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                }
+            }, 1000);
         }
 
-        // Handle disconnection
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
+        // Hide all phases
+        function hideAllPhases() {
+            document.getElementById('loadingPhase').classList.add('hidden');
+            document.getElementById('roleRevealPhase').classList.add('hidden');
+            document.getElementById('cluePhase').classList.add('hidden');
+            document.getElementById('votingPhase').classList.add('hidden');
+            document.getElementById('resultsPhase').classList.add('hidden');
+        }
+
+        // Return to lobby
+        function returnToLobby() {
+            window.location.href = `waiting-room.html?code=${roomCode}`;
+        }
+
+        // Handle browser close
+        window.addEventListener('beforeunload', () => {
+            socket.disconnect();
+        });
+
+        // Debug: Log all socket events
+        socket.onAny((eventName, ...args) => {
+            console.log('Socket event:', eventName, args);
         });
     </script>
 </body>
