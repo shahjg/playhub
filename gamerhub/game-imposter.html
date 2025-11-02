@@ -974,6 +974,12 @@
             showResults(data);
         });
 
+        // Early voting end (when someone gets majority)
+        socket.on('voting-ended-early', (data) => {
+            console.log('Voting ended early - majority reached');
+            // Just a notification, results will come next
+        });
+
         // Error handling
         socket.on('error', (data) => {
             console.error('Socket error:', data);
@@ -1244,12 +1250,13 @@
             
             console.log(`Skip votes: ${count}/${total}, majority needed: ${majority}`);
             
-            skipDisplay.textContent = `${count}/${majority} votes needed to skip`;
-            
-            // Visual feedback when close to majority
             if (count >= majority) {
+                skipDisplay.textContent = `✅ MAJORITY REACHED! (${count}/${total} votes)`;
                 skipDisplay.style.color = '#4caf50';
                 skipDisplay.style.fontWeight = '700';
+            } else {
+                skipDisplay.textContent = `${count}/${majority} votes to skip (${majority - count} more needed)`;
+                skipDisplay.style.color = '#666';
             }
         }
 
