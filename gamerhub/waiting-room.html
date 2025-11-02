@@ -567,15 +567,25 @@
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL);
 
-        // Get room code from URL
+        // Get room code from URL (lobby.html uses ?room= not ?code=)
         const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('code');
-        const playerName = localStorage.getItem('playerName');
-        const isHost = localStorage.getItem('isHost') === 'true';
+        const roomCode = urlParams.get('room') || urlParams.get('code');
+        const playerName = urlParams.get('name') || localStorage.getItem('playerName');
+        const isHost = urlParams.get('host') === 'true' || localStorage.getItem('isHost') === 'true';
 
         console.log('Waiting room initialized:', { roomCode, playerName, isHost });
+        
+        // Save to localStorage for reconnections
+        if (roomCode) localStorage.setItem('roomCode', roomCode);
+        if (playerName) localStorage.setItem('playerName', playerName);
+        if (isHost) localStorage.setItem('isHost', 'true');
 
         // Display room code
+        if (!roomCode) {
+            alert('No room code provided! Redirecting to lobby...');
+            window.location.href = 'lobby.html';
+        }
+        
         document.getElementById('roomCode').textContent = roomCode;
 
         // Show start button if host
@@ -659,7 +669,7 @@
         // Game started
         socket.on('game-started', (data) => {
             console.log('Game started, redirecting...');
-            window.location.href = `game-imposter.html?code=${roomCode}`;
+            window.location.href = `game-imposter.html?room=${roomCode}`;
         });
 
         // Error handling
