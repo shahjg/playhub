@@ -74,6 +74,11 @@
             border-radius: 8px;
             font-weight: 600;
             margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .game-type.spyfall {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
         .input-group {
@@ -124,6 +129,14 @@
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
+        }
+
+        button.spyfall {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.spyfall:hover {
+            background: linear-gradient(135deg, #e082ea 0%, #e4465b 100%);
         }
 
         .divider {
@@ -177,7 +190,7 @@
 
     <div class="container">
         <div class="lobby-card">
-            <div class="game-type">IMPOSTER</div>
+            <div class="game-type" id="gameType">LOADING...</div>
             
             <h1>Game Lobby</h1>
 
@@ -210,11 +223,31 @@
             transports: ['websocket', 'polling']
         });
 
+        // Get game type from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game') || 'imposter'; // default to imposter
+        
+        // Map game IDs to display names and types
+        const gameInfo = {
+            'imposter': { display: 'IMPOSTER', type: 'imposter', class: '' },
+            'spyfall': { display: 'SPYFALL', type: 'spyfall', class: 'spyfall' },
+            'werewolf': { display: 'WEREWOLF', type: 'werewolf', class: '' },
+            'avalon': { display: 'AVALON', type: 'avalon', class: '' }
+        };
+
+        const currentGame = gameInfo[gameId] || gameInfo['imposter'];
+        
+        // Update UI based on game
+        document.getElementById('gameType').textContent = currentGame.display;
+        document.getElementById('gameType').className = `game-type ${currentGame.class}`;
+        document.getElementById('createBtn').className = currentGame.class;
+        document.getElementById('joinBtn').className = currentGame.class;
+
         socket.on('connect', () => {
             console.log('Connected:', socket.id);
         });
 
-        // CREATE ROOM - Store in localStorage before redirect
+        // CREATE ROOM
         socket.on('room-created', (data) => {
             console.log('Room created:', data);
             
@@ -242,6 +275,12 @@
             enableButtons();
         });
 
+        socket.on('join-error', (data) => {
+            console.error('Join error:', data);
+            showError(data.message);
+            enableButtons();
+        });
+
         function createRoom() {
             const name = document.getElementById('createName').value.trim();
             
@@ -255,7 +294,7 @@
 
             socket.emit('create-room', {
                 playerName: name,
-                gameType: 'imposter'
+                gameType: currentGame.type
             });
         }
 
