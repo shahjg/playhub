@@ -6,7 +6,9 @@
     <title>Game Lobby - PlayHub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -16,511 +18,306 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #fafbff;
+            color: #1a1a1a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
         }
 
-        /* Animated Background Blobs */
-        .blob {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.5;
-            z-index: 0;
-            animation: float 20s infinite ease-in-out;
-        }
-
-        .blob-1 {
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 107, 107, 0.4);
-            top: -100px;
-            left: -100px;
-            animation-delay: 0s;
-        }
-
-        .blob-2 {
-            width: 400px;
-            height: 400px;
-            background: rgba(78, 205, 196, 0.4);
-            bottom: -150px;
-            right: -150px;
-            animation-delay: 5s;
-        }
-
-        .blob-3 {
-            width: 250px;
-            height: 250px;
-            background: rgba(255, 195, 113, 0.4);
-            top: 50%;
-            left: 50%;
-            animation-delay: 10s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(50px, -50px) scale(1.1); }
-            66% { transform: translate(-50px, 50px) scale(0.9); }
-        }
-
-        /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 4px solid #000;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-            padding: 1rem 2rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
+        h1, h2 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #000;
-            text-decoration: none;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
-        /* Main Container */
-        .container {
-            flex: 1;
+        nav {
+            padding: 30px 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-            position: relative;
-            z-index: 1;
+            border-bottom: 3px solid #1a1a1a;
+            margin-bottom: 60px;
+        }
+
+        .logo-nav {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.1rem;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 40px;
+            flex: 1;
         }
 
         .lobby-card {
-            background: rgba(255, 255, 255, 0.98);
-            border: 4px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            padding: 2.5rem;
-            max-width: 500px;
-            width: 100%;
+            background: white;
+            padding: 50px;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
 
         h1 {
-            font-family: 'Bebas Neue', sans-serif;
+            text-align: center;
             font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 0.5rem;
-            letter-spacing: 2px;
+            margin-bottom: 40px;
         }
 
-        .game-name {
+        .game-type {
             text-align: center;
-            color: #667eea;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
             font-weight: 600;
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
+            margin-bottom: 40px;
         }
 
-        /* Form Sections */
-        .form-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-divider {
-            text-align: center;
-            margin: 2rem 0;
-            position: relative;
-        }
-
-        .section-divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #ddd;
-            z-index: 0;
-        }
-
-        .section-divider span {
-            background: rgba(255, 255, 255, 0.98);
-            padding: 0 1rem;
-            position: relative;
-            z-index: 1;
-            color: #666;
-            font-weight: 600;
+        .input-group {
+            margin-bottom: 30px;
         }
 
         label {
             display: block;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 10px;
             color: #333;
         }
 
         input {
             width: 100%;
-            padding: 1rem;
-            border: 3px solid #000;
-            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             font-size: 1rem;
             font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
-            margin-bottom: 1rem;
+            transition: border-color 0.2s;
         }
 
         input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
         button {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: 4px solid #000;
-            border-radius: 10px;
-            padding: 1rem 2rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
             width: 100%;
+            padding: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
         }
 
         button:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        button:active {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+            background: #5568d3;
         }
 
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
-            opacity: 0.6;
         }
 
-        .error-message {
-            background: #f8d7da;
-            border: 3px solid #f5c2c7;
-            border-radius: 10px;
-            padding: 1rem;
-            color: #842029;
-            margin-top: 1rem;
-            display: none;
-        }
-
-        .loading {
+        .divider {
             text-align: center;
-            color: #667eea;
-            font-weight: 600;
-            margin-top: 1rem;
-            display: none;
-        }
-
-        /* Footer */
-        footer {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            text-align: center;
-            padding: 1.5rem;
+            margin: 40px 0;
             position: relative;
-            z-index: 10;
         }
 
-        /* Responsive */
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 20px;
+            position: relative;
+            color: #999;
+            font-weight: 600;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
         @media (max-width: 768px) {
-            .lobby-card {
-                padding: 1.5rem;
+            .container {
+                padding: 0 20px;
             }
 
-            h1 {
-                font-size: 2rem;
+            .lobby-card {
+                padding: 30px 20px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
+    <nav>
+        <div class="logo-nav">PLAYHUB</div>
+    </nav>
 
-    <!-- Header -->
-    <header>
-        <div class="header-content">
-            <a href="index.html" class="logo">PLAYHUB</a>
-        </div>
-    </header>
-
-    <!-- Main Container -->
     <div class="container">
         <div class="lobby-card">
-            <h1>GAME LOBBY</h1>
-            <div class="game-name" id="gameName">Imposter</div>
+            <div class="game-type">IMPOSTER</div>
+            
+            <h1>Game Lobby</h1>
 
-            <!-- Create Room Section -->
-            <div class="form-section">
+            <!-- Create Room -->
+            <div class="input-group">
                 <label for="createName">Your Name:</label>
                 <input type="text" id="createName" placeholder="Enter your name" maxlength="20">
-                <button onclick="createRoom()" id="createBtn">CREATE ROOM</button>
+                <button onclick="createRoom()" id="createBtn">Create Room</button>
             </div>
 
-            <div class="section-divider">
-                <span>OR</span>
-            </div>
+            <div class="divider"><span>OR</span></div>
 
-            <!-- Join Room Section -->
-            <div class="form-section">
+            <!-- Join Room -->
+            <div class="input-group">
                 <label for="joinName">Your Name:</label>
                 <input type="text" id="joinName" placeholder="Enter your name" maxlength="20">
                 
-                <label for="roomCode">Room Code:</label>
-                <input type="text" id="roomCode" placeholder="Enter 6-digit code" maxlength="6" style="text-transform: uppercase;">
-                
-                <button onclick="joinRoom()" id="joinBtn">JOIN ROOM</button>
+                <label for="roomCode" style="margin-top: 20px;">Room Code:</label>
+                <input type="text" id="roomCode" placeholder="6-digit code" maxlength="6">
+                <button onclick="joinRoom()" id="joinBtn">Join Room</button>
             </div>
 
-            <div class="error-message" id="errorMessage"></div>
-            <div class="loading" id="loadingMessage">Connecting...</div>
+            <div class="error" id="error"></div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <div>© 2024 PlayHub. All games free forever.</div>
-    </footer>
-
-    <!-- Socket.io Client -->
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
     <script>
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-        const socket = io(BACKEND_URL);
+        const socket = io(BACKEND_URL, {
+            transports: ['websocket', 'polling']
+        });
 
-        let isConnected = false;
-
-        // Get game type from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const gameType = urlParams.get('game') || 'imposter';
-        document.getElementById('gameName').textContent = gameType.charAt(0).toUpperCase() + gameType.slice(1);
-
-        // Socket connection events
         socket.on('connect', () => {
-            console.log('Connected to server, socket ID:', socket.id);
-            isConnected = true;
-            hideLoading();
+            console.log('Connected:', socket.id);
         });
 
-        socket.on('connect_error', (error) => {
-            console.error('Connection error:', error);
-            showError('Cannot connect to server. Please try again.');
-            isConnected = false;
-        });
-
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-            isConnected = false;
-        });
-
-        // Room created successfully - FIXED TO MATCH BACKEND
+        // CREATE ROOM - Store in localStorage before redirect
         socket.on('room-created', (data) => {
-            console.log('Room created successfully:', data);
+            console.log('Room created:', data);
             
-            if (data.roomCode) {
-                const roomCode = data.roomCode;
-                const playerName = document.getElementById('createName').value.trim();
-                
-                // Store info in localStorage
-                localStorage.setItem('roomCode', roomCode);
-                localStorage.setItem('playerName', playerName);
-                localStorage.setItem('isHost', 'true');
-                
-                // Redirect to waiting room with correct URL parameters
-                window.location.href = `waiting-room.html?room=${roomCode}&name=${playerName}&host=true`;
-            } else {
-                showError('Failed to create room. Please try again.');
-                hideLoading();
-            }
-        });
-
-        // Room joined successfully - FIXED TO MATCH BACKEND
-        socket.on('room-joined', (data) => {
-            console.log('Room joined successfully:', data);
-            
-            if (data.roomCode) {
-                const roomCode = data.roomCode;
-                const playerName = document.getElementById('joinName').value.trim();
-                
-                // Store info in localStorage
-                localStorage.setItem('roomCode', roomCode);
-                localStorage.setItem('playerName', playerName);
-                localStorage.setItem('isHost', 'false');
-                
-                // Redirect to waiting room with correct URL parameters
-                window.location.href = `waiting-room.html?room=${roomCode}&name=${playerName}&host=false`;
-            } else {
-                showError('Failed to join room. Please try again.');
-                hideLoading();
-            }
-        });
-
-        // General error
-        socket.on('error', (data) => {
-            console.error('Error:', data);
-            showError(data.message || 'An error occurred');
-            hideLoading();
-        });
-
-        // Create room function
-        function createRoom() {
             const playerName = document.getElementById('createName').value.trim();
             
-            // Validation
-            if (!playerName) {
-                showError('Please enter your name');
-                return;
-            }
-
-            if (playerName.length < 2) {
-                showError('Name must be at least 2 characters');
-                return;
-            }
-
-            if (!isConnected) {
-                showError('Not connected to server. Please refresh the page.');
-                return;
-            }
-
-            // Show loading
-            showLoading('Creating room...');
-            hideError();
-
-            console.log('Creating room with:', { playerName, gameType });
-
-            // Emit create-room event
-            socket.emit('create-room', {
-                playerName: playerName,
-                gameType: gameType
-            });
-        }
-
-        // Join room function
-        function joinRoom() {
-            const playerName = document.getElementById('joinName').value.trim();
-            const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
+            // Store data for waiting room
+            localStorage.setItem('tempRoomCode', data.roomCode);
+            localStorage.setItem('tempPlayerName', playerName);
+            localStorage.setItem('tempIsHost', 'true');
             
-            // Validation
-            if (!playerName) {
-                showError('Please enter your name');
+            // Redirect immediately
+            window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
+        });
+
+        // JOIN ROOM
+        socket.on('room-joined', (data) => {
+            console.log('Joined room:', data);
+            const playerName = document.getElementById('joinName').value.trim();
+            window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=false`;
+        });
+
+        socket.on('error', (data) => {
+            console.error('Error:', data);
+            showError(data.message);
+            enableButtons();
+        });
+
+        function createRoom() {
+            const name = document.getElementById('createName').value.trim();
+            
+            if (!name || name.length < 2) {
+                showError('Please enter a name (at least 2 characters)');
                 return;
             }
 
-            if (playerName.length < 2) {
-                showError('Name must be at least 2 characters');
-                return;
-            }
-
-            if (!roomCode) {
-                showError('Please enter a room code');
-                return;
-            }
-
-            if (roomCode.length !== 6) {
-                showError('Room code must be 6 characters');
-                return;
-            }
-
-            if (!isConnected) {
-                showError('Not connected to server. Please refresh the page.');
-                return;
-            }
-
-            // Show loading
-            showLoading('Joining room...');
             hideError();
+            disableButtons();
 
-            console.log('Joining room with:', { playerName, roomCode });
-
-            // Emit join-room event
-            socket.emit('join-room', {
-                playerName: playerName,
-                roomCode: roomCode
+            socket.emit('create-room', {
+                playerName: name,
+                gameType: 'imposter'
             });
         }
 
-        // Helper functions
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+        function joinRoom() {
+            const name = document.getElementById('joinName').value.trim();
+            const code = document.getElementById('roomCode').value.trim().toUpperCase();
+            
+            if (!name || name.length < 2) {
+                showError('Please enter a name (at least 2 characters)');
+                return;
+            }
+
+            if (!code || code.length !== 6) {
+                showError('Please enter a valid 6-digit room code');
+                return;
+            }
+
+            hideError();
+            disableButtons();
+
+            socket.emit('join-room', {
+                roomCode: code,
+                playerName: name
+            });
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('error');
+            err.textContent = msg;
+            err.style.display = 'block';
         }
 
         function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
         }
 
-        function showLoading(message) {
-            const loadingDiv = document.getElementById('loadingMessage');
-            loadingDiv.textContent = message;
-            loadingDiv.style.display = 'block';
-            
-            // Disable buttons
+        function disableButtons() {
             document.getElementById('createBtn').disabled = true;
             document.getElementById('joinBtn').disabled = true;
         }
 
-        function hideLoading() {
-            document.getElementById('loadingMessage').style.display = 'none';
-            
-            // Enable buttons
+        function enableButtons() {
             document.getElementById('createBtn').disabled = false;
             document.getElementById('joinBtn').disabled = false;
         }
 
-        // Auto-uppercase room code input
-        document.getElementById('roomCode').addEventListener('input', function(e) {
+        // Auto-uppercase room code
+        document.getElementById('roomCode').addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
 
         // Enter key support
-        document.getElementById('createName').addEventListener('keypress', function(e) {
+        document.getElementById('createName').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') createRoom();
         });
 
-        document.getElementById('joinName').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const roomCodeInput = document.getElementById('roomCode');
-                if (!roomCodeInput.value) {
-                    roomCodeInput.focus();
-                } else {
-                    joinRoom();
-                }
-            }
+        document.getElementById('joinName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('roomCode').focus();
         });
 
-        document.getElementById('roomCode').addEventListener('keypress', function(e) {
+        document.getElementById('roomCode').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') joinRoom();
-        });
-
-        // Debug: Log all socket events
-        socket.onAny((eventName, ...args) => {
-            console.log('Socket event:', eventName, args);
         });
     </script>
 </body>
