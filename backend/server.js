@@ -167,70 +167,11 @@ io.on('connection', (socket) => {
         console.log(`Sending role assignment to ${playerName}: ${playerRole.role}`);
         socket.emit('role-assigned', playerRole);
         
-        // Handle game phase transitions
-        if (room.gameData.phase === 'role-reveal') {
-          // Schedule clue phase start if not already scheduled
-          if (!room.gameData.phaseTransitionScheduled) {
-            room.gameData.phaseTransitionScheduled = true;
-            console.log('Scheduling clue phase start in 5 seconds...');
-            setTimeout(() => {
-              if (room.gameData.phase === 'role-reveal') { // Double check we're still in role reveal
-                room.gameData.phase = 'clue-giving';
-                io.to(roomCode).emit('clue-phase-start', {
-                  timeLimit: 60,
-                  round: room.gameData.currentRound
-                });
-                console.log(`Clue phase started in room ${roomCode}, Round ${room.gameData.currentRound}`);
-              }
-            }, 5000);
-          }
-        } else if (room.gameData.phase === 'clue-giving') {
-          // Already in clue phase, send current state
-          socket.emit('clue-phase-start', {
-            timeLimit: 60,
-            round: room.gameData.currentRound
-          });
-          // Send existing clues
-          room.gameData.clues.forEach(clue => {
-            socket.emit('clue-submitted', {
-              playerName: clue.playerName,
-              clue: clue.clue,
-              totalClues: room.gameData.clues.length,
-              totalPlayers: room.players.length
-            });
-          });
-        } else if (room.gameData.phase === 'voting') {
-          // Already in voting phase
-          socket.emit('voting-phase-start', {
-            clues: room.gameData.clues,
-            players: room.players,
-            round: room.gameData.currentRound
-          });
-          // Send current vote count
-          socket.emit('vote-counted', {
-            totalVotes: Object.keys(room.gameData.votes).length,
-            totalPlayers: room.players.length
-          });
-          // Send skip vote count if not final round
-          if (room.gameData.currentRound < 3) {
-            socket.emit('skip-vote-counted', {
-              skipVotes: room.gameData.skipVotes.length,
-              totalPlayers: room.players.length
-            });
-          }
-        } else if (room.gameData.phase === 'results') {
-          // Game ended, send results
-          const imposterCaught = room.gameData.votedOutPlayerId === room.gameData.imposterId;
-          const imposterPlayer = room.players.find(p => p.name === room.gameData.imposterName);
-          const votedOutPlayer = room.players.find(p => p.id === room.gameData.votedOutPlayerId);
-          
-          socket.emit('game-results', {
-            imposterCaught: imposterCaught,
-            imposter: imposterPlayer,
-            votedOut: votedOutPlayer,
-            word: room.gameData.word,
-            voteCounts: room.gameData.voteCounts || {}
-          });
+        // Handle game phase transitions based on game type
+        if (room.gameType === 'imposter') {
+          handleImposterPhaseTransition(room, socket, roomCode, playerName);
+        } else if (room.gameType === 'spyfall') {
+          handleSpyfallPhaseTransition(room, socket, roomCode, playerName);
         }
       }
     }
@@ -398,6 +339,8 @@ io.on('connection', (socket) => {
     // Initialize game based on game type
     if (room.gameType === 'imposter') {
       initImposterGame(room, category || 'random');
+    } else if (room.gameType === 'spyfall') {
+      initSpyfallGame(room, category || 'random');
     }
     // Add other game types here
     
@@ -411,6 +354,120 @@ io.on('connection', (socket) => {
     
     console.log(`Game started in room ${roomCode} with category: ${category || 'random'}`);
   });
+
+  // Helper function to handle Imposter phase transitions
+  function handleImposterPhaseTransition(room, socket, roomCode, playerName) {
+    if (room.gameData.phase === 'role-reveal') {
+      // Schedule clue phase start if not already scheduled
+      if (!room.gameData.phaseTransitionScheduled) {
+        room.gameData.phaseTransitionScheduled = true;
+        console.log('Scheduling clue phase start in 5 seconds...');
+        setTimeout(() => {
+          if (room.gameData.phase === 'role-reveal') {
+            room.gameData.phase = 'clue-giving';
+            io.to(roomCode).emit('clue-phase-start', {
+              timeLimit: 60,
+              round: room.gameData.currentRound
+            });
+            console.log(`Clue phase started in room ${roomCode}, Round ${room.gameData.currentRound}`);
+          }
+        }, 5000);
+      }
+    } else if (room.gameData.phase === 'clue-giving') {
+      socket.emit('clue-phase-start', {
+        timeLimit: 60,
+        round: room.gameData.currentRound
+      });
+      room.gameData.clues.forEach(clue => {
+        socket.emit('clue-submitted', {
+          playerName: clue.playerName,
+          clue: clue.clue,
+          totalClues: room.gameData.clues.length,
+          totalPlayers: room.players.length
+        });
+      });
+    } else if (room.gameData.phase === 'voting') {
+      socket.emit('voting-phase-start', {
+        clues: room.gameData.clues,
+        players: room.players,
+        round: room.gameData.currentRound
+      });
+      socket.emit('vote-counted', {
+        totalVotes: Object.keys(room.gameData.votes).length,
+        totalPlayers: room.players.length
+      });
+      if (room.gameData.currentRound < 3) {
+        socket.emit('skip-vote-counted', {
+          skipVotes: room.gameData.skipVotes.length,
+          totalPlayers: room.players.length
+        });
+      }
+    } else if (room.gameData.phase === 'results') {
+      const imposterCaught = room.gameData.votedOutPlayerId === room.gameData.imposterId;
+      const imposterPlayer = room.players.find(p => p.name === room.gameData.imposterName);
+      const votedOutPlayer = room.players.find(p => p.id === room.gameData.votedOutPlayerId);
+      
+      socket.emit('game-results', {
+        imposterCaught: imposterCaught,
+        imposter: imposterPlayer,
+        votedOut: votedOutPlayer,
+        word: room.gameData.word,
+        voteCounts: room.gameData.voteCounts || {}
+      });
+    }
+  }
+
+  // Helper function to handle Spyfall phase transitions
+  function handleSpyfallPhaseTransition(room, socket, roomCode, playerName) {
+    if (room.gameData.phase === 'role-reveal') {
+      if (!room.gameData.phaseTransitionScheduled) {
+        room.gameData.phaseTransitionScheduled = true;
+        console.log('Scheduling question phase start in 5 seconds...');
+        setTimeout(() => {
+          if (room.gameData.phase === 'role-reveal') {
+            room.gameData.phase = 'question';
+            io.to(roomCode).emit('question-phase-start', {
+              timeLimit: 480 // 8 minutes
+            });
+            // Send first turn
+            io.to(roomCode).emit('turn-changed', {
+              currentPlayer: room.players[0].name,
+              turnIndex: 0
+            });
+            console.log(`Question phase started in room ${roomCode}`);
+          }
+        }, 5000);
+      }
+    } else if (room.gameData.phase === 'question') {
+      socket.emit('question-phase-start', {
+        timeLimit: 480
+      });
+      socket.emit('turn-changed', {
+        currentPlayer: room.players[room.gameData.currentTurnIndex].name,
+        turnIndex: room.gameData.currentTurnIndex
+      });
+    } else if (room.gameData.phase === 'voting') {
+      socket.emit('voting-phase-start', {
+        players: room.players
+      });
+      socket.emit('vote-counted', {
+        totalVotes: Object.keys(room.gameData.votes).length,
+        totalPlayers: room.players.length
+      });
+    } else if (room.gameData.phase === 'results') {
+      const spyCaught = room.gameData.votedOutPlayerId === room.gameData.spyId;
+      const spyPlayer = room.players.find(p => p.name === room.gameData.spyName);
+      const votedOutPlayer = room.players.find(p => p.id === room.gameData.votedOutPlayerId);
+      
+      socket.emit('game-results', {
+        spyCaught: spyCaught,
+        spy: spyPlayer,
+        votedOut: votedOutPlayer,
+        location: room.gameData.location,
+        voteCounts: room.gameData.voteCounts || {}
+      });
+    }
+  }
 
   // Initialize Imposter game
   function initImposterGame(room, category = 'random') {
@@ -507,6 +564,110 @@ io.on('connection', (socket) => {
     
     console.log(`Game initialized in room ${room.code}. Category: ${category}, Imposter: ${room.gameData.imposterName}, Word: ${word}`);
   }
+
+  // Initialize Spyfall game
+  function initSpyfallGame(room, locationPack = 'classic') {
+    // Location packs with roles
+    const locationPacks = {
+      classic: [
+        { name: 'Airport', roles: ['First Class Passenger', 'Air Marshal', 'Mechanic', 'Flight Attendant', 'Co-Pilot', 'Captain', 'Tourist', 'Security Guard'] },
+        { name: 'Bank', roles: ['Armored Car Driver', 'Manager', 'Consultant', 'Customer', 'Robber', 'Security Guard', 'Teller', 'Janitor'] },
+        { name: 'Beach', roles: ['Beach Photographer', 'Ice Cream Man', 'Lifeguard', 'Thief', 'Beach Goer', 'Surfer', 'Kite Surfer', 'Beach Volleyball Player'] },
+        { name: 'Casino', roles: ['Bartender', 'Head Security', 'Bouncer', 'Manager', 'Hustler', 'Dealer', 'Gambler', 'Waitress'] },
+        { name: 'Cathedral', roles: ['Priest', 'Beggar', 'Sinner', 'Tourist', 'Sponsor', 'Choir Singer', 'Parishioner', 'Bishop'] },
+        { name: 'Circus', roles: ['Acrobat', 'Animal Trainer', 'Magician', 'Fire Eater', 'Clown', 'Juggler', 'Visitor', 'Ticket Seller'] },
+        { name: 'Hospital', roles: ['Nurse', 'Doctor', 'Anesthesiologist', 'Intern', 'Patient', 'Therapist', 'Surgeon', 'Pharmacist'] },
+        { name: 'Hotel', roles: ['Doorman', 'Security Guard', 'Manager', 'Housekeeper', 'Customer', 'Bartender', 'Bellman', 'Chef'] },
+        { name: 'Military Base', roles: ['Deserter', 'Colonel', 'Medic', 'Soldier', 'Sniper', 'Officer', 'Tank Engineer', 'Cook'] },
+        { name: 'Movie Studio', roles: ['Stunt Man', 'Sound Engineer', 'Camera Man', 'Director', 'Costume Artist', 'Actor', 'Producer', 'Makeup Artist'] },
+        { name: 'Ocean Liner', roles: ['Rich Passenger', 'Cook', 'Captain', 'Bartender', 'Musician', 'Waiter', 'Mechanic', 'Sailor'] },
+        { name: 'Passenger Train', roles: ['Mechanic', 'Border Patrol', 'Train Attendant', 'Passenger', 'Restaurant Chef', 'Engineer', 'Stoker', 'Conductor'] },
+        { name: 'Pirate Ship', roles: ['Cook', 'Sailor', 'Slave', 'Cannoneer', 'Bound Prisoner', 'Cabin Boy', 'Brave Captain', 'Surgeon'] },
+        { name: 'Polar Station', roles: ['Medic', 'Geologist', 'Expedition Leader', 'Biologist', 'Radioman', 'Hydrologist', 'Meteorologist', 'Cook'] },
+        { name: 'Police Station', roles: ['Detective', 'Lawyer', 'Journalist', 'Criminalist', 'Archivist', 'Patrol Officer', 'Criminal', 'Chief'] },
+        { name: 'Restaurant', roles: ['Musician', 'Customer', 'Bouncer', 'Hostess', 'Head Chef', 'Food Critic', 'Waiter', 'Bartender'] },
+        { name: 'School', roles: ['Gym Teacher', 'Student', 'Principal', 'Security Guard', 'Janitor', 'Cafeteria Lady', 'Maintenance Man', 'Teacher'] },
+        { name: 'Space Station', roles: ['Engineer', 'Alien', 'Space Tourist', 'Pilot', 'Commander', 'Scientist', 'Doctor', 'Astronaut'] },
+        { name: 'Submarine', roles: ['Cook', 'Commander', 'Sonar Technician', 'Electronics Technician', 'Sailor', 'Radioman', 'Navigator', 'Mechanic'] },
+        { name: 'Supermarket', roles: ['Customer', 'Cashier', 'Butcher', 'Janitor', 'Security Guard', 'Food Sample Demonstrator', 'Shelf Stocker', 'Manager'] },
+        { name: 'Theater', roles: ['Coat Check Lady', 'Prompter', 'Cashier', 'Director', 'Actor', 'Crew Man', 'Customer', 'Stage Hand'] },
+        { name: 'University', roles: ['Graduate Student', 'Professor', 'Dean', 'Psychologist', 'Maintenance Man', 'Student', 'Janitor', 'Researcher'] },
+        { name: 'Amusement Park', roles: ['Ride Operator', 'Parent', 'Food Vendor', 'Cashier', 'Happy Child', 'Annoying Child', 'Teenager', 'Security Guard'] },
+        { name: 'Art Museum', roles: ['Ticket Seller', 'Student', 'Visitor', 'Teacher', 'Security Guard', 'Painter', 'Art Collector', 'Curator'] },
+        { name: 'Embassy', roles: ['Security Guard', 'Secretary', 'Ambassador', 'Government Official', 'Tourist', 'Refugee', 'Diplomat', 'Clerk'] }
+      ],
+      modern: [
+        { name: 'Coffee Shop', roles: ['Barista', 'Regular Customer', 'Wi-Fi Freeloader', 'Student', 'Manager', 'Delivery Person', 'Freelancer', 'Tourist'] },
+        { name: 'Gym', roles: ['Personal Trainer', 'Bodybuilder', 'Yoga Instructor', 'Newbie', 'Receptionist', 'Cleaner', 'Athlete', 'Influencer'] },
+        { name: 'Shopping Mall', roles: ['Security Guard', 'Salesperson', 'Shopper', 'Manager', 'Janitor', 'Food Court Worker', 'Lost Child', 'Mystery Shopper'] },
+        { name: 'Tech Startup', roles: ['CEO', 'Developer', 'Designer', 'Intern', 'Investor', 'Marketing Manager', 'Salesperson', 'IT Support'] },
+        { name: 'Spa', roles: ['Masseuse', 'Customer', 'Receptionist', 'Beautician', 'Manager', 'Cleaner', 'VIP Customer', 'Aromatherapist'] }
+      ]
+    };
+
+    // Get locations from selected pack
+    let locations;
+    if (locationPack === 'random' || !locationPacks[locationPack]) {
+      locations = [...locationPacks.classic, ...locationPacks.modern];
+    } else {
+      locations = locationPacks[locationPack];
+    }
+
+    // Pick random location
+    const location = locations[Math.floor(Math.random() * locations.length)];
+    
+    // Randomly select spy
+    const spyIndex = Math.floor(Math.random() * room.players.length);
+    const spyId = room.players[spyIndex].id;
+    
+    // Shuffle roles
+    const shuffledRoles = [...location.roles].sort(() => Math.random() - 0.5);
+    
+    // Store game data with role assignments
+    room.gameData = {
+      location: location.name,
+      locationPack: locationPack,
+      spyId: spyId,
+      spyName: room.players[spyIndex].name,
+      votes: {},
+      currentTurnIndex: 0,
+      phase: 'role-reveal', // phases: role-reveal, question, voting, results
+      roleAssignments: {} // Store roles by player name
+    };
+    
+    // Store role assignments by player name
+    room.players.forEach((player, index) => {
+      const isSpy = index === spyIndex;
+      room.gameData.roleAssignments[player.name] = {
+        role: isSpy ? 'spy' : 'player',
+        location: isSpy ? null : location.name,
+        specificRole: isSpy ? 'Spy' : (shuffledRoles[index] || 'Tourist'),
+        isSpy: isSpy
+      };
+    });
+    
+    console.log(`Spyfall game initialized in room ${room.code}. Location: ${location.name}, Spy: ${room.gameData.spyName}`);
+  }
+
+  // NEXT TURN (for Spyfall)
+  socket.on('next-turn', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room || !room.gameData) {
+      socket.emit('error', { message: 'Invalid room or game' });
+      return;
+    }
+    
+    // Move to next turn
+    room.gameData.currentTurnIndex = (room.gameData.currentTurnIndex + 1) % room.players.length;
+    
+    // Notify all players
+    io.to(roomCode).emit('turn-changed', {
+      currentPlayer: room.players[room.gameData.currentTurnIndex].name,
+      turnIndex: room.gameData.currentTurnIndex
+    });
+  });
 
   // SUBMIT CLUE (for Imposter game)
   socket.on('submit-clue', (data) => {
@@ -623,7 +784,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // SUBMIT VOTE (for Imposter game)
+  // SUBMIT VOTE (for Imposter and Spyfall games)
   socket.on('submit-vote', (data) => {
     const { roomCode, votedPlayerId } = data;
     const room = rooms.get(roomCode);
@@ -671,7 +832,13 @@ io.on('connection', (socket) => {
       }
       
       console.log(`Ending voting in room ${roomCode}`);
-      calculateImposterResults(room);
+      
+      // Calculate results based on game type
+      if (room.gameType === 'imposter') {
+        calculateImposterResults(room);
+      } else if (room.gameType === 'spyfall') {
+        calculateSpyfallResults(room);
+      }
     }
   });
 
@@ -711,6 +878,46 @@ io.on('connection', (socket) => {
       imposter: imposterPlayer,
       votedOut: votedOutPlayer,
       word: room.gameData.word,
+      voteCounts: voteCounts
+    });
+  }
+
+  // Calculate voting results for Spyfall game
+  function calculateSpyfallResults(room) {
+    const voteCounts = {};
+    
+    // Count votes for each player
+    Object.values(room.gameData.votes).forEach(votedPlayerId => {
+      voteCounts[votedPlayerId] = (voteCounts[votedPlayerId] || 0) + 1;
+    });
+    
+    // Find player with most votes
+    let maxVotes = 0;
+    let votedOutPlayerId = null;
+    
+    Object.entries(voteCounts).forEach(([playerId, votes]) => {
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        votedOutPlayerId = playerId;
+      }
+    });
+    
+    // Determine if spy was caught
+    const spyPlayer = room.players.find(p => p.name === room.gameData.spyName);
+    const spyCaught = votedOutPlayerId === (spyPlayer ? spyPlayer.id : room.gameData.spyId);
+    const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
+    
+    room.gameData.phase = 'results';
+    room.gameData.voteCounts = voteCounts;
+    room.gameData.votedOutPlayerId = votedOutPlayerId;
+    room.gameData.spyCaught = spyCaught;
+    
+    // Send results to all players
+    io.to(room.code).emit('game-results', {
+      spyCaught: spyCaught,
+      spy: spyPlayer,
+      votedOut: votedOutPlayer,
+      location: room.gameData.location,
       voteCounts: voteCounts
     });
   }
