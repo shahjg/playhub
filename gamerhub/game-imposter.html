@@ -842,6 +842,18 @@
         let currentRound = 1;
         let hasVotedToSkip = false;
         let skipVoteCount = 0;
+        
+        // Timer tracking
+        let activeTimers = {};
+        
+        // Clear all active timers
+        function clearAllTimers() {
+            Object.keys(activeTimers).forEach(timerId => {
+                clearInterval(activeTimers[timerId]);
+                console.log('Cleared timer:', timerId);
+            });
+            activeTimers = {};
+        }
 
         // Display room code
         document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
@@ -896,17 +908,32 @@
         // Round skipped - start next round
         socket.on('round-skipped', (data) => {
             console.log('Round skipped, starting round', data.round);
-            alert(`Majority voted to skip! Starting Round ${data.round}...`);
+            
+            // Clear ALL timers immediately
+            clearAllTimers();
             
             // Reset clues for new round
             allClues = [];
-            document.getElementById('cluesList').innerHTML = '';
             
-            // Show role reveal briefly, then start new clue phase
+            // Clear clues display
+            const cluesList = document.getElementById('cluesList');
+            if (cluesList) {
+                cluesList.innerHTML = '';
+            }
+            
+            // Reset progress
+            updateClueProgress(0, totalPlayers);
+            
+            // Show notification
+            alert(`Majority voted to skip! Starting Round ${data.round}...`);
+            
+            // Brief role reminder (1 second only)
             showRoleReveal();
+            
+            // Then immediately start clue phase for new round
             setTimeout(() => {
                 showCluePhase(60, data.round);
-            }, 3000);
+            }, 1000); // Shortened from 3 seconds to 1 second
         });
 
         // Clue submitted by someone
@@ -982,6 +1009,11 @@
 
         // Show clue phase
         function showCluePhase(timeLimit, round = 1) {
+            console.log(`Starting clue phase for round ${round}`);
+            
+            // Clear all timers before starting
+            clearAllTimers();
+            
             hideAllPhases();
             document.getElementById('cluePhase').classList.remove('hidden');
             
@@ -999,7 +1031,26 @@
                 document.getElementById('cluePhaseImposterDisplay').classList.add('hidden');
             }
             
-            // Start timer
+            // CRITICAL: Reset input section for new round
+            const clueInput = document.getElementById('clueInput');
+            const submitBtn = document.getElementById('submitClueBtn');
+            const inputSection = document.getElementById('clueInputSection');
+            const waitingSection = document.getElementById('clueWaitingSection');
+            
+            // Clear and reset everything
+            clueInput.value = '';                           // Clear text
+            clueInput.disabled = false;                     // Enable input
+            clueInput.focus();                              // Focus for easy typing
+            submitBtn.disabled = false;                     // Enable button
+            submitBtn.textContent = 'SUBMIT CLUE';          // Reset text
+            inputSection.classList.remove('hidden');        // Show input section
+            waitingSection.classList.add('hidden');         // Hide waiting message
+            
+            // Reset clue progress display
+            updateClueProgress(0, totalPlayers);
+            
+            // Start fresh timer
+            console.log(`Starting ${timeLimit} second timer for round ${round}`);
             startTimer('clueTimer', timeLimit);
         }
 
@@ -1071,6 +1122,11 @@
 
         // Show voting phase
         function showVotingPhase(round = 1) {
+            console.log(`Starting voting phase for round ${round}`);
+            
+            // Clear all timers before starting
+            clearAllTimers();
+            
             hideAllPhases();
             document.getElementById('votingPhase').classList.remove('hidden');
             
@@ -1078,9 +1134,21 @@
             currentRound = round;
             document.getElementById('votingRound').textContent = round;
             
-            // Reset vote states
+            // Reset all vote states
             hasVotedToSkip = false;
             skipVoteCount = 0;
+            selectedVotePlayerId = null;
+            
+            // Reset submit button
+            const submitBtn = document.getElementById('submitVoteBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'CAST YOUR VOTE';
+            
+            // Reset skip button
+            const skipBtn = document.getElementById('skipRoundBtn');
+            skipBtn.disabled = false;
+            skipBtn.classList.remove('voted');
+            skipBtn.textContent = '⏭️ SKIP TO NEXT ROUND';
             
             // Show/hide skip option based on round
             const skipSection = document.getElementById('skipRoundSection');
@@ -1090,6 +1158,10 @@
                 // Rounds 1 & 2: Can skip
                 skipSection.style.display = 'block';
                 votingInstructions.textContent = '🔍 Vote to eliminate a player OR skip to the next round';
+                
+                // Reset skip votes display
+                const majority = Math.ceil(totalPlayers / 2);
+                document.getElementById('skipVotesDisplay').textContent = `0/${majority} votes needed to skip`;
             } else {
                 // Round 3: Must vote, can't skip
                 skipSection.style.display = 'none';
@@ -1099,7 +1171,8 @@
             // Build voting grid
             buildVotingGrid();
             
-            // Start timer
+            // Start fresh timer
+            console.log('Starting 45 second voting timer');
             startTimer('votingTimer', 45);
         }
 
@@ -1168,7 +1241,16 @@
             skipVoteCount = count;
             const skipDisplay = document.getElementById('skipVotesDisplay');
             const majority = Math.ceil(total / 2);
+            
+            console.log(`Skip votes: ${count}/${total}, majority needed: ${majority}`);
+            
             skipDisplay.textContent = `${count}/${majority} votes needed to skip`;
+            
+            // Visual feedback when close to majority
+            if (count >= majority) {
+                skipDisplay.style.color = '#4caf50';
+                skipDisplay.style.fontWeight = '700';
+            }
         }
 
         // Submit vote
@@ -1257,7 +1339,25 @@
 
         // Timer function
         function startTimer(elementId, seconds) {
+            console.log(`startTimer called for ${elementId} with ${seconds} seconds`);
+            
             const timerElement = document.getElementById(elementId);
+            if (!timerElement) {
+                console.error('Timer element not found:', elementId);
+                return;
+            }
+            
+            // CRITICAL: Clear any existing timer for this element
+            if (activeTimers[elementId]) {
+                console.log(`Clearing existing timer for ${elementId}`);
+                clearInterval(activeTimers[elementId]);
+                delete activeTimers[elementId];
+            }
+            
+            // Reset timer display completely
+            timerElement.textContent = seconds;
+            timerElement.classList.remove('warning');
+            
             let timeLeft = seconds;
 
             const interval = setInterval(() => {
@@ -1269,13 +1369,22 @@
                 }
 
                 if (timeLeft <= 0) {
+                    console.log(`Timer ${elementId} reached 0`);
                     clearInterval(interval);
+                    delete activeTimers[elementId];
                 }
             }, 1000);
+            
+            // Store the interval reference
+            activeTimers[elementId] = interval;
+            console.log(`Timer ${elementId} started, active timers:`, Object.keys(activeTimers));
         }
 
         // Hide all phases
         function hideAllPhases() {
+            // Stop all timers first
+            clearAllTimers();
+            
             document.getElementById('loadingPhase').classList.add('hidden');
             document.getElementById('roleRevealPhase').classList.add('hidden');
             document.getElementById('cluePhase').classList.add('hidden');
