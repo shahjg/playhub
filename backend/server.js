@@ -160,6 +160,71 @@ io.on('connection', (socket) => {
       room: room
     });
     
+    // If game is active, send the player their role
+    if (room.gameState === 'playing' && room.gameData && room.gameData.roleAssignments) {
+      const playerRole = room.gameData.roleAssignments[playerName];
+      if (playerRole) {
+        console.log(`Sending role assignment to ${playerName}: ${playerRole.role}`);
+        socket.emit('role-assigned', playerRole);
+        
+        // Handle game phase transitions
+        if (room.gameData.phase === 'role-reveal') {
+          // Schedule clue phase start if not already scheduled
+          if (!room.gameData.phaseTransitionScheduled) {
+            room.gameData.phaseTransitionScheduled = true;
+            console.log('Scheduling clue phase start in 5 seconds...');
+            setTimeout(() => {
+              if (room.gameData.phase === 'role-reveal') { // Double check we're still in role reveal
+                room.gameData.phase = 'clue-giving';
+                io.to(roomCode).emit('clue-phase-start', {
+                  timeLimit: 60
+                });
+                console.log(`Clue phase started in room ${roomCode}`);
+              }
+            }, 5000);
+          }
+        } else if (room.gameData.phase === 'clue-giving') {
+          // Already in clue phase, send current state
+          socket.emit('clue-phase-start', {
+            timeLimit: 60
+          });
+          // Send existing clues
+          room.gameData.clues.forEach(clue => {
+            socket.emit('clue-submitted', {
+              playerName: clue.playerName,
+              clue: clue.clue,
+              totalClues: room.gameData.clues.length,
+              totalPlayers: room.players.length
+            });
+          });
+        } else if (room.gameData.phase === 'voting') {
+          // Already in voting phase
+          socket.emit('voting-phase-start', {
+            clues: room.gameData.clues,
+            players: room.players
+          });
+          // Send current vote count
+          socket.emit('vote-counted', {
+            totalVotes: Object.keys(room.gameData.votes).length,
+            totalPlayers: room.players.length
+          });
+        } else if (room.gameData.phase === 'results') {
+          // Game ended, send results
+          const imposterCaught = room.gameData.votedOutPlayerId === room.gameData.imposterId;
+          const imposterPlayer = room.players.find(p => p.name === room.gameData.imposterName);
+          const votedOutPlayer = room.players.find(p => p.id === room.gameData.votedOutPlayerId);
+          
+          socket.emit('game-results', {
+            imposterCaught: imposterCaught,
+            imposter: imposterPlayer,
+            votedOut: votedOutPlayer,
+            word: room.gameData.word,
+            voteCounts: room.gameData.voteCounts || {}
+          });
+        }
+      }
+    }
+    
     // Notify others
     socket.to(roomCode).emit('player-joined', {
       player: room.players.find(p => p.id === socket.id),
@@ -351,33 +416,28 @@ io.on('connection', (socket) => {
     const imposterIndex = Math.floor(Math.random() * room.players.length);
     const imposterId = room.players[imposterIndex].id;
     
-    // Assign roles to all players
-    room.players.forEach((player, index) => {
-      const isImposter = index === imposterIndex;
-      
-      // Send role to each player privately
-      io.to(player.id).emit('role-assigned', {
-        role: isImposter ? 'imposter' : 'player',
-        word: isImposter ? null : word,
-        isImposter: isImposter
-      });
-    });
-    
-    // Store game data
+    // Store game data with role assignments
     room.gameData = {
       word: word,
       imposterId: imposterId,
+      imposterName: room.players[imposterIndex].name,
       clues: [],
       votes: {},
-      phase: 'clue-giving' // phases: clue-giving, voting, results
+      phase: 'role-reveal', // phases: role-reveal, clue-giving, voting, results
+      roleAssignments: {} // Store roles by player name (not socket ID, since IDs change)
     };
     
-    // Start clue-giving phase after a short delay (so players can see their roles)
-    setTimeout(() => {
-      io.to(room.code).emit('clue-phase-start', {
-        timeLimit: 60 // seconds
-      });
-    }, 5000);
+    // Store role assignments by player name
+    room.players.forEach((player, index) => {
+      const isImposter = index === imposterIndex;
+      room.gameData.roleAssignments[player.name] = {
+        role: isImposter ? 'imposter' : 'player',
+        word: isImposter ? null : word,
+        isImposter: isImposter
+      };
+    });
+    
+    console.log(`Game initialized in room ${room.code}. Imposter: ${room.gameData.imposterName}, Word: ${word}`);
   }
 
   // SUBMIT CLUE (for Imposter game)
@@ -470,11 +530,14 @@ io.on('connection', (socket) => {
     });
     
     // Determine if imposter was caught
-    const imposterCaught = votedOutPlayerId === room.gameData.imposterId;
-    const imposterPlayer = room.players.find(p => p.id === room.gameData.imposterId);
+    const imposterPlayer = room.players.find(p => p.name === room.gameData.imposterName);
+    const imposterCaught = votedOutPlayerId === (imposterPlayer ? imposterPlayer.id : room.gameData.imposterId);
     const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
     
     room.gameData.phase = 'results';
+    room.gameData.voteCounts = voteCounts;
+    room.gameData.votedOutPlayerId = votedOutPlayerId;
+    room.gameData.imposterCaught = imposterCaught;
     
     // Send results to all players
     io.to(room.code).emit('game-results', {
