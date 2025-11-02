@@ -177,16 +177,18 @@ io.on('connection', (socket) => {
               if (room.gameData.phase === 'role-reveal') { // Double check we're still in role reveal
                 room.gameData.phase = 'clue-giving';
                 io.to(roomCode).emit('clue-phase-start', {
-                  timeLimit: 60
+                  timeLimit: 60,
+                  round: room.gameData.currentRound
                 });
-                console.log(`Clue phase started in room ${roomCode}`);
+                console.log(`Clue phase started in room ${roomCode}, Round ${room.gameData.currentRound}`);
               }
             }, 5000);
           }
         } else if (room.gameData.phase === 'clue-giving') {
           // Already in clue phase, send current state
           socket.emit('clue-phase-start', {
-            timeLimit: 60
+            timeLimit: 60,
+            round: room.gameData.currentRound
           });
           // Send existing clues
           room.gameData.clues.forEach(clue => {
@@ -201,13 +203,21 @@ io.on('connection', (socket) => {
           // Already in voting phase
           socket.emit('voting-phase-start', {
             clues: room.gameData.clues,
-            players: room.players
+            players: room.players,
+            round: room.gameData.currentRound
           });
           // Send current vote count
           socket.emit('vote-counted', {
             totalVotes: Object.keys(room.gameData.votes).length,
             totalPlayers: room.players.length
           });
+          // Send skip vote count if not final round
+          if (room.gameData.currentRound < 3) {
+            socket.emit('skip-vote-counted', {
+              skipVotes: room.gameData.skipVotes.length,
+              totalPlayers: room.players.length
+            });
+          }
         } else if (room.gameData.phase === 'results') {
           // Game ended, send results
           const imposterCaught = room.gameData.votedOutPlayerId === room.gameData.imposterId;
@@ -423,6 +433,9 @@ io.on('connection', (socket) => {
       imposterName: room.players[imposterIndex].name,
       clues: [],
       votes: {},
+      skipVotes: [],
+      currentRound: 1,
+      maxRounds: 3,
       phase: 'role-reveal', // phases: role-reveal, clue-giving, voting, results
       roleAssignments: {} // Store roles by player name (not socket ID, since IDs change)
     };
@@ -476,10 +489,75 @@ io.on('connection', (socket) => {
     // If all players submitted clues, start voting phase
     if (room.gameData.clues.length === room.players.length) {
       room.gameData.phase = 'voting';
+      room.gameData.votes = {}; // Reset votes
+      room.gameData.skipVotes = []; // Reset skip votes
       io.to(roomCode).emit('voting-phase-start', {
         clues: room.gameData.clues,
-        players: room.players
+        players: room.players,
+        round: room.gameData.currentRound
       });
+    }
+  });
+
+  // VOTE TO SKIP ROUND (for Imposter game)
+  socket.on('vote-skip', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    
+    if (!room || !player) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Can only skip in rounds 1 and 2
+    if (room.gameData.currentRound >= 3) {
+      socket.emit('error', { message: 'Cannot skip final round' });
+      return;
+    }
+    
+    // Check if player already voted to skip
+    if (room.gameData.skipVotes.includes(socket.id)) {
+      socket.emit('error', { message: 'You already voted to skip' });
+      return;
+    }
+    
+    // Add skip vote
+    room.gameData.skipVotes.push(socket.id);
+    
+    // Notify all players about skip vote count
+    io.to(roomCode).emit('skip-vote-counted', {
+      skipVotes: room.gameData.skipVotes.length,
+      totalPlayers: room.players.length
+    });
+    
+    console.log(`Skip vote in room ${roomCode}: ${room.gameData.skipVotes.length}/${room.players.length}`);
+    
+    // Check if majority voted to skip
+    const majority = Math.ceil(room.players.length / 2);
+    if (room.gameData.skipVotes.length >= majority) {
+      // Skip to next round
+      room.gameData.currentRound++;
+      room.gameData.phase = 'role-reveal';
+      room.gameData.clues = []; // Reset clues
+      room.gameData.votes = {};
+      room.gameData.skipVotes = [];
+      
+      console.log(`Round skipped in room ${roomCode}, starting round ${room.gameData.currentRound}`);
+      
+      // Notify players
+      io.to(roomCode).emit('round-skipped', {
+        round: room.gameData.currentRound
+      });
+      
+      // Start next round after brief delay
+      setTimeout(() => {
+        room.gameData.phase = 'clue-giving';
+        io.to(roomCode).emit('clue-phase-start', {
+          timeLimit: 60,
+          round: room.gameData.currentRound
+        });
+      }, 3000);
     }
   });
 
