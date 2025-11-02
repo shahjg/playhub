@@ -374,7 +374,7 @@ io.on('connection', (socket) => {
 
   // START GAME
   socket.on('start-game', (data) => {
-    const { roomCode } = data;
+    const { roomCode, category } = data;
     const room = rooms.get(roomCode);
     
     if (!room) {
@@ -397,7 +397,7 @@ io.on('connection', (socket) => {
     
     // Initialize game based on game type
     if (room.gameType === 'imposter') {
-      initImposterGame(room);
+      initImposterGame(room, category || 'random');
     }
     // Add other game types here
     
@@ -409,16 +409,70 @@ io.on('connection', (socket) => {
       gameType: room.gameType
     });
     
-    console.log(`Game started in room ${roomCode}`);
+    console.log(`Game started in room ${roomCode} with category: ${category || 'random'}`);
   });
 
   // Initialize Imposter game
-  function initImposterGame(room) {
-    const words = [
-      'Pizza', 'Ocean', 'Mountain', 'Guitar', 'Coffee', 'Rainbow', 'Dinosaur', 'Robot',
-      'Sunset', 'Laptop', 'Basketball', 'Chocolate', 'Spaceship', 'Dragon', 'Camera',
-      'Volcano', 'Unicorn', 'Thunder', 'Waterfall', 'Moonlight', 'Butterfly', 'Castle'
-    ];
+  function initImposterGame(room, category = 'random') {
+    // Word lists by category
+    const wordCategories = {
+      food: [
+        'Pizza', 'Sushi', 'Burger', 'Taco', 'Pasta', 'Steak', 'Salad', 'Soup',
+        'Sandwich', 'Ice Cream', 'Chocolate', 'Coffee', 'Tea', 'Wine', 'Beer',
+        'Cheese', 'Bacon', 'Chicken', 'Rice', 'Bread', 'Cake', 'Cookie'
+      ],
+      animals: [
+        'Dog', 'Cat', 'Lion', 'Tiger', 'Bear', 'Elephant', 'Giraffe', 'Zebra',
+        'Monkey', 'Penguin', 'Dolphin', 'Shark', 'Eagle', 'Owl', 'Parrot',
+        'Snake', 'Rabbit', 'Horse', 'Cow', 'Pig', 'Sheep', 'Chicken'
+      ],
+      places: [
+        'Beach', 'Mountain', 'Desert', 'Forest', 'City', 'Village', 'Island',
+        'Airport', 'Hospital', 'School', 'Library', 'Restaurant', 'Mall',
+        'Park', 'Zoo', 'Museum', 'Theater', 'Stadium', 'Hotel', 'Casino'
+      ],
+      objects: [
+        'Phone', 'Laptop', 'Car', 'Bicycle', 'Watch', 'Camera', 'Television',
+        'Chair', 'Table', 'Bed', 'Lamp', 'Mirror', 'Book', 'Pen', 'Wallet',
+        'Keys', 'Umbrella', 'Backpack', 'Shoes', 'Hat', 'Glasses', 'Bottle'
+      ],
+      activities: [
+        'Swimming', 'Running', 'Dancing', 'Singing', 'Cooking', 'Reading',
+        'Writing', 'Painting', 'Football', 'Basketball', 'Tennis', 'Golf',
+        'Yoga', 'Hiking', 'Camping', 'Fishing', 'Shopping', 'Gaming', 'Skiing'
+      ],
+      nature: [
+        'Ocean', 'River', 'Lake', 'Waterfall', 'Mountain', 'Valley', 'Cave',
+        'Volcano', 'Rainbow', 'Sunset', 'Sunrise', 'Storm', 'Snow', 'Rain',
+        'Thunder', 'Lightning', 'Tree', 'Flower', 'Grass', 'Rock', 'Cloud'
+      ],
+      entertainment: [
+        'Movie', 'Concert', 'Festival', 'Party', 'Wedding', 'Birthday',
+        'Game', 'Puzzle', 'Magic', 'Circus', 'Comedy', 'Drama', 'Musical',
+        'Dance', 'Karaoke', 'Podcast', 'Stream', 'Video', 'Music', 'Song'
+      ],
+      spicy: [
+        'Bedroom', 'Kissing', 'Dating', 'Flirting', 'Romance', 'Attraction',
+        'Seduction', 'Passion', 'Desire', 'Fantasy', 'Pleasure', 'Intimate',
+        'Sensual', 'Temptation', 'Foreplay', 'Massage', 'Strip Club', 'Handcuffs',
+        'Lingerie', 'Tease', 'Fetish', 'Domination'
+      ],
+      stereotypes: [
+        'Karen', 'Chad', 'Boomer', 'Millennial', 'Gen Z', 'Hipster', 'Jock',
+        'Nerd', 'Goth', 'Emo', 'Influencer', 'Gamer', 'Vegan', 'CrossFit',
+        'Yoga Mom', 'Tech Bro', 'Finance Guy', 'Theater Kid', 'Band Kid',
+        'Art Student', 'Frat Boy', 'Sorority Girl'
+      ]
+    };
+    
+    // Get words from selected category or all categories
+    let words;
+    if (category === 'random' || !wordCategories[category]) {
+      // Combine all categories
+      words = Object.values(wordCategories).flat();
+    } else {
+      words = wordCategories[category];
+    }
     
     const word = words[Math.floor(Math.random() * words.length)];
     
@@ -429,6 +483,7 @@ io.on('connection', (socket) => {
     // Store game data with role assignments
     room.gameData = {
       word: word,
+      category: category,
       imposterId: imposterId,
       imposterName: room.players[imposterIndex].name,
       clues: [],
@@ -450,7 +505,7 @@ io.on('connection', (socket) => {
       };
     });
     
-    console.log(`Game initialized in room ${room.code}. Imposter: ${room.gameData.imposterName}, Word: ${word}`);
+    console.log(`Game initialized in room ${room.code}. Category: ${category}, Imposter: ${room.gameData.imposterName}, Word: ${word}`);
   }
 
   // SUBMIT CLUE (for Imposter game)
@@ -525,17 +580,22 @@ io.on('connection', (socket) => {
     // Add skip vote
     room.gameData.skipVotes.push(socket.id);
     
+    const skipVoteCount = room.gameData.skipVotes.length;
+    const totalPlayers = room.players.length;
+    
     // Notify all players about skip vote count
     io.to(roomCode).emit('skip-vote-counted', {
-      skipVotes: room.gameData.skipVotes.length,
-      totalPlayers: room.players.length
+      skipVotes: skipVoteCount,
+      totalPlayers: totalPlayers
     });
     
-    console.log(`Skip vote in room ${roomCode}: ${room.gameData.skipVotes.length}/${room.players.length}`);
+    console.log(`Skip vote in room ${roomCode}: ${skipVoteCount}/${totalPlayers}`);
     
-    // Check if majority voted to skip
-    const majority = Math.ceil(room.players.length / 2);
-    if (room.gameData.skipVotes.length >= majority) {
+    // Calculate majority (for ties, skip is prioritized)
+    const majority = Math.ceil(totalPlayers / 2);
+    
+    // Check if majority voted to skip (immediate check)
+    if (skipVoteCount >= majority) {
       // Skip to next round
       room.gameData.currentRound++;
       room.gameData.phase = 'role-reveal';
