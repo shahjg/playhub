@@ -582,6 +582,9 @@ io.on('connection', (socket) => {
     
     const skipVoteCount = room.gameData.skipVotes.length;
     const totalPlayers = room.players.length;
+    const majority = Math.ceil(totalPlayers / 2);
+    
+    console.log(`Skip vote in room ${roomCode}: ${skipVoteCount}/${totalPlayers}, majority needed: ${majority}`);
     
     // Notify all players about skip vote count
     io.to(roomCode).emit('skip-vote-counted', {
@@ -589,13 +592,10 @@ io.on('connection', (socket) => {
       totalPlayers: totalPlayers
     });
     
-    console.log(`Skip vote in room ${roomCode}: ${skipVoteCount}/${totalPlayers}`);
-    
-    // Calculate majority (for ties, skip is prioritized)
-    const majority = Math.ceil(totalPlayers / 2);
-    
     // Check if majority voted to skip (immediate check)
     if (skipVoteCount >= majority) {
+      console.log(`✅ MAJORITY REACHED for skip! ${skipVoteCount} >= ${majority}`);
+      
       // Skip to next round
       room.gameData.currentRound++;
       room.gameData.phase = 'role-reveal';
@@ -618,6 +618,9 @@ io.on('connection', (socket) => {
           round: room.gameData.currentRound
         });
       }, 3000);
+    } else {
+      console.log(`⏳ Waiting for more skip votes: ${skipVoteCount}/${majority} (need ${majority - skipVoteCount} more)`);
+    }
     }
   });
 
@@ -635,14 +638,40 @@ io.on('connection', (socket) => {
     // Record vote
     room.gameData.votes[socket.id] = votedPlayerId;
     
+    const totalVotes = Object.keys(room.gameData.votes).length;
+    const totalPlayers = room.players.length;
+    const majority = Math.ceil(totalPlayers / 2);
+    
     // Notify all players about vote count
     io.to(roomCode).emit('vote-counted', {
-      totalVotes: Object.keys(room.gameData.votes).length,
-      totalPlayers: room.players.length
+      totalVotes: totalVotes,
+      totalPlayers: totalPlayers
     });
     
-    // If all players voted, show results
-    if (Object.keys(room.gameData.votes).length === room.players.length) {
+    console.log(`Vote in room ${roomCode}: ${totalVotes}/${totalPlayers}, majority needed: ${majority}`);
+    
+    // Check if we have majority votes for any single player
+    const voteCounts = {};
+    Object.values(room.gameData.votes).forEach(votedId => {
+      voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+    });
+    
+    // Find if any player has majority
+    const maxVotes = Math.max(...Object.values(voteCounts));
+    const hasConsensus = maxVotes >= majority;
+    
+    console.log(`Vote counts:`, voteCounts, `Max votes: ${maxVotes}, Has consensus: ${hasConsensus}`);
+    
+    // End voting if someone has majority OR if all players voted
+    if (hasConsensus || totalVotes === totalPlayers) {
+      if (hasConsensus && totalVotes < totalPlayers) {
+        console.log(`✅ MAJORITY REACHED! Player has ${maxVotes} votes (need ${majority}), ending voting early`);
+        io.to(roomCode).emit('voting-ended-early', {
+          message: 'Someone has majority votes - ending voting early'
+        });
+      }
+      
+      console.log(`Ending voting in room ${roomCode}`);
       calculateImposterResults(room);
     }
   });
