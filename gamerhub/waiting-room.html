@@ -285,6 +285,41 @@
             text-align: center;
         }
 
+        .category-section {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .category-label {
+            display: block;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: #333;
+        }
+
+        .category-select {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            border: 3px solid #000;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .category-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .category-select option {
+            padding: 0.5rem;
+        }
+
         .min-players-warning {
             background: #fff3cd;
             border: 3px solid #ffc107;
@@ -514,6 +549,23 @@
             </div>
 
             <div class="start-section" id="startSection" style="display: none;">
+                <!-- Word Category Selection (Imposter only) -->
+                <div class="category-section" id="categorySection">
+                    <label for="wordCategory" class="category-label">Choose Word Category:</label>
+                    <select id="wordCategory" class="category-select">
+                        <option value="random">🎲 Random (All Categories)</option>
+                        <option value="food">🍕 Food & Drinks</option>
+                        <option value="animals">🦁 Animals</option>
+                        <option value="places">🌍 Places</option>
+                        <option value="objects">📦 Common Objects</option>
+                        <option value="activities">⚽ Activities & Sports</option>
+                        <option value="nature">🌲 Nature</option>
+                        <option value="entertainment">🎬 Entertainment</option>
+                        <option value="spicy">🔥 Spicy/Adult</option>
+                        <option value="stereotypes">👥 Stereotypes</option>
+                    </select>
+                </div>
+                
                 <div class="min-players-warning" id="minPlayersWarning">
                     ⚠️ Need at least 3 players to start
                 </div>
@@ -571,14 +623,15 @@
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room') || urlParams.get('code');
         const playerName = urlParams.get('name') || localStorage.getItem('playerName');
-        const isHost = urlParams.get('host') === 'true' || localStorage.getItem('isHost') === 'true';
+        
+        // DON'T trust client-side isHost - server will tell us
+        let isHost = false; // Will be set by server
 
-        console.log('Waiting room initialized:', { roomCode, playerName, isHost });
+        console.log('Waiting room initialized:', { roomCode, playerName });
         
         // Save to localStorage for reconnections
         if (roomCode) localStorage.setItem('roomCode', roomCode);
         if (playerName) localStorage.setItem('playerName', playerName);
-        if (isHost) localStorage.setItem('isHost', 'true');
 
         // Display room code
         if (!roomCode) {
@@ -616,12 +669,32 @@
         // Player joined (when someone NEW joins the room)
         socket.on('player-joined', (data) => {
             console.log('Player joined event:', data);
+            
+            // Check if I'm still the host
+            const myPlayer = data.room.players.find(p => p.name === playerName);
+            if (myPlayer) {
+                isHost = myPlayer.isHost;
+            }
+            
             updatePlayersList(data.room.players);
         });
 
         // Room joined successfully (when YOU join/rejoin)
         socket.on('room-joined', (data) => {
             console.log('Room joined event:', data);
+            
+            // Set isHost based on server data (authoritative)
+            const myPlayer = data.room.players.find(p => p.name === playerName);
+            if (myPlayer) {
+                isHost = myPlayer.isHost;
+                console.log('My host status:', isHost);
+                
+                // Show start section if I'm the host
+                if (isHost) {
+                    document.getElementById('startSection').style.display = 'block';
+                }
+            }
+            
             updatePlayersList(data.room.players);
         });
 
@@ -779,9 +852,12 @@
         // Start game function
         function startGame() {
             if (confirm('Start the game now? All players will be taken to the game screen.')) {
-                console.log('Starting game...');
+                const category = document.getElementById('wordCategory').value;
+                console.log('Starting game with category:', category);
+                
                 socket.emit('start-game', {
-                    roomCode: roomCode
+                    roomCode: roomCode,
+                    category: category
                 });
             }
         }
