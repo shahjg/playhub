@@ -621,7 +621,6 @@ io.on('connection', (socket) => {
     } else {
       console.log(`⏳ Waiting for more skip votes: ${skipVoteCount}/${majority} (need ${majority - skipVoteCount} more)`);
     }
-    }
   });
 
   // SUBMIT VOTE (for Imposter game)
