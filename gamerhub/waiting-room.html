@@ -588,22 +588,13 @@
             console.log('Connected to server, socket ID:', socket.id);
             console.log('Is host?', isHost, 'Player name:', playerName);
             
-            // Host needs to rejoin their room after page redirect
-            if (isHost) {
-                console.log('Host rejoining room...');
-                socket.emit('create-room', {
-                    playerName: playerName,
-                    gameType: 'imposter',
-                    roomCode: roomCode
-                });
-            } else {
-                // Regular player joins the room
-                console.log('Player joining room...');
-                socket.emit('join-room', {
-                    roomCode: roomCode,
-                    playerName: playerName
-                });
-            }
+            // Use rejoin-room for both host and players
+            // This handles reconnections properly
+            console.log('Rejoining room...');
+            socket.emit('rejoin-room', {
+                roomCode: roomCode,
+                playerName: playerName
+            });
         });
 
         // Connection error
@@ -618,18 +609,10 @@
             updatePlayersList(data.room.players);
         });
 
-        // Room joined successfully (when YOU join as a player)
+        // Room joined successfully (when YOU join/rejoin)
         socket.on('room-joined', (data) => {
             console.log('Room joined event:', data);
             updatePlayersList(data.room.players);
-        });
-
-        // Room created (for host when they create the room)
-        socket.on('room-created', (data) => {
-            console.log('Room created event:', data);
-            if (data.success) {
-                updatePlayersList(data.room.players);
-            }
         });
 
         // Room state received (response to get-room-state request)
