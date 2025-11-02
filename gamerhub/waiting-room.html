@@ -30,13 +30,6 @@
             letter-spacing: 1px;
         }
 
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 0 40px;
-            flex: 1;
-        }
-
         nav {
             padding: 30px 0;
             display: flex;
@@ -53,8 +46,11 @@
             color: #1a1a1a;
         }
 
-        .waiting-content {
-            padding: 40px 0;
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 0 40px;
+            flex: 1;
         }
 
         .room-header {
@@ -125,6 +121,7 @@
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
+            margin-left: 10px;
         }
 
         .kick-btn {
@@ -276,7 +273,7 @@
         <div class="waiting-content">
             <div class="room-header">
                 <h1>Waiting Room</h1>
-                <div class="game-type" id="gameType">Imposter</div>
+                <div class="game-type">Imposter</div>
                 <div class="room-code-display">
                     <h2>Room Code</h2>
                     <div class="code" id="roomCode">------</div>
@@ -319,7 +316,9 @@
         const playerName = urlParams.get('name');
         const isHost = urlParams.get('host') === 'true';
 
-        // Connect to backend - YOUR RAILWAY URL IS ALREADY HERE!
+        console.log('Waiting room loaded:', { roomCode, playerName, isHost });
+
+        // Connect to backend
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL, {
             transports: ['websocket', 'polling']
@@ -341,9 +340,9 @@
 
         // Socket connection
         socket.on('connect', () => {
-            console.log('Connected to server');
+            console.log('Connected to server:', socket.id);
             
-            // Rejoin room (in case of reconnection)
+            // Rejoin room
             socket.emit('join-room', {
                 roomCode: roomCode,
                 playerName: playerName
@@ -378,7 +377,7 @@
             window.location.href = 'party-games.html';
         });
 
-        // CRITICAL: Listen for game started event
+        // Listen for game started event
         socket.on('game-started', (data) => {
             console.log('Game started!', data);
             // Redirect to game page
@@ -391,6 +390,12 @@
             alert(data.message);
         });
 
+        // Host disconnected
+        socket.on('host-disconnected', () => {
+            alert('Host disconnected. Returning to lobby...');
+            window.location.href = 'party-games.html';
+        });
+
         // Update player list
         function updatePlayerList(room) {
             const playerList = document.getElementById('playerList');
@@ -401,25 +406,32 @@
             playerList.innerHTML = '';
             playerCount.textContent = room.players.length;
 
-            room.players.forEach(player => {
+            room.players.forEach((player, index) => {
                 const li = document.createElement('li');
                 li.className = 'player-item';
                 if (player.isHost) {
                     li.classList.add('host');
                 }
 
+                const leftSide = document.createElement('div');
+                leftSide.style.display = 'flex';
+                leftSide.style.alignItems = 'center';
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'player-name';
-                nameSpan.textContent = player.name;
-
-                const rightSide = document.createElement('div');
+                nameSpan.textContent = `Player ${index + 1}: ${player.name}`;
+                leftSide.appendChild(nameSpan);
 
                 if (player.isHost) {
                     const badge = document.createElement('span');
                     badge.className = 'player-badge';
                     badge.textContent = 'HOST';
-                    rightSide.appendChild(badge);
-                } else if (isHost) {
+                    leftSide.appendChild(badge);
+                }
+
+                const rightSide = document.createElement('div');
+
+                if (!player.isHost && isHost) {
                     // Show kick button only to host for non-host players
                     const kickBtn = document.createElement('button');
                     kickBtn.className = 'kick-btn';
@@ -428,7 +440,7 @@
                     rightSide.appendChild(kickBtn);
                 }
 
-                li.appendChild(nameSpan);
+                li.appendChild(leftSide);
                 li.appendChild(rightSide);
                 playerList.appendChild(li);
             });
