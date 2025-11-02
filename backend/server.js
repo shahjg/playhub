@@ -24,6 +24,7 @@ console.log('Frontend URL:', process.env.FRONTEND_URL);
 // In-memory storage (replace with database later)
 const rooms = new Map(); // roomCode -> room data
 const players = new Map(); // socketId -> player data
+const disconnectTimers = new Map(); // socketId -> timeout for delayed cleanup
 
 // Generate random 6-character room code
 function generateRoomCode() {
@@ -100,6 +101,7 @@ io.on('connection', (socket) => {
     
     const room = rooms.get(roomCode);
     if (!room) {
+      console.log(`Room ${roomCode} not found for rejoin`);
       socket.emit('error', { message: 'Room not found' });
       return;
     }
@@ -108,8 +110,15 @@ io.on('connection', (socket) => {
     const existingPlayer = room.players.find(p => p.name === playerName);
     
     if (existingPlayer) {
-      // Update socket ID for reconnection
+      // Cancel any pending disconnect timer for this player
       const oldId = existingPlayer.id;
+      if (disconnectTimers.has(oldId)) {
+        console.log(`Cancelling disconnect timer for ${playerName}`);
+        clearTimeout(disconnectTimers.get(oldId));
+        disconnectTimers.delete(oldId);
+      }
+      
+      // Update socket ID for reconnection
       existingPlayer.id = socket.id;
       
       // Update players map
@@ -123,6 +132,7 @@ io.on('connection', (socket) => {
       // Check if they were the host
       if (room.hostId === oldId) {
         room.hostId = socket.id;
+        console.log(`Host ${playerName} reconnected with new socket ID`);
       }
     } else {
       // Player wasn't in room, add them
@@ -486,48 +496,73 @@ io.on('connection', (socket) => {
       if (room) {
         // Check if disconnecting player is the host
         if (player.isHost) {
-          console.log(`Host disconnected from room ${player.roomCode}, closing room`);
+          console.log(`Host disconnected from room ${player.roomCode}, waiting 10s before cleanup...`);
           
-          // Notify all other players that host left
-          socket.to(player.roomCode).emit('host-left', {
-            message: 'The host has left. Game disconnected.'
-          });
+          // Set a timer to delete the room after 10 seconds
+          // If the host reconnects within 10 seconds, this timer will be cancelled
+          const timer = setTimeout(() => {
+            console.log(`Host did not reconnect, closing room ${player.roomCode}`);
+            
+            const currentRoom = rooms.get(player.roomCode);
+            if (currentRoom) {
+              // Notify all other players that host left
+              io.to(player.roomCode).emit('host-left', {
+                message: 'The host has left. Game disconnected.'
+              });
+              
+              // Remove all players from the room
+              currentRoom.players.forEach(p => {
+                players.delete(p.id);
+                // Disconnect their sockets
+                const playerSocket = io.sockets.sockets.get(p.id);
+                if (playerSocket) {
+                  playerSocket.leave(player.roomCode);
+                  playerSocket.disconnect(true);
+                }
+              });
+              
+              // Delete the room
+              rooms.delete(player.roomCode);
+              console.log(`Room ${player.roomCode} deleted (host left)`);
+            }
+            
+            disconnectTimers.delete(socket.id);
+          }, 10000); // 10 second grace period
           
-          // Remove all players from the room
-          room.players.forEach(p => {
-            if (p.id !== socket.id) {
-              players.delete(p.id);
-              // Disconnect their sockets
-              const playerSocket = io.sockets.sockets.get(p.id);
-              if (playerSocket) {
-                playerSocket.leave(player.roomCode);
+          disconnectTimers.set(socket.id, timer);
+          
+        } else {
+          // Regular player disconnected - also give them a grace period
+          console.log(`Player ${player.playerName} disconnected, waiting 10s before cleanup...`);
+          
+          const timer = setTimeout(() => {
+            console.log(`Player ${player.playerName} did not reconnect, removing from room`);
+            
+            const currentRoom = rooms.get(player.roomCode);
+            if (currentRoom) {
+              // Remove player from room
+              currentRoom.players = currentRoom.players.filter(p => p.id !== socket.id);
+              
+              // If room is now empty, delete it
+              if (currentRoom.players.length === 0) {
+                rooms.delete(player.roomCode);
+                console.log(`Room ${player.roomCode} deleted (empty)`);
+              } else {
+                // Notify remaining players
+                io.to(player.roomCode).emit('player-disconnected', {
+                  playerName: player.playerName,
+                  room: currentRoom
+                });
               }
             }
-          });
+            
+            players.delete(socket.id);
+            disconnectTimers.delete(socket.id);
+          }, 10000); // 10 second grace period
           
-          // Delete the room
-          rooms.delete(player.roomCode);
-          console.log(`Room ${player.roomCode} deleted (host left)`);
-        } else {
-          // Regular player disconnected
-          // Remove player from room
-          room.players = room.players.filter(p => p.id !== socket.id);
-          
-          // If room is now empty, delete it
-          if (room.players.length === 0) {
-            rooms.delete(player.roomCode);
-            console.log(`Room ${player.roomCode} deleted (empty)`);
-          } else {
-            // Notify remaining players
-            io.to(player.roomCode).emit('player-disconnected', {
-              playerName: player.playerName,
-              room: room
-            });
-          }
+          disconnectTimers.set(socket.id, timer);
         }
       }
-      
-      players.delete(socket.id);
     }
   });
 });
