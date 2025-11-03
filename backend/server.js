@@ -316,6 +316,37 @@ io.on('connection', (socket) => {
     }
   });
 
+  // HOST RETURN TO LOBBY (force all players back to waiting room)
+  socket.on('host-return-lobby', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    const host = players.get(socket.id);
+    
+    if (!room || !host) {
+      socket.emit('error', { message: 'Invalid room or player' });
+      return;
+    }
+    
+    // Only host can force return to lobby
+    if (!host.isHost) {
+      socket.emit('error', { message: 'Only host can return players to lobby' });
+      return;
+    }
+    
+    console.log(`Host returning all players to lobby in room ${roomCode}`);
+    
+    // Reset game state
+    room.gameState = 'waiting';
+    room.gameData = null;
+    
+    // Notify all players to return to lobby
+    io.to(roomCode).emit('force-return-lobby', {
+      message: 'Host has returned everyone to the lobby'
+    });
+    
+    console.log(`Room ${roomCode} returned to lobby by host`);
+  });
+
   // START GAME
   socket.on('start-game', (data) => {
     const { roomCode, category, twoSpies } = data;
