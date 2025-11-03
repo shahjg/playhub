@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spyfall Game - PlayHub</title>
+    <title>Game Lobby - PlayHub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -16,1133 +18,345 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: #fafbff;
+            color: #1a1a1a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
         }
 
-        /* Animated Background Blobs */
-        .blob {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.5;
-            z-index: 0;
-            animation: float 20s infinite ease-in-out;
-        }
-
-        .blob-1 {
-            width: 300px;
-            height: 300px;
-            background: rgba(240, 147, 251, 0.4);
-            top: -100px;
-            left: -100px;
-        }
-
-        .blob-2 {
-            width: 400px;
-            height: 400px;
-            background: rgba(245, 87, 108, 0.4);
-            bottom: -150px;
-            right: -150px;
-            animation-delay: 5s;
-        }
-
-        .blob-3 {
-            width: 250px;
-            height: 250px;
-            background: rgba(255, 195, 113, 0.4);
-            top: 50%;
-            left: 50%;
-            animation-delay: 10s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(50px, -50px) scale(1.1); }
-            66% { transform: translate(-50px, 50px) scale(0.9); }
-        }
-
-        /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 4px solid #000;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-            padding: 1rem 2rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
+        h1, h2 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #000;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
-
-        .room-code-header {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: #f5576c;
-            letter-spacing: 2px;
-        }
-
-        /* Main Container */
-        .container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .game-card {
-            background: rgba(255, 255, 255, 0.98);
-            border: 4px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            padding: 2.5rem;
-            max-width: 900px;
-            width: 100%;
-            min-height: 500px;
-        }
-
-        /* Phase Indicator */
-        .phase-indicator {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .phase-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #f5576c;
-            letter-spacing: 2px;
-            margin-bottom: 0.5rem;
-        }
-
-        .phase-subtitle {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        /* Timer */
-        .timer {
-            background: #000;
-            color: #fff;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
-            padding: 1rem 2rem;
-            border-radius: 15px;
-            text-align: center;
-            margin: 0 auto 2rem;
-            max-width: 200px;
-            letter-spacing: 3px;
-        }
-
-        .timer.warning {
-            background: #ff4757;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        /* Role Reveal */
-        .role-reveal {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .role-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: 4px solid #000;
-            border-radius: 20px;
-            padding: 3rem 2rem;
-            margin: 2rem auto;
-            max-width: 600px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .role-card.spy {
-            background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
-        }
-
-        .role-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
-            letter-spacing: 3px;
-            margin-bottom: 1rem;
-        }
-
-        .location-display {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3.5rem;
-            letter-spacing: 5px;
-            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
-            margin: 2rem 0;
-        }
-
-        .location-reminder {
-            background: rgba(255, 255, 255, 0.95);
-            border: 3px solid #f5576c;
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin: 1.5rem auto;
-            max-width: 500px;
-            text-align: center;
-        }
-
-        .location-display-small {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #f5576c;
-            letter-spacing: 3px;
-        }
-
-        .spy-reminder {
-            font-size: 1.3rem;
-            color: #2d3436;
-            font-weight: 700;
-            padding: 1rem;
-        }
-
-        .role-instruction {
-            font-size: 1.2rem;
-            line-height: 1.6;
-            margin-top: 1.5rem;
-        }
-
-        /* Question Phase */
-        .question-phase {
-            margin-top: 2rem;
-        }
-
-        .player-turn {
-            background: #fff3cd;
-            border: 3px solid #ffc107;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .player-turn.your-turn {
-            background: #d1f2eb;
-            border-color: #00b894;
-        }
-
-        .turn-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .turn-player {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #f5576c;
-            letter-spacing: 2px;
-            margin: 0.5rem 0;
-        }
-
-        /* Players Grid */
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .player-card {
-            background: #f8f9fa;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .player-card.active-turn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            animation: glow 1.5s infinite;
-        }
-
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 10px rgba(245, 87, 108, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(245, 87, 108, 0.8); }
-        }
-
-        .player-name-card {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .player-status {
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .player-card.active-turn .player-status {
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* Voting Phase */
-        .voting-section {
-            margin-top: 2rem;
-        }
-
-        .voting-instructions {
-            background: #fff3cd;
-            border: 3px solid #ffc107;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            color: #856404;
-            font-weight: 600;
-        }
-
-        .players-voting-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .vote-player-card {
-            background: #f8f9fa;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .vote-player-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            background: #fff;
-        }
-
-        .vote-player-card.selected {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            transform: translateY(-5px);
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .vote-player-name {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
             letter-spacing: 1px;
         }
 
-        .submit-vote-btn {
+        nav {
+            padding: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+            margin-bottom: 60px;
+        }
+
+        .logo-nav {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
+            font-size: 2.1rem;
             letter-spacing: 2px;
-            background: #f5576c;
+            color: #1a1a1a;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 40px;
+            flex: 1;
+        }
+
+        .lobby-card {
+            background: white;
+            padding: 50px;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+        }
+
+        .game-type {
+            text-align: center;
+            background: #667eea;
             color: white;
-            border: 4px solid #000;
-            border-radius: 10px;
-            padding: 1rem 3rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            margin-top: 2rem;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .game-type.spyfall {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        input {
             width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
         }
 
-        .submit-vote-btn:hover:not(:disabled) {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        input:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
-        .submit-vote-btn:disabled {
+        button {
+            width: 100%;
+            padding: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
             background: #ccc;
             cursor: not-allowed;
-            opacity: 0.6;
         }
 
-        /* Results Phase */
-        .results-section {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .result-banner {
+        button.spyfall {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: 4px solid #000;
-            border-radius: 20px;
-            padding: 3rem 2rem;
-            margin: 2rem auto;
-            max-width: 600px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
         }
 
-        .result-banner.spy-wins {
-            background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+        button.spyfall:hover {
+            background: linear-gradient(135deg, #e082ea 0%, #e4465b 100%);
         }
 
-        .result-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
-            letter-spacing: 3px;
-            margin-bottom: 1rem;
-        }
-
-        .result-message {
-            font-size: 1.3rem;
-            line-height: 1.6;
-            margin: 1rem 0;
-        }
-
-        .revealed-location {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3.5rem;
-            letter-spacing: 5px;
-            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
-            margin: 2rem 0;
-        }
-
-        .spy-reveal {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin: 2rem 0;
-        }
-
-        .spy-name {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 2px;
-        }
-
-        .play-again-btn {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: #ffd700;
-            color: #000;
-            border: 4px solid #000;
-            border-radius: 10px;
-            padding: 1rem 3rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            margin-top: 2rem;
-        }
-
-        .play-again-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        /* Vote Results */
-        .vote-results {
-            margin: 2rem 0;
-        }
-
-        .vote-result-item {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .vote-result-name {
-            font-weight: 700;
-        }
-
-        .vote-result-count {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-        }
-
-        /* Loading */
-        .loading {
+        .divider {
             text-align: center;
-            color: #666;
-            font-size: 1.2rem;
-            padding: 3rem;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #f5576c;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 2rem auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Footer */
-        footer {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            text-align: center;
-            padding: 1.5rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Progress Indicator */
-        .progress-indicator {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: #666;
-            font-size: 1rem;
-        }
-
-        .progress-bar {
-            background: #f0f0f0;
-            border: 2px solid #000;
-            border-radius: 10px;
-            height: 30px;
-            margin: 1rem auto;
-            max-width: 400px;
-            overflow: hidden;
+            margin: 40px 0;
             position: relative;
         }
 
-        .progress-fill {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            height: 100%;
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 0.9rem;
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
         }
 
-        /* Hidden class */
-        .hidden {
-            display: none !important;
+        .divider span {
+            background: white;
+            padding: 0 20px;
+            position: relative;
+            color: #999;
+            font-weight: 600;
         }
 
-        /* Responsive */
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
         @media (max-width: 768px) {
-            .game-card {
-                padding: 1.5rem;
+            .container {
+                padding: 0 20px;
             }
 
-            .role-title {
-                font-size: 2rem;
-            }
-
-            .location-display {
-                font-size: 2rem;
-            }
-
-            .players-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-
-            .players-voting-grid {
-                grid-template-columns: 1fr;
+            .lobby-card {
+                padding: 30px 20px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
+    <nav>
+        <div class="logo-nav">PLAYHUB</div>
+    </nav>
 
-    <!-- Header -->
-    <header>
-        <div class="header-content">
-            <a href="index.html" class="logo">PLAYHUB</a>
-            <div class="room-code-header" id="roomCodeHeader">ROOM: ------</div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
     <div class="container">
-        <div class="game-card">
-            <!-- Loading State -->
-            <div id="loadingPhase" class="loading">
-                <div class="spinner"></div>
-                <p>Connecting to game...</p>
+        <div class="lobby-card">
+            <div class="game-type" id="gameType">LOADING...</div>
+            
+            <h1>Game Lobby</h1>
+
+            <!-- Create Room -->
+            <div class="input-group">
+                <label for="createName">Your Name:</label>
+                <input type="text" id="createName" placeholder="Enter your name" maxlength="20">
+                <button onclick="createRoom()" id="createBtn">Create Room</button>
             </div>
 
-            <!-- Role Reveal Phase -->
-            <div id="roleRevealPhase" class="hidden">
-                <div class="phase-indicator">
-                    <div class="phase-title">ROLE REVEAL</div>
-                    <div class="phase-subtitle">Remember your information!</div>
-                </div>
+            <div class="divider"><span>OR</span></div>
 
-                <div class="role-reveal">
-                    <div id="roleCard" class="role-card">
-                        <div class="role-title" id="roleTitle">YOUR ROLE</div>
-                        <div id="locationSection" class="hidden">
-                            <p>The location is:</p>
-                            <div class="location-display" id="locationDisplay">LOCATION</div>
-                            <p style="margin-top: 1.5rem; font-size: 1.1rem;">Your role: <strong id="specificRole">Tourist</strong></p>
-                        </div>
-                        <div id="spySection" class="hidden">
-                            <p style="font-size: 1.5rem;">🕵️</p>
-                            <p>You don't know the location!</p>
-                        </div>
-                        <div class="role-instruction" id="roleInstruction"></div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: 2rem;">
-                    <p style="color: #666; font-size: 1.1rem;">Game starting soon...</p>
-                </div>
+            <!-- Join Room -->
+            <div class="input-group">
+                <label for="joinName">Your Name:</label>
+                <input type="text" id="joinName" placeholder="Enter your name" maxlength="20">
+                
+                <label for="roomCode" style="margin-top: 20px;">Room Code:</label>
+                <input type="text" id="roomCode" placeholder="6-digit code" maxlength="6">
+                <button onclick="joinRoom()" id="joinBtn">Join Room</button>
             </div>
 
-            <!-- Question Phase -->
-            <div id="questionPhase" class="hidden">
-                <div class="phase-indicator">
-                    <div class="phase-title">QUESTION PHASE</div>
-                    <div class="phase-subtitle">Ask questions to find the spy!</div>
-                </div>
-
-                <!-- Always show location during game -->
-                <div id="gameLocationReminder" class="location-reminder">
-                    <div id="gameLocationDisplay" class="location-display-small">LOCATION</div>
-                    <div id="gameSpyDisplay" class="spy-reminder hidden">
-                        🕵️ You're the Spy - Blend in!
-                    </div>
-                </div>
-
-                <div class="timer" id="questionTimer">480</div>
-
-                <div class="player-turn" id="playerTurn">
-                    <div class="turn-text">Current Turn:</div>
-                    <div class="turn-player" id="currentTurnPlayer">PLAYER</div>
-                    <div style="font-size: 0.95rem; color: #666; margin-top: 0.5rem;">
-                        Players take turns asking each other questions
-                    </div>
-                </div>
-
-                <div class="players-grid" id="playersGrid"></div>
-            </div>
-
-            <!-- Voting Phase -->
-            <div id="votingPhase" class="hidden">
-                <div class="phase-indicator">
-                    <div class="phase-title">VOTE FOR THE SPY</div>
-                    <div class="phase-subtitle">Who do you think is the spy?</div>
-                </div>
-
-                <div class="timer" id="votingTimer">45</div>
-
-                <div class="voting-section">
-                    <div class="voting-instructions">
-                        🕵️ Vote for who you think is the spy!
-                    </div>
-
-                    <div class="players-voting-grid" id="votingGrid"></div>
-
-                    <button class="submit-vote-btn" id="submitVoteBtn" onclick="submitVote()" disabled>
-                        CAST YOUR VOTE
-                    </button>
-
-                    <div class="progress-indicator" id="voteProgress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="voteProgressFill" style="width: 0%">0/0</div>
-                        </div>
-                        <p>Players who voted</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Results Phase -->
-            <div id="resultsPhase" class="hidden">
-                <div class="results-section">
-                    <div id="resultBanner" class="result-banner">
-                        <div class="result-title" id="resultTitle">GAME OVER</div>
-                        <div class="result-message" id="resultMessage"></div>
-                        
-                        <div class="spy-reveal">
-                            <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">The Spy was:</p>
-                            <div class="spy-name" id="spyName">PLAYER</div>
-                        </div>
-
-                        <p style="font-size: 1.2rem; margin: 1rem 0;">The location was:</p>
-                        <div class="revealed-location" id="revealedLocation">LOCATION</div>
-
-                        <div class="vote-results" id="voteResults"></div>
-                    </div>
-
-                    <button class="play-again-btn" onclick="returnToLobby()">
-                        RETURN TO LOBBY
-                    </button>
-                </div>
-            </div>
+            <div class="error" id="error"></div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <div>© 2024 PlayHub. All games free forever.</div>
-    </footer>
-
-    <!-- Socket.io Client -->
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
     <script>
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-        const socket = io(BACKEND_URL);
+        const socket = io(BACKEND_URL, {
+            transports: ['websocket', 'polling']
+        });
 
-        // Get room code from URL
+        // Get game type from URL
         const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('room') || urlParams.get('code');
-        const playerName = localStorage.getItem('playerName');
-
-        // Game state
-        let myRole = null;
-        let myLocation = null;
-        let mySpecificRole = null;
-        let isSpy = false;
-        let selectedVotePlayerId = null;
-        let totalPlayers = 0;
-        let allPlayers = [];
-        let currentTurnIndex = 0;
+        const gameId = urlParams.get('game') || 'imposter'; // default to imposter
         
-        // Timer tracking
-        let activeTimers = {};
+        // Map game IDs to display names and types
+        const gameInfo = {
+            'imposter': { display: 'IMPOSTER', type: 'imposter', class: '' },
+            'spyfall': { display: 'SPYFALL', type: 'spyfall', class: 'spyfall' },
+            'werewolf': { display: 'WEREWOLF', type: 'werewolf', class: '' },
+            'avalon': { display: 'AVALON', type: 'avalon', class: '' }
+        };
+
+        const currentGame = gameInfo[gameId] || gameInfo['imposter'];
         
-        // Clear all active timers
-        function clearAllTimers() {
-            Object.keys(activeTimers).forEach(timerId => {
-                clearInterval(activeTimers[timerId]);
-                console.log('Cleared timer:', timerId);
-            });
-            activeTimers = {};
-        }
+        // Update UI based on game
+        document.getElementById('gameType').textContent = currentGame.display;
+        document.getElementById('gameType').className = `game-type ${currentGame.class}`;
+        document.getElementById('createBtn').className = currentGame.class;
+        document.getElementById('joinBtn').className = currentGame.class;
 
-        // Display room code
-        document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
-
-        console.log('Spyfall game initialized:', { roomCode, playerName });
-
-        // Socket connection
         socket.on('connect', () => {
-            console.log('Connected to game server');
-            
-            console.log('Rejoining room for game...');
-            socket.emit('rejoin-room', {
-                roomCode: roomCode,
-                playerName: playerName
-            });
+            console.log('Connected:', socket.id);
         });
 
-        // Room joined successfully
+        // CREATE ROOM
+        socket.on('room-created', (data) => {
+            console.log('Room created:', data);
+            
+            const playerName = document.getElementById('createName').value.trim();
+            
+            // Store data for waiting room
+            localStorage.setItem('tempRoomCode', data.roomCode);
+            localStorage.setItem('tempPlayerName', playerName);
+            localStorage.setItem('tempIsHost', 'true');
+            
+            // Redirect immediately
+            window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
+        });
+
+        // JOIN ROOM
         socket.on('room-joined', (data) => {
-            console.log('Successfully rejoined room for game:', data);
-            allPlayers = data.room.players;
-            totalPlayers = allPlayers.length;
+            console.log('Joined room:', data);
+            const playerName = document.getElementById('joinName').value.trim();
+            window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=false`;
         });
 
-        // Role assigned
-        socket.on('role-assigned', (data) => {
-            console.log('Role assigned:', data);
-            
-            myRole = data.role;
-            isSpy = data.isSpy;
-            myLocation = data.location;
-            mySpecificRole = data.specificRole;
-
-            showRoleReveal();
-
-            // Auto-start question phase after 5 seconds
-            setTimeout(() => {
-                // Server should send question-phase-start
-            }, 5000);
-        });
-
-        // Question phase started
-        socket.on('question-phase-start', (data) => {
-            console.log('Question phase started:', data);
-            showQuestionPhase(data.timeLimit || 480); // 8 minutes
-        });
-
-        // Turn changed
-        socket.on('turn-changed', (data) => {
-            console.log('Turn changed:', data);
-            updateCurrentTurn(data.currentPlayer, data.turnIndex);
-        });
-
-        // Voting phase started
-        socket.on('voting-phase-start', (data) => {
-            console.log('Voting phase started:', data);
-            allPlayers = data.players;
-            totalPlayers = data.players.length;
-            showVotingPhase();
-        });
-
-        // Vote counted
-        socket.on('vote-counted', (data) => {
-            console.log('Vote counted:', data);
-            updateVoteProgress(data.totalVotes, data.totalPlayers);
-        });
-
-        // Game results
-        socket.on('game-results', (data) => {
-            console.log('Game results:', data);
-            showResults(data);
-        });
-
-        // Error handling
         socket.on('error', (data) => {
-            console.error('Socket error:', data);
-            alert(data.message);
+            console.error('Error:', data);
+            showError(data.message);
+            enableButtons();
         });
 
-        // Show role reveal phase
-        function showRoleReveal() {
-            hideAllPhases();
-            document.getElementById('roleRevealPhase').classList.remove('hidden');
+        socket.on('join-error', (data) => {
+            console.error('Join error:', data);
+            showError(data.message);
+            enableButtons();
+        });
 
-            const roleCard = document.getElementById('roleCard');
-            const roleTitle = document.getElementById('roleTitle');
-            const locationSection = document.getElementById('locationSection');
-            const spySection = document.getElementById('spySection');
-            const roleInstruction = document.getElementById('roleInstruction');
-
-            if (isSpy) {
-                roleCard.classList.add('spy');
-                roleTitle.textContent = '🕵️ THE SPY';
-                spySection.classList.remove('hidden');
-                locationSection.classList.add('hidden');
-                roleInstruction.textContent = 'Ask clever questions to figure out the location without revealing you don\'t know it!';
-            } else {
-                roleCard.classList.remove('spy');
-                roleTitle.textContent = '👥 PLAYER';
-                locationSection.classList.remove('hidden');
-                spySection.classList.add('hidden');
-                document.getElementById('locationDisplay').textContent = myLocation;
-                document.getElementById('specificRole').textContent = mySpecificRole;
-                roleInstruction.textContent = 'Ask questions to find the spy, but don\'t make the location too obvious!';
-            }
-        }
-
-        // Show question phase
-        function showQuestionPhase(timeLimit) {
-            console.log('Starting question phase');
+        function createRoom() {
+            const name = document.getElementById('createName').value.trim();
             
-            clearAllTimers();
-            
-            hideAllPhases();
-            document.getElementById('questionPhase').classList.remove('hidden');
-            
-            // Show location/spy reminder
-            if (isSpy) {
-                document.getElementById('gameLocationDisplay').classList.add('hidden');
-                document.getElementById('gameSpyDisplay').classList.remove('hidden');
-            } else {
-                document.getElementById('gameLocationDisplay').textContent = myLocation;
-                document.getElementById('gameLocationDisplay').classList.remove('hidden');
-                document.getElementById('gameSpyDisplay').classList.add('hidden');
-            }
-            
-            // Build players grid
-            buildPlayersGrid();
-            
-            // Start timer
-            startTimer('questionTimer', timeLimit);
-            
-            // Initialize first turn
-            updateCurrentTurn(allPlayers[0].name, 0);
-        }
-
-        // Build players grid
-        function buildPlayersGrid() {
-            const playersGrid = document.getElementById('playersGrid');
-            playersGrid.innerHTML = '';
-
-            allPlayers.forEach((player, index) => {
-                const card = document.createElement('div');
-                card.className = 'player-card';
-                card.id = `player-card-${index}`;
-                
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'player-name-card';
-                nameDiv.textContent = player.name;
-                
-                const statusDiv = document.createElement('div');
-                statusDiv.className = 'player-status';
-                statusDiv.textContent = 'Waiting...';
-                
-                card.appendChild(nameDiv);
-                card.appendChild(statusDiv);
-                playersGrid.appendChild(card);
-            });
-        }
-
-        // Update current turn
-        function updateCurrentTurn(playerName, turnIndex) {
-            currentTurnIndex = turnIndex;
-            
-            // Update turn display
-            document.getElementById('currentTurnPlayer').textContent = playerName;
-            
-            // Update player turn indicator
-            const playerTurn = document.getElementById('playerTurn');
-            if (playerName === playerName) {
-                playerTurn.classList.add('your-turn');
-            } else {
-                playerTurn.classList.remove('your-turn');
-            }
-            
-            // Update player cards
-            document.querySelectorAll('.player-card').forEach((card, index) => {
-                if (index === turnIndex) {
-                    card.classList.add('active-turn');
-                    card.querySelector('.player-status').textContent = 'Their Turn';
-                } else {
-                    card.classList.remove('active-turn');
-                    card.querySelector('.player-status').textContent = 'Waiting...';
-                }
-            });
-        }
-
-        // Show voting phase
-        function showVotingPhase() {
-            console.log('Starting voting phase');
-            
-            clearAllTimers();
-            
-            hideAllPhases();
-            document.getElementById('votingPhase').classList.remove('hidden');
-            
-            selectedVotePlayerId = null;
-            
-            // Reset submit button
-            const submitBtn = document.getElementById('submitVoteBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'CAST YOUR VOTE';
-            
-            // Build voting grid
-            buildVotingGrid();
-            
-            // Start timer
-            startTimer('votingTimer', 45);
-        }
-
-        // Build voting grid
-        function buildVotingGrid() {
-            const votingGrid = document.getElementById('votingGrid');
-            votingGrid.innerHTML = '';
-
-            allPlayers.forEach(player => {
-                const card = document.createElement('div');
-                card.className = 'vote-player-card';
-                card.onclick = () => selectVotePlayer(player.id, card);
-                
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'vote-player-name';
-                nameDiv.textContent = player.name;
-                
-                card.appendChild(nameDiv);
-                votingGrid.appendChild(card);
-            });
-        }
-
-        // Select player to vote for
-        function selectVotePlayer(playerId, cardElement) {
-            // Remove selection from all cards
-            document.querySelectorAll('.vote-player-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // Select this card
-            cardElement.classList.add('selected');
-            selectedVotePlayerId = playerId;
-            document.getElementById('submitVoteBtn').disabled = false;
-        }
-
-        // Submit vote
-        function submitVote() {
-            if (!selectedVotePlayerId) {
-                alert('Please select a player to vote for!');
+            if (!name || name.length < 2) {
+                showError('Please enter a name (at least 2 characters)');
                 return;
             }
 
-            console.log('Submitting vote for:', selectedVotePlayerId);
-            
-            socket.emit('submit-vote', {
-                roomCode: roomCode,
-                votedPlayerId: selectedVotePlayerId
-            });
+            hideError();
+            disableButtons();
 
-            // Disable voting
-            document.getElementById('submitVoteBtn').disabled = true;
-            document.getElementById('submitVoteBtn').textContent = 'VOTE SUBMITTED ✓';
-            document.querySelectorAll('.vote-player-card').forEach(card => {
-                card.style.pointerEvents = 'none';
+            socket.emit('create-room', {
+                playerName: name,
+                gameType: currentGame.type
             });
         }
 
-        // Update vote progress
-        function updateVoteProgress(current, total) {
-            const progressFill = document.getElementById('voteProgressFill');
-            const percentage = (current / total) * 100;
-            progressFill.style.width = percentage + '%';
-            progressFill.textContent = `${current}/${total}`;
-        }
-
-        // Show results
-        function showResults(data) {
-            hideAllPhases();
-            document.getElementById('resultsPhase').classList.remove('hidden');
-
-            const resultBanner = document.getElementById('resultBanner');
-            const resultTitle = document.getElementById('resultTitle');
-            const resultMessage = document.getElementById('resultMessage');
-            const spyName = document.getElementById('spyName');
-            const revealedLocation = document.getElementById('revealedLocation');
-            const voteResults = document.getElementById('voteResults');
-
-            // Set spy name and location
-            spyName.textContent = data.spy.name.toUpperCase();
-            revealedLocation.textContent = data.location.toUpperCase();
-
-            // Set result based on outcome
-            if (data.spyCaught) {
-                resultBanner.classList.remove('spy-wins');
-                resultTitle.textContent = '🎉 PLAYERS WIN!';
-                resultMessage.textContent = `${data.votedOut.name} was voted out and they were the spy!`;
-            } else {
-                resultBanner.classList.add('spy-wins');
-                resultTitle.textContent = '🕵️ SPY WINS!';
-                resultMessage.textContent = `${data.votedOut.name} was voted out, but they were innocent! The spy escaped.`;
-            }
-
-            // Show vote counts
-            voteResults.innerHTML = '<p style="margin-bottom: 1rem; font-size: 1.2rem;">Vote Results:</p>';
+        function joinRoom() {
+            const name = document.getElementById('joinName').value.trim();
+            const code = document.getElementById('roomCode').value.trim().toUpperCase();
             
-            const sortedVotes = Object.entries(data.voteCounts).sort((a, b) => b[1] - a[1]);
-            
-            sortedVotes.forEach(([playerId, votes]) => {
-                const player = allPlayers.find(p => p.id === playerId);
-                if (player) {
-                    const voteItem = document.createElement('div');
-                    voteItem.className = 'vote-result-item';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'vote-result-name';
-                    nameSpan.textContent = player.name;
-                    
-                    const countSpan = document.createElement('span');
-                    countSpan.className = 'vote-result-count';
-                    countSpan.textContent = `${votes} vote${votes !== 1 ? 's' : ''}`;
-                    
-                    voteItem.appendChild(nameSpan);
-                    voteItem.appendChild(countSpan);
-                    voteResults.appendChild(voteItem);
-                }
-            });
-        }
-
-        // Timer function
-        function startTimer(elementId, seconds) {
-            console.log(`startTimer called for ${elementId} with ${seconds} seconds`);
-            
-            const timerElement = document.getElementById(elementId);
-            if (!timerElement) {
-                console.error('Timer element not found:', elementId);
+            if (!name || name.length < 2) {
+                showError('Please enter a name (at least 2 characters)');
                 return;
             }
-            
-            if (activeTimers[elementId]) {
-                console.log(`Clearing existing timer for ${elementId}`);
-                clearInterval(activeTimers[elementId]);
-                delete activeTimers[elementId];
+
+            if (!code || code.length !== 6) {
+                showError('Please enter a valid 6-digit room code');
+                return;
             }
-            
-            timerElement.textContent = formatTime(seconds);
-            timerElement.classList.remove('warning');
-            
-            let timeLeft = seconds;
 
-            const interval = setInterval(() => {
-                timeLeft--;
-                timerElement.textContent = formatTime(timeLeft);
+            hideError();
+            disableButtons();
 
-                if (timeLeft <= 60) {
-                    timerElement.classList.add('warning');
-                }
-
-                if (timeLeft <= 0) {
-                    console.log(`Timer ${elementId} reached 0`);
-                    clearInterval(interval);
-                    delete activeTimers[elementId];
-                }
-            }, 1000);
-            
-            activeTimers[elementId] = interval;
-            console.log(`Timer ${elementId} started`);
+            socket.emit('join-room', {
+                roomCode: code,
+                playerName: name
+            });
         }
 
-        // Format time as MM:SS
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        function showError(msg) {
+            const err = document.getElementById('error');
+            err.textContent = msg;
+            err.style.display = 'block';
         }
 
-        // Hide all phases
-        function hideAllPhases() {
-            clearAllTimers();
-            
-            document.getElementById('loadingPhase').classList.add('hidden');
-            document.getElementById('roleRevealPhase').classList.add('hidden');
-            document.getElementById('questionPhase').classList.add('hidden');
-            document.getElementById('votingPhase').classList.add('hidden');
-            document.getElementById('resultsPhase').classList.add('hidden');
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
         }
 
-        // Return to lobby
-        function returnToLobby() {
-            window.location.href = `waiting-room.html?room=${roomCode}`;
+        function disableButtons() {
+            document.getElementById('createBtn').disabled = true;
+            document.getElementById('joinBtn').disabled = true;
         }
 
-        // Handle browser close
-        window.addEventListener('beforeunload', () => {
-            socket.disconnect();
+        function enableButtons() {
+            document.getElementById('createBtn').disabled = false;
+            document.getElementById('joinBtn').disabled = false;
+        }
+
+        // Auto-uppercase room code
+        document.getElementById('roomCode').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
         });
 
-        // Debug: Log all socket events
-        socket.onAny((eventName, ...args) => {
-            console.log('Socket event:', eventName, args);
+        // Enter key support
+        document.getElementById('createName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') createRoom();
+        });
+
+        document.getElementById('joinName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('roomCode').focus();
+        });
+
+        document.getElementById('roomCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') joinRoom();
         });
     </script>
 </body>
