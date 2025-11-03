@@ -237,6 +237,9 @@
 
         const currentGame = gameInfo[gameId] || gameInfo['imposter'];
         
+        // IMPORTANT: Store game type immediately in localStorage
+        localStorage.setItem('tempGameType', currentGame.type);
+        
         // Update UI based on game
         document.getElementById('gameType').textContent = currentGame.display;
         document.getElementById('gameType').className = `game-type ${currentGame.class}`;
@@ -257,6 +260,7 @@
             localStorage.setItem('tempRoomCode', data.roomCode);
             localStorage.setItem('tempPlayerName', playerName);
             localStorage.setItem('tempIsHost', 'true');
+            localStorage.setItem('tempGameType', currentGame.type); // Store again for safety
             
             // Redirect immediately
             window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
@@ -266,6 +270,12 @@
         socket.on('room-joined', (data) => {
             console.log('Joined room:', data);
             const playerName = document.getElementById('joinName').value.trim();
+            
+            // Store game type if available
+            if (data.gameType) {
+                localStorage.setItem('tempGameType', data.gameType);
+            }
+            
             window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=false`;
         });
 
