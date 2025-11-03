@@ -23,6 +23,10 @@
             overflow-x: hidden;
         }
 
+        body.spyfall {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
         /* Animated Background Blobs */
         .blob {
             position: fixed;
@@ -130,6 +134,10 @@
             margin-bottom: 0.5rem;
         }
 
+        .game-title.spyfall {
+            color: #f5576c;
+        }
+
         .how-to-play-btn {
             display: block;
             margin: 0 auto 1.5rem;
@@ -166,6 +174,10 @@
             color: #667eea;
             letter-spacing: 4px;
             text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .room-code.spyfall {
+            color: #f5576c;
         }
 
         .player-count {
@@ -215,6 +227,10 @@
         .player-item.host {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+        }
+
+        body.spyfall .player-item.host {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
         .player-info {
@@ -316,6 +332,11 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
         }
 
+        body.spyfall .category-select:focus {
+            border-color: #f5576c;
+            box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.3);
+        }
+
         .category-select option {
             padding: 0.5rem;
         }
@@ -343,6 +364,10 @@
             box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
             transition: all 0.2s;
             width: 100%;
+        }
+
+        body.spyfall .start-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
         .start-btn:hover:not(:disabled) {
@@ -410,6 +435,10 @@
             color: #667eea;
         }
 
+        body.spyfall .modal-header {
+            color: #f5576c;
+        }
+
         .modal-body {
             line-height: 1.8;
             color: #333;
@@ -448,6 +477,10 @@
             width: 100%;
         }
 
+        body.spyfall .close-modal-btn {
+            background: #f5576c;
+        }
+
         .close-modal-btn:hover {
             transform: translate(-2px, -2px);
             box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
@@ -476,6 +509,10 @@
         .players-list::-webkit-scrollbar-thumb {
             background: #667eea;
             border-radius: 10px;
+        }
+
+        body.spyfall .players-list::-webkit-scrollbar-thumb {
+            background: #f5576c;
         }
 
         .players-list::-webkit-scrollbar-thumb:hover {
@@ -531,7 +568,7 @@
     <div class="container">
         <div class="waiting-room-card">
             <h1>WAITING ROOM</h1>
-            <div class="game-title" id="gameTitle">IMPOSTER</div>
+            <div class="game-title" id="gameTitle">LOADING...</div>
             <button class="how-to-play-btn" onclick="showHowToPlay()">❓ How to Play</button>
             
             <div class="room-code-display">
@@ -549,20 +586,11 @@
             </div>
 
             <div class="start-section" id="startSection" style="display: none;">
-                <!-- Word Category Selection (Imposter only) -->
+                <!-- Category Selection -->
                 <div class="category-section" id="categorySection">
-                    <label for="wordCategory" class="category-label">Choose Word Category:</label>
-                    <select id="wordCategory" class="category-select">
-                        <option value="random">🎲 Random (All Categories)</option>
-                        <option value="food">🍕 Food & Drinks</option>
-                        <option value="animals">🦁 Animals</option>
-                        <option value="places">🌍 Places</option>
-                        <option value="objects">📦 Common Objects</option>
-                        <option value="activities">⚽ Activities & Sports</option>
-                        <option value="nature">🌲 Nature</option>
-                        <option value="entertainment">🎬 Entertainment</option>
-                        <option value="spicy">🔥 Spicy/Adult</option>
-                        <option value="stereotypes">👥 Stereotypes</option>
+                    <label for="gameCategory" class="category-label" id="categoryLabel">Choose Category:</label>
+                    <select id="gameCategory" class="category-select">
+                        <!-- Options will be populated by JavaScript based on game type -->
                     </select>
                 </div>
                 
@@ -579,29 +607,9 @@
     <!-- How to Play Modal -->
     <div id="howToPlayModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">HOW TO PLAY IMPOSTER</div>
-            <div class="modal-body">
-                <p><strong>Objective:</strong> Find the imposter before it's too late!</p>
-                
-                <h3>Game Setup:</h3>
-                <ul>
-                    <li>One player is randomly selected as the <strong>Imposter</strong></li>
-                    <li>All other players receive the same secret word</li>
-                    <li>The Imposter doesn't know the word</li>
-                </ul>
-
-                <h3>How to Play:</h3>
-                <ul>
-                    <li><strong>Phase 1:</strong> Everyone gives a one-word clue about the secret word</li>
-                    <li>The Imposter must blend in without knowing the word!</li>
-                    <li><strong>Phase 2:</strong> Vote on who you think is the Imposter</li>
-                </ul>
-
-                <h3>Winning:</h3>
-                <ul>
-                    <li><strong>Players win</strong> if they correctly vote out the Imposter</li>
-                    <li><strong>Imposter wins</strong> if an innocent player is voted out</li>
-                </ul>
+            <div class="modal-header" id="modalHeader">HOW TO PLAY</div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be populated by JavaScript -->
             </div>
             <button class="close-modal-btn" onclick="closeHowToPlay()">GOT IT!</button>
         </div>
@@ -619,21 +627,97 @@
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL);
 
-        // Get room code from URL (lobby.html uses ?room= not ?code=)
+        // Get room code from URL
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room') || urlParams.get('code');
         const playerName = urlParams.get('name') || localStorage.getItem('playerName');
         
-        // DON'T trust client-side isHost - server will tell us
-        let isHost = false; // Will be set by server
+        // Game state
+        let isHost = false;
+        let gameType = null;
+        let currentRoom = null;
+
+        // Game configurations
+        const gameConfigs = {
+            'imposter': {
+                title: 'IMPOSTER',
+                categoryLabel: 'Choose Word Category:',
+                categories: [
+                    { value: 'random', text: '🎲 Random (All Categories)' },
+                    { value: 'food', text: '🍕 Food & Drinks' },
+                    { value: 'animals', text: '🦁 Animals' },
+                    { value: 'places', text: '🌍 Places' },
+                    { value: 'objects', text: '📦 Common Objects' },
+                    { value: 'activities', text: '⚽ Activities & Sports' },
+                    { value: 'nature', text: '🌲 Nature' },
+                    { value: 'entertainment', text: '🎬 Entertainment' },
+                    { value: 'spicy', text: '🔥 Spicy/Adult' },
+                    { value: 'stereotypes', text: '👥 Stereotypes' }
+                ],
+                howToPlay: `
+                    <p><strong>Objective:</strong> Find the imposter before it's too late!</p>
+                    <h3>Game Setup:</h3>
+                    <ul>
+                        <li>One player is randomly selected as the <strong>Imposter</strong></li>
+                        <li>All other players receive the same secret word</li>
+                        <li>The Imposter doesn't know the word</li>
+                    </ul>
+                    <h3>How to Play:</h3>
+                    <ul>
+                        <li><strong>Phase 1:</strong> Everyone gives a one-word clue about the secret word</li>
+                        <li>The Imposter must blend in without knowing the word!</li>
+                        <li><strong>Phase 2:</strong> Vote on who you think is the Imposter</li>
+                    </ul>
+                    <h3>Winning:</h3>
+                    <ul>
+                        <li><strong>Players win</strong> if they correctly vote out the Imposter</li>
+                        <li><strong>Imposter wins</strong> if an innocent player is voted out</li>
+                    </ul>
+                `,
+                bodyClass: '',
+                gameFile: 'game-imposter.html'
+            },
+            'spyfall': {
+                title: 'SPYFALL',
+                categoryLabel: 'Choose Location Pack:',
+                categories: [
+                    { value: 'classic', text: '🎭 Classic Locations' },
+                    { value: 'modern', text: '☕ Modern Locations' },
+                    { value: 'random', text: '🎲 Random (All Locations)' }
+                ],
+                howToPlay: `
+                    <p><strong>Objective:</strong> Find the spy among you!</p>
+                    <h3>Game Setup:</h3>
+                    <ul>
+                        <li>One player is randomly selected as the <strong>Spy</strong></li>
+                        <li>All other players know the location and have specific roles</li>
+                        <li>The Spy doesn't know the location</li>
+                    </ul>
+                    <h3>How to Play:</h3>
+                    <ul>
+                        <li><strong>8 minutes:</strong> Players take turns asking each other questions</li>
+                        <li>The Spy tries to figure out the location without revealing they don't know it</li>
+                        <li>Players try to find the spy without making the location obvious</li>
+                        <li><strong>Voting:</strong> Everyone votes on who they think is the Spy</li>
+                    </ul>
+                    <h3>Winning:</h3>
+                    <ul>
+                        <li><strong>Players win</strong> if they correctly vote out the Spy</li>
+                        <li><strong>Spy wins</strong> if an innocent player is voted out</li>
+                    </ul>
+                `,
+                bodyClass: 'spyfall',
+                gameFile: 'game-spyfall.html'
+            }
+        };
 
         console.log('Waiting room initialized:', { roomCode, playerName });
         
-        // Save to localStorage for reconnections
+        // Save to localStorage
         if (roomCode) localStorage.setItem('roomCode', roomCode);
         if (playerName) localStorage.setItem('playerName', playerName);
 
-        // Display room code
+        // Check for valid room code
         if (!roomCode) {
             alert('No room code provided! Redirecting to lobby...');
             window.location.href = 'lobby.html';
@@ -641,18 +725,10 @@
         
         document.getElementById('roomCode').textContent = roomCode;
 
-        // Show start button if host
-        if (isHost) {
-            document.getElementById('startSection').style.display = 'block';
-        }
-
         // Socket connection
         socket.on('connect', () => {
             console.log('Connected to server, socket ID:', socket.id);
-            console.log('Is host?', isHost, 'Player name:', playerName);
             
-            // Use rejoin-room for both host and players
-            // This handles reconnections properly
             console.log('Rejoining room...');
             socket.emit('rejoin-room', {
                 roomCode: roomCode,
@@ -666,83 +742,59 @@
             document.getElementById('playersList').innerHTML = '<div class="loading">Connection error. Retrying...</div>';
         });
 
-        // Player joined (when someone NEW joins the room)
+        // Player joined
         socket.on('player-joined', (data) => {
             console.log('Player joined event:', data);
-            
-            // Check if I'm still the host
-            const myPlayer = data.room.players.find(p => p.name === playerName);
-            if (myPlayer) {
-                isHost = myPlayer.isHost;
-            }
-            
-            updatePlayersList(data.room.players);
+            updateRoomState(data.room);
         });
 
-        // Room joined successfully (when YOU join/rejoin)
+        // Room joined successfully
         socket.on('room-joined', (data) => {
             console.log('Room joined event:', data);
-            
-            // Set isHost based on server data (authoritative)
-            const myPlayer = data.room.players.find(p => p.name === playerName);
-            if (myPlayer) {
-                isHost = myPlayer.isHost;
-                console.log('My host status:', isHost);
-                
-                // Show start section if I'm the host
-                if (isHost) {
-                    document.getElementById('startSection').style.display = 'block';
-                }
-            }
-            
-            updatePlayersList(data.room.players);
+            updateRoomState(data.room);
         });
 
-        // Room state received (response to get-room-state request)
+        // Room state received
         socket.on('room-state', (data) => {
             console.log('Room state received:', data);
             if (data.success) {
-                updatePlayersList(data.room.players);
+                updateRoomState(data.room);
             }
         });
 
         // Player disconnected
         socket.on('player-disconnected', (data) => {
             console.log('Player disconnected:', data);
-            updatePlayersList(data.room.players);
+            updateRoomState(data.room);
         });
 
         // Player kicked
         socket.on('player-kicked', (data) => {
             console.log('Player kicked:', data);
-            updatePlayersList(data.room.players);
+            updateRoomState(data.room);
         });
 
-        // You were kicked!
+        // You were kicked
         socket.on('kicked', (data) => {
             alert('❌ ' + data.message);
             window.location.href = 'party-games.html';
         });
 
-        // Host left, game disconnected
+        // Host left
         socket.on('host-left', (data) => {
             alert('⚠️ ' + data.message);
             window.location.href = 'party-games.html';
         });
 
-        // New host assigned
-        socket.on('new-host', (data) => {
-            console.log('New host assigned:', data);
-            if (socket.id === data.hostId) {
-                document.getElementById('startSection').style.display = 'block';
-                alert('You are now the host!');
-            }
-        });
-
         // Game started
         socket.on('game-started', (data) => {
             console.log('Game started, redirecting...');
-            window.location.href = `game-imposter.html?room=${roomCode}`;
+            const config = gameConfigs[data.gameType];
+            if (config) {
+                window.location.href = `${config.gameFile}?room=${roomCode}`;
+            } else {
+                window.location.href = `game-${data.gameType}.html?room=${roomCode}`;
+            }
         });
 
         // Error handling
@@ -757,6 +809,53 @@
             alert(`Error: ${data.message}\n\nRedirecting to lobby...`);
             window.location.href = 'lobby.html';
         });
+
+        // Update room state and UI
+        function updateRoomState(room) {
+            console.log('Updating room state:', room);
+            
+            currentRoom = room;
+            gameType = room.gameType;
+            
+            // Update game type display
+            const config = gameConfigs[gameType] || gameConfigs['imposter'];
+            document.getElementById('gameTitle').textContent = config.title;
+            document.getElementById('gameTitle').className = `game-title ${config.bodyClass}`;
+            document.getElementById('roomCode').className = `room-code ${config.bodyClass}`;
+            document.body.className = config.bodyClass;
+            
+            // Populate category dropdown
+            populateCategoryDropdown(config);
+            
+            // Check if I'm the host
+            const myPlayer = room.players.find(p => p.name === playerName);
+            if (myPlayer) {
+                isHost = myPlayer.isHost;
+                console.log('My host status:', isHost);
+                
+                if (isHost) {
+                    document.getElementById('startSection').style.display = 'block';
+                }
+            }
+            
+            updatePlayersList(room.players);
+        }
+
+        // Populate category dropdown based on game type
+        function populateCategoryDropdown(config) {
+            const select = document.getElementById('gameCategory');
+            const label = document.getElementById('categoryLabel');
+            
+            label.textContent = config.categoryLabel;
+            select.innerHTML = '';
+            
+            config.categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.text;
+                select.appendChild(option);
+            });
+        }
 
         // Update players list UI
         function updatePlayersList(players) {
@@ -773,10 +872,8 @@
                 return;
             }
 
-            // Clear the list
             playersList.innerHTML = '';
             
-            // Add each player
             players.forEach((player, index) => {
                 const playerItem = document.createElement('div');
                 playerItem.className = `player-item ${player.isHost ? 'host' : ''}`;
@@ -784,12 +881,10 @@
                 const playerInfo = document.createElement('div');
                 playerInfo.className = 'player-info';
                 
-                // Player number
                 const playerNumber = document.createElement('div');
                 playerNumber.className = 'player-number';
                 playerNumber.textContent = index + 1;
                 
-                // Player name
                 const playerNameSpan = document.createElement('span');
                 playerNameSpan.className = 'player-name';
                 playerNameSpan.textContent = player.name;
@@ -798,11 +893,9 @@
                 playerInfo.appendChild(playerNameSpan);
                 playerItem.appendChild(playerInfo);
                 
-                // Player actions (badges and kick button)
                 const playerActions = document.createElement('div');
                 playerActions.className = 'player-actions';
                 
-                // Host badge
                 if (player.isHost) {
                     const badge = document.createElement('span');
                     badge.className = 'player-badge';
@@ -810,7 +903,6 @@
                     playerActions.appendChild(badge);
                 }
                 
-                // Kick button (only for host, not for themselves)
                 if (isHost && !player.isHost) {
                     const kickBtn = document.createElement('button');
                     kickBtn.className = 'kick-btn';
@@ -823,10 +915,8 @@
                 playersList.appendChild(playerItem);
             });
 
-            // Update player count display
             playerCountDisplay.textContent = `${players.length}/15 Players`;
 
-            // Enable/disable start button based on player count (only if user is host)
             if (isHost) {
                 if (players.length >= 3) {
                     startBtn.disabled = false;
@@ -838,7 +928,7 @@
             }
         }
 
-        // Kick player function
+        // Kick player
         function kickPlayer(playerId, playerName) {
             if (confirm(`Kick ${playerName} from the room?`)) {
                 console.log('Kicking player:', playerId);
@@ -849,10 +939,10 @@
             }
         }
 
-        // Start game function
+        // Start game
         function startGame() {
             if (confirm('Start the game now? All players will be taken to the game screen.')) {
-                const category = document.getElementById('wordCategory').value;
+                const category = document.getElementById('gameCategory').value;
                 console.log('Starting game with category:', category);
                 
                 socket.emit('start-game', {
@@ -862,11 +952,15 @@
             }
         }
 
-        // How to Play modal functions
+        // Show how to play modal
         function showHowToPlay() {
+            const config = gameConfigs[gameType] || gameConfigs['imposter'];
+            document.getElementById('modalHeader').textContent = `HOW TO PLAY ${config.title}`;
+            document.getElementById('modalBody').innerHTML = config.howToPlay;
             document.getElementById('howToPlayModal').style.display = 'block';
         }
 
+        // Close modal
         function closeHowToPlay() {
             document.getElementById('howToPlayModal').style.display = 'none';
         }
