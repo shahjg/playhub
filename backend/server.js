@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
     // Always generate a new room code for initial creation
     const roomCode = generateRoomCode();
     
-    console.log(`Creating room: ${roomCode} for player: ${playerName}`);
+    console.log(`Creating room: ${roomCode} for player: ${playerName}, game: ${gameType}`);
     
     // Create new room
     const newRoom = {
@@ -87,10 +87,11 @@ io.on('connection', (socket) => {
     socket.emit('room-created', {
       success: true,
       roomCode: roomCode,
+      gameType: gameType,
       room: newRoom
     });
     
-    console.log(`Room created: ${roomCode} by ${playerName}`);
+    console.log(`Room created: ${roomCode} by ${playerName} for game ${gameType}`);
   });
 
   // REJOIN ROOM (for page refreshes or reconnections)
@@ -157,6 +158,7 @@ io.on('connection', (socket) => {
     socket.emit('room-joined', {
       success: true,
       roomCode: roomCode,
+      gameType: room.gameType,
       room: room
     });
     
@@ -251,6 +253,7 @@ io.on('connection', (socket) => {
     socket.emit('room-joined', {
       success: true,
       roomCode: roomCode,
+      gameType: room.gameType,
       room: room
     });
     
@@ -315,7 +318,7 @@ io.on('connection', (socket) => {
 
   // START GAME
   socket.on('start-game', (data) => {
-    const { roomCode, category } = data;
+    const { roomCode, category, twoSpies } = data;
     const room = rooms.get(roomCode);
     
     if (!room) {
@@ -340,7 +343,7 @@ io.on('connection', (socket) => {
     if (room.gameType === 'imposter') {
       initImposterGame(room, category || 'random');
     } else if (room.gameType === 'spyfall') {
-      initSpyfallGame(room, category || 'random');
+      initSpyfallGame(room, category || 'random', twoSpies || false);
     }
     // Add other game types here
     
@@ -352,7 +355,7 @@ io.on('connection', (socket) => {
       gameType: room.gameType
     });
     
-    console.log(`Game started in room ${roomCode} with category: ${category || 'random'}`);
+    console.log(`Game started in room ${roomCode} with category: ${category || 'random'}, twoSpies: ${twoSpies || false}`);
   });
 
   // Helper function to handle Imposter phase transitions
@@ -455,16 +458,24 @@ io.on('connection', (socket) => {
         totalPlayers: room.players.length
       });
     } else if (room.gameData.phase === 'results') {
-      const spyCaught = room.gameData.votedOutPlayerId === room.gameData.spyId;
-      const spyPlayer = room.players.find(p => p.name === room.gameData.spyName);
+      const spiesCaught = room.gameData.spies.filter(spyId => 
+        room.gameData.votedOutPlayerIds && room.gameData.votedOutPlayerIds.includes(spyId)
+      ).length;
+      const allSpiesCaught = spiesCaught === room.gameData.spies.length;
+      
+      const spyPlayers = room.gameData.spies.map(spyId => 
+        room.players.find(p => p.id === spyId) || { name: 'Unknown' }
+      );
       const votedOutPlayer = room.players.find(p => p.id === room.gameData.votedOutPlayerId);
       
       socket.emit('game-results', {
-        spyCaught: spyCaught,
-        spy: spyPlayer,
+        spyCaught: allSpiesCaught,
+        spies: spyPlayers,
+        spy: spyPlayers[0], // For backwards compatibility
         votedOut: votedOutPlayer,
         location: room.gameData.location,
-        voteCounts: room.gameData.voteCounts || {}
+        voteCounts: room.gameData.voteCounts || {},
+        twoSpies: room.gameData.twoSpies
       });
     }
   }
@@ -566,49 +577,184 @@ io.on('connection', (socket) => {
   }
 
   // Initialize Spyfall game
-  function initSpyfallGame(room, locationPack = 'classic') {
-    // Location packs with roles
+  function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
+    // EXPANDED LOCATION PACKS - 15-20 locations each
     const locationPacks = {
       classic: [
-        { name: 'Airport', roles: ['First Class Passenger', 'Air Marshal', 'Mechanic', 'Flight Attendant', 'Co-Pilot', 'Captain', 'Tourist', 'Security Guard'] },
-        { name: 'Bank', roles: ['Armored Car Driver', 'Manager', 'Consultant', 'Customer', 'Robber', 'Security Guard', 'Teller', 'Janitor'] },
-        { name: 'Beach', roles: ['Beach Photographer', 'Ice Cream Man', 'Lifeguard', 'Thief', 'Beach Goer', 'Surfer', 'Kite Surfer', 'Beach Volleyball Player'] },
-        { name: 'Casino', roles: ['Bartender', 'Head Security', 'Bouncer', 'Manager', 'Hustler', 'Dealer', 'Gambler', 'Waitress'] },
-        { name: 'Cathedral', roles: ['Priest', 'Beggar', 'Sinner', 'Tourist', 'Sponsor', 'Choir Singer', 'Parishioner', 'Bishop'] },
-        { name: 'Circus', roles: ['Acrobat', 'Animal Trainer', 'Magician', 'Fire Eater', 'Clown', 'Juggler', 'Visitor', 'Ticket Seller'] },
-        { name: 'Hospital', roles: ['Nurse', 'Doctor', 'Anesthesiologist', 'Intern', 'Patient', 'Therapist', 'Surgeon', 'Pharmacist'] },
-        { name: 'Hotel', roles: ['Doorman', 'Security Guard', 'Manager', 'Housekeeper', 'Customer', 'Bartender', 'Bellman', 'Chef'] },
-        { name: 'Military Base', roles: ['Deserter', 'Colonel', 'Medic', 'Soldier', 'Sniper', 'Officer', 'Tank Engineer', 'Cook'] },
-        { name: 'Movie Studio', roles: ['Stunt Man', 'Sound Engineer', 'Camera Man', 'Director', 'Costume Artist', 'Actor', 'Producer', 'Makeup Artist'] },
-        { name: 'Ocean Liner', roles: ['Rich Passenger', 'Cook', 'Captain', 'Bartender', 'Musician', 'Waiter', 'Mechanic', 'Sailor'] },
-        { name: 'Passenger Train', roles: ['Mechanic', 'Border Patrol', 'Train Attendant', 'Passenger', 'Restaurant Chef', 'Engineer', 'Stoker', 'Conductor'] },
-        { name: 'Pirate Ship', roles: ['Cook', 'Sailor', 'Slave', 'Cannoneer', 'Bound Prisoner', 'Cabin Boy', 'Brave Captain', 'Surgeon'] },
-        { name: 'Polar Station', roles: ['Medic', 'Geologist', 'Expedition Leader', 'Biologist', 'Radioman', 'Hydrologist', 'Meteorologist', 'Cook'] },
-        { name: 'Police Station', roles: ['Detective', 'Lawyer', 'Journalist', 'Criminalist', 'Archivist', 'Patrol Officer', 'Criminal', 'Chief'] },
-        { name: 'Restaurant', roles: ['Musician', 'Customer', 'Bouncer', 'Hostess', 'Head Chef', 'Food Critic', 'Waiter', 'Bartender'] },
-        { name: 'School', roles: ['Gym Teacher', 'Student', 'Principal', 'Security Guard', 'Janitor', 'Cafeteria Lady', 'Maintenance Man', 'Teacher'] },
-        { name: 'Space Station', roles: ['Engineer', 'Alien', 'Space Tourist', 'Pilot', 'Commander', 'Scientist', 'Doctor', 'Astronaut'] },
-        { name: 'Submarine', roles: ['Cook', 'Commander', 'Sonar Technician', 'Electronics Technician', 'Sailor', 'Radioman', 'Navigator', 'Mechanic'] },
-        { name: 'Supermarket', roles: ['Customer', 'Cashier', 'Butcher', 'Janitor', 'Security Guard', 'Food Sample Demonstrator', 'Shelf Stocker', 'Manager'] },
-        { name: 'Theater', roles: ['Coat Check Lady', 'Prompter', 'Cashier', 'Director', 'Actor', 'Crew Man', 'Customer', 'Stage Hand'] },
-        { name: 'University', roles: ['Graduate Student', 'Professor', 'Dean', 'Psychologist', 'Maintenance Man', 'Student', 'Janitor', 'Researcher'] },
-        { name: 'Amusement Park', roles: ['Ride Operator', 'Parent', 'Food Vendor', 'Cashier', 'Happy Child', 'Annoying Child', 'Teenager', 'Security Guard'] },
-        { name: 'Art Museum', roles: ['Ticket Seller', 'Student', 'Visitor', 'Teacher', 'Security Guard', 'Painter', 'Art Collector', 'Curator'] },
-        { name: 'Embassy', roles: ['Security Guard', 'Secretary', 'Ambassador', 'Government Official', 'Tourist', 'Refugee', 'Diplomat', 'Clerk'] }
+        { name: 'Airport', roles: ['First Class Passenger', 'Air Marshal', 'Mechanic', 'Flight Attendant', 'Co-Pilot', 'Captain', 'Tourist', 'Security Guard', 'Pilot', 'Baggage Handler', 'TSA Agent', 'Gate Agent', 'Janitor', 'Customs Officer', 'Duty Free Clerk'] },
+        { name: 'Bank', roles: ['Armored Car Driver', 'Manager', 'Consultant', 'Customer', 'Robber', 'Security Guard', 'Teller', 'Janitor', 'Loan Officer', 'Vault Keeper', 'Financial Advisor', 'ATM Technician', 'Intern', 'Branch Director', 'Auditor'] },
+        { name: 'Beach', roles: ['Beach Photographer', 'Ice Cream Man', 'Lifeguard', 'Thief', 'Beach Goer', 'Surfer', 'Kite Surfer', 'Beach Volleyball Player', 'Sunbather', 'Vendor', 'Fisherman', 'Parasailer', 'Tourist', 'Beach Cleaner', 'Jet Ski Renter'] },
+        { name: 'Casino', roles: ['Bartender', 'Head Security', 'Bouncer', 'Manager', 'Hustler', 'Dealer', 'Gambler', 'Waitress', 'Pit Boss', 'Card Counter', 'Chip Runner', 'Poker Player', 'Slot Attendant', 'High Roller', 'Floor Supervisor'] },
+        { name: 'Cathedral', roles: ['Priest', 'Beggar', 'Sinner', 'Tourist', 'Sponsor', 'Choir Singer', 'Parishioner', 'Bishop', 'Altar Boy', 'Organist', 'Wedding Guest', 'Confessor', 'Sacristan', 'Deacon', 'Visitor'] },
+        { name: 'Circus', roles: ['Acrobat', 'Animal Trainer', 'Magician', 'Fire Eater', 'Clown', 'Juggler', 'Visitor', 'Ticket Seller', 'Ringmaster', 'Trapeze Artist', 'Tightrope Walker', 'Strongman', 'Contortionist', 'Knife Thrower', 'Lion Tamer'] },
+        { name: 'Hospital', roles: ['Nurse', 'Doctor', 'Anesthesiologist', 'Intern', 'Patient', 'Therapist', 'Surgeon', 'Pharmacist', 'Radiologist', 'ER Doctor', 'Orderly', 'Medical Student', 'Paramedic', 'Lab Technician', 'Administrator'] },
+        { name: 'Hotel', roles: ['Doorman', 'Security Guard', 'Manager', 'Housekeeper', 'Customer', 'Bartender', 'Bellman', 'Chef', 'Concierge', 'Valet', 'Guest', 'Receptionist', 'Room Service', 'Maintenance', 'Event Coordinator'] },
+        { name: 'Military Base', roles: ['Deserter', 'Colonel', 'Medic', 'Soldier', 'Sniper', 'Officer', 'Tank Engineer', 'Cook', 'General', 'Drill Sergeant', 'Recruit', 'Spy', 'Pilot', 'Radio Operator', 'Intelligence Officer'] },
+        { name: 'Movie Studio', roles: ['Stunt Man', 'Sound Engineer', 'Camera Man', 'Director', 'Costume Artist', 'Actor', 'Producer', 'Makeup Artist', 'Screenwriter', 'Set Designer', 'Lighting Technician', 'Boom Operator', 'Casting Director', 'Gaffer', 'Film Editor'] },
+        { name: 'Ocean Liner', roles: ['Rich Passenger', 'Cook', 'Captain', 'Bartender', 'Musician', 'Waiter', 'Mechanic', 'Sailor', 'Cruise Director', 'Entertainer', 'Deckhand', 'Navigator', 'Purser', 'Lifeguard', 'Guest'] },
+        { name: 'Passenger Train', roles: ['Mechanic', 'Border Patrol', 'Train Attendant', 'Passenger', 'Restaurant Chef', 'Engineer', 'Stoker', 'Conductor', 'Ticket Inspector', 'Porter', 'Sleeper Car Attendant', 'Dining Car Server', 'Tourist', 'Commuter', 'Cargo Handler'] },
+        { name: 'Pirate Ship', roles: ['Cook', 'Sailor', 'Slave', 'Cannoneer', 'Bound Prisoner', 'Cabin Boy', 'Brave Captain', 'Surgeon', 'First Mate', 'Lookout', 'Navigator', 'Gunner', 'Quartermaster', 'Stowaway', 'Treasure Hunter'] },
+        { name: 'Polar Station', roles: ['Medic', 'Geologist', 'Expedition Leader', 'Biologist', 'Radioman', 'Hydrologist', 'Meteorologist', 'Cook', 'Researcher', 'Engineer', 'Pilot', 'Glaciologist', 'Climatologist', 'Supply Manager', 'Photographer'] },
+        { name: 'Police Station', roles: ['Detective', 'Lawyer', 'Journalist', 'Criminalist', 'Archivist', 'Patrol Officer', 'Criminal', 'Chief', 'Dispatcher', 'Forensic Expert', 'Sergeant', 'Witness', 'Undercover Agent', 'IT Specialist', 'CSI Technician'] },
+        { name: 'Restaurant', roles: ['Musician', 'Customer', 'Bouncer', 'Hostess', 'Head Chef', 'Food Critic', 'Waiter', 'Bartender', 'Sous Chef', 'Dishwasher', 'Sommelier', 'Busboy', 'Line Cook', 'Regular', 'Manager'] },
+        { name: 'School', roles: ['Gym Teacher', 'Student', 'Principal', 'Security Guard', 'Janitor', 'Cafeteria Lady', 'Maintenance Man', 'Teacher', 'Librarian', 'Counselor', 'Substitute', 'Coach', 'Nurse', 'Vice Principal', 'Lunch Monitor'] },
+        { name: 'Space Station', roles: ['Engineer', 'Alien', 'Space Tourist', 'Pilot', 'Commander', 'Scientist', 'Doctor', 'Astronaut', 'Mission Specialist', 'Flight Controller', 'Researcher', 'Mechanic', 'Biologist', 'Communications Officer', 'Space Walker'] },
+        { name: 'Submarine', roles: ['Cook', 'Commander', 'Sonar Technician', 'Electronics Technician', 'Sailor', 'Radioman', 'Navigator', 'Mechanic', 'Torpedo Operator', 'Executive Officer', 'Engineer', 'Lookout', 'Weapons Officer', 'Diver', 'Cryptographer'] },
+        { name: 'Supermarket', roles: ['Customer', 'Cashier', 'Butcher', 'Janitor', 'Security Guard', 'Food Sample Demonstrator', 'Shelf Stocker', 'Manager', 'Produce Worker', 'Deli Counter Worker', 'Baker', 'Pharmacist', 'Cart Collector', 'Loss Prevention', 'Assistant Manager'] }
       ],
+      
       modern: [
-        { name: 'Coffee Shop', roles: ['Barista', 'Regular Customer', 'Wi-Fi Freeloader', 'Student', 'Manager', 'Delivery Person', 'Freelancer', 'Tourist'] },
-        { name: 'Gym', roles: ['Personal Trainer', 'Bodybuilder', 'Yoga Instructor', 'Newbie', 'Receptionist', 'Cleaner', 'Athlete', 'Influencer'] },
-        { name: 'Shopping Mall', roles: ['Security Guard', 'Salesperson', 'Shopper', 'Manager', 'Janitor', 'Food Court Worker', 'Lost Child', 'Mystery Shopper'] },
-        { name: 'Tech Startup', roles: ['CEO', 'Developer', 'Designer', 'Intern', 'Investor', 'Marketing Manager', 'Salesperson', 'IT Support'] },
-        { name: 'Spa', roles: ['Masseuse', 'Customer', 'Receptionist', 'Beautician', 'Manager', 'Cleaner', 'VIP Customer', 'Aromatherapist'] }
+        { name: 'Coffee Shop', roles: ['Barista', 'Regular Customer', 'Wi-Fi Freeloader', 'Student', 'Manager', 'Delivery Person', 'Freelancer', 'Tourist', 'Coffee Snob', 'Blogger', 'Remote Worker', 'First Date', 'Book Reader', 'Artist', 'Laptop Warrior'] },
+        { name: 'Gym', roles: ['Personal Trainer', 'Bodybuilder', 'Yoga Instructor', 'Newbie', 'Receptionist', 'Cleaner', 'Athlete', 'Influencer', 'Powerlifter', 'Cardio Enthusiast', 'CrossFit Coach', 'Zumba Teacher', 'Spin Instructor', 'Physical Therapist', 'Protein Shake Guy'] },
+        { name: 'Shopping Mall', roles: ['Security Guard', 'Salesperson', 'Shopper', 'Manager', 'Janitor', 'Food Court Worker', 'Lost Child', 'Mystery Shopper', 'Teenager', 'Kiosk Seller', 'Window Shopper', 'Mall Walker', 'Store Owner', 'Parking Attendant', 'Santa Claus'] },
+        { name: 'Tech Startup', roles: ['CEO', 'Developer', 'Designer', 'Intern', 'Investor', 'Marketing Manager', 'Salesperson', 'IT Support', 'Product Manager', 'UX Researcher', 'Data Analyst', 'Scrum Master', 'DevOps Engineer', 'Growth Hacker', 'Office Dog'] },
+        { name: 'Spa', roles: ['Masseuse', 'Customer', 'Receptionist', 'Beautician', 'Manager', 'Cleaner', 'VIP Customer', 'Aromatherapist', 'Nail Technician', 'Facial Specialist', 'Yoga Teacher', 'Meditation Guide', 'Sauna Attendant', 'Makeup Artist', 'Hot Stone Therapist'] },
+        { name: 'Escape Room', roles: ['Game Master', 'First Timer', 'Pro Player', 'Birthday Guest', 'Team Leader', 'Panicker', 'Actor', 'Owner', 'Tech Support', 'Hint Giver', 'Time Keeper', 'Observer', 'Group Leader', 'Photographer', 'Scared Participant'] },
+        { name: 'Coworking Space', roles: ['Startup Founder', 'Freelancer', 'Remote Worker', 'Receptionist', 'Event Manager', 'Networking Enthusiast', 'Coffee Addict', 'Phone Booth Hog', 'Community Manager', 'Developer', 'Designer', 'Sales Rep', 'Consultant', 'Investor Scout', 'Nap Room User'] },
+        { name: 'Food Truck Festival', roles: ['Food Truck Owner', 'Customer', 'Food Blogger', 'Vendor', 'Street Performer', 'Festival Organizer', 'Health Inspector', 'Musician', 'Line Waiter', 'Photographer', 'Local Chef', 'Food Critic', 'Beer Tent Worker', 'Ticket Seller', 'Lost Tourist'] },
+        { name: 'Podcast Studio', roles: ['Host', 'Co-Host', 'Guest', 'Producer', 'Sound Engineer', 'Intern', 'Sponsor Rep', 'Social Media Manager', 'Listener', 'Fact Checker', 'Editor', 'Music Composer', 'Advertiser', 'Network Executive', 'Fan'] },
+        { name: 'Airbnb', roles: ['Host', 'Guest', 'Cleaner', 'Neighbor', 'Maintenance Person', 'Previous Guest', 'Photographer', 'Property Manager', 'Review Writer', 'Check-in Assistant', 'Long-term Renter', 'Party Thrower', 'Quiet Reader', 'Chef User', 'Remote Worker'] },
+        { name: 'Rock Climbing Gym', roles: ['Instructor', 'Beginner', 'Expert Climber', 'Belayer', 'Manager', 'Route Setter', 'Scared Parent', 'Kid Climber', 'Competitive Athlete', 'Yoga Class Member', 'Equipment Renter', 'Social Climber', 'Boulder Problem Solver', 'Chalk Addict', 'Wall Cleaner'] },
+        { name: 'eSports Arena', roles: ['Pro Gamer', 'Coach', 'Commentator', 'Fan', 'Streamer', 'Sponsor', 'Team Manager', 'Referee', 'Casual Player', 'Tech Support', 'Camera Operator', 'Social Media Manager', 'Snack Vendor', 'Tournament Organizer', 'Spectator'] },
+        { name: 'Pet Store', roles: ['Owner', 'Customer', 'Dog Trainer', 'Aquarium Specialist', 'Groomer', 'Cashier', 'Adoption Counselor', 'Veterinarian', 'Bird Handler', 'Reptile Expert', 'Hamster Buyer', 'Fish Tank Cleaner', 'Pet Food Rep', 'Kid with Parents', 'Cat Lady'] },
+        { name: 'Comic Con', roles: ['Cosplayer', 'Celebrity Guest', 'Vendor', 'Security', 'Panel Moderator', 'Photographer', 'First Timer', 'Hardcore Fan', 'Artist', 'Voice Actor', 'Blogger', 'Autograph Hunter', 'Props Maker', 'Convention Staff', 'Confused Parent'] },
+        { name: 'Brewery', roles: ['Brewmaster', 'Bartender', 'Tour Guide', 'Customer', 'Beer Enthusiast', 'Tasting Room Manager', 'Hop Farmer', 'Quality Control', 'Delivery Driver', 'First Timer', 'IPA Snob', 'Designated Driver', 'Food Truck Partner', 'Brewer Assistant', 'Craft Beer Blogger'] },
+        { name: 'Dog Park', roles: ['Dog Owner', 'Professional Dog Walker', 'Puppy Owner', 'Large Breed Owner', 'Small Dog Owner', 'Ball Thrower', 'Treat Giver', 'Park Regular', 'Dog Trainer', 'Vet', 'Grumpy Owner', 'Social Butterfly', 'Photographer', 'Lost Dog Owner', 'Dog Sitting for Friend'] }
+      ],
+      
+      adult: [
+        { name: 'Strip Club', roles: ['Dancer', 'DJ', 'Bouncer', 'VIP Guest', 'Regular', 'Bachelor Party Guest', 'Bartender', 'Manager', 'Security Guard', 'Waitress', 'Stage Manager', 'First Timer', 'Nervous Friend', 'High Roller', 'Pole Instructor'] },
+        { name: 'Las Vegas Casino', roles: ['High Roller', 'Cocktail Waitress', 'Dealer', 'Poker Pro', 'Drunk Tourist', 'Security', 'Pit Boss', 'Card Counter', 'Elvis Impersonator', 'Newlywed', 'Bachelor', 'Bachelorette', 'Magician', 'Showgirl', 'Loan Shark'] },
+        { name: 'Hookah Lounge', roles: ['Owner', 'Regular', 'First Timer', 'Flavor Expert', 'Bartender', 'DJ', 'Hookah Preparer', 'VIP Guest', 'College Student', 'Date Couple', 'Group Leader', 'Belly Dancer', 'Bouncer', 'Instagram Model', 'Smoke Trick Master'] },
+        { name: 'Gentleman\'s Club', roles: ['Manager', 'Entertainer', 'Bouncer', 'Bachelor', 'Regular Client', 'Waitress', 'Bartender', 'DJ', 'VIP Host', 'Security', 'Photographer', 'First Timer', 'Champagne Room Guest', 'Bottle Service', 'Club Promoter'] },
+        { name: 'Wine Tasting', roles: ['Sommelier', 'Wine Snob', 'First Timer', 'Vineyard Owner', 'Tipsy Guest', 'Designated Spitter', 'Wine Blogger', 'Cheese Pairer', 'Rich Collector', 'Broke College Kid', 'Date Night Couple', 'Tour Guide', 'Winery Manager', 'Barrel Taster', 'Cork Sniffer'] },
+        { name: 'Nightclub', roles: ['DJ', 'Bouncer', 'Bartender', 'VIP Guest', 'Bottle Service Girl', 'Dance Floor Regular', 'Promoter', 'Coat Check', 'Security', 'Birthday Party', 'Bachelorette', 'First Timer', 'Instagram Influencer', 'Drug Dealer', 'Lightweight Drunk'] },
+        { name: 'Bachelor Party', roles: ['Groom', 'Best Man', 'Drunk Friend', 'Responsible One', 'Party Planner', 'Exotic Dancer', 'Limo Driver', 'Bartender', 'Casino Dealer', 'Wingman', 'Photographer', 'Bouncer', 'VIP Host', 'Regretful Attendee', 'Blackout Drunk'] },
+        { name: 'Bachelorette Party', roles: ['Bride', 'Maid of Honor', 'Drunk Bridesmaid', 'Responsible Friend', 'Party Planner', 'Male Stripper', 'Bartender', 'Limo Driver', 'Photographer', 'Instagram Manager', 'Spa Worker', 'Crying Emotional Friend', 'Wild One', 'Mom Friend', 'Ex Boyfriend'] },
+        { name: 'Poker Tournament', roles: ['Pro Player', 'Amateur', 'Dealer', 'Floor Manager', 'Chip Runner', 'Cocktail Waitress', 'Commentator', 'Cameraman', 'Railbird', 'Tournament Director', 'Security', 'Bluffer', 'Tight Player', 'All-in Addict', 'Sponsorship Rep'] },
+        { name: 'Speakeasy Bar', roles: ['Bartender', 'Mixologist', 'Regular', 'First Timer', 'Owner', 'Jazz Singer', 'Bouncer', 'Prohibition Agent', 'Gangster', 'Rich Patron', 'Secret Password Giver', 'Whiskey Connoisseur', 'Date Couple', 'Undercover Cop', 'Bootlegger'] },
+        { name: 'Tattoo Parlor', roles: ['Tattoo Artist', 'Apprentice', 'Customer', 'First Timer', 'Heavily Tattooed Regular', 'Piercer', 'Receptionist', 'Regretful Ex Name Haver', 'Cover-up Seeker', 'Pain Wimp', 'Tough Guy', 'Mom Getting Kid Name', 'Couple Tattoo', 'Gang Member', 'Artist Portfolio Checker'] },
+        { name: 'Music Festival', roles: ['Headliner', 'Opening Act', 'Festival Goer', 'Security', 'Vendor', 'Lost Friend', 'Drug Dealer', 'First Aid', 'VIP Guest', 'Photographer', 'Stage Manager', 'Sound Engineer', 'Crowd Surfer', 'Passed Out Person', 'Pickpocket'] },
+        { name: 'Boxing Gym', roles: ['Boxer', 'Coach', 'Sparring Partner', 'Cutman', 'Manager', 'Ring Girl', 'Referee', 'Promoter', 'First Timer', 'Heavy Bag Hitter', 'Speed Bag Expert', 'Jump Rope Master', 'Intimidating Regular', 'Fitness Boxer', 'Former Pro'] },
+        { name: 'Dive Bar', roles: ['Bartender', 'Regular Drunk', 'Pool Shark', 'Dart Player', 'Jukebox Hog', 'Bouncer', 'Karaoke Singer', 'First Timer', 'Old Timer', 'College Kids', 'Loner', 'Bar Fight Starter', 'Whiskey Drinker', 'Beer Guy', 'Owner'] },
+        { name: 'Swingers Club', roles: ['Regular Member', 'First Timer', 'Curious Couple', 'Single Guy', 'Hostess', 'Bartender', 'Security', 'DJ', 'VIP Member', 'Nervous Newbie', 'Experienced Swinger', 'Voyeur', 'Rules Explainer', 'Coat Check', 'Uncomfortable Guest'] },
+        { name: 'Massage Parlor', roles: ['Masseuse', 'Client', 'Receptionist', 'Manager', 'First Timer', 'Regular', 'Deep Tissue Specialist', 'Hot Stone Therapist', 'Couples Massage Client', 'Sports Massage Client', 'Aromatherapist', 'Reflexologist', 'Nervous Customer', 'Creepy Guy', 'Undercover Cop'] }
+      ],
+      
+      marvel: [
+        { name: 'Avengers Tower', roles: ['Iron Man', 'Captain America', 'Thor', 'Hulk', 'Black Widow', 'Hawkeye', 'Nick Fury', 'Jarvis', 'Pepper Potts', 'War Machine', 'Vision', 'Scarlet Witch', 'Falcon', 'Security Guard', 'Scientist'] },
+        { name: 'Asgard', roles: ['Thor', 'Loki', 'Odin', 'Heimdall', 'Sif', 'Warrior', 'Palace Guard', 'Frost Giant', 'Asgardian Citizen', 'Valkyrie', 'Court Jester', 'Blacksmith', 'Royal Advisor', 'Bifrost Guardian', 'Prisoner'] },
+        { name: 'Wakanda', roles: ['Black Panther', 'Shuri', 'Okoye', 'M\'Baku', 'Nakia', 'W\'Kabi', 'Dora Milaje', 'Wakandan Citizen', 'Scientist', 'Tribal Elder', 'Border Tribe Warrior', 'Merchant', 'Royal Guard', 'Vibranium Miner', 'Jabari Warrior'] },
+        { name: 'X-Mansion', roles: ['Professor X', 'Wolverine', 'Storm', 'Cyclops', 'Jean Grey', 'Beast', 'Rogue', 'Gambit', 'Jubilee', 'Nightcrawler', 'Iceman', 'Student', 'Sentinel', 'Mystique', 'Magneto'] },
+        { name: 'Stark Industries', roles: ['Tony Stark', 'Pepper Potts', 'Happy Hogan', 'Engineer', 'Scientist', 'Security Guard', 'Janitor', 'Intern', 'Board Member', 'PR Manager', 'Weapons Designer', 'AI Programmer', 'Test Pilot', 'Accountant', 'Receptionist'] },
+        { name: 'S.H.I.E.L.D. Helicarrier', roles: ['Nick Fury', 'Maria Hill', 'Phil Coulson', 'Agent', 'Pilot', 'Engineer', 'Medical Officer', 'Communications', 'Weapons Officer', 'Mechanic', 'Scientist', 'Hydra Spy', 'Recruit', 'Captain', 'Radar Operator'] },
+        { name: 'Sanctum Sanctorum', roles: ['Doctor Strange', 'Wong', 'Ancient One', 'Sorcerer', 'Apprentice', 'Librarian', 'Guardian', 'Mystic Arts Student', 'Astral Projector', 'Portal Master', 'Time Stone Keeper', 'Dimension Traveler', 'Kamar-Taj Monk', 'Dark Dimension Entity', 'Zealot'] },
+        { name: 'Knowhere', roles: ['Collector', 'Rocket Raccoon', 'Groot', 'Star-Lord', 'Gamora', 'Drax', 'Mantis', 'Miner', 'Bar Patron', 'Slave', 'Black Market Dealer', 'Bounty Hunter', 'Ravager', 'Tourist', 'Security'] },
+        { name: 'Hydra Base', roles: ['Red Skull', 'Hydra Agent', 'Scientist', 'Winter Soldier', 'Commander', 'Guard', 'Weapons Expert', 'Infiltrator', 'Brainwashed Soldier', 'Mad Scientist', 'Test Subject', 'Strategist', 'Assassin', 'Undercover S.H.I.E.L.D.', 'Zealot'] },
+        { name: 'Daily Bugle', roles: ['J. Jonah Jameson', 'Peter Parker', 'Photographer', 'Reporter', 'Editor', 'Intern', 'Receptionist', 'Fact Checker', 'Copy Editor', 'Layout Designer', 'Columnist', 'Investigative Journalist', 'Coffee Runner', 'IT Guy', 'Security'] },
+        { name: 'Sokovia', roles: ['Scarlet Witch', 'Quicksilver', 'Ultron', 'Refugee', 'Resistance Fighter', 'Civilian', 'Street Vendor', 'Hydra Scientist', 'War Orphan', 'Baron Strucker', 'Enhanced Individual', 'Aid Worker', 'Journalist', 'UN Peacekeeper', 'Evacuee'] },
+        { name: 'Kamar-Taj', roles: ['Ancient One', 'Wong', 'Mordo', 'Apprentice Sorcerer', 'Master', 'Librarian', 'Healer', 'Portal Guardian', 'Time Keeper', 'Astral Plane Guide', 'Meditation Master', 'Weapon Master', 'Student', 'Zealot Spy', 'Dimensional Traveler'] },
+        { name: 'Ravager Ship', roles: ['Yondu', 'Star-Lord', 'Kraglin', 'Taserface', 'Ravager Captain', 'Pilot', 'Gunner', 'Engineer', 'Prisoner', 'New Recruit', 'Cook', 'Mutineer', 'Treasure Hunter', 'Bounty Target', 'Stowaway'] },
+        { name: 'Titan', roles: ['Thanos', 'Gamora', 'Nebula', 'Titan Survivor', 'Black Order Member', 'Chitauri', 'Outrider', 'Sanctuary Guard', 'Mad Titan Worshipper', 'Prisoner', 'Scientist', 'Warlord', 'Sacrificed Soul', 'Resistance Fighter', 'Soul Stone Guardian'] },
+        { name: 'TVA (Time Variance Authority)', roles: ['Loki', 'Mobius', 'Hunter', 'Judge', 'Miss Minutes', 'Analyst', 'Minuteman', 'Variant', 'Time Keeper', 'Receptionist', 'Pruner', 'Clerk', 'Reset Charge Placer', 'Time Theater Operator', 'Void Survivor'] }
+      ],
+      
+      dc: [
+        { name: 'Batcave', roles: ['Batman', 'Robin', 'Alfred', 'Batgirl', 'Nightwing', 'Oracle', 'Commissioner Gordon', 'Lucius Fox', 'Computer System', 'Mechanic', 'Security System', 'Bat-family Member', 'Injured Hero', 'Training Partner', 'Intruder'] },
+        { name: 'Fortress of Solitude', roles: ['Superman', 'Lois Lane', 'Jor-El AI', 'Kryptonian Robot', 'Phantom Zone Prisoner', 'Supergirl', 'Brainiac', 'Krypto', 'Scientist Hologram', 'Intruder', 'Ice Creature', 'Visitor', 'Lex Luthor', 'Jimmy Olsen', 'Time Traveler'] },
+        { name: 'Arkham Asylum', roles: ['Joker', 'Harley Quinn', 'Scarecrow', 'Two-Face', 'Riddler', 'Poison Ivy', 'Mr. Freeze', 'Bane', 'Doctor', 'Guard', 'Nurse', 'Psychiatrist', 'Orderly', 'Visitor', 'Escaped Inmate'] },
+        { name: 'Metropolis', roles: ['Superman', 'Lois Lane', 'Jimmy Olsen', 'Perry White', 'Lex Luthor', 'Citizen', 'Police Officer', 'Daily Planet Reporter', 'Photographer', 'News Anchor', 'Businessman', 'Tourist', 'Superhero Fan', 'Villain', 'LexCorp Employee'] },
+        { name: 'Gotham City', roles: ['Batman', 'Commissioner Gordon', 'Detective', 'Corrupt Cop', 'Mob Boss', 'Street Thug', 'Wayne Enterprises Employee', 'Reporter', 'Vigilante', 'Citizen', 'Crime Scene Investigator', 'GCPD Officer', 'Arkham Escapee', 'District Attorney', 'Informant'] },
+        { name: 'Justice League Watchtower', roles: ['Superman', 'Batman', 'Wonder Woman', 'Flash', 'Green Lantern', 'Aquaman', 'Cyborg', 'Martian Manhunter', 'Monitor Duty', 'Scientist', 'Engineer', 'Medical Officer', 'Security', 'Communications', 'Trainee Hero'] },
+        { name: 'Themyscira', roles: ['Wonder Woman', 'Hippolyta', 'Antiope', 'Amazon Warrior', 'Oracle', 'Blacksmith', 'Healer', 'Trainer', 'Guard', 'Priestess', 'Young Amazon', 'Steve Trevor', 'Intruder', 'Ares', 'Cheetah'] },
+        { name: 'Atlantis', roles: ['Aquaman', 'Mera', 'Ocean Master', 'Atlantean Soldier', 'Palace Guard', 'Royal Advisor', 'Scientist', 'Citizen', 'Black Manta', 'Sea Creature Trainer', 'Priest', 'Ambassador', 'Rebel', 'Surface Dweller', 'Trench Creature'] },
+        { name: 'Central City', roles: ['Flash', 'Iris West', 'Cisco Ramon', 'Caitlin Snow', 'Joe West', 'Harrison Wells', 'S.T.A.R. Labs Scientist', 'Police Officer', 'Speedster Villain', 'Crime Scene Analyst', 'Reporter', 'Citizen', 'Meta-human', 'Time Remnant', 'Speedforce Entity'] },
+        { name: 'LexCorp Tower', roles: ['Lex Luthor', 'Mercy Graves', 'Scientist', 'Security Guard', 'Engineer', 'Board Member', 'Secretary', 'Intern', 'Corporate Spy', 'Weapons Designer', 'Superman Hater', 'Lab Tech', 'Janitor', 'PR Manager', 'Kryptonite Researcher'] },
+        { name: 'Hall of Justice', roles: ['Superman', 'Batman', 'Wonder Woman', 'Aquaman', 'Green Lantern', 'Flash', 'Tour Guide', 'Security', 'Visitor', 'Museum Curator', 'Sidekick', 'News Reporter', 'Young Justice Member', 'Janitor', 'Villain Disguised'] },
+        { name: 'Apokolips', roles: ['Darkseid', 'Desaad', 'Granny Goodness', 'Kalibak', 'Steppenwolf', 'Parademon', 'Female Fury', 'Slave', 'Fire Pit Guard', 'Scientist', 'Warrior', 'Boom Tube Operator', 'Prisoner', 'Lowly', 'New God'] },
+        { name: 'Oa (Green Lantern HQ)', roles: ['Guardian', 'Hal Jordan', 'John Stewart', 'Guy Gardner', 'Kilowog', 'Sinestro', 'Trainee Lantern', 'Alpha Lantern', 'Honor Guard', 'Book of Oa Keeper', 'Scientist', 'Ring Forger', 'Central Battery Guard', 'Ambassador', 'Yellow Lantern Spy'] },
+        { name: 'Smallville', roles: ['Young Clark Kent', 'Martha Kent', 'Jonathan Kent', 'Lana Lang', 'Pete Ross', 'Lex Luthor', 'Farmer', 'High School Student', 'Teacher', 'Sheriff', 'Diner Owner', 'Meteor Mutant', 'Reporter', 'Curious Neighbor', 'Kryptonian Artifact Hunter'] },
+        { name: 'Wayne Manor', roles: ['Bruce Wayne', 'Alfred', 'Dick Grayson', 'Tim Drake', 'Damian Wayne', 'Butler', 'Maid', 'Chef', 'Security Guard', 'Gardener', 'Party Guest', 'Socialite', 'Paparazzi', 'Talia al Ghul', 'League of Assassins Member'] }
+      ],
+      
+      movies: [
+        { name: 'Hogwarts', roles: ['Harry Potter', 'Hermione', 'Ron', 'Dumbledore', 'Snape', 'McGonagall', 'Hagrid', 'Student', 'House Elf', 'Ghost', 'Prefect', 'Quidditch Player', 'Death Eater', 'Professor', 'Malfoy'] },
+        { name: 'The Shire', roles: ['Frodo', 'Sam', 'Merry', 'Pippin', 'Bilbo', 'Gandalf', 'Farmer', 'Innkeeper', 'Hobbit Child', 'Party Guest', 'Gardener', 'Baker', 'Ring Wraith', 'Traveling Dwarf', 'Elf Visitor'] },
+        { name: 'Mordor', roles: ['Sauron', 'Saruman', 'Orc', 'Nazgul', 'Gollum', 'Uruk-hai', 'Tower Guard', 'Eye of Sauron', 'Mouth of Sauron', 'Orc Captain', 'Warg Rider', 'Slave', 'Prisoner', 'Corrupted Man', 'Dark Lord Servant'] },
+        { name: 'Rivendell', roles: ['Elrond', 'Arwen', 'Legolas', 'Elf Warrior', 'Scholar', 'Healer', 'Council Member', 'Musician', 'Ranger', 'Gandalf', 'Visitor', 'Librarian', 'Guard', 'Blacksmith', 'Loremaster'] },
+        { name: 'Death Star', roles: ['Darth Vader', 'Emperor', 'Stormtrooper', 'Imperial Officer', 'Pilot', 'Engineer', 'Prisoner', 'Rebel Spy', 'Gunner', 'Commander', 'Droid', 'Mechanic', 'Admiral', 'Scientist', 'Detention Guard'] },
+        { name: 'Jurassic Park', roles: ['Ian Malcolm', 'Alan Grant', 'Ellie Sattler', 'John Hammond', 'Robert Muldoon', 'Scientist', 'Security Guard', 'Tour Guide', 'Lawyer', 'Veterinarian', 'Computer Programmer', 'Dinosaur Handler', 'Visitor', 'Chef', 'Raptor'] },
+        { name: 'Titanic', roles: ['Jack', 'Rose', 'Cal', 'Captain Smith', 'Molly Brown', 'First Class Passenger', 'Third Class Passenger', 'Crew Member', 'Lookout', 'Violinist', 'Steward', 'Engineer', 'Lifeboat Officer', 'Iceberg Spotter', 'Survivor'] },
+        { name: 'The Matrix', roles: ['Neo', 'Morpheus', 'Trinity', 'Agent Smith', 'Oracle', 'Cypher', 'Tank', 'Dozer', 'Mouse', 'Apoc', 'Switch', 'Architect', 'Keymaker', 'Merovingian', 'Seraph'] },
+        { name: 'Pandora (Avatar)', roles: ['Jake Sully', 'Neytiri', 'Colonel Quaritch', 'Dr. Grace Augustine', 'Na\'vi Warrior', 'Scientist', 'Marine', 'Pilot', 'Ikran Rider', 'Toruk Makto', 'Shaman', 'Omaticaya Clan Member', 'RDA Employee', 'Avatar Driver', 'Thanator'] },
+        { name: 'Gotham (Dark Knight)', roles: ['Batman', 'Joker', 'Harvey Dent', 'Commissioner Gordon', 'Alfred', 'Lucius Fox', 'Rachel Dawes', 'Scarecrow', 'Mob Boss', 'GCPD Officer', 'Corrupt Cop', 'Citizen', 'Bank Robber', 'Hospital Patient', 'Ferry Passenger'] },
+        { name: 'Wonderland', roles: ['Alice', 'Mad Hatter', 'Cheshire Cat', 'Queen of Hearts', 'White Rabbit', 'Caterpillar', 'Tweedledee', 'Tweedledum', 'March Hare', 'Dormouse', 'Card Soldier', 'Talking Flower', 'Mock Turtle', 'Gryphon', 'Jabberwocky'] },
+        { name: 'Shawshank Prison', roles: ['Andy Dufresne', 'Red', 'Warden Norton', 'Captain Hadley', 'Brooks', 'Tommy', 'Bogs', 'Heywood', 'Guard', 'Inmate', 'Librarian', 'New Fish', 'Parole Board', 'Corrupt Guard', 'Innocent Prisoner'] },
+        { name: 'Fight Club Basement', roles: ['Tyler Durden', 'Narrator', 'Marla Singer', 'Bob', 'Fight Club Member', 'New Recruit', 'Bartender', 'Lou', 'Mechanic', 'Waiter', 'Space Monkey', 'Project Mayhem Member', 'Beaten Member', 'First Timer', 'Narrator\'s Boss'] },
+        { name: 'Inception Dream', roles: ['Cobb', 'Arthur', 'Ariadne', 'Eames', 'Yusuf', 'Saito', 'Mal', 'Fischer', 'Extractor', 'Architect', 'Forger', 'Chemist', 'Tourist', 'Projection', 'Dream Security'] },
+        { name: 'Wakanda (Black Panther)', roles: ['T\'Challa', 'Shuri', 'Okoye', 'Nakia', 'M\'Baku', 'W\'Kabi', 'Killmonger', 'Dora Milaje', 'Tribal Elder', 'Border Tribe', 'Merchant Tribe', 'River Tribe', 'Jabari Warrior', 'Scientist', 'Wakandan Citizen'] }
+      ],
+      
+      medieval: [
+        { name: 'Castle Throne Room', roles: ['King', 'Queen', 'Prince', 'Princess', 'Royal Advisor', 'Knight', 'Jester', 'Royal Guard', 'Nobleman', 'Noblewoman', 'Squire', 'Servant', 'Messenger', 'Bard', 'Assassin'] },
+        { name: 'Medieval Tavern', roles: ['Innkeeper', 'Barmaid', 'Drunk Patron', 'Traveling Merchant', 'Bard', 'Knight', 'Thief', 'Gambler', 'Cook', 'Stable Boy', 'Mysterious Hooded Figure', 'Local Drunk', 'Bounty Hunter', 'Peasant', 'Wanted Criminal'] },
+        { name: 'Blacksmith Forge', roles: ['Master Blacksmith', 'Apprentice', 'Knight Customer', 'Weaponsmith', 'Armorer', 'Bellows Operator', 'Metal Merchant', 'Sword Buyer', 'Beggar', 'Thief', 'Noble Customer', 'Royal Armorer', 'Village Blacksmith', 'Swordmaster', 'Coal Deliverer'] },
+        { name: 'Medieval Market', roles: ['Merchant', 'Baker', 'Butcher', 'Fishmonger', 'Fabric Seller', 'Blacksmith', 'Herbalist', 'Pickpocket', 'Town Crier', 'Guard', 'Noble Shopper', 'Peasant', 'Traveling Salesman', 'Street Performer', 'Tax Collector'] },
+        { name: 'Monastery', roles: ['Abbot', 'Monk', 'Novice', 'Scribe', 'Librarian', 'Herbalist', 'Pilgrim', 'Healer', 'Gardener', 'Cook', 'Bell Ringer', 'Illuminator', 'Choir Member', 'Guest', 'Wandering Friar'] },
+        { name: 'Jousting Tournament', roles: ['Champion Knight', 'Challenger', 'Herald', 'Squire', 'King', 'Queen', 'Noble Spectator', 'Peasant Spectator', 'Weapons Master', 'Horse Trainer', 'Tent Master', 'Physician', 'Bard', 'Betting Man', 'Disgraced Knight'] },
+        { name: 'Castle Dungeon', roles: ['Dungeon Master', 'Torturer', 'Guard', 'Prisoner', 'Political Prisoner', 'Thief', 'Traitor', 'Spy', 'Witch', 'Heretic', 'Debtor', 'Executioner', 'Priest', 'Jailer', 'Innocent Victim'] },
+        { name: 'Wizard\'s Tower', roles: ['Wizard', 'Apprentice', 'Familiar', 'Alchemist', 'Scribe', 'Magic Student', 'Librarian', 'Demon', 'Summoned Creature', 'Scholar', 'Potion Maker', 'Spell Caster', 'Tower Guard', 'Visiting Mage', 'Cursed Servant'] },
+        { name: 'Knights\' Barracks', roles: ['Knight Commander', 'Veteran Knight', 'Young Knight', 'Squire', 'Weapons Master', 'Armor Keeper', 'Stable Hand', 'Blacksmith', 'Trainer', 'Page', 'Messenger', 'Healer', 'Cook', 'Guard Captain', 'Disgraced Knight'] },
+        { name: 'Royal Banquet', roles: ['King', 'Queen', 'Jester', 'Bard', 'Cup Bearer', 'Chef', 'Servant', 'Noble Guest', 'Foreign Ambassador', 'Royal Taster', 'Entertainer', 'Juggler', 'Acrobat', 'Poisoner', 'Spy'] },
+        { name: 'Medieval Village', roles: ['Village Elder', 'Blacksmith', 'Baker', 'Farmer', 'Miller', 'Shepherd', 'Peasant', 'Town Guard', 'Priest', 'Healer', 'Innkeeper', 'Beggar', 'Traveling Merchant', 'Tax Collector', 'Witch'] },
+        { name: 'Dragon\'s Lair', roles: ['Dragon', 'Knight Slayer', 'Treasure Hunter', 'Captured Princess', 'Wizard', 'Brave Warrior', 'Scared Squire', 'Kobold', 'Dragon Cultist', 'Cursed Victim', 'Former Hero', 'Gold Hoarding Dragon', 'Cave Explorer', 'Trapped Adventurer', 'Dragon Egg Guardian'] },
+        { name: 'Plague Village', roles: ['Doctor', 'Plague Victim', 'Priest', 'Healer', 'Grave Digger', 'Town Watch', 'Survivor', 'Quarantined Resident', 'Herbalist', 'Merchant', 'Fleeing Noble', 'Desperate Mother', 'Undertaker', 'Witch Hunter', 'Paranoid Villager'] },
+        { name: 'Siege Battlefield', roles: ['King', 'General', 'Knight', 'Archer', 'Foot Soldier', 'Siege Engineer', 'Medic', 'Spy', 'Messenger', 'Squire', 'Catapult Operator', 'Cavalry', 'Supply Runner', 'Wounded Soldier', 'Traitor'] },
+        { name: 'Enchanted Forest', roles: ['Elf', 'Dwarf', 'Fairy', 'Druid', 'Ranger', 'Witch', 'Wizard', 'Forest Guardian', 'Unicorn', 'Centaur', 'Tree Ent', 'Lost Traveler', 'Hunter', 'Bandit', 'Cursed Prince'] }
+      ],
+      
+      websites: [
+        { name: 'Reddit Office', roles: ['Moderator', 'Admin', 'Karma Farmer', 'Troll', 'Lurker', 'Power User', 'Subreddit Creator', 'Bot', 'Downvote Brigade', 'Wholesome Poster', 'Reposter', 'AMA Guest', 'Gilded User', 'Banned User', 'New Redditor'] },
+        { name: 'YouTube Studio', roles: ['YouTuber', 'Video Editor', 'Cameraman', 'Thumbnail Designer', 'Subscriber', 'Hater', 'Copyright Striker', 'Monetization Specialist', 'Comment Moderator', 'Reaction YouTuber', 'Demonetized Creator', 'Algorithm Expert', 'Sponsor', 'Clickbaiter', 'Livestreamer'] },
+        { name: 'Discord Server', roles: ['Server Owner', 'Admin', 'Moderator', 'Bot', 'Active Member', 'Lurker', 'Troll', 'Nitro User', 'Emoji Spammer', 'DM Slider', 'Gamer', 'Music Bot', 'Meme Lord', 'Server Booster', 'Banned User Alt'] },
+        { name: 'TikTok House', roles: ['Famous TikToker', 'Up and Coming Creator', 'Manager', 'Videographer', 'Dancer', 'Comedy Creator', 'Makeup Artist', 'Editor', 'Chef', 'Housekeeper', 'Brand Deal Rep', 'Cancelled Creator', 'Drama Stirrer', 'Backup Dancer', 'Pet Influencer'] },
+        { name: 'Twitter HQ', roles: ['CEO', 'Developer', 'Content Moderator', 'Verified User', 'Ratio\'d User', 'Bot Account', 'Blue Checkmark', 'Trending Topic Starter', 'Reply Guy', 'Quote Tweet Master', 'Canceled User', 'Thread Maker', 'Meme Account', 'News Breaker', 'Troll'] },
+        { name: 'Twitch Stream', roles: ['Streamer', 'Moderator', 'Subscriber', 'Viewer', 'Troll', 'Donator', 'Emote Spammer', 'Lurker', 'Raid Leader', 'Chatter', 'Clip Chimp', 'Hype Man', 'Bot', 'Banned User', 'Bits Donator'] },
+        { name: 'Amazon Warehouse', roles: ['Warehouse Worker', 'Manager', 'Packer', 'Driver', 'Robot', 'Customer Return Processor', 'Quality Control', 'Forklift Operator', 'Scanner', 'Sorter', 'Prime Member', 'Stolen Package', 'Union Organizer', 'Jeff Bezos', 'Delivery Drone'] },
+        { name: 'LinkedIn Office', roles: ['CEO', 'Recruiter', 'Job Seeker', 'Humble Bragger', 'Thought Leader', 'Connection Collector', 'Endorsement Farmer', 'Motivational Speaker', 'Unemployed Graduate', 'Networking Pro', 'Cringe Poster', 'Sales Rep', 'HR Manager', 'Algorithm Gamer', 'Spam Messenger'] },
+        { name: 'Instagram Influencer Shoot', roles: ['Influencer', 'Photographer', 'Makeup Artist', 'Manager', 'Brand Rep', 'Assistant', 'Props Manager', 'Fan', 'Paparazzi', 'Filter Expert', 'Location Scout', 'Videographer', 'Comment Engagement Pod Member', 'Fake Follower Bot', 'Jealous Competitor'] },
+        { name: 'Wikipedia Edit War', roles: ['Admin', 'Editor', 'Vandal', 'Subject Expert', 'Passionate Amateur', 'Citation Needed Guy', 'Revert Warrior', 'Talk Page Debater', 'Bot', 'Banned User', 'Sockpuppet Account', 'Neutral Observer', 'Biased Editor', 'Bureaucrat', 'Stubborn Contributor'] },
+        { name: 'Steam Game Launch', roles: ['Game Developer', 'QA Tester', 'Community Manager', 'Player', 'Hater', 'Review Bomber', 'Early Access Buyer', 'Refund Requester', 'Bug Reporter', 'Streamer', 'Mod Creator', 'Achievement Hunter', 'Forum Troll', 'Discount Waiter', 'Trading Card Farmer'] },
+        { name: 'Netflix Office', roles: ['Content Curator', 'Algorithm Engineer', 'Producer', 'Binge Watcher', 'Show Canceller', 'Password Sharer', 'Subscription Manager', 'Recommendation Bot', 'Documentary Maker', 'Stand-up Comedian', 'Anime Fan', 'Movie Critic', 'Autoplay Hater', 'Original Series Creator', 'Are You Still Watching Person'] },
+        { name: 'OnlyFans', roles: ['Content Creator', 'Subscriber', 'Manager', 'Photographer', 'Editor', 'Top 1% Earner', 'New Creator', 'Catfish', 'Simp', 'Tipper', 'Request Maker', 'DM Responder', 'Free Trial Hunter', 'Leaked Content Reporter', 'Account Manager'] },
+        { name: 'eBay Warehouse', roles: ['Seller', 'Buyer', 'Bidder', 'Scammer', 'Power Seller', 'Feedback Farmer', 'Shipping Manager', 'Auction Sniper', 'Returns Processor', 'Collector', 'Reseller', 'Non-Payer', 'Dispute Filer', 'Rare Item Hunter', 'Vintage Seller'] },
+        { name: 'Spotify Office', roles: ['Playlist Curator', 'Artist', 'Podcast Host', 'Algorithm Engineer', 'Listener', 'Premium User', 'Ad Skipper', 'Discover Weekly Fan', 'Wrapped Sharer', 'Family Plan Moocher', 'Indie Artist', 'Top 0.01% Fan', 'Shuffle Hater', 'Lyrics Reader', 'Queue Manager'] }
+      ],
+      
+      popculture: [
+        { name: 'Squid Game', roles: ['Player 456', 'Player 001', 'VIP Guest', 'Front Man', 'Guard', 'Game Master', 'Desperate Player', 'Strategic Player', 'Scared Player', 'Betrayer', 'Alliance Member', 'Old Player', 'Young Player', 'Marble Game Partner', 'Glass Bridge Walker'] },
+        { name: 'The Office', roles: ['Michael Scott', 'Dwight', 'Jim', 'Pam', 'Angela', 'Kevin', 'Oscar', 'Stanley', 'Phyllis', 'Ryan', 'Kelly', 'Toby', 'Creed', 'Intern', 'Regional Manager'] },
+        { name: 'Friends Apartment', roles: ['Rachel', 'Ross', 'Monica', 'Chandler', 'Joey', 'Phoebe', 'Gunther', 'Janice', 'Central Perk Customer', 'Ugly Naked Guy', 'Neighbor', 'Guest Star', 'Roommate', 'Date', 'Smelly Cat'] },
+        { name: 'Stranger Things', roles: ['Eleven', 'Mike', 'Dustin', 'Lucas', 'Will', 'Joyce', 'Hopper', 'Steve', 'Demogorgon', 'Mind Flayer', 'Dr. Brenner', 'Lab Experiment', 'Hawkins Resident', 'Upside Down Creature', 'D&D Player'] },
+        { name: 'Among Us Ship', roles: ['Crewmate', 'Imposter', 'Engineer', 'Scientist', 'Guardian Angel', 'Shapeshifter', 'AFK Player', 'Task Doer', 'Emergency Button Presser', 'Vent User', 'Security Camera Watcher', 'Medbay Scanner', 'Electrical Fixer', 'Sus Person', 'Dead Body Reporter'] },
+        { name: 'Minecraft World', roles: ['Steve', 'Alex', 'Creeper', 'Enderman', 'Villager', 'Zombie', 'Skeleton', 'Builder', 'Miner', 'Farmer', 'Redstone Engineer', 'Speedrunner', 'PvP Player', 'Noob', 'Ender Dragon'] },
+        { name: 'Fortnite Battle', roles: ['Default Skin', 'Sweat', 'Bot', 'Streamer', 'Squad Leader', 'Sniper', 'Builder', 'Bush Camper', 'Storm Runner', 'Loot Goblin', 'Emote Dancer', 'Skin Collector', 'No Skin', 'Try Hard', 'AFK Player'] },
+        { name: 'Breaking Bad RV', roles: ['Walter White', 'Jesse Pinkman', 'DEA Agent', 'Cartel Member', 'Rival Cook', 'Customer', 'Supplier', 'Cleanup Crew', 'Lawyer', 'Informant', 'Hank', 'Gus', 'Mike', 'Junkie', 'Witness'] },
+        { name: 'Game of Thrones', roles: ['Jon Snow', 'Daenerys', 'Tyrion', 'Cersei', 'Jaime', 'Arya', 'Sansa', 'White Walker', 'Dragon', 'Maester', 'Knight', 'Wildling', 'Lord', 'Assassin', 'King\'s Guard'] },
+        { name: 'SpongeBob\'s Bikini Bottom', roles: ['SpongeBob', 'Patrick', 'Squidward', 'Mr. Krabs', 'Sandy', 'Plankton', 'Karen', 'Gary', 'Mrs. Puff', 'Pearl', 'Larry', 'Krusty Krab Customer', 'Jellyfish', 'Mermaid Man', 'Barnacle Boy'] },
+        { name: 'Marvel Snap', roles: ['Iron Man', 'Captain America', 'Hulk', 'Thor', 'Black Widow', 'Spider-Man', 'Doctor Strange', 'Loki', 'Thanos', 'Galactus', 'Destroyer', 'Cosmo', 'Shang-Chi', 'She-Hulk', 'Devil Dinosaur'] },
+        { name: 'Wednesday Addams School', roles: ['Wednesday', 'Enid', 'Xavier', 'Bianca', 'Tyler', 'Principal Weems', 'Outcast Student', 'Normie Student', 'Monster', 'Sheriff', 'Therapist', 'Teacher', 'Goth Student', 'Siren', 'Werewolf'] },
+        { name: 'Ted Lasso Locker Room', roles: ['Ted Lasso', 'Coach Beard', 'Roy Kent', 'Jamie Tartt', 'Keeley', 'Rebecca', 'Nathan', 'Sam', 'Dani Rojas', 'Isaac', 'Colin', 'Will', 'Trent Crimm', 'Rupert', 'Dr. Sharon'] },
+        { name: 'Last of Us', roles: ['Joel', 'Ellie', 'Clicker', 'Bloater', 'Survivor', 'Firefly', 'FEDRA Soldier', 'Infected', 'Smuggler', 'Scavenger', 'Doctor', 'Hunter', 'Tommy', 'Tess', 'Resistance Fighter'] },
+        { name: 'Yellowstone Ranch', roles: ['John Dutton', 'Beth', 'Kayce', 'Rip', 'Jamie', 'Cowboy', 'Ranch Hand', 'Horse Trainer', 'Livestock Agent', 'Native American', 'Land Developer', 'Governor', 'Lawyer', 'Branded Worker', 'Journalist'] }
       ]
     };
 
     // Get locations from selected pack
     let locations;
     if (locationPack === 'random' || !locationPacks[locationPack]) {
-      locations = [...locationPacks.classic, ...locationPacks.modern];
+      // Combine all location packs
+      locations = Object.values(locationPacks).flat();
     } else {
       locations = locationPacks[locationPack];
     }
@@ -616,9 +762,23 @@ io.on('connection', (socket) => {
     // Pick random location
     const location = locations[Math.floor(Math.random() * locations.length)];
     
-    // Randomly select spy
-    const spyIndex = Math.floor(Math.random() * room.players.length);
-    const spyId = room.players[spyIndex].id;
+    // Randomly select spy(ies)
+    let spyIndices = [];
+    if (twoSpies && room.players.length >= 5) {
+      // Pick 2 different random indices for spies
+      const firstSpyIndex = Math.floor(Math.random() * room.players.length);
+      let secondSpyIndex;
+      do {
+        secondSpyIndex = Math.floor(Math.random() * room.players.length);
+      } while (secondSpyIndex === firstSpyIndex);
+      spyIndices = [firstSpyIndex, secondSpyIndex];
+    } else {
+      // Single spy mode
+      spyIndices = [Math.floor(Math.random() * room.players.length)];
+    }
+    
+    const spyIds = spyIndices.map(idx => room.players[idx].id);
+    const spyNames = spyIndices.map(idx => room.players[idx].name);
     
     // Shuffle roles
     const shuffledRoles = [...location.roles].sort(() => Math.random() - 0.5);
@@ -627,8 +787,11 @@ io.on('connection', (socket) => {
     room.gameData = {
       location: location.name,
       locationPack: locationPack,
-      spyId: spyId,
-      spyName: room.players[spyIndex].name,
+      spies: spyIds, // Array of spy IDs
+      spyId: spyIds[0], // For backwards compatibility
+      spyName: spyNames[0], // For backwards compatibility
+      spyNames: spyNames,
+      twoSpies: twoSpies,
       votes: {},
       currentTurnIndex: 0,
       phase: 'role-reveal', // phases: role-reveal, question, voting, results
@@ -637,7 +800,7 @@ io.on('connection', (socket) => {
     
     // Store role assignments by player name
     room.players.forEach((player, index) => {
-      const isSpy = index === spyIndex;
+      const isSpy = spyIndices.includes(index);
       room.gameData.roleAssignments[player.name] = {
         role: isSpy ? 'spy' : 'player',
         location: isSpy ? null : location.name,
@@ -646,7 +809,7 @@ io.on('connection', (socket) => {
       };
     });
     
-    console.log(`Spyfall game initialized in room ${room.code}. Location: ${location.name}, Spy: ${room.gameData.spyName}`);
+    console.log(`Spyfall game initialized in room ${room.code}. Location: ${location.name}, Spies: ${spyNames.join(', ')}, Two Spies Mode: ${twoSpies}`);
   }
 
   // NEXT TURN (for Spyfall)
@@ -902,9 +1065,11 @@ io.on('connection', (socket) => {
       }
     });
     
-    // Determine if spy was caught
-    const spyPlayer = room.players.find(p => p.name === room.gameData.spyName);
-    const spyCaught = votedOutPlayerId === (spyPlayer ? spyPlayer.id : room.gameData.spyId);
+    // Determine if spy(ies) was/were caught
+    const spyPlayers = room.gameData.spies.map(spyId => 
+      room.players.find(p => p.id === spyId) || { name: 'Unknown' }
+    );
+    const spyCaught = room.gameData.spies.includes(votedOutPlayerId);
     const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
     
     room.gameData.phase = 'results';
@@ -915,10 +1080,12 @@ io.on('connection', (socket) => {
     // Send results to all players
     io.to(room.code).emit('game-results', {
       spyCaught: spyCaught,
-      spy: spyPlayer,
+      spies: spyPlayers,
+      spy: spyPlayers[0], // For backwards compatibility
       votedOut: votedOutPlayer,
       location: room.gameData.location,
-      voteCounts: voteCounts
+      voteCounts: voteCounts,
+      twoSpies: room.gameData.twoSpies
     });
   }
 
