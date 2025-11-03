@@ -113,7 +113,7 @@
             border-radius: 20px;
             box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
             padding: 2.5rem;
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
         }
 
@@ -302,7 +302,7 @@
         }
 
         .category-section {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             text-align: left;
         }
 
@@ -339,6 +339,78 @@
 
         .category-select option {
             padding: 0.5rem;
+        }
+
+        /* Location Preview */
+        .location-preview {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .location-preview h4 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+            color: #667eea;
+        }
+
+        body.spyfall .location-preview h4 {
+            color: #f5576c;
+        }
+
+        .location-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .location-tag {
+            background: white;
+            border: 2px solid #000;
+            border-radius: 5px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Two Spies Checkbox */
+        .two-spies-section {
+            margin-bottom: 1.5rem;
+            text-align: left;
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .checkbox-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
         }
 
         .min-players-warning {
@@ -414,6 +486,8 @@
             max-width: 500px;
             box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
             animation: slideDown 0.3s;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         @keyframes slideDown {
@@ -497,25 +571,30 @@
         }
 
         /* Scrollbar Styling */
-        .players-list::-webkit-scrollbar {
+        .players-list::-webkit-scrollbar,
+        .location-preview::-webkit-scrollbar {
             width: 8px;
         }
 
-        .players-list::-webkit-scrollbar-track {
+        .players-list::-webkit-scrollbar-track,
+        .location-preview::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 10px;
         }
 
-        .players-list::-webkit-scrollbar-thumb {
+        .players-list::-webkit-scrollbar-thumb,
+        .location-preview::-webkit-scrollbar-thumb {
             background: #667eea;
             border-radius: 10px;
         }
 
-        body.spyfall .players-list::-webkit-scrollbar-thumb {
+        body.spyfall .players-list::-webkit-scrollbar-thumb,
+        body.spyfall .location-preview::-webkit-scrollbar-thumb {
             background: #f5576c;
         }
 
-        .players-list::-webkit-scrollbar-thumb:hover {
+        .players-list::-webkit-scrollbar-thumb:hover,
+        .location-preview::-webkit-scrollbar-thumb:hover {
             background: #764ba2;
         }
 
@@ -589,9 +668,26 @@
                 <!-- Category Selection -->
                 <div class="category-section" id="categorySection">
                     <label for="gameCategory" class="category-label" id="categoryLabel">Choose Category:</label>
-                    <select id="gameCategory" class="category-select">
+                    <select id="gameCategory" class="category-select" onchange="updateLocationPreview()">
                         <!-- Options will be populated by JavaScript based on game type -->
                     </select>
+                    
+                    <!-- Location Preview -->
+                    <div id="locationPreview" class="location-preview" style="display: none;">
+                        <h4>Locations in this pack:</h4>
+                        <div id="locationList" class="location-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Two Spies Option (Spyfall only) -->
+                <div class="two-spies-section" id="twoSpiesSection" style="display: none;">
+                    <label class="checkbox-container" for="twoSpiesCheckbox">
+                        <input type="checkbox" id="twoSpiesCheckbox">
+                        <span class="checkbox-label">🕵️ Two Spies Mode</span>
+                    </label>
+                    <div class="checkbox-description">
+                        Make the game harder with 2 spies! (Requires 5+ players)
+                    </div>
                 </div>
                 
                 <div class="min-players-warning" id="minPlayersWarning">
@@ -622,7 +718,6 @@
 
     <!-- Socket.io Client -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
     <script>
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL);
@@ -634,9 +729,22 @@
         
         // Game state
         let isHost = false;
-        let gameType = null;
+        let gameType = localStorage.getItem('tempGameType') || null; // Try to get game type from storage first
         let currentRoom = null;
-
+        
+        // Location packs data for previews
+        const locationPacks = {
+            classic: ['Airport', 'Bank', 'Beach', 'Casino', 'Cathedral', 'Circus', 'Hospital', 'Hotel', 'Military Base', 'Movie Studio', 'Ocean Liner', 'Passenger Train', 'Pirate Ship', 'Polar Station', 'Police Station', 'Restaurant', 'School', 'Space Station', 'Submarine', 'Supermarket'],
+            modern: ['Coffee Shop', 'Gym', 'Shopping Mall', 'Tech Startup', 'Spa', 'Escape Room', 'Coworking Space', 'Food Truck Festival', 'Podcast Studio', 'Airbnb', 'Rock Climbing Gym', 'eSports Arena', 'Pet Store', 'Comic Con', 'Brewery', 'Dog Park'],
+            adult: ['Strip Club', 'Las Vegas Casino', 'Hookah Lounge', 'Gentleman\'s Club', 'Wine Tasting', 'Nightclub', 'Bachelor Party', 'Bachelorette Party', 'Poker Tournament', 'Speakeasy Bar', 'Tattoo Parlor', 'Music Festival', 'Boxing Gym', 'Dive Bar', 'Swingers Club', 'Massage Parlor'],
+            marvel: ['Avengers Tower', 'Asgard', 'Wakanda', 'X-Mansion', 'Stark Industries', 'S.H.I.E.L.D. Helicarrier', 'Sanctum Sanctorum', 'Knowhere', 'Hydra Base', 'Daily Bugle', 'Sokovia', 'Kamar-Taj', 'Ravager Ship', 'Titan', 'TVA'],
+            dc: ['Batcave', 'Fortress of Solitude', 'Arkham Asylum', 'Metropolis', 'Gotham City', 'Justice League Watchtower', 'Themyscira', 'Atlantis', 'Central City', 'LexCorp Tower', 'Hall of Justice', 'Apokolips', 'Oa', 'Smallville', 'Wayne Manor'],
+            movies: ['Hogwarts', 'The Shire', 'Mordor', 'Rivendell', 'Death Star', 'Jurassic Park', 'Titanic', 'The Matrix', 'Pandora', 'Gotham', 'Wonderland', 'Shawshank Prison', 'Fight Club Basement', 'Inception Dream', 'Wakanda'],
+            medieval: ['Castle Throne Room', 'Medieval Tavern', 'Blacksmith Forge', 'Medieval Market', 'Monastery', 'Jousting Tournament', 'Castle Dungeon', 'Wizard\'s Tower', 'Knights\' Barracks', 'Royal Banquet', 'Medieval Village', 'Dragon\'s Lair', 'Plague Village', 'Siege Battlefield', 'Enchanted Forest'],
+            websites: ['Reddit Office', 'YouTube Studio', 'Discord Server', 'TikTok House', 'Twitter HQ', 'Twitch Stream', 'Amazon Warehouse', 'LinkedIn Office', 'Instagram Influencer Shoot', 'Wikipedia Edit War', 'Steam Game Launch', 'Netflix Office', 'OnlyFans', 'eBay Warehouse', 'Spotify Office'],
+            popculture: ['Squid Game', 'The Office', 'Friends Apartment', 'Stranger Things', 'Among Us Ship', 'Minecraft World', 'Fortnite Battle', 'Breaking Bad RV', 'Game of Thrones', 'SpongeBob\'s Bikini Bottom', 'Marvel Snap', 'Wednesday Addams School', 'Ted Lasso Locker Room', 'Last of Us', 'Yellowstone Ranch']
+        };
+        
         // Game configurations
         const gameConfigs = {
             'imposter': {
@@ -667,6 +775,7 @@
                         <li><strong>Phase 1:</strong> Everyone gives a one-word clue about the secret word</li>
                         <li>The Imposter must blend in without knowing the word!</li>
                         <li><strong>Phase 2:</strong> Vote on who you think is the Imposter</li>
+                        <li>You can skip to the next round in rounds 1 & 2 if majority votes to skip</li>
                     </ul>
                     <h3>Winning:</h3>
                     <ul>
@@ -675,21 +784,30 @@
                     </ul>
                 `,
                 bodyClass: '',
-                gameFile: 'game-imposter.html'
+                gameFile: 'game-imposter.html',
+                showLocationPreview: false,
+                showTwoSpies: false
             },
             'spyfall': {
                 title: 'SPYFALL',
                 categoryLabel: 'Choose Location Pack:',
                 categories: [
-                    { value: 'classic', text: '🎭 Classic Locations' },
-                    { value: 'modern', text: '☕ Modern Locations' },
-                    { value: 'random', text: '🎲 Random (All Locations)' }
+                    { value: 'random', text: '🎲 Random (All Locations)' },
+                    { value: 'classic', text: '🎭 Classic (20 Locations)' },
+                    { value: 'modern', text: '☕ Modern Life (16 Locations)' },
+                    { value: 'adult', text: '🔞 Adult Only (16 Locations)' },
+                    { value: 'marvel', text: '⚡ Marvel Universe (15 Locations)' },
+                    { value: 'dc', text: '🦇 DC Universe (15 Locations)' },
+                    { value: 'movies', text: '🎬 Movies & Shows (15 Locations)' },
+                    { value: 'medieval', text: '⚔️ Medieval Times (15 Locations)' },
+                    { value: 'websites', text: '💻 Popular Websites (15 Locations)' },
+                    { value: 'popculture', text: '📺 Pop Culture (15 Locations)' }
                 ],
                 howToPlay: `
                     <p><strong>Objective:</strong> Find the spy among you!</p>
                     <h3>Game Setup:</h3>
                     <ul>
-                        <li>One player is randomly selected as the <strong>Spy</strong></li>
+                        <li>One (or two) players are randomly selected as the <strong>Spy</strong></li>
                         <li>All other players know the location and have specific roles</li>
                         <li>The Spy doesn't know the location</li>
                     </ul>
@@ -700,6 +818,12 @@
                         <li>Players try to find the spy without making the location obvious</li>
                         <li><strong>Voting:</strong> Everyone votes on who they think is the Spy</li>
                     </ul>
+                    <h3>Two Spies Mode:</h3>
+                    <ul>
+                        <li>Enable for extra difficulty! Two spies work together</li>
+                        <li>Requires at least 5 players</li>
+                        <li>Both spies must be caught to win</li>
+                    </ul>
                     <h3>Winning:</h3>
                     <ul>
                         <li><strong>Players win</strong> if they correctly vote out the Spy</li>
@@ -707,11 +831,21 @@
                     </ul>
                 `,
                 bodyClass: 'spyfall',
-                gameFile: 'game-spyfall.html'
+                gameFile: 'game-spyfall.html',
+                showLocationPreview: true,
+                showTwoSpies: true
             }
         };
+        
+        // Apply initial game type styling if we have it
+        if (gameType) {
+            const config = gameConfigs[gameType];
+            if (config) {
+                applyGameStyling(config);
+            }
+        }
 
-        console.log('Waiting room initialized:', { roomCode, playerName });
+        console.log('Waiting room initialized:', { roomCode, playerName, gameType });
         
         // Save to localStorage
         if (roomCode) localStorage.setItem('roomCode', roomCode);
@@ -724,6 +858,13 @@
         }
         
         document.getElementById('roomCode').textContent = roomCode;
+
+        function applyGameStyling(config) {
+            document.getElementById('gameTitle').textContent = config.title;
+            document.getElementById('gameTitle').className = `game-title ${config.bodyClass}`;
+            document.getElementById('roomCode').className = `room-code ${config.bodyClass}`;
+            document.body.className = config.bodyClass;
+        }
 
         // Socket connection
         socket.on('connect', () => {
@@ -817,15 +958,22 @@
             currentRoom = room;
             gameType = room.gameType;
             
+            // Store game type in localStorage for reconnections
+            localStorage.setItem('tempGameType', gameType);
+            
             // Update game type display
             const config = gameConfigs[gameType] || gameConfigs['imposter'];
-            document.getElementById('gameTitle').textContent = config.title;
-            document.getElementById('gameTitle').className = `game-title ${config.bodyClass}`;
-            document.getElementById('roomCode').className = `room-code ${config.bodyClass}`;
-            document.body.className = config.bodyClass;
+            applyGameStyling(config);
             
             // Populate category dropdown
             populateCategoryDropdown(config);
+            
+            // Show/hide two spies option
+            if (config.showTwoSpies) {
+                document.getElementById('twoSpiesSection').style.display = 'block';
+            } else {
+                document.getElementById('twoSpiesSection').style.display = 'none';
+            }
             
             // Check if I'm the host
             const myPlayer = room.players.find(p => p.name === playerName);
@@ -855,6 +1003,40 @@
                 option.textContent = cat.text;
                 select.appendChild(option);
             });
+            
+            // Update location preview if needed
+            if (config.showLocationPreview) {
+                updateLocationPreview();
+            }
+        }
+
+        // Update location preview (for Spyfall)
+        function updateLocationPreview() {
+            const config = gameConfigs[gameType];
+            if (!config || !config.showLocationPreview) return;
+            
+            const category = document.getElementById('gameCategory').value;
+            const preview = document.getElementById('locationPreview');
+            const locationList = document.getElementById('locationList');
+            
+            if (category === 'random') {
+                // Show all locations
+                preview.style.display = 'block';
+                locationList.innerHTML = '<div style="color: #666; font-style: italic;">All locations from all packs will be used</div>';
+            } else if (locationPacks[category]) {
+                // Show locations for this pack
+                preview.style.display = 'block';
+                locationList.innerHTML = '';
+                
+                locationPacks[category].forEach(location => {
+                    const tag = document.createElement('span');
+                    tag.className = 'location-tag';
+                    tag.textContent = location;
+                    locationList.appendChild(tag);
+                });
+            } else {
+                preview.style.display = 'none';
+            }
         }
 
         // Update players list UI
@@ -865,6 +1047,7 @@
             const playerCountDisplay = document.getElementById('playerCountDisplay');
             const startBtn = document.getElementById('startBtn');
             const minPlayersWarning = document.getElementById('minPlayersWarning');
+            const twoSpiesCheckbox = document.getElementById('twoSpiesCheckbox');
             
             if (!players || players.length === 0) {
                 console.warn('No players to display');
@@ -925,6 +1108,16 @@
                     startBtn.disabled = true;
                     minPlayersWarning.style.display = 'block';
                 }
+                
+                // Disable two spies checkbox if less than 5 players
+                if (twoSpiesCheckbox) {
+                    if (players.length < 5) {
+                        twoSpiesCheckbox.checked = false;
+                        twoSpiesCheckbox.disabled = true;
+                    } else {
+                        twoSpiesCheckbox.disabled = false;
+                    }
+                }
             }
         }
 
@@ -943,11 +1136,14 @@
         function startGame() {
             if (confirm('Start the game now? All players will be taken to the game screen.')) {
                 const category = document.getElementById('gameCategory').value;
-                console.log('Starting game with category:', category);
+                const twoSpies = document.getElementById('twoSpiesCheckbox').checked;
+                
+                console.log('Starting game with category:', category, 'twoSpies:', twoSpies);
                 
                 socket.emit('start-game', {
                     roomCode: roomCode,
-                    category: category
+                    category: category,
+                    twoSpies: twoSpies
                 });
             }
         }
