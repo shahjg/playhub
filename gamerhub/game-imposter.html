@@ -625,6 +625,104 @@
             font-size: 0.9rem;
         }
 
+        /* Custom Confirmation Modal */
+        .custom-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .custom-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .custom-modal-content {
+            position: relative;
+            background: white;
+            border: 4px solid #000;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .custom-modal-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            color: #667eea;
+        }
+
+        .custom-modal-body {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        .custom-modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .custom-modal-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            padding: 0.75rem 2rem;
+            border: 3px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .custom-modal-btn.cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .custom-modal-btn.confirm {
+            background: #667eea;
+            color: white;
+        }
+
+        .custom-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .game-card {
@@ -645,6 +743,14 @@
 
             .players-voting-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .custom-modal-actions {
+                flex-direction: column;
+            }
+
+            .custom-modal-btn {
+                width: 100%;
             }
         }
 
@@ -819,6 +925,21 @@
         <div>© 2024 PlayHub. All games free forever.</div>
     </footer>
 
+    <!-- Custom Confirmation Modal -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-overlay" onclick="closeCustomModal()"></div>
+        <div class="custom-modal-content">
+            <div class="custom-modal-header" id="customModalTitle">Confirm</div>
+            <div class="custom-modal-body" id="customModalMessage">
+                Are you sure?
+            </div>
+            <div class="custom-modal-actions">
+                <button class="custom-modal-btn cancel" onclick="closeCustomModal()">Cancel</button>
+                <button class="custom-modal-btn confirm" onclick="confirmCustomModal()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Socket.io Client -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
@@ -842,9 +963,38 @@
         let currentRound = 1;
         let hasVotedToSkip = false;
         let skipVoteCount = 0;
+        let modalCallback = null;
         
         // Timer tracking
         let activeTimers = {};
+
+        // Custom Modal System
+        function showCustomModal(title, message, onConfirm, showCancel = true) {
+            document.getElementById('customModalTitle').textContent = title;
+            document.getElementById('customModalMessage').textContent = message;
+            document.getElementById('customModal').style.display = 'flex';
+            
+            const cancelBtn = document.getElementById('customModalCancel');
+            if (showCancel) {
+                cancelBtn.style.display = 'inline-block';
+            } else {
+                cancelBtn.style.display = 'none';
+            }
+            
+            modalCallback = onConfirm;
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').style.display = 'none';
+            modalCallback = null;
+        }
+
+        function confirmCustomModal() {
+            if (modalCallback) {
+                modalCallback();
+            }
+            closeCustomModal();
+        }
         
         // Clear all active timers
         function clearAllTimers() {
@@ -924,16 +1074,21 @@
             // Reset progress
             updateClueProgress(0, totalPlayers);
             
-            // Show notification
-            alert(`Majority voted to skip! Starting Round ${data.round}...`);
-            
-            // Brief role reminder (1 second only)
-            showRoleReveal();
-            
-            // Then immediately start clue phase for new round
-            setTimeout(() => {
-                showCluePhase(60, data.round);
-            }, 1000); // Shortened from 3 seconds to 1 second
+            // Show notification via custom modal
+            showCustomModal(
+                'Round Skipped',
+                `Majority voted to skip! Starting Round ${data.round}...`,
+                () => {
+                    // Brief role reminder (1 second only)
+                    showRoleReveal();
+                    
+                    // Then immediately start clue phase for new round
+                    setTimeout(() => {
+                        showCluePhase(60, data.round);
+                    }, 1000);
+                },
+                false // No cancel button
+            );
         });
 
         // Clue submitted by someone
@@ -983,7 +1138,7 @@
         // Error handling
         socket.on('error', (data) => {
             console.error('Socket error:', data);
-            alert(data.message);
+            showCustomModal('Error', data.message, () => {}, false);
         });
 
         // Show role reveal phase
@@ -1066,13 +1221,13 @@
             const clue = clueInput.value.trim().toUpperCase();
 
             if (!clue) {
-                alert('Please enter a clue!');
+                showCustomModal('Enter Clue', 'Please enter a clue!', () => {}, false);
                 return;
             }
 
             // Check if it's a single word
             if (clue.split(' ').length > 1) {
-                alert('Only one word allowed!');
+                showCustomModal('One Word Only', 'Only one word allowed!', () => {}, false);
                 return;
             }
 
@@ -1224,7 +1379,7 @@
         // Vote to skip to next round
         function voteToSkip() {
             if (hasVotedToSkip) {
-                alert('You already voted to skip!');
+                showCustomModal('Already Voted', 'You already voted to skip!', () => {}, false);
                 return;
             }
 
@@ -1263,7 +1418,7 @@
         // Submit vote
         function submitVote() {
             if (!selectedVotePlayerId) {
-                alert('Please select a player to vote for!');
+                showCustomModal('Select Player', 'Please select a player to vote for!', () => {}, false);
                 return;
             }
 
@@ -1399,9 +1554,15 @@
             document.getElementById('resultsPhase').classList.add('hidden');
         }
 
-        // Return to lobby
+        // Return to lobby - WITH CUSTOM MODAL
         function returnToLobby() {
-            window.location.href = `waiting-room.html?room=${roomCode}`;
+            showCustomModal(
+                'Return to Lobby',
+                'Return to the waiting room? The game will end for you.',
+                () => {
+                    window.location.href = `waiting-room.html?room=${roomCode}`;
+                }
+            );
         }
 
         // Handle browser close
