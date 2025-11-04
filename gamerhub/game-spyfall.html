@@ -672,6 +672,104 @@
             border-radius: 10px;
         }
 
+        /* Custom Confirmation Modal */
+        .custom-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .custom-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .custom-modal-content {
+            position: relative;
+            background: white;
+            border: 4px solid #000;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .custom-modal-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            color: #f5576c;
+        }
+
+        .custom-modal-body {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        .custom-modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .custom-modal-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            padding: 0.75rem 2rem;
+            border: 3px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .custom-modal-btn.cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .custom-modal-btn.confirm {
+            background: #f5576c;
+            color: white;
+        }
+
+        .custom-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .container {
@@ -714,6 +812,14 @@
 
             .location-sidebar {
                 max-height: 300px;
+            }
+
+            .custom-modal-actions {
+                flex-direction: column;
+            }
+
+            .custom-modal-btn {
+                width: 100%;
             }
         }
     </style>
@@ -876,6 +982,21 @@
         <div>© 2024 PlayHub. All games free forever.</div>
     </footer>
 
+    <!-- Custom Confirmation Modal -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-overlay" onclick="closeCustomModal()"></div>
+        <div class="custom-modal-content">
+            <div class="custom-modal-header" id="customModalTitle">Confirm</div>
+            <div class="custom-modal-body" id="customModalMessage">
+                Are you sure?
+            </div>
+            <div class="custom-modal-actions">
+                <button class="custom-modal-btn cancel" onclick="closeCustomModal()">Cancel</button>
+                <button class="custom-modal-btn confirm" onclick="confirmCustomModal()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Socket.io Client -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
@@ -900,6 +1021,7 @@
         let currentTurnIndex = 0;
         let locationPack = 'classic';
         let crossedOffLocations = new Set();
+        let modalCallback = null;
         
         // Timer tracking
         let activeTimers = {};
@@ -917,6 +1039,34 @@
             popculture: ['Squid Game', 'The Office', 'Friends Apartment', 'Stranger Things', 'Among Us Ship', 'Minecraft World', 'Fortnite Battle', 'Breaking Bad RV', 'Game of Thrones', 'SpongeBob\'s Bikini Bottom', 'Marvel Snap', 'Wednesday Addams School', 'Ted Lasso Locker Room', 'Last of Us', 'Yellowstone Ranch']
         };
         
+        // Custom Modal System
+        function showCustomModal(title, message, onConfirm, showCancel = true) {
+            document.getElementById('customModalTitle').textContent = title;
+            document.getElementById('customModalMessage').textContent = message;
+            document.getElementById('customModal').style.display = 'flex';
+            
+            const cancelBtn = document.getElementById('customModalCancel');
+            if (showCancel) {
+                cancelBtn.style.display = 'inline-block';
+            } else {
+                cancelBtn.style.display = 'none';
+            }
+            
+            modalCallback = onConfirm;
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').style.display = 'none';
+            modalCallback = null;
+        }
+
+        function confirmCustomModal() {
+            if (modalCallback) {
+                modalCallback();
+            }
+            closeCustomModal();
+        }
+
         // Clear all active timers
         function clearAllTimers() {
             Object.keys(activeTimers).forEach(timerId => {
@@ -1025,7 +1175,7 @@
         // Error handling
         socket.on('error', (data) => {
             console.error('Socket error:', data);
-            alert(data.message);
+            showCustomModal('Error', data.message, () => {}, false);
         });
 
         // Show location sidebar with crossoff
@@ -1236,7 +1386,7 @@
         // Submit vote
         function submitVote() {
             if (!selectedVotePlayerId) {
-                alert('Please select a player to vote for!');
+                showCustomModal('Select Player', 'Please select a player to vote for!', () => {}, false);
                 return;
             }
 
@@ -1374,21 +1524,31 @@
             document.getElementById('resultsPhase').classList.add('hidden');
         }
 
-        // Return to lobby (regular player)
+        // Return to lobby (regular player) - WITH CUSTOM MODAL
         function returnToLobby() {
-            window.location.href = `waiting-room.html?room=${roomCode}`;
+            showCustomModal(
+                'Return to Lobby',
+                'Return to the waiting room? The game will end for you.',
+                () => {
+                    window.location.href = `waiting-room.html?room=${roomCode}`;
+                }
+            );
         }
 
-        // Return to lobby as host (forces all players back)
+        // Return to lobby as host (forces all players back) - WITH CUSTOM MODAL
         function returnToLobbyAsHost() {
-            if (confirm('Return all players to the lobby? The game will end.')) {
-                socket.emit('host-return-lobby', {
-                    roomCode: roomCode
-                });
-                
-                // Redirect self immediately
-                window.location.href = `waiting-room.html?room=${roomCode}`;
-            }
+            showCustomModal(
+                'End Game',
+                'Return all players to the lobby? The game will end.',
+                () => {
+                    socket.emit('host-return-lobby', {
+                        roomCode: roomCode
+                    });
+                    
+                    // Redirect self immediately
+                    window.location.href = `waiting-room.html?room=${roomCode}`;
+                }
+            );
         }
 
         // Handle browser close
