@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Werewolf - PlayHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            color: #fff;
+        }
+
+        /* Animated Background - Dark/Spooky */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            z-index: 0;
+            animation: float 25s infinite ease-in-out;
+        }
+
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(139, 0, 0, 0.5);
+            top: -100px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: rgba(25, 25, 112, 0.5);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 7s;
+        }
+
+        .blob-3 {
+            width: 300px;
+            height: 300px;
+            background: rgba(70, 70, 70, 0.5);
+            top: 50%;
+            left: 50%;
+            animation-delay: 14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(60px, -60px) scale(1.15); }
+            66% { transform: translate(-60px, 60px) scale(0.85); }
+        }
+
+        /* Header */
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 3px solid #8b0000;
+            padding: 1.5rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        .room-info {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .room-code-display {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: #8b0000;
+            letter-spacing: 3px;
+        }
+
+        .return-lobby-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .return-lobby-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #8b0000;
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            letter-spacing: 3px;
+            color: #8b0000;
+            text-shadow: 2px 2px 10px rgba(139, 0, 0, 0.5);
+        }
+
+        .phase-indicator {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(139, 0, 0, 0.2);
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Hide all phases by default */
+        .phase {
+            display: none;
+        }
+
+        .phase.active {
+            display: block;
+        }
+
+        /* Role Reveal Phase */
+        .role-reveal {
+            text-align: center;
+        }
+
+        .role-card {
+            background: linear-gradient(135deg, #8b0000 0%, #4a0000 100%);
+            border: 3px solid #ff0000;
+            border-radius: 15px;
+            padding: 3rem;
+            margin: 2rem auto;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+        }
+
+        .role-card.villager {
+            background: linear-gradient(135deg, #2c5f2d 0%, #1a3a1b 100%);
+            border-color: #4caf50;
+        }
+
+        .role-card.seer {
+            background: linear-gradient(135deg, #4a148c 0%, #2d0a54 100%);
+            border-color: #9c27b0;
+        }
+
+        .role-card.doctor {
+            background: linear-gradient(135deg, #0277bd 0%, #014a6b 100%);
+            border-color: #03a9f4;
+        }
+
+        .role-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+
+        .role-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .role-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .role-ability {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .role-ability strong {
+            color: #ffd700;
+        }
+
+        /* Timer */
+        .timer-display {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .timer-circle {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 1rem;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .timer-label {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Night Phase */
+        .night-phase {
+            text-align: center;
+        }
+
+        .night-message {
+            font-size: 1.5rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            line-height: 1.8;
+        }
+
+        .player-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .player-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .player-card.selected {
+            background: rgba(139, 0, 0, 0.5);
+            border-color: #8b0000;
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+        }
+
+        .player-card.werewolf-selected {
+            background: rgba(139, 0, 0, 0.5);
+            border-color: #ff0000;
+        }
+
+        .player-card.seer-selected {
+            background: rgba(156, 39, 176, 0.5);
+            border-color: #9c27b0;
+        }
+
+        .player-card.doctor-selected {
+            background: rgba(3, 169, 244, 0.5);
+            border-color: #03a9f4;
+        }
+
+        .player-card.dead {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .player-card.dead:hover {
+            transform: none;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .player-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .player-status {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Werewolf Team Display */
+        .werewolf-team {
+            background: rgba(139, 0, 0, 0.3);
+            border: 2px solid #8b0000;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .werewolf-team h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ff0000;
+        }
+
+        .werewolf-list {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .werewolf-member {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #8b0000;
+            font-weight: 600;
+        }
+
+        /* Seer Vision Result */
+        .seer-result {
+            background: rgba(156, 39, 176, 0.3);
+            border: 2px solid #9c27b0;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .seer-result h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #e1bee7;
+        }
+
+        .seer-result p {
+            font-size: 1.3rem;
+            line-height: 1.6;
+        }
+
+        .seer-result.werewolf-found {
+            background: rgba(139, 0, 0, 0.3);
+            border-color: #ff0000;
+        }
+
+        .seer-result.villager-found {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #4caf50;
+        }
+
+        /* Day Phase */
+        .day-phase {
+            text-align: center;
+        }
+
+        .day-message {
+            font-size: 1.3rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(255, 165, 0, 0.1);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            border-radius: 10px;
+            line-height: 1.8;
+        }
+
+        .death-announcement {
+            background: rgba(139, 0, 0, 0.3);
+            border: 2px solid #8b0000;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .death-announcement .skull {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .death-announcement p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff6b6b;
+        }
+
+        /* Voting Phase */
+        .voting-phase {
+            text-align: center;
+        }
+
+        .vote-instruction {
+            font-size: 1.3rem;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 165, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .vote-count-display {
+            font-size: 1.1rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Results Phase */
+        .results-phase {
+            text-align: center;
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 3px solid #8b0000;
+            border-radius: 15px;
+            padding: 3rem;
+            margin: 2rem 0;
+        }
+
+        .result-card.victory {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .result-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .result-message {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .eliminated-player {
+            background: rgba(139, 0, 0, 0.3);
+            border: 2px solid #8b0000;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .eliminated-player h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #ff6b6b;
+        }
+
+        .role-reveal-list {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .role-reveal-list h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .role-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        /* Buttons */
+        .action-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #8b0000 0%, #4a0000 100%);
+            color: white;
+            border: 3px solid #ff0000;
+            border-radius: 10px;
+            padding: 1rem 3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.5);
+            transition: all 0.3s;
+            margin: 1rem 0.5rem;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(139, 0, 0, 0.7);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Alive Players List */
+        .alive-players-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .alive-players-section h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .alive-players-list {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .alive-player-tag {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4caf50;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Custom Modal */
+        .custom-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .custom-modal-content {
+            position: relative;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 4px solid #8b0000;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+        }
+
+        .custom-modal-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            color: #8b0000;
+        }
+
+        .custom-modal-body {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .custom-modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .custom-modal-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            padding: 0.75rem 2rem;
+            border: 3px solid #8b0000;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #8b0000;
+            color: white;
+        }
+
+        .custom-modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .custom-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+
+            .room-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .game-card {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .role-card {
+                padding: 2rem 1rem;
+            }
+
+            .role-icon {
+                font-size: 3rem;
+            }
+
+            .role-name {
+                font-size: 2rem;
+            }
+
+            .player-selection-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timer-circle {
+                width: 120px;
+                height: 120px;
+                font-size: 2.5rem;
+            }
+
+            .action-btn {
+                font-size: 1.2rem;
+                padding: 0.9rem 2rem;
+            }
+
+            .custom-modal-actions {
+                flex-direction: column;
+            }
+
+            .custom-modal-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">PLAYHUB</a>
+            <div class="room-info">
+                <div class="room-code-display" id="roomCodeDisplay">LOADING...</div>
+                <button class="return-lobby-btn" onclick="returnToLobby()" id="returnLobbyBtn" style="display: none;">
+                    Return to Lobby
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="game-card">
+            <h1>🐺 ULTIMATE WEREWOLF 🌙</h1>
+            <div class="phase-indicator" id="phaseIndicator">Preparing game...</div>
+
+            <!-- ROLE REVEAL PHASE -->
+            <div class="phase role-reveal-phase" id="roleRevealPhase">
+                <div class="role-card" id="roleCard">
+                    <div class="role-icon" id="roleIcon">🐺</div>
+                    <div class="role-name" id="roleName">WEREWOLF</div>
+                    <div class="role-description" id="roleDescription">
+                        You are a werewolf! Hunt the villagers at night and survive the day.
+                    </div>
+                    <div class="role-ability" id="roleAbility">
+                        <strong>Night Ability:</strong> Work with other werewolves to choose a victim to eliminate.
+                    </div>
+                </div>
+
+                <div id="werewolfTeamDisplay" style="display: none;">
+                    <div class="werewolf-team">
+                        <h3>🐺 Your Werewolf Pack:</h3>
+                        <div class="werewolf-list" id="werewolfList"></div>
+                    </div>
+                </div>
+
+                <p style="text-align: center; font-size: 1.1rem; margin-top: 2rem;">
+                    The game will begin shortly...
+                </p>
+            </div>
+
+            <!-- NIGHT PHASE -->
+            <div class="phase night-phase" id="nightPhase">
+                <div class="timer-display">
+                    <div class="timer-circle" id="nightTimer">60</div>
+                    <div class="timer-label">Time Remaining</div>
+                </div>
+
+                <div class="night-message" id="nightMessage">
+                    🌙 The village sleeps... Werewolves, choose your victim!
+                </div>
+
+                <div id="nightActionContent">
+                    <!-- Content will be populated by JavaScript based on role -->
+                </div>
+
+                <div id="seerResultDisplay" style="display: none;"></div>
+            </div>
+
+            <!-- DAY PHASE -->
+            <div class="phase day-phase" id="dayPhase">
+                <div class="timer-display">
+                    <div class="timer-circle" id="dayTimer">90</div>
+                    <div class="timer-label">Discussion Time</div>
+                </div>
+
+                <div id="deathAnnouncement"></div>
+
+                <div class="day-message">
+                    ☀️ The sun rises. The village gathers to discuss who might be a werewolf.
+                    <br><br>
+                    <strong>Use this time to share information and suspicions!</strong>
+                </div>
+
+                <div class="alive-players-section">
+                    <h3>👥 Players Still Alive:</h3>
+                    <div class="alive-players-list" id="aliveDayPlayers"></div>
+                </div>
+            </div>
+
+            <!-- VOTING PHASE -->
+            <div class="phase voting-phase" id="votingPhase">
+                <div class="vote-instruction">
+                    🗳️ <strong>VOTE TO ELIMINATE</strong><br>
+                    Choose who you think is a werewolf!
+                </div>
+
+                <div class="vote-count-display" id="voteCountDisplay">
+                    Waiting for votes... (0/0)
+                </div>
+
+                <div class="player-selection-grid" id="votingGrid"></div>
+
+                <button class="action-btn" id="submitVoteBtn" onclick="submitVote()" disabled>
+                    CAST YOUR VOTE
+                </button>
+            </div>
+
+            <!-- RESULTS PHASE -->
+            <div class="phase results-phase" id="resultsPhase">
+                <div class="result-card" id="resultCard">
+                    <div class="result-icon" id="resultIcon">🎉</div>
+                    <div class="result-title" id="resultTitle">GAME OVER</div>
+                    <div class="result-message" id="resultMessage">
+                        The game has ended!
+                    </div>
+                </div>
+
+                <div class="eliminated-player" id="eliminatedDisplay"></div>
+
+                <div class="role-reveal-list">
+                    <h3>🎭 Role Reveals:</h3>
+                    <div id="roleRevealList"></div>
+                </div>
+
+                <button class="action-btn" onclick="returnToLobby()">
+                    RETURN TO LOBBY
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header" id="customModalTitle">Notice</div>
+            <div class="custom-modal-body" id="customModalMessage">
+                Message goes here
+            </div>
+            <div class="custom-modal-actions">
+                <button class="custom-modal-btn cancel" id="customModalCancel" onclick="closeCustomModal()">Cancel</button>
+                <button class="custom-modal-btn" id="customModalConfirm" onclick="confirmCustomModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div>© 2024 PlayHub. All games free forever.</div>
+    </footer>
+
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+        const socket = io(BACKEND_URL);
+
+        // Get room code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+        const playerName = localStorage.getItem('playerName') || 'Player';
+
+        // Game state
+        let myRole = null;
+        let myRoleData = null;
+        let isWerewolf = false;
+        let isSeer = false;
+        let isDoctor = false;
+        let currentPhase = 'role-reveal';
+        let selectedPlayerId = null;
+        let alivePlayers = [];
+        let allPlayers = [];
+        let werewolves = [];
+        let currentNightPhase = null;
+        let nightActionSubmitted = false;
+        let modalCallback = null;
+
+        // Timers
+        let phaseTimer = null;
+
+        console.log('Game initialized. Room:', roomCode, 'Player:', playerName);
+
+        if (!roomCode) {
+            showCustomModal('Error', 'No room code provided!', false);
+            setTimeout(() => {
+                window.location.href = 'party-games.html';
+            }, 2000);
+        }
+
+        document.getElementById('roomCodeDisplay').textContent = roomCode;
+
+        // Socket connection
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            socket.emit('rejoin-room', {
+                roomCode: roomCode,
+                playerName: playerName
+            });
+        });
+
+        // Role assigned
+        socket.on('role-assigned', (data) => {
+            console.log('Role assigned:', data);
+            myRole = data.role;
+            myRoleData = data;
+            isWerewolf = data.role === 'werewolf';
+            isSeer = data.role === 'seer';
+            isDoctor = data.role === 'doctor';
+
+            displayRoleCard(data);
+
+            // Show return to lobby button for host
+            const isHost = localStorage.getItem('tempIsHost') === 'true';
+            if (isHost) {
+                document.getElementById('returnLobbyBtn').style.display = 'block';
+            }
+        });
+
+        // Werewolf team info
+        socket.on('werewolf-team', (data) => {
+            console.log('Werewolf team:', data);
+            werewolves = data.werewolves;
+            if (isWerewolf) {
+                displayWerewolfTeam(data.werewolves);
+            }
+        });
+
+        // Night phase started
+        socket.on('night-phase-start', (data) => {
+            console.log('Night phase started:', data);
+            currentPhase = 'night';
+            currentNightPhase = data.activeRole;
+            alivePlayers = data.alivePlayers;
+            nightActionSubmitted = false;
+            
+            showPhase('nightPhase');
+            updatePhaseIndicator(`🌙 NIGHT - ${data.activeRole.toUpperCase()} PHASE`);
+            
+            buildNightActionUI(data);
+            startTimer('nightTimer', data.timeLimit || 45);
+        });
+
+        // Night action confirmed
+        socket.on('night-action-confirmed', (data) => {
+            console.log('Night action confirmed');
+            nightActionSubmitted = true;
+            showCustomModal('Action Submitted', 'Your action has been recorded. Waiting for other players...', false);
+        });
+
+        // Seer vision result
+        socket.on('seer-vision', (data) => {
+            console.log('Seer vision:', data);
+            displaySeerResult(data);
+        });
+
+        // Day phase started
+        socket.on('day-phase-start', (data) => {
+            console.log('Day phase started:', data);
+            currentPhase = 'day';
+            alivePlayers = data.alivePlayers;
+            
+            showPhase('dayPhase');
+            updatePhaseIndicator('☀️ DAY - DISCUSSION TIME');
+            
+            if (data.killedPlayer) {
+                displayDeathAnnouncement(data.killedPlayer, data.savedByDoctor);
+            } else if (data.savedByDoctor) {
+                displayNoDeathAnnouncement();
+            }
+            
+            updateAlivePlayersList(data.alivePlayers, 'aliveDayPlayers');
+            startTimer('dayTimer', data.timeLimit || 90);
+        });
+
+        // Voting phase started
+        socket.on('voting-phase-start', (data) => {
+            console.log('Voting phase started:', data);
+            currentPhase = 'voting';
+            alivePlayers = data.alivePlayers;
+            selectedPlayerId = null;
+            
+            showPhase('votingPhase');
+            updatePhaseIndicator('🗳️ VOTING PHASE');
+            
+            buildVotingGrid(data.alivePlayers);
+            updateVoteCount(0, data.alivePlayers.length);
+        });
+
+        // Vote counted
+        socket.on('vote-counted', (data) => {
+            console.log('Vote counted:', data);
+            updateVoteCount(data.totalVotes, data.totalPlayers);
+        });
+
+        // Game results
+        socket.on('game-results', (data) => {
+            console.log('Game results:', data);
+            currentPhase = 'results';
+            
+            showPhase('resultsPhase');
+            updatePhaseIndicator('🎮 GAME OVER');
+            
+            displayResults(data);
+            clearAllTimers();
+        });
+
+        // Room state (for reconnection)
+        socket.on('room-state', (data) => {
+            console.log('Room state received:', data);
+            allPlayers = data.room.players;
+        });
+
+        // Error handling
+        socket.on('error', (data) => {
+            console.error('Socket error:', data);
+            showCustomModal('Error', data.message, false);
+        });
+
+        socket.on('forced-return-lobby', () => {
+            window.location.href = `waiting-room.html?room=${roomCode}`;
+        });
+
+        // Display role card
+        function displayRoleCard(roleData) {
+            const card = document.getElementById('roleCard');
+            const icon = document.getElementById('roleIcon');
+            const name = document.getElementById('roleName');
+            const description = document.getElementById('roleDescription');
+            const ability = document.getElementById('roleAbility');
+
+            const roleConfig = {
+                werewolf: {
+                    icon: '🐺',
+                    name: 'WEREWOLF',
+                    description: 'You are a werewolf! Work with your pack to eliminate villagers at night and blend in during the day.',
+                    ability: '<strong>Night Ability:</strong> Vote with other werewolves to choose a villager to eliminate.',
+                    class: ''
+                },
+                seer: {
+                    icon: '🔮',
+                    name: 'SEER',
+                    description: 'You are the Seer! You have the power to see the true nature of players.',
+                    ability: '<strong>Night Ability:</strong> Each night, choose one player to learn if they are a werewolf or villager.',
+                    class: 'seer'
+                },
+                doctor: {
+                    icon: '⚕️',
+                    name: 'DOCTOR',
+                    description: 'You are the Doctor! You can save one person from being eliminated each night.',
+                    ability: '<strong>Night Ability:</strong> Choose one player to protect. If werewolves target them, they will survive.',
+                    class: 'doctor'
+                },
+                villager: {
+                    icon: '👤',
+                    name: 'VILLAGER',
+                    description: 'You are a Villager! Use logic and observation to help identify the werewolves.',
+                    ability: '<strong>Day Ability:</strong> Participate in discussions and vote to eliminate suspected werewolves.',
+                    class: 'villager'
+                }
+            };
+
+            const config = roleConfig[roleData.role] || roleConfig.villager;
+            
+            card.className = `role-card ${config.class}`;
+            icon.textContent = config.icon;
+            name.textContent = config.name;
+            description.textContent = config.description;
+            ability.innerHTML = config.ability;
+
+            showPhase('roleRevealPhase');
+            updatePhaseIndicator('🎭 ROLE REVEAL');
+        }
+
+        // Display werewolf team
+        function displayWerewolfTeam(werewolfList) {
+            const teamDisplay = document.getElementById('werewolfTeamDisplay');
+            const list = document.getElementById('werewolfList');
+            
+            list.innerHTML = '';
+            werewolfList.forEach(wolf => {
+                const member = document.createElement('div');
+                member.className = 'werewolf-member';
+                member.textContent = wolf.name;
+                list.appendChild(member);
+            });
+            
+            teamDisplay.style.display = 'block';
+        }
+
+        // Build night action UI
+        function buildNightActionUI(data) {
+            const content = document.getElementById('nightActionContent');
+            const message = document.getElementById('nightMessage');
+            
+            document.getElementById('seerResultDisplay').style.display = 'none';
+            
+            if (data.activeRole === 'werewolf' && isWerewolf) {
+                message.innerHTML = '🐺 <strong>WEREWOLF PHASE</strong><br>Choose a villager to eliminate!';
+                content.innerHTML = '<div class="player-selection-grid" id="werewolfTargetGrid"></div><button class="action-btn" id="submitWerewolfBtn" onclick="submitNightAction()" disabled>CHOOSE VICTIM</button>';
+                buildTargetGrid(data.alivePlayers.filter(p => !p.isWerewolf), 'werewolfTargetGrid');
+            } else if (data.activeRole === 'seer' && isSeer) {
+                message.innerHTML = '🔮 <strong>SEER PHASE</strong><br>Choose a player to check their role!';
+                content.innerHTML = '<div class="player-selection-grid" id="seerTargetGrid"></div><button class="action-btn" id="submitSeerBtn" onclick="submitNightAction()" disabled>CHECK PLAYER</button>';
+                buildTargetGrid(data.alivePlayers.filter(p => p.name !== playerName), 'seerTargetGrid');
+            } else if (data.activeRole === 'doctor' && isDoctor) {
+                message.innerHTML = '⚕️ <strong>DOCTOR PHASE</strong><br>Choose a player to protect tonight!';
+                content.innerHTML = '<div class="player-selection-grid" id="doctorTargetGrid"></div><button class="action-btn" id="submitDoctorBtn" onclick="submitNightAction()" disabled>PROTECT PLAYER</button>';
+                buildTargetGrid(data.alivePlayers, 'doctorTargetGrid');
+            } else {
+                message.innerHTML = '😴 <strong>The village sleeps...</strong><br>Night actions are being performed.';
+                content.innerHTML = '<p style="text-align: center; font-size: 1.2rem; margin: 2rem 0;">Wait while special roles make their choices.</p>';
+            }
+        }
+
+        // Build target selection grid
+        function buildTargetGrid(players, gridId) {
+            const grid = document.getElementById(gridId);
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.onclick = () => selectTarget(player.id || player.name, card, gridId);
+                
+                const name = document.createElement('div');
+                name.className = 'player-name';
+                name.textContent = player.name;
+                
+                card.appendChild(name);
+                grid.appendChild(card);
+            });
+        }
+
+        // Select target
+        function selectTarget(playerId, cardElement, gridId) {
+            if (nightActionSubmitted) return;
+            
+            const grid = document.getElementById(gridId);
+            grid.querySelectorAll('.player-card').forEach(card => {
+                card.classList.remove('selected', 'werewolf-selected', 'seer-selected', 'doctor-selected');
+            });
+
+            cardElement.classList.add('selected');
+            if (isWerewolf) cardElement.classList.add('werewolf-selected');
+            if (isSeer) cardElement.classList.add('seer-selected');
+            if (isDoctor) cardElement.classList.add('doctor-selected');
+            
+            selectedPlayerId = playerId;
+            
+            if (isWerewolf) document.getElementById('submitWerewolfBtn').disabled = false;
+            if (isSeer) document.getElementById('submitSeerBtn').disabled = false;
+            if (isDoctor) document.getElementById('submitDoctorBtn').disabled = false;
+        }
+
+        // Submit night action
+        function submitNightAction() {
+            if (!selectedPlayerId || nightActionSubmitted) return;
+            
+            let actionType = null;
+            if (isWerewolf) actionType = 'werewolf-target';
+            if (isSeer) actionType = 'seer-check';
+            if (isDoctor) actionType = 'doctor-save';
+            
+            console.log('Submitting night action:', actionType, selectedPlayerId);
+            
+            socket.emit('night-action', {
+                roomCode: roomCode,
+                actionType: actionType,
+                targetId: selectedPlayerId
+            });
+            
+            nightActionSubmitted = true;
+            
+            if (isWerewolf) document.getElementById('submitWerewolfBtn').disabled = true;
+            if (isSeer) document.getElementById('submitSeerBtn').disabled = true;
+            if (isDoctor) document.getElementById('submitDoctorBtn').disabled = true;
+        }
+
+        // Display seer result
+        function displaySeerResult(data) {
+            const resultDisplay = document.getElementById('seerResultDisplay');
+            
+            const resultClass = data.isWerewolf ? 'werewolf-found' : 'villager-found';
+            const resultText = data.isWerewolf ? 
+                `⚠️ ${data.playerName} is a WEREWOLF! 🐺` : 
+                `✅ ${data.playerName} is a VILLAGER 👤`;
+            
+            resultDisplay.className = `seer-result ${resultClass}`;
+            resultDisplay.innerHTML = `
+                <h3>🔮 Vision Result</h3>
+                <p>${resultText}</p>
+            `;
+            resultDisplay.style.display = 'block';
+        }
+
+        // Display death announcement
+        function displayDeathAnnouncement(killedPlayer, savedByDoctor) {
+            const announcement = document.getElementById('deathAnnouncement');
+            
+            if (savedByDoctor) {
+                announcement.innerHTML = `
+                    <div class="death-announcement" style="background: rgba(76, 175, 80, 0.3); border-color: #4caf50;">
+                        <div class="skull">⚕️</div>
+                        <p style="color: #4caf50;">The Doctor saved someone! No one died last night.</p>
+                    </div>
+                `;
+            } else {
+                announcement.innerHTML = `
+                    <div class="death-announcement">
+                        <div class="skull">💀</div>
+                        <p>${killedPlayer.name} was killed by werewolves!</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display no death announcement
+        function displayNoDeathAnnouncement() {
+            const announcement = document.getElementById('deathAnnouncement');
+            announcement.innerHTML = `
+                <div class="death-announcement" style="background: rgba(255, 215, 0, 0.2); border-color: #ffd700;">
+                    <div class="skull">✨</div>
+                    <p style="color: #ffd700;">Everyone survived the night!</p>
+                </div>
+            `;
+        }
+
+        // Update alive players list
+        function updateAlivePlayersList(players, elementId) {
+            const list = document.getElementById(elementId);
+            list.innerHTML = '';
+            
+            players.forEach(player => {
+                const tag = document.createElement('div');
+                tag.className = 'alive-player-tag';
+                tag.textContent = player.name;
+                list.appendChild(tag);
+            });
+        }
+
+        // Build voting grid
+        function buildVotingGrid(players) {
+            const grid = document.getElementById('votingGrid');
+            grid.innerHTML = '';
+            
+            players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.onclick = () => selectVoteTarget(player.id || player.name, card);
+                
+                const name = document.createElement('div');
+                name.className = 'player-name';
+                name.textContent = player.name;
+                
+                card.appendChild(name);
+                grid.appendChild(card);
+            });
+        }
+
+        // Select vote target
+        function selectVoteTarget(playerId, cardElement) {
+            document.querySelectorAll('#votingGrid .player-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            cardElement.classList.add('selected');
+            selectedPlayerId = playerId;
+            document.getElementById('submitVoteBtn').disabled = false;
+        }
+
+        // Submit vote
+        function submitVote() {
+            if (!selectedPlayerId) return;
+            
+            console.log('Submitting vote for:', selectedPlayerId);
+            
+            socket.emit('submit-vote', {
+                roomCode: roomCode,
+                votedPlayerId: selectedPlayerId
+            });
+            
+            document.getElementById('submitVoteBtn').disabled = true;
+            document.getElementById('submitVoteBtn').textContent = 'VOTE SUBMITTED';
+        }
+
+        // Update vote count
+        function updateVoteCount(votes, total) {
+            const display = document.getElementById('voteCountDisplay');
+            display.textContent = `Votes cast: ${votes}/${total}`;
+        }
+
+        // Display results
+        function displayResults(data) {
+            const resultCard = document.getElementById('resultCard');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const message = document.getElementById('resultMessage');
+            const eliminatedDisplay = document.getElementById('eliminatedDisplay');
+            const roleRevealList = document.getElementById('roleRevealList');
+
+            if (data.villagersWin) {
+                resultCard.classList.add('victory');
+                icon.textContent = '✅';
+                title.textContent = 'VILLAGERS WIN!';
+                message.innerHTML = 'The villagers have successfully eliminated all the werewolves!<br><strong>The village is safe!</strong>';
+            } else if (data.werewolvesWin) {
+                icon.textContent = '🐺';
+                title.textContent = 'WEREWOLVES WIN!';
+                message.innerHTML = 'The werewolves have overtaken the village!<br><strong>All hope is lost...</strong>';
+            } else {
+                icon.textContent = '⚖️';
+                title.textContent = 'GAME OVER';
+                message.textContent = 'The game has ended.';
+            }
+
+            if (data.eliminatedPlayer) {
+                eliminatedDisplay.innerHTML = `
+                    <h3>Eliminated This Round:</h3>
+                    <p style="font-size: 1.3rem; margin-top: 0.5rem;">
+                        <strong>${data.eliminatedPlayer.name}</strong> was <strong>${data.eliminatedPlayer.role.toUpperCase()}</strong>
+                    </p>
+                `;
+            }
+
+            roleRevealList.innerHTML = '';
+            if (data.allRoles) {
+                data.allRoles.forEach(player => {
+                    const roleItem = document.createElement('div');
+                    roleItem.className = 'role-item';
+                    
+                    const roleIcon = player.role === 'werewolf' ? '🐺' : 
+                                   player.role === 'seer' ? '🔮' :
+                                   player.role === 'doctor' ? '⚕️' : '👤';
+                    
+                    roleItem.innerHTML = `
+                        <span><strong>${player.name}</strong></span>
+                        <span>${roleIcon} ${player.role.toUpperCase()}</span>
+                    `;
+                    roleRevealList.appendChild(roleItem);
+                });
+            }
+        }
+
+        // Phase management
+        function showPhase(phaseId) {
+            document.querySelectorAll('.phase').forEach(phase => {
+                phase.classList.remove('active');
+            });
+            document.getElementById(phaseId).classList.add('active');
+        }
+
+        function updatePhaseIndicator(text) {
+            document.getElementById('phaseIndicator').textContent = text;
+        }
+
+        // Timer management
+        function startTimer(elementId, seconds) {
+            clearAllTimers();
+            
+            const timerElement = document.getElementById(elementId);
+            let timeLeft = seconds;
+            
+            timerElement.textContent = timeLeft;
+            
+            phaseTimer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(phaseTimer);
+                }
+            }, 1000);
+        }
+
+        function clearAllTimers() {
+            if (phaseTimer) {
+                clearInterval(phaseTimer);
+                phaseTimer = null;
+            }
+        }
+
+        // Return to lobby
+        function returnToLobby() {
+            const isHost = localStorage.getItem('tempIsHost') === 'true';
+            
+            if (isHost) {
+                showCustomModal('Return to Lobby', 'This will end the game for all players. Continue?', true);
+            } else {
+                window.location.href = `waiting-room.html?room=${roomCode}`;
+            }
+        }
+
+        // Custom modal
+        function showCustomModal(title, message, isConfirm = false) {
+            document.getElementById('customModalTitle').textContent = title;
+            document.getElementById('customModalMessage').textContent = message;
+            document.getElementById('customModal').style.display = 'flex';
+            
+            const cancelBtn = document.getElementById('customModalCancel');
+            const confirmBtn = document.getElementById('customModalConfirm');
+            
+            if (isConfirm) {
+                cancelBtn.style.display = 'inline-block';
+                confirmBtn.textContent = 'YES, RETURN';
+                modalCallback = () => {
+                    socket.emit('host-return-lobby', { roomCode: roomCode });
+                    window.location.href = `waiting-room.html?room=${roomCode}`;
+                };
+            } else {
+                cancelBtn.style.display = 'none';
+                confirmBtn.textContent = 'OK';
+                modalCallback = null;
+            }
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').style.display = 'none';
+            modalCallback = null;
+        }
+
+        function confirmCustomModal() {
+            if (modalCallback) {
+                modalCallback();
+            }
+            closeCustomModal();
+        }
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            socket.disconnect();
+        });
+    </script>
+</body>
+</html>
