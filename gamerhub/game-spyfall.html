@@ -121,17 +121,18 @@
             box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
         }
 
-        /* Main Container */
+        /* Main Container - STACKED VERTICALLY */
         .container {
             flex: 1;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
             padding: 2rem;
             position: relative;
             z-index: 1;
             gap: 2rem;
-            max-width: 1600px;
+            max-width: 1200px;
             margin: 0 auto;
             width: 100%;
         }
@@ -142,22 +143,18 @@
             border-radius: 20px;
             box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
             padding: 2.5rem;
-            flex: 1;
+            width: 100%;
             min-height: 500px;
         }
 
-        /* Location Reference Sidebar */
+        /* Location Reference - BELOW GAME CARD, NO SCROLL, 2 COLUMNS */
         .location-sidebar {
             background: rgba(255, 255, 255, 0.98);
             border: 4px solid #000;
             border-radius: 20px;
             box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
             padding: 2rem;
-            width: 350px;
-            max-height: 85vh;
-            overflow-y: auto;
-            position: sticky;
-            top: 2rem;
+            width: 100%;
         }
 
         .location-sidebar h3 {
@@ -170,9 +167,9 @@
         }
 
         .location-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
         }
 
         .location-item {
@@ -657,21 +654,6 @@
             display: none !important;
         }
 
-        /* Scrollbar */
-        .location-sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .location-sidebar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .location-sidebar::-webkit-scrollbar-thumb {
-            background: #f5576c;
-            border-radius: 10px;
-        }
-
         /* Custom Confirmation Modal */
         .custom-modal {
             position: fixed;
@@ -771,24 +753,6 @@
         }
 
         /* Responsive */
-        @media (max-width: 1200px) {
-            .container {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .location-sidebar {
-                width: 100%;
-                max-width: 800px;
-                position: static;
-                max-height: 400px;
-            }
-
-            .game-card {
-                width: 100%;
-            }
-        }
-
         @media (max-width: 768px) {
             .game-card {
                 padding: 1.5rem;
@@ -810,8 +774,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .location-sidebar {
-                max-height: 300px;
+            .location-list {
+                grid-template-columns: 1fr;
             }
 
             .custom-modal-actions {
@@ -843,15 +807,6 @@
 
     <!-- Main Container -->
     <div class="container">
-        <!-- Location Reference Sidebar -->
-        <div class="location-sidebar" id="locationSidebar" style="display: none;">
-            <h3>📍 LOCATIONS</h3>
-            <p style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1rem;">
-                Click to cross off locations
-            </p>
-            <div class="location-list" id="locationList"></div>
-        </div>
-
         <!-- Game Card -->
         <div class="game-card">
             <!-- Loading State -->
@@ -881,7 +836,7 @@
                         <div id="spySection" class="hidden">
                             <p style="font-size: 1.5rem;">🕵️</p>
                             <p>You don't know the location!</p>
-                            <p style="margin-top: 1rem; font-size: 1.1rem;">Use the location list to cross off possibilities</p>
+                            <p style="margin-top: 1rem; font-size: 1.1rem;">Use the location list below to cross off possibilities</p>
                         </div>
                         <div class="role-instruction" id="roleInstruction"></div>
                     </div>
@@ -974,6 +929,15 @@
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Location Reference - BELOW GAME CARD -->
+        <div class="location-sidebar" id="locationSidebar" style="display: none;">
+            <h3>📍 LOCATIONS</h3>
+            <p style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;">
+                Click to cross off locations
+            </p>
+            <div class="location-list" id="locationList"></div>
         </div>
     </div>
 
@@ -1274,14 +1238,14 @@
             
             // Show location/spy reminder
             if (isSpy) {
-                document.getElementById('gameLocationDisplay').classList.add('hidden');
-                document.getElementById('gameRoleDisplay').classList.add('hidden');
+                document.getElementById('gameLocationDisplay').style.display = 'none';
+                document.getElementById('gameRoleDisplay').style.display = 'none';
                 document.getElementById('gameSpyDisplay').classList.remove('hidden');
             } else {
                 document.getElementById('gameLocationDisplay').textContent = myLocation;
                 document.getElementById('gameSpecificRole').textContent = mySpecificRole;
-                document.getElementById('gameLocationDisplay').classList.remove('hidden');
-                document.getElementById('gameRoleDisplay').classList.remove('hidden');
+                document.getElementById('gameLocationDisplay').style.display = 'block';
+                document.getElementById('gameRoleDisplay').style.display = 'block';
                 document.getElementById('gameSpyDisplay').classList.add('hidden');
             }
             
