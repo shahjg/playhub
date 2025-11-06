@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Herd Mentality - PlayHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        /* Header */
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 4px solid #000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-nav {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+        }
+
+        .room-code-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: #ff6b9d;
+            letter-spacing: 2px;
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .game-card {
+            background: white;
+            border: 4px solid #000;
+            border-radius: 20px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            padding: 2.5rem;
+            max-width: 800px;
+            width: 100%;
+            min-height: 500px;
+        }
+
+        /* Question Phase */
+        .question-phase {
+            text-align: center;
+        }
+
+        .round-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .question-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #ff6b9d;
+            margin-bottom: 2rem;
+            line-height: 1.2;
+        }
+
+        .timer {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: #000;
+            margin-bottom: 2rem;
+        }
+
+        .timer.urgent {
+            color: #ff4757;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 1.5rem;
+            font-size: 1.2rem;
+            font-family: 'Inter', sans-serif;
+            border: 3px solid #000;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #ff6b9d;
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.3);
+        }
+
+        .answer-input:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        .submit-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: #ff6b9d;
+            color: white;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 1rem 3rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .waiting-message {
+            margin-top: 2rem;
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Results Phase */
+        .results-phase {
+            text-align: center;
+        }
+
+        .results-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #ff6b9d;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .answer-groups {
+            margin-bottom: 2rem;
+        }
+
+        .answer-group {
+            background: #f8f9fa;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .answer-group.majority {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a47d5 100%);
+            color: white;
+            border-color: #000;
+        }
+
+        .answer-group.pink-cow {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff4757 100%);
+            color: white;
+            border-color: #000;
+        }
+
+        .group-answer {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .group-count {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .group-players {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .player-badge {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            border: 2px solid #000;
+        }
+
+        .answer-group.majority .player-badge {
+            background: rgba(255, 255, 255, 0.95);
+            color: #3a47d5;
+        }
+
+        .answer-group.pink-cow .player-badge {
+            background: rgba(255, 255, 255, 0.95);
+            color: #ff4757;
+        }
+
+        .pink-cow-announcement {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .pink-cow-emoji {
+            font-size: 2rem;
+            margin-right: 0.5rem;
+        }
+
+        /* Scoreboard Phase */
+        .scoreboard-phase {
+            text-align: center;
+        }
+
+        .scoreboard-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #ff6b9d;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .score-list {
+            margin-bottom: 2rem;
+        }
+
+        .score-item {
+            background: #f8f9fa;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-item.has-cow {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .score-item.leading {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a47d5 100%);
+            color: white;
+        }
+
+        .player-rank {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            width: 50px;
+        }
+
+        .player-info {
+            flex: 1;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .player-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+        }
+
+        .next-round-timer {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: #666;
+            margin-top: 2rem;
+        }
+
+        /* Game Over */
+        .game-over-phase {
+            text-align: center;
+        }
+
+        .winner-announcement {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3.5rem;
+            color: #ff6b9d;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .winner-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            color: #000;
+            margin-bottom: 2rem;
+            letter-spacing: 3px;
+        }
+
+        .final-scores {
+            margin: 2rem 0;
+        }
+
+        .play-again-btn, .lobby-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            background: #ff6b9d;
+            color: white;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            margin: 0.5rem;
+        }
+
+        .lobby-btn {
+            background: #6c757d;
+        }
+
+        .play-again-btn:hover, .lobby-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #666;
+            padding: 3rem;
+        }
+
+        /* Hide phases by default */
+        .phase {
+            display: none;
+        }
+
+        .phase.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-card {
+                padding: 1.5rem;
+            }
+
+            .question-text {
+                font-size: 1.8rem;
+            }
+
+            .timer {
+                font-size: 2.5rem;
+            }
+
+            .answer-input {
+                font-size: 1rem;
+                padding: 1rem;
+            }
+
+            .group-answer {
+                font-size: 1.5rem;
+            }
+
+            .winner-announcement {
+                font-size: 2.5rem;
+            }
+
+            .winner-name {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .logo-nav {
+                font-size: 1.5rem;
+            }
+
+            .room-code-header {
+                font-size: 1.2rem;
+            }
+
+            .question-text {
+                font-size: 1.5rem;
+            }
+
+            .results-title, .scoreboard-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav>
+        <div class="logo-nav">PLAYHUB</div>
+        <div class="room-code-header" id="roomCodeHeader">ROOM: ------</div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="game-card">
+            <!-- Loading State -->
+            <div id="loadingPhase" class="phase active">
+                <div class="loading">
+                    🐄 Loading Herd Mentality...
+                </div>
+            </div>
+
+            <!-- Question Phase -->
+            <div id="questionPhase" class="phase question-phase">
+                <div class="round-number" id="roundNumber">ROUND 1</div>
+                <div class="question-text" id="questionText">Loading question...</div>
+                <div class="timer" id="timer">30</div>
+                <input type="text" 
+                       id="answerInput" 
+                       class="answer-input" 
+                       placeholder="Type your answer here..."
+                       maxlength="50">
+                <button class="submit-btn" id="submitBtn" onclick="submitAnswer()">
+                    SUBMIT ANSWER
+                </button>
+                <div class="waiting-message" id="waitingMessage" style="display: none;">
+                    ⏳ Waiting for other players...
+                </div>
+            </div>
+
+            <!-- Results Phase -->
+            <div id="resultsPhase" class="phase results-phase">
+                <div class="results-title">📊 RESULTS</div>
+                <div id="pinkCowAnnouncement" class="pink-cow-announcement" style="display: none;">
+                    <span class="pink-cow-emoji">🐄</span>
+                    <span id="pinkCowText">Pink Cow announcement</span>
+                </div>
+                <div class="answer-groups" id="answerGroups">
+                    <!-- Answer groups will be populated here -->
+                </div>
+            </div>
+
+            <!-- Scoreboard Phase -->
+            <div id="scoreboardPhase" class="phase scoreboard-phase">
+                <div class="scoreboard-title">🏆 SCOREBOARD</div>
+                <div class="score-list" id="scoreList">
+                    <!-- Scores will be populated here -->
+                </div>
+                <div class="next-round-timer" id="nextRoundTimer">
+                    Next round in 5...
+                </div>
+            </div>
+
+            <!-- Game Over Phase -->
+            <div id="gameOverPhase" class="phase game-over-phase">
+                <div class="winner-announcement">🎉 WINNER! 🎉</div>
+                <div class="winner-name" id="winnerName">Player Name</div>
+                <div class="final-scores">
+                    <div class="scoreboard-title">FINAL SCORES</div>
+                    <div class="score-list" id="finalScoreList">
+                        <!-- Final scores will be populated here -->
+                    </div>
+                </div>
+                <div>
+                    <button class="play-again-btn" onclick="playAgain()">
+                        🔄 PLAY AGAIN
+                    </button>
+                    <button class="lobby-btn" onclick="backToLobby()">
+                        🏠 BACK TO LOBBY
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+        const socket = io(BACKEND_URL, {
+            transports: ['websocket', 'polling']
+        });
+
+        // Get room code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+        const playerName = localStorage.getItem('playerName');
+
+        // Game state
+        let currentPhase = 'loading';
+        let timerInterval = null;
+        let hasSubmitted = false;
+
+        // Initialize
+        if (roomCode) {
+            document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
+        }
+
+        console.log('Herd Mentality game loaded:', { roomCode, playerName });
+
+        // Socket events
+        socket.on('connect', () => {
+            console.log('Connected:', socket.id);
+            
+            // Rejoin room
+            socket.emit('rejoin-room', {
+                roomCode: roomCode,
+                playerName: playerName
+            });
+        });
+
+        // Question phase starts
+        socket.on('question-phase', (data) => {
+            console.log('Question phase:', data);
+            showQuestionPhase(data);
+        });
+
+        // Results phase
+        socket.on('results-phase', (data) => {
+            console.log('Results phase:', data);
+            showResultsPhase(data);
+        });
+
+        // Scoreboard phase
+        socket.on('scoreboard-phase', (data) => {
+            console.log('Scoreboard phase:', data);
+            showScoreboardPhase(data);
+        });
+
+        // Game over
+        socket.on('game-over', (data) => {
+            console.log('Game over:', data);
+            showGameOverPhase(data);
+        });
+
+        // Answer submitted confirmation
+        socket.on('answer-submitted', () => {
+            hasSubmitted = true;
+            document.getElementById('answerInput').disabled = true;
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('waitingMessage').style.display = 'block';
+        });
+
+        // Error handling
+        socket.on('error', (data) => {
+            console.error('Error:', data);
+            alert(data.message);
+        });
+
+        // Show question phase
+        function showQuestionPhase(data) {
+            currentPhase = 'question';
+            hasSubmitted = false;
+            
+            // Reset inputs
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').disabled = false;
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('waitingMessage').style.display = 'none';
+            
+            // Update UI
+            document.getElementById('roundNumber').textContent = `ROUND ${data.roundNumber}`;
+            document.getElementById('questionText').textContent = data.question;
+            
+            // Show phase
+            hideAllPhases();
+            document.getElementById('questionPhase').classList.add('active');
+            
+            // Start timer
+            startTimer(data.timeLimit || 30);
+            
+            // Focus input
+            document.getElementById('answerInput').focus();
+        }
+
+        // Submit answer
+        function submitAnswer() {
+            const answer = document.getElementById('answerInput').value.trim();
+            
+            if (!answer) {
+                alert('Please enter an answer!');
+                return;
+            }
+            
+            if (hasSubmitted) {
+                return;
+            }
+            
+            console.log('Submitting answer:', answer);
+            
+            socket.emit('submit-answer', {
+                roomCode: roomCode,
+                answer: answer
+            });
+        }
+
+        // Enter key to submit
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitAnswer();
+                }
+            });
+        });
+
+        // Timer
+        function startTimer(seconds) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            let timeLeft = seconds;
+            const timerEl = document.getElementById('timer');
+            
+            timerEl.textContent = timeLeft;
+            timerEl.classList.remove('urgent');
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                
+                if (timeLeft <= 10) {
+                    timerEl.classList.add('urgent');
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    
+                    // Auto-submit if not submitted
+                    if (!hasSubmitted) {
+                        const answer = document.getElementById('answerInput').value.trim();
+                        if (answer) {
+                            submitAnswer();
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        // Show results phase
+        function showResultsPhase(data) {
+            currentPhase = 'results';
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            hideAllPhases();
+            document.getElementById('resultsPhase').classList.add('active');
+            
+            // Show answer groups
+            const groupsContainer = document.getElementById('answerGroups');
+            groupsContainer.innerHTML = '';
+            
+            // Sort groups by count (majority first)
+            const sortedGroups = Object.entries(data.groups).sort((a, b) => b[1].count - a[1].count);
+            
+            sortedGroups.forEach(([answer, group]) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'answer-group';
+                
+                // Check if this is the majority or pink cow
+                if (group.isMajority) {
+                    groupDiv.classList.add('majority');
+                }
+                if (group.isPinkCow) {
+                    groupDiv.classList.add('pink-cow');
+                }
+                
+                groupDiv.innerHTML = `
+                    <div class="group-answer">${answer}</div>
+                    <div class="group-count">${group.count} player${group.count !== 1 ? 's' : ''}</div>
+                    <div class="group-players">
+                        ${group.players.map(p => `<span class="player-badge">${p}</span>`).join('')}
+                    </div>
+                `;
+                
+                groupsContainer.appendChild(groupDiv);
+            });
+            
+            // Show pink cow announcement if applicable
+            if (data.pinkCowPlayer) {
+                const announcement = document.getElementById('pinkCowAnnouncement');
+                document.getElementById('pinkCowText').textContent = 
+                    `${data.pinkCowPlayer} got the Pink Cow!`;
+                announcement.style.display = 'block';
+            } else {
+                document.getElementById('pinkCowAnnouncement').style.display = 'none';
+            }
+        }
+
+        // Show scoreboard phase
+        function showScoreboardPhase(data) {
+            currentPhase = 'scoreboard';
+            
+            hideAllPhases();
+            document.getElementById('scoreboardPhase').classList.add('active');
+            
+            displayScoreboard(data.scores, data.pinkCowHolder, 'scoreList');
+            
+            // Countdown to next round
+            let countdown = 5;
+            const timerEl = document.getElementById('nextRoundTimer');
+            timerEl.textContent = `Next round in ${countdown}...`;
+            
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    timerEl.textContent = `Next round in ${countdown}...`;
+                } else {
+                    clearInterval(countdownInterval);
+                    timerEl.textContent = 'Starting...';
+                }
+            }, 1000);
+        }
+
+        // Show game over phase
+        function showGameOverPhase(data) {
+            currentPhase = 'gameOver';
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            hideAllPhases();
+            document.getElementById('gameOverPhase').classList.add('active');
+            
+            document.getElementById('winnerName').textContent = data.winner;
+            displayScoreboard(data.finalScores, null, 'finalScoreList');
+        }
+
+        // Display scoreboard
+        function displayScoreboard(scores, pinkCowHolder, containerId) {
+            const scoreList = document.getElementById(containerId);
+            scoreList.innerHTML = '';
+            
+            // Sort by score
+            const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            
+            sortedScores.forEach(([player, score], index) => {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = 'score-item';
+                
+                if (index === 0) {
+                    scoreItem.classList.add('leading');
+                }
+                
+                if (pinkCowHolder === player) {
+                    scoreItem.classList.add('has-cow');
+                }
+                
+                scoreItem.innerHTML = `
+                    <div class="player-rank">${index + 1}.</div>
+                    <div class="player-info">
+                        ${player}
+                        ${pinkCowHolder === player ? ' 🐄' : ''}
+                    </div>
+                    <div class="player-score">${score}</div>
+                `;
+                
+                scoreList.appendChild(scoreItem);
+            });
+        }
+
+        // Hide all phases
+        function hideAllPhases() {
+            document.querySelectorAll('.phase').forEach(phase => {
+                phase.classList.remove('active');
+            });
+        }
+
+        // Play again
+        function playAgain() {
+            window.location.href = `waiting-room.html?room=${roomCode}&name=${playerName}`;
+        }
+
+        // Back to lobby
+        function backToLobby() {
+            window.location.href = 'lobby.html?game=herd-mentality';
+        }
+
+        // Handle disconnect
+        window.addEventListener('beforeunload', () => {
+            socket.disconnect();
+        });
+    </script>
+</body>
+</html>
