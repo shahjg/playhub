@@ -1,11 +1,40 @@
 // ============================================
-// CORRECT PLACEMENT FOR WEREWOLF CODE IN SERVER.JS
+// EXACT SERVER.JS STRUCTURE - COPY THIS PATTERN
 // ============================================
 
-// STEP 1: Add these helper functions BEFORE the io.on('connection') block
-// Put them right after the calculateSpyfallResults function
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors');
 
-// Initialize Werewolf game
+const app = express();
+const server = http.createServer(app);
+
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+app.use(cors());
+app.use(express.json());
+
+const rooms = new Map();
+const players = new Map();
+const disconnectTimers = new Map();
+
+function generateRoomCode() {
+  // ... your existing code
+}
+
+// ============================================
+// ADD ALL WEREWOLF HELPER FUNCTIONS HERE
+// (BEFORE io.on('connection'))
+// ============================================
+
 function initWerewolfGame(room) {
   const playerCount = room.players.length;
   
@@ -16,14 +45,13 @@ function initWerewolfGame(room) {
   const hasSeer = playerCount >= 4;
   const hasDoctor = playerCount >= 6;
   
-  console.log(`Werewolf game setup: ${playerCount} players, ${werewolfCount} werewolves, Seer: ${hasSeer}, Doctor: ${hasDoctor}`);
+  console.log(`Werewolf game setup: ${playerCount} players, ${werewolfCount} werewolves`);
   
   const shuffledPlayers = [...room.players].sort(() => Math.random() - 0.5);
   
   const werewolves = [];
   let seer = null;
   let doctor = null;
-  
   let roleIndex = 0;
   
   for (let i = 0; i < werewolfCount; i++) {
@@ -84,9 +112,7 @@ function initWerewolfGame(room) {
   
   const werewolfTeam = werewolves.map(w => ({ id: w.id, name: w.name }));
   werewolves.forEach(wolf => {
-    io.to(wolf.id).emit('werewolf-team', {
-      werewolves: werewolfTeam
-    });
+    io.to(wolf.id).emit('werewolf-team', { werewolves: werewolfTeam });
   });
   
   console.log(`Werewolf game initialized in room ${room.code}`);
@@ -99,9 +125,7 @@ function initWerewolfGame(room) {
 function startNightPhase(room) {
   room.gameData.phase = 'night';
   room.gameData.nightActions = {};
-  
   console.log(`Night ${room.gameData.currentRound} started in room ${room.code}`);
-  
   startWerewolfPhase(room);
 }
 
@@ -186,7 +210,6 @@ function processNightActions(room) {
 
 function startDayPhase(room, killedPlayer, savedByDoctor) {
   room.gameData.phase = 'day';
-  
   console.log(`Day ${room.gameData.currentRound} started in room ${room.code}`);
   
   io.to(room.code).emit('day-phase-start', {
@@ -204,7 +227,6 @@ function startDayPhase(room, killedPlayer, savedByDoctor) {
 function startVotingPhase(room) {
   room.gameData.phase = 'voting';
   room.gameData.votes = {};
-  
   console.log(`Voting started in room ${room.code}`);
   
   io.to(room.code).emit('voting-phase-start', {
@@ -292,7 +314,7 @@ function checkWinConditions(room, eliminatedPlayer = null) {
       allRoles: allRoles
     });
     
-    console.log(`Game over in room ${room.code}. Villagers win: ${villagersWin}, Werewolves win: ${werewolvesWin}`);
+    console.log(`Game over in room ${room.code}`);
     return true;
   }
   
@@ -300,16 +322,56 @@ function checkWinConditions(room, eliminatedPlayer = null) {
 }
 
 // ============================================
-// STEP 2: FIND THIS LINE IN YOUR server.js:
-//   io.on('connection', (socket) => {
-//
-// THEN INSIDE THAT BLOCK, FIND WHERE YOUR OTHER socket.on() HANDLERS ARE
-// (like 'submit-vote', 'submit-clue', etc.)
-//
-// ADD THIS HANDLER THERE (around line 300-ish, with your other handlers):
+// NOW START THE SOCKET CONNECTION BLOCK
+// NOTICE: All socket.on() handlers go INSIDE here
 // ============================================
 
-  // NIGHT ACTION (add this with your other socket.on handlers)
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+
+  // ... your existing handlers like create-room, join-room, etc.
+
+  // START GAME HANDLER - UPDATE THIS
+  socket.on('start-game', (data) => {
+    const { roomCode, category, twoSpies } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+    
+    const player = players.get(socket.id);
+    if (!player || !player.isHost) {
+      socket.emit('error', { message: 'Only host can start the game' });
+      return;
+    }
+    
+    if (room.players.length < 3) {
+      socket.emit('error', { message: 'Need at least 3 players to start' });
+      return;
+    }
+    
+    // Initialize game based on game type
+    if (room.gameType === 'imposter') {
+      initImposterGame(room, category || 'random');
+    } else if (room.gameType === 'spyfall') {
+      initSpyfallGame(room, category || 'random', twoSpies || false);
+    } else if (room.gameType === 'werewolf') {
+      initWerewolfGame(room);
+    }
+    
+    room.gameState = 'playing';
+    
+    io.to(roomCode).emit('game-started', {
+      roomCode: roomCode,
+      gameType: room.gameType
+    });
+    
+    console.log(`Game started in room ${roomCode}`);
+  });
+
+  // NIGHT ACTION HANDLER - ADD THIS INSIDE THE CONNECTION BLOCK
   socket.on('night-action', (data) => {
     const { roomCode, actionType, targetId } = data;
     const room = rooms.get(roomCode);
@@ -320,7 +382,7 @@ function checkWinConditions(room, eliminatedPlayer = null) {
       return;
     }
     
-    console.log(`Night action in room ${roomCode}: ${actionType} by ${player.playerName} targeting ${targetId}`);
+    console.log(`Night action: ${actionType} by ${player.playerName}`);
     
     if (actionType === 'werewolf-target') {
       if (!room.gameData.werewolfVotes) {
@@ -373,7 +435,6 @@ function checkWinConditions(room, eliminatedPlayer = null) {
       
     } else if (actionType === 'doctor-save') {
       room.gameData.nightActions.doctorSave = targetId;
-      
       socket.emit('night-action-confirmed', {});
       
       setTimeout(() => {
@@ -382,57 +443,7 @@ function checkWinConditions(room, eliminatedPlayer = null) {
     }
   });
 
-// ============================================
-// STEP 3: UPDATE YOUR EXISTING 'start-game' HANDLER
-// Find your existing socket.on('start-game', ...) handler
-// and update it to include werewolf:
-// ============================================
-
-  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies } = data;
-    const room = rooms.get(roomCode);
-    
-    if (!room) {
-      socket.emit('error', { message: 'Room not found' });
-      return;
-    }
-    
-    const player = players.get(socket.id);
-    if (!player || !player.isHost) {
-      socket.emit('error', { message: 'Only host can start the game' });
-      return;
-    }
-    
-    if (room.players.length < 3) {
-      socket.emit('error', { message: 'Need at least 3 players to start' });
-      return;
-    }
-    
-    // Initialize game based on game type
-    if (room.gameType === 'imposter') {
-      initImposterGame(room, category || 'random');
-    } else if (room.gameType === 'spyfall') {
-      initSpyfallGame(room, category || 'random', twoSpies || false);
-    } else if (room.gameType === 'werewolf') {
-      initWerewolfGame(room);  // ADD THIS LINE
-    }
-    
-    room.gameState = 'playing';
-    
-    io.to(roomCode).emit('game-started', {
-      roomCode: roomCode,
-      gameType: room.gameType
-    });
-    
-    console.log(`Game started in room ${roomCode}, type: ${room.gameType}`);
-  });
-
-// ============================================
-// STEP 4: UPDATE YOUR EXISTING 'submit-vote' HANDLER
-// Find your existing socket.on('submit-vote', ...) handler
-// Replace it with this updated version:
-// ============================================
-
+  // SUBMIT VOTE HANDLER - UPDATE THIS
   socket.on('submit-vote', (data) => {
     const { roomCode, votedPlayerId } = data;
     const room = rooms.get(roomCode);
@@ -447,7 +458,6 @@ function checkWinConditions(room, eliminatedPlayer = null) {
     
     const totalVotes = Object.keys(room.gameData.votes).length;
     
-    // For werewolf, count alive players only
     let totalPlayers;
     if (room.gameType === 'werewolf') {
       totalPlayers = room.gameData.alivePlayers.length;
@@ -462,8 +472,6 @@ function checkWinConditions(room, eliminatedPlayer = null) {
       totalPlayers: totalPlayers
     });
     
-    console.log(`Vote in room ${roomCode}: ${totalVotes}/${totalPlayers}`);
-    
     const voteCounts = {};
     Object.values(room.gameData.votes).forEach(votedId => {
       voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
@@ -473,22 +481,25 @@ function checkWinConditions(room, eliminatedPlayer = null) {
     const hasConsensus = maxVotes >= majority;
     
     if (hasConsensus || totalVotes === totalPlayers) {
-      console.log(`Ending voting in room ${roomCode}`);
-      
       if (room.gameType === 'imposter') {
         calculateImposterResults(room);
       } else if (room.gameType === 'spyfall') {
         calculateSpyfallResults(room);
       } else if (room.gameType === 'werewolf') {
-        processVotingResults(room);  // ADD THIS
+        processVotingResults(room);
       }
     }
   });
 
+  // ... your other handlers (disconnect, kick-player, etc.)
+
+}); // ← END OF io.on('connection') - VERY IMPORTANT!
+
 // ============================================
-// QUICK SUMMARY:
-// 1. Add all the werewolf functions BEFORE io.on('connection')
-// 2. Add socket.on('night-action') INSIDE io.on('connection')
-// 3. Update socket.on('start-game') to include werewolf
-// 4. Update socket.on('submit-vote') to handle werewolf
+// START SERVER (after the connection block closes)
 // ============================================
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
