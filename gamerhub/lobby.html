@@ -172,6 +172,17 @@
             display: none;
         }
 
+        .success {
+            background: #e7f5e7;
+            color: #2d7a2d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 20px;
@@ -213,6 +224,7 @@
                 <button onclick="joinRoom()" id="joinBtn">Join Room</button>
             </div>
 
+            <div class="success" id="success"></div>
             <div class="error" id="error"></div>
         </div>
     </div>
@@ -251,7 +263,7 @@
             console.log('Connected:', socket.id);
         });
 
-        // CREATE ROOM
+        // CREATE ROOM - FIXED with delay
         socket.on('room-created', (data) => {
             console.log('Room created:', data);
             
@@ -261,10 +273,15 @@
             localStorage.setItem('tempRoomCode', data.roomCode);
             localStorage.setItem('tempPlayerName', playerName);
             localStorage.setItem('tempIsHost', 'true');
-            localStorage.setItem('tempGameType', currentGame.type); // Store again for safety
+            localStorage.setItem('tempGameType', currentGame.type);
             
-            // Redirect immediately
-            window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
+            // Show success message
+            showSuccess(`Room ${data.roomCode} created! Redirecting...`);
+            
+            // CRITICAL FIX: Add delay before redirect to let socket connection stabilize
+            setTimeout(() => {
+                window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
+            }, 200); // 200ms delay prevents premature disconnect
         });
 
         // JOIN ROOM
@@ -277,7 +294,12 @@
                 localStorage.setItem('tempGameType', data.gameType);
             }
             
-            window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=false`;
+            // Show success and redirect with delay
+            showSuccess(`Joined room ${data.roomCode}! Redirecting...`);
+            
+            setTimeout(() => {
+                window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=false`;
+            }, 200);
         });
 
         socket.on('error', (data) => {
@@ -301,7 +323,10 @@
             }
 
             hideError();
+            hideSuccess();
             disableButtons();
+
+            console.log('Emitting create-room event:', { playerName: name, gameType: currentGame.type });
 
             socket.emit('create-room', {
                 playerName: name,
@@ -324,6 +349,7 @@
             }
 
             hideError();
+            hideSuccess();
             disableButtons();
 
             socket.emit('join-room', {
@@ -340,6 +366,16 @@
 
         function hideError() {
             document.getElementById('error').style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            const success = document.getElementById('success');
+            success.textContent = msg;
+            success.style.display = 'block';
+        }
+
+        function hideSuccess() {
+            document.getElementById('success').style.display = 'none';
         }
 
         function disableButtons() {
