@@ -265,7 +265,7 @@
 
         // CREATE ROOM - FIXED with delay
         socket.on('room-created', (data) => {
-            console.log('Room created:', data);
+            console.log('✅ Room created successfully:', data);
             
             const playerName = document.getElementById('createName').value.trim();
             
@@ -278,10 +278,20 @@
             // Show success message
             showSuccess(`Room ${data.roomCode} created! Redirecting...`);
             
-            // CRITICAL FIX: Add delay before redirect to let socket connection stabilize
+            console.log('📦 Stored in localStorage:', {
+                roomCode: data.roomCode,
+                playerName: playerName,
+                gameType: currentGame.type
+            });
+            
+            // Don't disconnect socket - let it stay connected
+            console.log('🔄 Redirecting in 100ms...');
+            
+            // CRITICAL FIX: Minimal delay before redirect
             setTimeout(() => {
+                console.log('🚀 Redirecting now to:', `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`);
                 window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
-            }, 200); // 200ms delay prevents premature disconnect
+            }, 100); // Reduced to 100ms for faster redirect
         });
 
         // JOIN ROOM
