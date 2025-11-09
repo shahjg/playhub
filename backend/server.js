@@ -291,7 +291,87 @@ function endHerdGame(room, winner) {
     finalScores: room.gameData.scores
   });
 }
+// ============================================
+// CODENAMES WORD BANK & GAME LOGIC
+// ============================================
 
+const codenamesWords = [
+  'AGENT', 'AFRICA', 'AIR', 'ALIEN', 'ALPS', 'AMAZON', 'AMBULANCE', 'AMERICA', 'ANGEL', 'ANTARCTICA',
+  'APPLE', 'ARM', 'ATLANTIS', 'AUSTRALIA', 'AZTEC', 'BACK', 'BALL', 'BAND', 'BANK', 'BAR',
+  'BARK', 'BAT', 'BATTERY', 'BEACH', 'BEAR', 'BEAT', 'BED', 'BEIJING', 'BELL', 'BELT',
+  'BERLIN', 'BERMUDA', 'BERRY', 'BILL', 'BLOCK', 'BOARD', 'BOLT', 'BOMB', 'BOND', 'BOOM',
+  'BOOT', 'BOTTLE', 'BOW', 'BOX', 'BRIDGE', 'BRUSH', 'BUCK', 'BUFFALO', 'BUG', 'BUGLE',
+  'BUTTON', 'CALF', 'CANADA', 'CAP', 'CAPITAL', 'CAR', 'CARD', 'CARROT', 'CASINO', 'CAST',
+  'CAT', 'CELL', 'CENTAUR', 'CENTER', 'CHAIR', 'CHANGE', 'CHARGE', 'CHECK', 'CHEST', 'CHICK',
+  'CHINA', 'CHOCOLATE', 'CHURCH', 'CIRCLE', 'CLIFF', 'CLOAK', 'CLUB', 'CODE', 'COLD', 'COMIC',
+  'COMPOUND', 'CONCERT', 'CONDUCTOR', 'CONTRACT', 'COOK', 'COPPER', 'COTTON', 'COURT', 'COVER', 'CRANE',
+  'CRASH', 'CRICKET', 'CROSS', 'CROWN', 'CYCLE', 'CZECH', 'DANCE', 'DATE', 'DAY', 'DEATH',
+  'DECK', 'DEGREE', 'DIAMOND', 'DICE', 'DINOSAUR', 'DISEASE', 'DOCTOR', 'DOG', 'DRAFT', 'DRAGON',
+  'DRESS', 'DRILL', 'DROP', 'DUCK', 'DWARF', 'EAGLE', 'EGYPT', 'EMBASSY', 'ENGINE', 'ENGLAND',
+  'EUROPE', 'EYE', 'FACE', 'FAIR', 'FALL', 'FAN', 'FENCE', 'FIELD', 'FIGHTER', 'FIGURE',
+  'FILE', 'FILM', 'FIRE', 'FISH', 'FLUTE', 'FLY', 'FOOT', 'FORCE', 'FOREST', 'FORK',
+  'FRANCE', 'GAME', 'GAS', 'GENIUS', 'GERMANY', 'GHOST', 'GIANT', 'GLASS', 'GLOVE', 'GOLD',
+  'GRACE', 'GRASS', 'GREECE', 'GREEN', 'GROUND', 'HAM', 'HAND', 'HAWK', 'HEAD', 'HEART',
+  'HELICOPTER', 'HIMALAYAS', 'HOLE', 'HOLLYWOOD', 'HONEY', 'HOOD', 'HOOK', 'HORN', 'HORSE', 'HORSESHOE',
+  'HOSPITAL', 'HOTEL', 'ICE', 'INDIA', 'IRON', 'IVORY', 'JACK', 'JAM', 'JET', 'JUPITER',
+  'KANGAROO', 'KETCHUP', 'KEY', 'KID', 'KING', 'KIWI', 'KNIFE', 'KNIGHT', 'LAB', 'LAP',
+  'LASER', 'LAWYER', 'LEAD', 'LEMON', 'LEPRECHAUN', 'LIFE', 'LIGHT', 'LIMOUSINE', 'LINE', 'LINK',
+  'LION', 'LITTER', 'LOCH NESS', 'LOCK', 'LOG', 'LONDON', 'LUCK', 'MAIL', 'MAMMOTH', 'MAPLE',
+  'MARBLE', 'MARCH', 'MASS', 'MATCH', 'MERCURY', 'MEXICO', 'MICROSCOPE', 'MILLIONAIRE', 'MINE', 'MINT',
+  'MISSILE', 'MODEL', 'MOLE', 'MOON', 'MOSCOW', 'MOUNT', 'MOUSE', 'MOUTH', 'MUG', 'NAIL',
+  'NEEDLE', 'NET', 'NEW YORK', 'NIGHT', 'NINJA', 'NOTE', 'NOVEL', 'NURSE', 'NUT', 'OCTOPUS',
+  'OIL', 'OLIVE', 'OLYMPUS', 'OPERA', 'ORANGE', 'ORGAN', 'PALM', 'PAN', 'PANTS', 'PAPER',
+  'PARACHUTE', 'PARK', 'PART', 'PASS', 'PASTE', 'PENGUIN', 'PHOENIX', 'PIANO', 'PIE', 'PILOT',
+  'PIN', 'PIPE', 'PIRATE', 'PISTOL', 'PIT', 'PITCH', 'PLANE', 'PLASTIC', 'PLATE', 'PLATYPUS',
+  'PLAY', 'PLOT', 'POINT', 'POISON', 'POLE', 'POLICE', 'POOL', 'PORT', 'POST', 'POUND',
+  'PRESS', 'PRINCESS', 'PUMPKIN', 'PUPIL', 'PYRAMID', 'QUEEN', 'RABBIT', 'RACKET', 'RAY', 'REVOLUTION',
+  'RING', 'ROBIN', 'ROBOT', 'ROCK', 'ROME', 'ROOT', 'ROSE', 'ROULETTE', 'ROUND', 'ROW',
+  'RULER', 'SATELLITE', 'SATURN', 'SCALE', 'SCHOOL', 'SCIENTIST', 'SCORPION', 'SCREEN', 'SCUBA DIVER', 'SEAL',
+  'SERVER', 'SHADOW', 'SHAKESPEARE', 'SHARK', 'SHIP', 'SHOE', 'SHOP', 'SHOT', 'SINK', 'SKYSCRAPER',
+  'SLIP', 'SLUG', 'SMUGGLER', 'SNOW', 'SOCK', 'SOLDIER', 'SOUL', 'SOUND', 'SPACE', 'SPELL',
+  'SPIDER', 'SPIKE', 'SPINE', 'SPOT', 'SPRING', 'SPY', 'SQUARE', 'STADIUM', 'STAFF', 'STAR',
+  'STATE', 'STICK', 'STOCK', 'STRAW', 'STREAM', 'STRIKE', 'STRING', 'SUB', 'SUIT', 'SUPERHERO',
+  'SWING', 'SWITCH', 'TABLE', 'TABLET', 'TAG', 'TAIL', 'TAP', 'TEACHER', 'TELESCOPE', 'TEMPLE',
+  'TEXAS', 'THEATER', 'THIEF', 'THUMB', 'TICK', 'TIE', 'TIME', 'TOKYO', 'TOOTH', 'TORCH',
+  'TOWER', 'TRACK', 'TRAIN', 'TRIANGLE', 'TRIP', 'TRUNK', 'TUBE', 'TURKEY', 'UNDERTAKER', 'UNICORN',
+  'VACUUM', 'VAN', 'VET', 'WAKE', 'WALL', 'WAR', 'WASHER', 'WASHINGTON', 'WATCH', 'WATER',
+  'WAVE', 'WEB', 'WELL', 'WHALE', 'WHIP', 'WIND', 'WITCH', 'WORM', 'YARD'
+];
+
+function initializeCodenamesGame(room) {
+  // Pick 25 random words
+  const shuffled = [...codenamesWords].sort(() => Math.random() - 0.5);
+  const selectedWords = shuffled.slice(0, 25);
+
+  // Decide who goes first (Red or Blue)
+  const startingTeam = Math.random() < 0.5 ? 'red' : 'blue';
+  
+  // Assign colors to words
+  const colors = [];
+  colors.push(...Array(startingTeam === 'red' ? 9 : 8).fill('red'));
+  colors.push(...Array(startingTeam === 'blue' ? 9 : 8).fill('blue'));
+  colors.push(...Array(7).fill('neutral'));
+  colors.push('assassin');
+  
+  // Shuffle colors
+  colors.sort(() => Math.random() - 0.5);
+
+  // Create word objects
+  const words = selectedWords.map((word, index) => ({
+    word,
+    color: colors[index],
+    revealed: false
+  }));
+
+  return {
+    words,
+    currentTeam: startingTeam,
+    currentClue: null,
+    phase: 'clue_giving',
+    winner: null,
+    gameOverReason: null
+  };
+}
 // ============================================
 // WEREWOLF HELPER FUNCTIONS
 // ============================================
@@ -1462,7 +1542,11 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'herd-mentality') {
       initHerdMentalityGame(room, category || 'standard');
     }
-    
+    } else if (room.gameType === 'codenames') {
+      // Codenames has special team setup, so we don't initialize here
+      // Game starts when host clicks start in team setup screen
+      return; // Don't emit game-started yet
+    }
     room.gameState = 'playing';
     
     // Notify all players to start
@@ -1706,7 +1790,172 @@ io.on('connection', (socket) => {
       calculateHerdResults(room);
     }
   });
+  // ============================================
+  // CODENAMES SOCKET HANDLERS
+  // ============================================
 
+  // Join a team
+  socket.on('codenames-join-team', (data) => {
+    const { roomCode, team, role } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room) return socket.emit('error', { message: 'Room not found' });
+    
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return socket.emit('error', { message: 'Player not in room' });
+
+    // Create teams structure if needed
+    if (!room.codenamesTeams) {
+      room.codenamesTeams = {
+        red: { spymaster: null, operatives: [] },
+        blue: { spymaster: null, operatives: [] }
+      };
+    }
+
+    // Remove player from any existing team
+    ['red', 'blue'].forEach(t => {
+      if (room.codenamesTeams[t].spymaster?.id === socket.id) {
+        room.codenamesTeams[t].spymaster = null;
+      }
+      room.codenamesTeams[t].operatives = 
+        room.codenamesTeams[t].operatives.filter(p => p.id !== socket.id);
+    });
+
+    // Add to new team/role
+    if (role === 'spymaster') {
+      if (room.codenamesTeams[team].spymaster) {
+        return socket.emit('error', { message: 'Spymaster slot taken' });
+      }
+      room.codenamesTeams[team].spymaster = player;
+    } else {
+      room.codenamesTeams[team].operatives.push(player);
+    }
+
+    io.to(roomCode).emit('team-updated', { room });
+  });
+
+  // Start game
+  socket.on('codenames-start-game', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room) return socket.emit('error', { message: 'Room not found' });
+    
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player?.isHost) return socket.emit('error', { message: 'Only host can start' });
+
+    const teams = room.codenamesTeams;
+    if (!teams.red.spymaster || !teams.blue.spymaster ||
+        teams.red.operatives.length === 0 || teams.blue.operatives.length === 0) {
+      return socket.emit('error', { message: 'Need both spymasters + 1 operative each' });
+    }
+
+    room.codenamesState = initializeCodenamesGame(room);
+    room.status = 'playing';
+
+    io.to(roomCode).emit('codenames-started', { gameState: room.codenamesState });
+  });
+
+  // Give clue (spymaster)
+  socket.on('codenames-give-clue', (data) => {
+    const { roomCode, word, number } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room?.codenamesState) return socket.emit('error', { message: 'Game not found' });
+
+    const state = room.codenamesState;
+    const teams = room.codenamesTeams;
+    const currentTeam = teams[state.currentTeam];
+    
+    if (!currentTeam.spymaster || currentTeam.spymaster.id !== socket.id) {
+      return socket.emit('error', { message: 'Not your turn' });
+    }
+
+    state.currentClue = { word: word.toUpperCase(), number };
+    state.phase = 'guessing';
+
+    io.to(roomCode).emit('codenames-clue-given', { 
+      clue: state.currentClue,
+      gameState: state
+    });
+  });
+
+  // Select word (operative)
+  socket.on('codenames-select-word', (data) => {
+    const { roomCode, wordIndex } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room?.codenamesState) return socket.emit('error', { message: 'Game not found' });
+
+    const state = room.codenamesState;
+    const teams = room.codenamesTeams;
+    const currentTeam = teams[state.currentTeam];
+    const isOperative = currentTeam.operatives.some(p => p.id === socket.id);
+
+    if (!isOperative) return socket.emit('error', { message: 'Not your turn' });
+    if (!state.currentClue) return socket.emit('error', { message: 'Wait for clue' });
+
+    const word = state.words[wordIndex];
+    if (word.revealed) return socket.emit('error', { message: 'Already revealed' });
+
+    // Reveal word
+    word.revealed = true;
+
+    // Check game over
+    const assassinRevealed = word.color === 'assassin';
+    const redRemaining = state.words.filter(w => w.color === 'red' && !w.revealed).length;
+    const blueRemaining = state.words.filter(w => w.color === 'blue' && !w.revealed).length;
+
+    if (assassinRevealed) {
+      state.phase = 'game_over';
+      state.winner = state.currentTeam === 'red' ? 'blue' : 'red';
+      state.gameOverReason = 'assassin';
+    } else if (redRemaining === 0) {
+      state.phase = 'game_over';
+      state.winner = 'red';
+      state.gameOverReason = 'all_words';
+    } else if (blueRemaining === 0) {
+      state.phase = 'game_over';
+      state.winner = 'blue';
+      state.gameOverReason = 'all_words';
+    } else if (word.color !== state.currentTeam) {
+      // Wrong word - end turn
+      state.currentTeam = state.currentTeam === 'red' ? 'blue' : 'red';
+      state.currentClue = null;
+      state.phase = 'clue_giving';
+    }
+
+    io.to(roomCode).emit('codenames-word-revealed', {
+      wordIndex,
+      color: word.color,
+      gameState: state
+    });
+
+    if (state.phase === 'clue_giving') {
+      io.to(roomCode).emit('codenames-turn-ended', { gameState: state });
+    }
+  });
+
+  // End turn
+  socket.on('codenames-end-turn', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    
+    if (!room?.codenamesState) return socket.emit('error', { message: 'Game not found' });
+
+    const state = room.codenamesState;
+    const teams = room.codenamesTeams;
+    const currentTeam = teams[state.currentTeam];
+    const isOperative = currentTeam.operatives.some(p => p.id === socket.id);
+
+    if (!isOperative) return socket.emit('error', { message: 'Not your turn' });
+
+    state.currentTeam = state.currentTeam === 'red' ? 'blue' : 'red';
+    state.currentClue = null;
+    state.phase = 'clue_giving';
+
+    io.to(roomCode).emit('codenames-turn-ended', { gameState: state });
+  });
   // WEREWOLF - NIGHT ACTION
   socket.on('night-action', (data) => {
     const { roomCode, actionType, targetId } = data;
