@@ -1542,7 +1542,7 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'herd-mentality') {
       initHerdMentalityGame(room, category || 'standard');
     } else if (room.gameType === 'codenames') {
-      // Codenames uses team setup screen, don't initialize here
+      // Codenames uses team setup screen
       return;
     }
     
@@ -1553,9 +1553,6 @@ io.on('connection', (socket) => {
       roomCode: roomCode,
       gameType: room.gameType
     });
-    
-    console.log(`Game started in room ${roomCode} with category: ${category || 'random'}, twoSpies: ${twoSpies || false}`);
-  });
     
     console.log(`Game started in room ${roomCode} with category: ${category || 'random'}, twoSpies: ${twoSpies || false}`);
   });
