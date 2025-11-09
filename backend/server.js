@@ -1541,12 +1541,11 @@ io.on('connection', (socket) => {
       initWerewolfGame(room);
     } else if (room.gameType === 'herd-mentality') {
       initHerdMentalityGame(room, category || 'standard');
-    }
     } else if (room.gameType === 'codenames') {
-      // Codenames has special team setup, so we don't initialize here
-      // Game starts when host clicks start in team setup screen
-      return; // Don't emit game-started yet
+      // Codenames uses team setup screen, don't initialize here
+      return;
     }
+    
     room.gameState = 'playing';
     
     // Notify all players to start
@@ -1554,6 +1553,9 @@ io.on('connection', (socket) => {
       roomCode: roomCode,
       gameType: room.gameType
     });
+    
+    console.log(`Game started in room ${roomCode} with category: ${category || 'random'}, twoSpies: ${twoSpies || false}`);
+  });
     
     console.log(`Game started in room ${roomCode} with category: ${category || 'random'}, twoSpies: ${twoSpies || false}`);
   });
