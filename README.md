@@ -1,4 +1,4 @@
-# PlayHub - Modern Game Platform Design
+# TheGamingHub - Modern Game Platform Design
 
 ## 🎮 What I've Created
 
@@ -91,7 +91,7 @@ In `index.html`, copy a `.game-card` div and modify:
 - Adjust player count and stats
 
 ### Change Platform Name
-Replace "PlayHub" with your name in:
+Replace "TheGamingHub" with your name in:
 - `<title>` tag
 - `.logo-text` span
 - Footer
