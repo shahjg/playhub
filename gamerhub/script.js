@@ -140,6 +140,6 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Console message for developers
-console.log('%c🎮 Welcome to PlayHub! 🎮', 'font-size: 20px; font-weight: bold; color: #667eea;');
+console.log('%c🎮 Welcome to TheGamingHub! 🎮', 'font-size: 20px; font-weight: bold; color: #667eea;');
 console.log('%cLike what you see? We\'re hiring! Check out our careers page.', 'font-size: 14px; color: #a0a0b0;');
 console.log('%cPro tip: Try the Konami Code 😉', 'font-size: 12px; color: #f5576c;');
