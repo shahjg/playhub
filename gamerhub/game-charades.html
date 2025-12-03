@@ -49,7 +49,9 @@
         .selection-description { font-size: 0.95rem; color: #666; margin-bottom: 12px; font-weight: 500; line-height: 1.5; }
 
         /* Pack Specific Styles */
-        .packs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        /* Dynamic Pack Grid: Will adjust based on number of active packs */
+        .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
+
         .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
         .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
         .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
@@ -170,7 +172,6 @@
         @media (max-width: 768px) {
             .container { padding: 0 20px; }
             .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
-            /* 3-column grid switches to 1 column on mobile */
             .selection-grid { grid-template-columns: 1fr; } 
             .packs-grid { grid-template-columns: 1fr; }
             .quit-btn { position: static; margin-bottom: 15px; display: block; width: 100%; }
@@ -248,7 +249,7 @@
                 
                 <div class="selection-header">
                     <h2 id="packCategoryTitle"></h2>
-                    <p>Choose a pack of 20 prompts</p>
+                    <p>Choose a pack of prompts</p>
                 </div>
 
                 <div class="packs-grid" id="packsGrid">
@@ -309,7 +310,7 @@
         let currentPack = '';
         let currentPrompts = [];
         let currentPlayer = 1; // Start with Player 1
-        const TOTAL_PROMPTS = 20; // 20 prompts per pack
+        const TOTAL_PROMPTS = 20; // Used for prompt counter display if pack size is consistent
 
         const categoryTitles = {
             'silly': 'SILLY & RANDOM',
@@ -320,7 +321,7 @@
             'fantasy': 'FUTURE & FANTASY'
         };
         
-        // --- CHARADES PROMPT BANKS (3 PACKS OF 20 PROMPTS EACH) ---
+        // --- CHARADES PROMPT BANKS (Only active packs included) ---
         const charadesPrompts = {
             silly: {
                 pack1: [ "Trying to assemble IKEA furniture", "A cat demanding food", "A very clumsy waiter", "Singing terribly in the shower", "Trying to parallel park", "Eating a giant messy burger", "A nervous public speaker", "Running for a bus", "Doing the laundry (and failing)", "A bird hitting a window", "Shaking a can of soda", "An opera singer breaking glass", "Trying to put on tight jeans", "A chef tasting bad food", "An awkward first date hug", "Invisible box challenge", "A ghost haunting a small room", "A dog chasing its own tail", "Getting tangled in Christmas lights", "A celebrity signing an autograph"],
@@ -338,19 +339,13 @@
                 pack3: [ "A private dance just for you", "A provocative glance", "Kissing down the back", "Whipping cream challenge", "A fantasy role play", "A dominant move", "Waking up naked", "The hottest part of my body", "A naughty whisper in the ear", "A spontaneous moment", "Taking off a shirt smoothly", "A jealous stare", "My favorite part of your body", "A confident stance", "A sexy wink", "A sensual lick", "Running your hands through my hair", "A slow, deep kiss", "My favorite spot to be kissed", "A long, meaningful hug after sex"]
             },
             'pop-culture': {
-                pack1: [ "Tearful Oscar acceptance speech", "A celebrity hiding from the paparazzi", "The music video Thriller", "A character getting a red card", "Opening a magic portal", "A popular TikTok dance", "The famous Titanic scene", "A magician pulling a rabbit out of a hat", "A villain twirling a mustache", "A person winning the lottery", "A news anchor reading a teleprompter", "A famous painting (e.g., Mona Lisa)", "Trying to act cool on a red carpet", "Being ghosted", "A person binge-watching TV", "The movie Jaws", "The scene from The Matrix", "Drinking wine dramatically", "A person taking a selfie", "Rapping fast"],
-                pack2: [], // Empty packs for launch
-                pack3: [] // Empty packs for launch
+                pack1: [ "Tearful Oscar acceptance speech", "A celebrity hiding from the paparazzi", "The music video Thriller", "A character getting a red card", "Opening a magic portal", "A popular TikTok dance", "The famous Titanic scene", "A magician pulling a rabbit out of a hat", "A villain twirling a mustache", "A person winning the lottery", "A news anchor reading a teleprompter", "A famous painting (e.g., Mona Lisa)", "Trying to act cool on a red carpet", "Being ghosted", "A person binge-watching TV", "The movie Jaws", "The scene from The Matrix", "Drinking wine dramatically", "A person taking a selfie", "Rapping fast"]
             },
             'nostalgia': {
-                pack1: [ "Jumping rope", "Riding a bicycle with no hands", "Playing hopscotch", "Tasting a sour candy", "Building a sandcastle", "Trying to beat a video game boss", "Waiting for the school bus", "Hiding under the covers with a flashlight", "Getting caught sneaking out", "A teacher writing on a blackboard", "A parent reading a bedtime story", "Sharing secrets over a sleepover", "Putting a puzzle together", "Singing into a hairbrush microphone", "Learning to tie shoes", "Getting grounded", "Waiting for the ice cream truck", "Playing tag", "Passing notes in class", "Sneaking food to a pet"],
-                pack2: [], // Empty packs for launch
-                pack3: [] // Empty packs for launch
+                pack1: [ "Jumping rope", "Riding a bicycle with no hands", "Playing hopscotch", "Tasting a sour candy", "Building a sandcastle", "Trying to beat a video game boss", "Waiting for the school bus", "Hiding under the covers with a flashlight", "Getting caught sneaking out", "A teacher writing on a blackboard", "A parent reading a bedtime story", "Sharing secrets over a sleepover", "Putting a puzzle together", "Singing into a hairbrush microphone", "Learning to tie shoes", "Getting grounded", "Waiting for the ice cream truck", "Playing tag", "Passing notes in class", "Sneaking food to a pet"]
             },
             'fantasy': {
-                pack1: [ "A robot rebellion", "Finding a hidden treasure map", "Living on Mars", "Flying a spaceship", "Time travel accident", "Meeting an alien", "Winning the Nobel Prize", "A future mode of transportation", "A genie granting three wishes", "Building a successful tech startup", "Curing a disease", "Surviving a zombie apocalypse", "A unicorn prancing", "A person with psychic powers", "Creating a new holiday tradition", "Discovering a new planet", "A dragon hoarding gold", "Teleporting somewhere embarrassing", "A politician making a promise", "Living in a smart house"],
-                pack2: [], // Empty packs for launch
-                pack3: [] // Empty packs for launch
+                pack1: [ "A robot rebellion", "Finding a hidden treasure map", "Living on Mars", "Flying a spaceship", "Time travel accident", "Meeting an alien", "Winning the Nobel Prize", "A future mode of transportation", "A genie granting three wishes", "Building a successful tech startup", "Curing a disease", "Surviving a zombie apocalypse", "A unicorn prancing", "A person with psychic powers", "Creating a new holiday tradition", "Discovering a new planet", "A dragon hoarding gold", "Teleporting somewhere embarrassing", "A politician making a promise", "Living in a smart house"]
             }
         };
 
@@ -368,50 +363,37 @@
             
             document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
             
-            // Dynamically generate pack cards (3 packs)
+            // Dynamically generate pack cards based ONLY on existing keys in the object
             const packsGrid = document.getElementById('packsGrid');
             packsGrid.innerHTML = '';
             
-            // Check if packs exist for this category
             const categoryPacks = charadesPrompts[categoryId];
-            const packKeys = Object.keys(categoryPacks);
+            let packIndex = 1;
 
-            for (let i = 0; i < 3; i++) {
-                const packId = packKeys[i];
-                const promptsCount = categoryPacks[packId] ? categoryPacks[packId].length : 0;
-                
-                let packCard;
-                if (promptsCount > 0) {
-                    // Active Pack
-                    packCard = `
+            for (const packId in categoryPacks) {
+                if (categoryPacks.hasOwnProperty(packId) && categoryPacks[packId].length > 0) {
+                    const promptsCount = categoryPacks[packId].length;
+                    
+                    const packCard = `
                         <div class="pack-card" onclick="selectPack('${packId}')">
-                            <div class="pack-number">${i + 1}</div>
-                            <h3>PACK ${i + 1}</h3>
+                            <div class="pack-number">${packIndex}</div>
+                            <h3>PACK ${packIndex}</h3>
                             <p class="pack-questions">${promptsCount} PROMPTS</p>
                         </div>
                     `;
-                } else {
-                    // Coming Soon Packs
-                    packCard = `
-                        <div class="pack-card" style="opacity: 0.6; cursor: not-allowed;">
-                            <div class="pack-number">${i + 1}</div>
-                            <h3>PACK ${i + 1}</h3>
-                            <p class="pack-questions">COMING SOON</p>
-                        </div>
-                    `;
+                    packsGrid.innerHTML += packCard;
+                    packIndex++;
                 }
-                packsGrid.innerHTML += packCard;
             }
         }
 
         function selectPack(packId) {
             currentPack = packId;
-            // Pull prompts only from the CHARADES bank
             currentPrompts = charadesPrompts[currentCategory][packId];
             
-            // Safety check for empty packs (shouldn't happen if logic above is right, but good practice)
+            // Safety check for empty packs (should never happen with new logic, but robust)
             if (currentPrompts.length === 0) {
-                 alert(`Pack ${packId.replace('pack', '')} is currently empty. Please choose an active pack.`);
+                 alert(`Selected pack is empty. Please choose an active pack.`);
                  return;
             }
 
