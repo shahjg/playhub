@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Builder - PlayHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base Styles from Q&A Template */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        /* Animated background blobs */
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
+        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
+        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
+        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
+        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Navigation */
+        nav { padding: 30px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
+        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        .back-btn:hover { color: #1a1a1a; }
+
+        /* General Content */
+        .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
+        .hidden { display: none !important; }
+
+        /* --- SELECTION SCREENS --- */
+        .selection-screen { max-width: 800px; margin: 40px auto; }
+        .selection-header { text-align: center; margin-bottom: 50px; }
+        .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
+        .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
+        
+        /* 3x2 Grid for 6 categories */
+        .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; } 
+        
+        .selection-card { background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
+        .selection-card:hover { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
+        .selection-icon { font-size: 3rem; margin-bottom: 15px; }
+        .selection-card h3 { font-size: 2rem; margin-bottom: 10px; line-height: 1; }
+        .selection-description { font-size: 0.95rem; color: #666; margin-bottom: 12px; font-weight: 500; line-height: 1.5; }
+
+        /* Pack Specific Styles */
+        .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
+        .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
+        .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
+        .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-bottom: 30px; }
+        .back-link:hover { color: #1a1a1a; }
+
+        /* --- INTERACTIVE GAME SCREEN --- */
+        .game-screen { display: none; }
+        .game-header { text-align: center; margin-bottom: 20px; position: relative; }
+        .quit-btn { position: absolute; right: 0; top: 0; background: white; border: 2px solid #1a1a1a; padding: 8px 20px; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; color: #666; }
+        .quit-btn:hover { background: #f0f0f0; color: #1a1a1a; }
+        
+        .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
+        
+        /* Story Container and Display */
+        .story-display-card {
+            background: white;
+            border: 4px solid #1a1a1a;
+            box-shadow: 8px 8px 0 #e0e0e0;
+            padding: 30px;
+            margin-bottom: 20px;
+            flex-grow: 1; /* Allows the story area to fill available vertical space */
+            overflow-y: auto;
+            max-height: 450px; /* Max height to constrain scrolling */
+        }
+        
+        .story-display-card p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .story-prompt-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 25px !important;
+            color: #c44569;
+            border-bottom: 2px dashed #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .player-turn-indicator {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 0 #ff6b9d;
+        }
+
+        /* Input and Button Area */
+        #sentenceInput {
+            width: 100%;
+            height: 80px;
+            padding: 15px;
+            border: 3px solid #1a1a1a;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 10px;
+            box-shadow: 3px 3px 0 #e0e0e0;
+        }
+
+        #addSentenceBtn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border: 2px solid #8b2e47;
+            box-shadow: 4px 4px 0 #8b2e47;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #addSentenceBtn:hover:not(:disabled) {
+            transform: translate(1px, -1px);
+            box-shadow: 3px 3px 0 #8b2e47;
+        }
+        
+        #addSentenceBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* End Screen */
+        .end-screen { display: none; text-align: center; max-width: 700px; margin: 80px auto; }
+        .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
+        .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
+        
+        .end-actions { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+        .action-btn { padding: 20px 50px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; width: 100%; }
+        .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
+        .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container { padding: 0 20px; }
+            .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
+            .selection-grid { grid-template-columns: 1fr; } 
+            .packs-grid { grid-template-columns: 1fr; }
+            .story-display-card { max-height: 350px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="container">
+        <nav>
+            <a href="index.html" class="logo-nav">PLAYHUB</a>
+            <a href="date-night.html" class="back-btn">
+                ← Back to Games
+            </a>
+        </nav>
+
+        <div class="game-content">
+            
+            <!-- 1. CATEGORY SELECTION SCREEN (6 VIBES) -->
+            <div class="selection-screen" id="categorySelection">
+                <div class="selection-header">
+                    <h2>STORY BUILDER</h2>
+                    <p>Create a hilarious or romantic story together, one sentence at a time.</p>
+                </div>
+
+                <div class="selection-grid">
+                    <div class="selection-card" onclick="showPacks('romance')"> <div class="selection-icon">💘</div> <h3>ROMANTIC COMEDY</h3> <p class="selection-description">Beginnings focused on awkward dates, meet-cutes, and affection.</p> </div>
+                    <div class="selection-card" onclick="showPacks('horror')"> <div class="selection-icon">🔪</div> <h3>HORROR / THRILLER</h3> <p class="selection-description">Suspenseful openings leading to mystery, dread, and monsters.</p> </div>
+                    <div class="selection-card" onclick="showPacks('fantasy')"> <div class="selection-icon">🐉</div> <h3>EPIC FANTASY</h3> <p class="selection-description">Adventures, medieval settings, magic, and grand quests.</p> </div>
+                    <div class="selection-card" onclick="showPacks('sci-fi')"> <div class="selection-icon">🚀</div> <h3>SCI-FI / FUTURE</h3> <p class="selection-description">Robots, space travel, dystopias, and advanced technology.</p> </div>
+                    <div class="selection-card" onclick="showPacks('noir')"> <div class="selection-icon">🕵️</div> <h3>CRIME NOIR / DETECTIVE</h3> <p class="selection-description">Mysterious rain-soaked settings, shady characters, and dark secrets.</p> </div>
+                    <div class="selection-card" onclick="showPacks('absurd')"> <div class="selection-icon">🤪</div> <h3>ABSURD COMEDY</h3> <p class="selection-description">Random, nonsensical, and hilarious beginnings with no rules.</p> </div>
+                </div>
+            </div>
+
+            <!-- 2. PACK SELECTION SCREEN -->
+            <div class="selection-screen hidden" id="packSelection">
+                <span class="back-link" onclick="backToCategories()">← Back to Categories</span>
+                
+                <div class="selection-header">
+                    <h2 id="packCategoryTitle"></h2>
+                    <p>Choose a story beginning</p>
+                </div>
+
+                <div class="packs-grid" id="packsGrid">
+                    <!-- Packs will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- 3. GAME SCREEN -->
+            <div class="game-screen" id="gameScreen">
+                <div class="game-header">
+                    <button class="quit-btn" onclick="quitToPacks()">QUIT</button>
+                    <div class="mode-label">STORY BUILDER</div>
+                    <div class="player-turn-indicator" id="playerTurnIndicator">PLAYER 1'S TURN</div>
+                </div>
+
+                <!-- Story Display Area -->
+                <div class="story-display-card" id="storyDisplay">
+                    <p class="story-prompt-text" id="storyPromptText">Start: A deep, rumbling sound came from the basement.</p>
+                    <!-- Sentences appended here -->
+                </div>
+
+                <!-- Input Area -->
+                <textarea id="sentenceInput" placeholder="Add your next sentence here..."></textarea>
+                <button id="addSentenceBtn" onclick="addSentence()">ADD SENTENCE</button>
+            </div>
+
+            <!-- END SCREEN -->
+            <div class="end-screen" id="endScreen">
+                <h2>THE END! 📖</h2>
+                <p class="end-message">You successfully completed your collaborative story! What a journey.</p>
+                
+                <div class="end-actions">
+                    <button class="action-btn primary" onclick="viewFinalStory()">READ FINAL STORY</button>
+                    <button class="action-btn secondary" onclick="backToPackSelection()">START NEW STORY</button>
+                </div>
+            </div>
+
+            <!-- FINAL STORY MODAL (Hidden by Default) -->
+            <div class="end-screen hidden" id="finalStoryModal">
+                <h2 id="finalStoryTitle"></h2>
+                <div class="story-display-card" id="finalStoryText"></div>
+                <div class="end-actions" style="margin-top: 30px;">
+                    <button class="action-btn primary" onclick="backToPackSelection()">START NEW STORY</button>
+                </div>
+            </div>
+
+        </div>
+
+        <footer></footer>
+    </div>
+
+    <script>
+        // --- GAME STATE & DATA ---
+        let currentCategory = '';
+        let currentPrompt = '';
+        let currentStory = [];
+        let currentPlayer = 1; 
+        const MAX_SENTENCES = 20;
+
+        const categoryTitles = {
+            'romance': 'ROMANTIC COMEDY', 'horror': 'HORROR / THRILLER', 'fantasy': 'EPIC FANTASY',
+            'sci-fi': 'SCI-FI / FUTURE', 'noir': 'CRIME NOIR / DETECTIVE', 'absurd': 'ABSURD COMEDY',
+        };
+        
+        // --- STORY STARTERS (10 Starters per Pack/Theme) ---
+        const storyStarters = {
+            romance: [
+                "It all started with an awkward collision at the coffee shop, spilling latte everywhere.",
+                "He/She noticed her/his mismatched socks first, which was somehow charming.",
+                "The blind date was a disaster until they both ordered the exact same weird appetizer.",
+                "They realized they were neighbors when they both locked themselves out at the exact same moment.",
+                "A truly terrible karaoke performance somehow became the most romantic moment of their lives."
+            ],
+            horror: [
+                "The old house smelled of dust and something metallic; they knew they shouldn't have opened the door.",
+                "The deep, unnatural silence of the forest was broken only by a chilling whisper.",
+                "The antique mirror didn't reflect their faces, only the face of a grinning man.",
+                "They woke up to find a perfectly straight line of salt poured around their bed.",
+                "The basement light flickered once, then died, plunging them into total darkness."
+            ],
+            fantasy: [
+                "The ancient map unrolled, revealing a path to a kingdom swallowed by time.",
+                "Their ordinary dog suddenly sprouted iridescent wings and began to float.",
+                "The Queen's urgent decree meant only one thing: the dragons had returned.",
+                "The forgotten sword felt strangely warm in their hand, humming a low tone.",
+                "They stepped through the closet door and found themselves standing on a mountain peak."
+            ],
+            sci_fi: [
+                "The transmission was faint, broken, but the three words were terrifying: 'Do not approach.'",
+                "The self-driving car suddenly developed a personality and refused to go to work.",
+                "In the year 2099, the air was clean, but humanity was utterly bored.",
+                "They realized their new neighbor was a robot with surprisingly emotional eyes.",
+                "The portal stabilized just long enough for them to leap through, landing on orange sand."
+            ],
+            noir: [
+                "The rain hit the window like percussion, a lonely rhythm fitting the lonely night.",
+                "She walked into the office wearing a dress the color of spilled whiskey, and he was hooked.",
+                "The envelope contained nothing but a single, cryptic black feather.",
+                "He knew the moment he took the case, he'd regret chasing that kind of trouble.",
+                "The voice on the phone was gravel and smoke, offering him a deal he couldn't refuse."
+            ],
+            absurd: [
+                "The squirrel was definitely wearing tiny trousers and demanding money for parking.",
+                "Suddenly, everyone in the city could only speak using the sound of rubber chickens.",
+                "Their favorite appliance began to argue existential philosophy with the toaster.",
+                "The cat confessed everything: the missing keys, the lost wallet, the global warming.",
+                "The mayor outlawed elbows, making life surprisingly complicated."
+            ]
+        };
+
+        // --- CORE GAME FUNCTIONS ---
+
+        function init() {
+            document.getElementById('categorySelection').style.display = 'block';
+        }
+
+        function showPacks(categoryId) {
+            currentCategory = categoryId;
+            document.getElementById('categorySelection').classList.add('hidden');
+            document.getElementById('packSelection').classList.remove('hidden');
+            
+            document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
+            
+            const packsGrid = document.getElementById('packsGrid');
+            packsGrid.innerHTML = '';
+            
+            const starters = storyStarters[categoryId];
+            let packIndex = 1;
+
+            starters.forEach((promptText) => {
+                const packCard = `
+                    <div class="pack-card" onclick="selectPrompt('${packTextToId(promptText)}')">
+                        <div class="pack-number">${packIndex}</div>
+                        <h3>PROMPT ${packIndex}</h3>
+                        <p class="pack-questions">${promptText.substring(0, 30)}...</p>
+                    </div>
+                `;
+                packsGrid.innerHTML += packCard;
+                packIndex++;
+            });
+        }
+        
+        // Utility to turn text into a stable, searchable ID
+        function packTextToId(text) {
+             return text.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '');
+        }
+
+        function selectPrompt(promptId) {
+            const starters = storyStarters[currentCategory];
+            currentPrompt = starters.find(text => packTextToId(text) === promptId);
+            
+            if (!currentPrompt) {
+                 alert("Error: Could not find story prompt.");
+                 return;
+            }
+
+            // Reset game state
+            currentStory = [];
+            currentPlayer = 1; 
+            
+            document.getElementById('packSelection').classList.add('hidden');
+            document.getElementById('gameScreen').style.display = 'flex';
+            
+            // Set up initial display
+            const storyDisplay = document.getElementById('storyDisplay');
+            storyDisplay.innerHTML = `<p class="story-prompt-text">Start: ${currentPrompt}</p>`;
+            
+            document.getElementById('sentenceInput').value = '';
+            updateTurn();
+        }
+
+        function updateTurn() {
+            const indicator = document.getElementById('playerTurnIndicator');
+            const input = document.getElementById('sentenceInput');
+            const button = document.getElementById('addSentenceBtn');
+            const storyLength = currentStory.length;
+            
+            indicator.textContent = `PLAYER ${currentPlayer}'S TURN (${storyLength + 1} / ${MAX_SENTENCES} SENTENCES)`;
+            input.placeholder = `Player ${currentPlayer}, continue the story here...`;
+            input.focus();
+
+            if (storyLength >= MAX_SENTENCES) {
+                indicator.textContent = `STORY COMPLETE (${MAX_SENTENCES} SENTENCES)`;
+                button.textContent = "STORY FINISHED";
+                button.disabled = true;
+                showEndScreen();
+            } else {
+                button.textContent = "ADD SENTENCE";
+                button.disabled = false;
+            }
+        }
+
+        function addSentence() {
+            const input = document.getElementById('sentenceInput');
+            let sentence = input.value.trim();
+
+            if (sentence.length < 5) {
+                alert("Please write a sentence before continuing.");
+                return;
+            }
+            
+            // Ensure the sentence ends with proper punctuation
+            if (!/[.!?]$/.test(sentence)) {
+                sentence += '.';
+            }
+
+            // Append sentence to the story array and the display
+            currentStory.push(`Player ${currentPlayer}: ${sentence}`);
+            
+            const storyDisplay = document.getElementById('storyDisplay');
+            const newSentence = document.createElement('p');
+            newSentence.innerHTML = `<span style="font-weight: 700; color: #ff6b9d;">Player ${currentPlayer}:</span> ${sentence}`;
+            storyDisplay.appendChild(newSentence);
+            
+            // Clear input and switch turns
+            input.value = '';
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateTurn();
+        }
+
+
+        // --- BACK/QUIT FUNCTIONS ---
+        function quitToPacks() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('packSelection').classList.remove('hidden');
+        }
+
+        function showEndScreen() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'block';
+        }
+
+        function viewFinalStory() {
+            document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('finalStoryModal').classList.remove('hidden');
+            
+            document.getElementById('finalStoryTitle').textContent = "Your Completed Story!";
+            const finalStoryText = document.getElementById('finalStoryText');
+            finalStoryText.innerHTML = `<p class="story-prompt-text">Start: ${currentPrompt}</p>`;
+            
+            currentStory.forEach((line) => {
+                const parts = line.split(':');
+                const player = parts[0];
+                const sentence = parts.slice(1).join(':').trim();
+                
+                const p = document.createElement('p');
+                p.innerHTML = `<span style="font-weight: 700; color: #ff6b9d;">${player}:</span> ${sentence}`;
+                finalStoryText.appendChild(p);
+            });
+            // Scroll to the top of the final story text
+            finalStoryText.scrollTop = 0;
+        }
+
+        function backToPackSelection() {
+            document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('finalStoryModal').classList.add('hidden');
+            document.getElementById('packSelection').classList.remove('hidden');
+            // Reset state
+            currentStory = [];
+            currentPlayer = 1;
+        }
+
+        function backToGames() {
+            window.location.href = 'date-night.html';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
