@@ -345,7 +345,7 @@
                 <p class="end-message" id="endMessage">Are you finished with your story, or do you want to keep writing?</p>
                 
                 <div class="end-actions">
-                    <button class="action-btn primary" onclick="viewFinalStory()">READ FINAL STORY</button>
+                    <button class="action-btn primary" onclick="viewFinalStory(false)">READ FINAL STORY</button>
                     <button class="action-btn secondary" onclick="continueStory()">KEEP WRITING</button>
                 </div>
             </div>
@@ -355,6 +355,7 @@
                 <h2 id="finalStoryTitle" style="text-align: center;"></h2>
                 <div class="story-display-card" id="finalStoryText"></div>
                 <div class="end-actions" style="margin-top: 30px;">
+                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DATE NIGHT</button>
                     <button class="action-btn primary" onclick="backToPackSelection()">START NEW STORY</button>
                 </div>
             </div>
@@ -421,7 +422,7 @@
                 "In the year 2099, the air was clean, but humanity was utterly bored.",
                 "They realized their new neighbor was a robot with surprisingly emotional eyes.",
                 "The portal stabilized just long enough for them to leap through, landing on orange sand.",
-                "The holographic news anchor suddenly started weeping, broadcasting the system failure.",
+                "Holographic news anchor suddenly started weeping, broadcasting the system failure.",
                 "The new synthetic food tasted like betrayal, leading to a massive corporate cover-up.",
                 "Their spaceship ran out of fuel halfway to Mars, leaving them stranded and silent.",
                 "Every robot in the city received the same corrupted code, prompting chaos.",
@@ -551,6 +552,12 @@
             const input = document.getElementById('sentenceInput');
             let sentence = input.value.trim();
 
+            // CRITICAL FIX: Hard stop if max sentences is reached
+            if (currentStory.length >= MAX_SENTENCES) {
+                 viewFinalStory(true);
+                 return;
+            }
+            
             if (sentence.length < 5) {
                 alert("Please write a sentence before continuing.");
                 return;
@@ -577,6 +584,12 @@
 
         // --- NEW FUNCTION: Finish Early ---
         function finishEarly() {
+            // FIX: If story is empty, don't show end modal, just go back to packs
+            if (currentStory.length === 0) {
+                 quitToPacks();
+                 return;
+            }
+
             document.getElementById('gameScreen').style.display = 'none';
             document.getElementById('endScreen').style.display = 'block';
             
