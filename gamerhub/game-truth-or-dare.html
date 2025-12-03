@@ -274,7 +274,7 @@
         let currentPack = '';
         let currentPlayer = 1; 
         let history = []; 
-        const PROMPT_PER_PACK = 20; // FIXED: Changed from 18 to 20
+        const PROMPT_PER_PACK = 20; 
         
         // Decks containing the remaining prompts for the current game session
         let availableTruths = [];
@@ -381,7 +381,7 @@
             }
         };
 
-        // Utility function to get a random item from a list (now used for shuffling)
+        // Utility function to get a random item from a list
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -463,25 +463,19 @@
             const truthBtn = document.querySelector('.choice-buttons button:nth-child(1)');
             const dareBtn = document.querySelector('.choice-buttons button:nth-child(2)');
 
-            if (truthCount === 0 && dareCount === 0) {
-                 alert("You've completed all challenges in this pack!");
-                 showEndScreen();
-                 return;
-            }
-
+            // 1. Check Truth exhaustion
             if (truthCount === 0) {
                 truthBtn.textContent = 'TRUTH (0 LEFT)';
                 truthBtn.disabled = true;
-                alert(`Player ${currentPlayer}, all Truths in this pack have been used! You must choose Dare.`);
             } else {
                 truthBtn.textContent = 'TRUTH';
                 truthBtn.disabled = false;
             }
 
+            // 2. Check Dare exhaustion
             if (dareCount === 0) {
                 dareBtn.textContent = 'DARE (0 LEFT)';
                 dareBtn.disabled = true;
-                alert(`Player ${currentPlayer}, all Dares in this pack have been used! You must choose Truth.`);
             } else {
                 dareBtn.textContent = 'DARE';
                 dareBtn.disabled = false;
@@ -495,10 +489,10 @@
             let chosenPrompt;
 
             if (choiceType === 'TRUTH') {
-                if (availableTruths.length === 0) return; // Should be handled by startTurn alert
+                if (availableTruths.length === 0) return; 
                 chosenPrompt = availableTruths.pop(); // DRAW from the deck
             } else {
-                if (availableDares.length === 0) return; // Should be handled by startTurn alert
+                if (availableDares.length === 0) return; 
                 chosenPrompt = availableDares.pop(); // DRAW from the deck
             }
 
@@ -542,12 +536,10 @@
             if (currentPromptIndex > 0) {
                 currentPromptIndex--;
                 
-                // Find the prompt that was just revealed (to put it back)
                 const itemToRestore = history[history.length - 1]; 
                 
-                // Return the prompt to the deck it came from
                 if (itemToRestore.type === 'TRUTH') {
-                    availableTruths.unshift(itemToRestore.prompt); // Put back on top
+                    availableTruths.unshift(itemToRestore.prompt); 
                 } else {
                     availableDares.unshift(itemToRestore.prompt);
                 }
@@ -558,6 +550,7 @@
                 
                 if (history.length > 0) {
                      const lastItem = history[history.length - 1];
+                     
                      document.getElementById('currentPlayerTurn').textContent = `PLAYER ${lastItem.player}'S TURN`;
                      document.getElementById('typeLabel').textContent = lastItem.type;
                      document.getElementById('promptText').textContent = lastItem.prompt;
