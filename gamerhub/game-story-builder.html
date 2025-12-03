@@ -351,7 +351,7 @@
             </div>
 
             <!-- FINAL STORY MODAL -->
-            <div class="story-modal-view hidden" id="finalStoryModal">
+            <div class="story-modal-view" id="finalStoryModal" style="display: none;">
                 <h2 id="finalStoryTitle" style="text-align: center;"></h2>
                 <div class="story-display-card" id="finalStoryText"></div>
                 <div class="end-actions" style="margin-top: 30px;">
@@ -556,6 +556,12 @@
             const input = document.getElementById('sentenceInput');
             let sentence = input.value.trim();
 
+            // CRITICAL FIX: Hard stop if max sentences is reached
+            if (currentStory.length >= MAX_SENTENCES) {
+                 viewFinalStory(true);
+                 return;
+            }
+            
             if (sentence.length < 5) {
                 alert("Please write a sentence before continuing.");
                 return;
@@ -600,9 +606,9 @@
             document.getElementById('endScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'none';
             
-            // FIX: Use style.display = 'flex' instead of removing 'hidden' class for robustness
+            // Show the FINAL STORY MODAL
             const modal = document.getElementById('finalStoryModal');
-            modal.style.display = 'flex'; 
+            modal.style.display = 'flex'; // Use style.display for robustness
             
             const completionTitle = isForcedCompletion ? "STORY COMPLETE! 🎉" : "STORY FINISHED EARLY!";
             document.getElementById('finalStoryTitle').textContent = completionTitle;
