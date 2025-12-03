@@ -9,12 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* All Base Styles (from 21 Questions) */
+        /* All Base Styles (from previous versions) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
         h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 
-        /* Animated background blobs (Copied directly for consistency) */
+        /* Animated background blobs */
         .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
         .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
         .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
@@ -39,7 +39,7 @@
         .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
         .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
         
-        /* ADJUSTED GRID FOR 6 CATEGORIES */
+        /* GRID FOR 6 CATEGORIES */
         .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         
         .selection-card { background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
@@ -207,7 +207,7 @@
                     <div class="selection-card" onclick="showPacks('silly')">
                         <div class="selection-icon">😂</div>
                         <h3>SILLY & RANDOM</h3>
-                        <p class="selection-description">Stupid, funny actions and objects for hilarious guesses.</p>
+                        <p class="selection-description">Always different! Generates unique combinations for endless fun.</p>
                     </div>
 
                     <div class="selection-card" onclick="showPacks('romance')">
@@ -303,13 +303,24 @@
     </div>
 
     <script>
+        // --- UTILITY FUNCTION FOR GENERATOR ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        function getRandomElement(list) {
+            return list[Math.floor(Math.random() * list.length)];
+        }
+        
         // --- GAME STATE & DATA ---
         let currentPromptIndex = 0;
         let currentCategory = '';
         let currentPack = '';
         let currentPrompts = [];
         let currentPlayer = 1; // Start with Player 1
-        const TOTAL_PROMPTS = 20; 
+        const TOTAL_GENERATOR_PROMPTS = 20; // Number of unique prompts generated per run
 
         const categoryTitles = {
             'silly': 'SILLY & RANDOM',
@@ -320,12 +331,22 @@
             'fantasy': 'FUTURE & FANTASY'
         };
         
-        // --- CHARADES PROMPT BANKS (ALL 18 PACKS ARE NOW FILLED) ---
+        // --- CHARADES PROMPT BANKS (Silly is now a Generator) ---
         const charadesPrompts = {
             silly: {
-                pack1: [ "Trying to assemble IKEA furniture", "A cat demanding food", "A very clumsy waiter", "Singing terribly in the shower", "Trying to parallel park", "Eating a giant messy burger", "A nervous public speaker", "Running for a bus", "Doing the laundry (and failing)", "A bird hitting a window", "Shaking a can of soda", "An opera singer breaking glass", "Trying to put on tight jeans", "A chef tasting bad food", "An awkward first date hug", "Invisible box challenge", "A ghost haunting a small room", "A dog chasing its own tail", "Getting tangled in Christmas lights", "A celebrity signing an autograph"],
-                pack2: [ "A bad marriage proposal", "A mime trapped in a box", "Trying to wake up gracefully", "Sneaking a snack in the kitchen", "Waving at the wrong person", "Being chased by a swarm of bees", "An evil villain monologue", "Trying to fold a fitted sheet", "A vampire scared of a cross", "Dancing to a polka", "A baby throwing a tantrum", "Tasting something sour", "Trying to open a jar", "A superhero flying away awkwardly", "Stepping on a lego", "Catching a massive fish", "A robot malfunctioning", "A waiter dropping a tray", "A person walking on a windy day", "Trying to sneeze quietly"],
-                pack3: [ "A very dramatic death scene", "A clumsy gymnast", "A monkey peeling a banana", "Being late for a flight", "An athlete scoring a goal", "A chef making pasta", "Falling down the stairs", "A person stuck in quicksand", "Trying to fit into old clothes", "A dog wearing a sweater", "A bad magician doing a trick", "A person trying to juggle", "Tipping over a canoe", "A tourist taking too many photos", "Slipping on ice", "Trying to fix a jammed printer", "A ghost trying to scare someone", "A cat cleaning itself", "Getting stuck in a revolving door", "A person searching for their keys"]
+                // The 'generator' pack uses component lists for randomization
+                generator: {
+                    components: {
+                        A: [ 'Clumsy', 'Grumpy', 'Nervous', 'Awkward', 'Invisible', 'Confused', 'Dramatic', 'Slippery', 'Oversized', 'Tiny', 'Angry' ],
+                        B: [ 'Waiter', 'Penguin', 'Athlete', 'Magician', 'Celebrity', 'Chef', 'Mascot', 'Ninja', 'Cat', 'Ghost', 'Robot', 'Dog' ],
+                        C: [ 'trying to tie its shoes', 'looking for keys', 'eating a giant messy burger', 'singing terribly', 'trying to parallel park', 'dancing to a polka', 'running for a bus', 'stuck in a revolving door', 'trying to breakdance', 'smelling something gross', 'escaping a giant spider', 'riding a tiny bicycle' ]
+                    },
+                    templates: [
+                        (A, B, C) => `Act out a ${A} ${B} ${C}.`,
+                        (A, B, C) => `Act out a ${B} who is secretly ${A} and must ${C}.`,
+                        (A, B, C) => `What happens when a ${A} ${B} tries ${C}?`,
+                    ]
+                }
             },
             romance: {
                 pack1: [ "Making out in the rain", "The first time we met", "Stolen kiss on a rooftop", "Planning our future home", "Couple's inside joke", "A surprise romantic getaway", "Having a deep conversation", "Writing a love letter", "Getting engaged", "Cuddling on the couch", "Sharing an umbrella", "A romantic picnic date", "Dancing slowly at a wedding", "Making breakfast in bed", "A perfect date night", "Warming my cold hands", "A big, heartfelt apology", "Gifting flowers", "Sharing a single scoop of ice cream", "Watching the sunset together"],
@@ -359,6 +380,37 @@
         function init() {
             document.getElementById('categorySelection').style.display = 'block';
         }
+        
+        // --- PROMPT GENERATION LOGIC ---
+        function generateSillyPrompts() {
+            const data = charadesPrompts.silly.generator;
+            const components = data.components;
+            const prompts = [];
+            const history = new Set();
+            
+            // Generate 20 unique prompts
+            while (prompts.length < TOTAL_GENERATOR_PROMPTS) {
+                // Randomly select template and components
+                const template = getRandomElement(data.templates);
+                const A = getRandomElement(components.A);
+                const B = getRandomElement(components.B);
+                const C = getRandomElement(components.C);
+                
+                const newPrompt = template(A, B, C);
+                
+                // Use a string key for uniqueness check (e.g., "Clumsy|Chef|trying to tie its shoes")
+                const key = `${A}|${B}|${C}|${data.templates.indexOf(template)}`;
+
+                if (!history.has(key)) {
+                    prompts.push(newPrompt);
+                    history.add(key);
+                }
+                // Stop trying if we somehow run out of unique combinations (highly unlikely here)
+                if (history.size > 1000) break; 
+            }
+            return prompts;
+        }
+
 
         function showPacks(categoryId) {
             currentCategory = categoryId;
@@ -367,7 +419,6 @@
             
             document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
             
-            // Dynamically generate pack cards based ONLY on existing keys in the object
             const packsGrid = document.getElementById('packsGrid');
             packsGrid.innerHTML = '';
             
@@ -376,14 +427,27 @@
 
             // Iterate through every pack ID in the category
             for (const packId in categoryPacks) {
-                // Ensure the pack exists and has prompts (eliminates 'Coming Soon' packs automatically)
-                if (categoryPacks.hasOwnProperty(packId) && categoryPacks[packId].length > 0) {
-                    const promptsCount = categoryPacks[packId].length;
-                    
+                if (!categoryPacks.hasOwnProperty(packId)) continue;
+
+                let promptsCount = 0;
+                let packTitle;
+                
+                if (packId === 'generator') {
+                    // This is the dynamic generator pack
+                    packTitle = 'GENERATOR PACK';
+                    promptsCount = TOTAL_GENERATOR_PROMPTS;
+                } else {
+                    // This is a standard static pack
+                    promptsCount = categoryPacks[packId].length;
+                    packTitle = `PACK ${packIndex}`;
+                }
+
+                // Only display if the pack contains playable content
+                if (promptsCount > 0) {
                     const packCard = `
                         <div class="pack-card" onclick="selectPack('${packId}')">
                             <div class="pack-number">${packIndex}</div>
-                            <h3>PACK ${packIndex}</h3>
+                            <h3>${packTitle}</h3>
                             <p class="pack-questions">${promptsCount} PROMPTS</p>
                         </div>
                     `;
@@ -395,8 +459,15 @@
 
         function selectPack(packId) {
             currentPack = packId;
-            currentPrompts = charadesPrompts[currentCategory][packId];
             
+            if (packId === 'generator') {
+                // GENERATE DYNAMIC PROMPTS
+                currentPrompts = generateSillyPrompts();
+            } else {
+                // LOAD STATIC PROMPTS
+                currentPrompts = charadesPrompts[currentCategory][packId];
+            }
+
             if (currentPrompts.length === 0) {
                  alert(`Selected pack is empty. Please choose an active pack.`);
                  return;
@@ -421,25 +492,20 @@
             document.getElementById('progressFill').style.width = progress + '%';
             document.getElementById('promptCounter').textContent = `PROMPT ${promptsPlayed} OF ${totalPrompts}`;
             
-            // Update Turn Card Info
             document.getElementById('turnPlayer').textContent = `PASS TO PLAYER ${currentPlayer}`;
             document.getElementById('turnInstruction').textContent = `Player ${currentPlayer}, click 'SHOW PROMPT' below once the other player looks away. You are ACTING.`;
             
-            // Set prompt text (still obscured)
             document.getElementById('promptText').textContent = currentPrompts[currentPromptIndex];
             
-            // Show the turn card, hide the prompt card
             document.getElementById('turnCard').style.display = 'flex';
             document.getElementById('promptCard').style.display = 'none';
             document.getElementById('promptCard').classList.remove('revealed');
 
-            // Disable previous button if at the start
             document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
             document.getElementById('nextBtn').textContent = currentPromptIndex === totalPrompts - 1 ? 'FINISH' : 'GUESSED! →';
         }
         
         function showPromptCard() {
-             // Hide the turn card and show the prompt card
             document.getElementById('turnCard').style.display = 'none';
             document.getElementById('promptCard').style.display = 'flex';
             document.getElementById('promptCard').classList.add('revealed');
@@ -494,7 +560,7 @@
             window.location.href = 'date-night.html';
         }
 
-        // --- KEYBOARD NAVIGATION (Right arrow reveals, then advances) ---
+        // --- KEYBOARD NAVIGATION ---
         document.addEventListener('keydown', function(e) {
             if (document.getElementById('gameScreen').style.display === 'block') {
                 if (e.key === 'ArrowRight') {
