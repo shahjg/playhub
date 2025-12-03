@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Seat - PlayHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS STYLES (Copied from the final Q&A/NHIE template) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        /* Animated background blobs */
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
+        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
+        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
+        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
+        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Navigation */
+        nav { padding: 30px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
+        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        .back-btn:hover { color: #1a1a1a; }
+
+        /* General Content */
+        .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
+        .hidden { display: none !important; }
+
+        /* --- SCREEN STYLES (Category, Pack Selection) --- */
+        .selection-screen { max-width: 800px; margin: 40px auto; }
+        .selection-header { text-align: center; margin-bottom: 50px; }
+        .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
+        .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
+        
+        /* 3x2 Grid for 6 categories */
+        .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; } 
+        
+        .selection-card { background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
+        .selection-card:hover { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
+        .selection-icon { font-size: 3rem; margin-bottom: 15px; }
+        .selection-card h3 { font-size: 2rem; margin-bottom: 10px; line-height: 1; }
+        .selection-description { font-size: 0.95rem; color: #666; margin-bottom: 12px; font-weight: 500; line-height: 1.5; }
+
+        /* Pack Specific Styles */
+        .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
+        .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
+        .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
+        .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-bottom: 30px; }
+        .back-link:hover { color: #1a1a1a; }
+
+        /* --- GAME SCREEN STYLES --- */
+        .game-screen { display: none; }
+        .progress-bar-container { background: white; border: 3px solid #1a1a1a; padding: 8px; margin-bottom: 40px; box-shadow: 4px 4px 0 #e0e0e0; }
+        .progress-bar { height: 12px; background: #f0f0f0; position: relative; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); transition: width 0.3s ease; }
+        .game-header { text-align: center; margin-bottom: 40px; position: relative; }
+        .quit-btn { position: absolute; right: 0; top: 0; background: white; border: 2px solid #1a1a1a; padding: 8px 20px; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; color: #666; }
+        .quit-btn:hover { background: #f0f0f0; color: #1a1a1a; }
+        
+        .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
+        .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
+
+        /* Prompt Card (Always visible when playing) */
+        .prompt-card { 
+            background: white; color: #1a1a1a; border: 4px solid #1a1a1a; padding: 60px 50px; 
+            margin-bottom: 40px; box-shadow: 8px 8px 0 #e0e0e0; min-height: 280px; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        
+        .prompt-text { font-size: 1.8rem; line-height: 1.5; font-weight: 600; color: #1a1a1a; }
+        .answer-prompt { font-size: 1rem; color: #ff6b9d; font-weight: 700; margin-top: 20px; }
+        
+        .navigation { display: flex; gap: 15px; justify-content: center; }
+        .nav-btn { flex: 1; padding: 18px 30px; font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
+        .nav-btn.prev { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; flex-grow: 0.5; }
+        .nav-btn.next { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; flex-grow: 1; }
+        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* End Screen */
+        .end-screen { display: none; text-align: center; max-width: 700px; margin: 80px auto; }
+        .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
+        .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
+        
+        .end-actions { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+
+        .action-btn { padding: 20px 50px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; width: 100%; }
+        .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
+        .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container { padding: 0 20px; }
+            .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
+            .selection-grid { grid-template-columns: 1fr; } 
+            .packs-grid { grid-template-columns: 1fr; }
+            .prompt-text { font-size: 1.4rem; }
+            .prompt-card { padding: 40px 30px; min-height: 240px; }
+            .nav-btn { font-size: 1.1rem; padding: 15px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="container">
+        <nav>
+            <a href="index.html" class="logo-nav">PLAYHUB</a>
+            <a href="date-night.html" class="back-btn">
+                ← Back to Games
+            </a>
+        </nav>
+
+        <div class="game-content">
+            
+            <div class="selection-screen" id="categorySelection">
+                <div class="selection-header">
+                    <h2>HOT SEAT</h2>
+                    <p>Choose a category and put your partner on the spot!</p>
+                </div>
+
+                <div class="selection-grid">
+                    <div class="selection-card" onclick="showPacks('spotlight')"> <div class="selection-icon">💡</div> <h3>GENERAL SPOTLIGHT</h3> <p class="selection-description">Quick-fire questions on current opinions and surface secrets.</p> </div>
+                    <div class="selection-card" onclick="showPacks('past')"> <div class="selection-icon">🕰️</div> <h3>PAST SECRETS</h3> <p class="selection-description">Ex-partners, childhood mistakes, and history.</p> </div>
+                    <div class="selection-card" onclick="showPacks('relationship')"> <div class="selection-icon">❤️</div> <h3>RELATIONSHIP FOCUS</h3> <p class="selection-description">Direct questions about our partnership and compatibility.</p> </div>
+                    <div class="selection-card" onclick="showPacks('silly')"> <div class="selection-icon">🤪</div> <h3>FUNNY & EMBARRASSING</h3> <p class="selection-description">Recounting funny past events, weird habits, and childish behavior.</p> </div>
+                    <div class="selection-card" onclick="showPacks('hypothetical')"> <div class="selection-icon">🤯</div> <h3>WILD HYPOTHETICALS</h3> <p class="selection-description">Fantasy scenarios, impossible choices, and ethical dilemmas.</p> </div>
+                    <div class="selection-card" onclick="showPacks('money')"> <div class="selection-icon">💰</div> <h3>FINANCE & AMBITION</h3> <p class="selection-description">Career goals, money secrets, and spending habits.</p> </div>
+                </div>
+            </div>
+
+            <div class="selection-screen hidden" id="packSelection">
+                <span class="back-link" onclick="backToCategories()">← Back to Categories</span>
+                
+                <div class="selection-header">
+                    <h2 id="packCategoryTitle"></h2>
+                    <p>Choose a pack of 20 prompts</p>
+                </div>
+
+                <div class="packs-grid" id="packsGrid">
+                    </div>
+            </div>
+
+            <div class="game-screen" id="gameScreen">
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="game-header">
+                    <button class="quit-btn" onclick="quitToPacks()">QUIT</button>
+                    <div class="mode-label">HOT SEAT</div>
+                    <div class="prompt-counter" id="promptCounter">PROMPT 1 OF 20</div>
+                </div>
+
+                <div class="prompt-card" id="promptCard">
+                    <p class="prompt-text" id="promptText">Hot Seat Question: What is the most expensive thing you've ever broken?</p>
+                    <p class="answer-prompt">Answer truthfully and discuss briefly.</p>
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-btn prev" id="prevBtn" onclick="previousPrompt()">← PREVIOUS</button>
+                    <button class="nav-btn next" id="nextBtn" onclick="nextPrompt()">NEXT →</button>
+                </div>
+            </div>
+
+            <div class="end-screen" id="endScreen">
+                <h2>YOU DID IT! 🎉</h2>
+                <p class="end-message">Great job completing the challenges!</p>
+                <div class="end-actions">
+                    <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
+                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DATE NIGHT</button>
+                </div>
+            </div>
+        </div>
+
+        <footer></footer>
+    </div>
+
+    <script>
+        // --- Core Setup Variables ---
+        const PROMPT_PREAMBLE = "Hot Seat Question: ";
+        const PROMPT_POSTAMBLE = "Answer truthfully and discuss briefly.";
+        const GAME_NAME = "HOT SEAT";
+        
+        let currentPromptIndex = 0;
+        let currentCategory = '';
+        let currentPack = '';
+        let currentPrompts = [];
+        const PROMPT_COUNT = 20; 
+
+        // --- Category Titles ---
+        const categoryTitles = {
+            'spotlight': 'GENERAL SPOTLIGHT',
+            'past': 'PAST SECRETS',
+            'relationship': 'RELATIONSHIP FOCUS',
+            'silly': 'FUNNY & EMBARRASSING',
+            'hypothetical': 'WILD HYPOTHETICALS',
+            'money': 'FINANCE & AMBITION'
+        };
+
+        // --- Game Prompts (100% Content Complete) ---
+        const gamePrompts = {
+            spotlight: {
+                pack1: [
+                    "What's the most expensive thing you've ever broken?", "What's a food you secretly hate?", "What's your current biggest insecurity?", "What celebrity do you think is overrated?", 
+                    "What's the most embarrassing thing you've ever worn?", "What's the one thing you always lie about?", "What's the worst job you've ever had?", "What's the fastest you've ever gotten fired?", 
+                    "What's your most annoying habit?", "What's the most ridiculous fight you've ever started?", "What's the strangest thing you've bought in the last year?", "If you could change your name, what would it be?", 
+                    "What's the one thing I do that drives you crazy?", "What's the last time you cried and why?", "What's a skill everyone else has that you lack?", "What's your best impression of me?", 
+                    "What's one thing you hope I never find out?", "What's the most childish thing you still do?", "What's a social media account you check secretly?", "What's your go-to excuse for being late?"
+                ],
+                pack2: [
+                    "What's the weirdest thing you do when you think you're alone?", "What's a song that is guaranteed to make you cry?", "What's the last time you genuinely yelled?", "What's a job you secretly think you could do better than anyone?", 
+                    "What's the one thing you refuse to share, even with me?", "What's the most useless thing you learned in school?", "What's one thing you're secretly competitive about?", "What's a talent you wish you could show off?", 
+                    "What's the one thing you think I judge you for?", "What's the last time you made a decision solely based on spite?", "What's the silliest argument you've ever won?", "What's the one movie you pretend to like?", 
+                    "What's the worst smell you can remember?", "What's the most embarrassing thing you keep in your house?", "What's the one thing you always spend too much money on?", "What's the most childish thing you've asked me to do?", 
+                    "What's the one food you could eat every day?", "What's the last piece of art you saw that truly moved you?", "What's one bad habit I have that you ignore?", "What's the best piece of gossip you've heard recently?"
+                ],
+                pack3: [
+                    "What's the most trouble you've gotten into this year?", "What's the one phrase you overuse?", "What is your biggest pet peeve about strangers?", "What's one thing you think is severely overrated?", 
+                    "What's the worst purchase you've ever pressured me into?", "What's the one thing you would change about your physical appearance?", "What's the biggest secret you've kept from me this month?", "What's one question you hope I never ask?", 
+                    "What's the worst fashion disaster you've had?", "What's the last thing you cried about?", "What's the one job you could never do?", "What's your biggest weakness when you're tired?", 
+                    "What's the most embarrassing thing you've posted online?", "What's the silliest fear you have?", "What's one thing you're genuinely proud of me for?", "What's one thing you wish you could tell your former self?", 
+                    "What's the hardest truth about yourself to admit?", "What's one thing you wish I'd stop doing?", "What's the most immature thing I do that you love?", "What's one thing you always forget to do?"
+                ]
+            },
+            past: {
+                pack1: [
+                    "Who was your first crush?", "What's the one secret you kept from your last partner?", "What's the biggest lie you told in high school?", "What's the dumbest tattoo you considered getting?", 
+                    "What's your most embarrassing moment from middle school?", "How many times have you been fired?", "Who was the last ex you stalked on social media?", "What's the worst fashion trend you participated in?", 
+                    "What's the most illegal thing you've ever done (and gotten away with)?", "What was your worst date ever?", "What's a rumor you started that got out of hand?", "What's the one thing you stole as a child?", 
+                    "What's the most embarrassing pet name you've had?", "What's a belief you held that you now find ridiculous?", "What's the most hurtful thing someone ever said to you?", "What's your biggest regret about a friendship?", 
+                    "What did you spend your first paycheck on?", "What's the craziest trip you ever took?", "What's the dumbest thing you did because of a dare?", "What's a weird ritual you had growing up?"
+                ],
+                pack2: [
+                    "Who was the last person you dated before me and why did it end?", "What's the silliest lie you told to get out of a ticket?", "What's the most childish thing you still do at home?", "What's the meanest thing you ever said to a sibling?", 
+                    "What's the strangest place you've ever slept?", "What's one habit from your childhood you wish you still had?", "What was your worst grade in school?", "What's the most trouble you got into as a teenager?", 
+                    "What's the most embarrassing public confession you've made?", "What's the one thing about your past relationships you haven't told me?", "What's the biggest fight you had with your parents?", "What's the biggest risk you took in your 20s?", 
+                    "What's the worst grade you ever lied about?", "What's a job you were terrible at?", "What's the most romantic thing an ex ever did for you?", "What was your biggest insecurity in high school?", 
+                    "What's the one thing you've pretended to be knowledgeable about?", "What's one secret you kept from me in our first month?", "What's a food you liked as a kid but hate now?", "What's the silliest injury you've had?"
+                ],
+                pack3: [
+                    "What's the one thing I don't know about your dating history?", "What's the most embarrassing clothing item you've worn that I haven't seen?", "What's the biggest rumor you were part of?", "What's the silliest thing you've lied about?", 
+                    "What was your worst high school memory?", "What's the most childish thing you still do when you're alone?", "What's the biggest regret you have from your last birthday?", "What's a phase you went through that you regret?", 
+                    "What's the weirdest interaction you've had with a celebrity?", "What's the one thing you would change about your upbringing?", "What's the most shocking thing a former friend revealed to you?", "What's the worst advice you've ever given?", 
+                    "What's the one secret that could ruin your life if it came out?", "What's the most childish belief you held onto too long?", "What was your first kiss like?", "What's the worst gift you ever gave?", 
+                    "What's the silliest thing you were grounded for?", "What's one thing you were obsessed with as a teenager?", "What's the last time you lied to me?", "What's the biggest professional failure you've had?"
+                ]
+            },
+            relationship: {
+                pack1: [
+                    "What's the one physical trait I have that you love most?", "What's the most annoying habit I have?", "What's one thing you want me to start doing?", "How many children do you secretly wish we had?", 
+                    "What was your honest first thought when you saw me?", "What's one thing you wish we spent less money on?", "What's the one area you wish we had more compatibility?", "What's the most romantic thing you want to do with me?", 
+                    "What's a secret worry you have about our future?", "What's one thing I do that makes you instantly jealous?", "What's your definition of 'cheating'?", "What's a bad habit I have that you've given up trying to fix?", 
+                    "What's the one thing about my past that worries you?", "What's one thing you wish I told you more often?", "What's your favorite memory of us in the first year?", "How often do you think about me when we're apart?", 
+                    "What's a goal for our relationship this year?", "What's the best present I've ever given you?", "What's one secret you keep from me?", "What's the most significant thing you've lied to me about?"
+                ],
+                pack2: [
+                    "What's the last time I really hurt your feelings and didn't know?", "What's one thing you want us to do more often together?", "What's my biggest physical turn-off (be gentle!)?", "What's the one non-physical thing about me you'd change?", 
+                    "If we broke up tomorrow, what would you regret most?", "What's the sexiest compliment I've ever given you?", "What's one financial goal we should prioritize?", "How do you feel about our communication quality (1-10)?", 
+                    "What's one thing you hide from me about our relationship?", "What's the biggest compliment I could give you right now?", "What's the one thing you wish I wouldn't post on social media?", "What's one thing I do that makes you instantly feel loved?", 
+                    "What's your favorite inside joke we share?", "What's the last thing you apologized for and meant it?", "What's one thing you wish I would stop worrying about?", "What is one thing I should know about how you handle stress?", 
+                    "What is the most beautiful thing I've done for you?", "What is your biggest fear regarding our long-term health?", "What's one thing you find boring about our routine?", "What is one thing I do that makes you feel sexy?"
+                ],
+                pack3: [
+                    "What's the one thing I do that instantly calms you down?", "What's one thing you wish we had in common?", "What's the one gift you want most next year?", "What's the last time you felt truly proud of me?", 
+                    "What's the biggest sacrifice you've made for me?", "What's one relationship boundary we need to set?", "What's the one thing you would change about my friends?", "What is your favorite memory of us arguing?", 
+                    "What's one thing you think I don't appreciate enough about myself?", "What is one commitment we should make right now?", "What's the best memory of a date we've had?", "What's one thing you wish I'd learn to do?", 
+                    "What's one thing I do that is absolutely unique?", "What's one thing you would never forgive?", "What's the one place in our home that feels most like 'ours'?", "What's the most attractive non-physical quality I have?", 
+                    "What's one thing about our sex life you want to improve?", "What's one thing you hide from me about your health?", "What's the best advice I've given you?", "What's the most spontaneous thing you want us to do?"
+                ]
+            },
+            silly: {
+                pack1: [
+                    "What's the weirdest thing you've accidentally eaten?", "What's the strangest place you've fallen asleep?", "What's your worst childhood fear that still lingers?", "What's the silliest recurring dream you have?", 
+                    "What fictional language do you wish you spoke?", "What's the most embarrassing typo you've ever sent?", "What's the worst smell you can remember?", "What's the one word you always misspell?", 
+                    "What's the most ridiculous dance craze you've tried?", "What's your best impression of an animal?", "What's the last childish thing you did alone?", "What's the silliest word you know?", 
+                    "What's the most ridiculous gift you've ever received?", "What's the silliest reason you've ever cried?", "What's the weirdest noise you can make?", "What's the strangest food combination you secretly enjoy?", 
+                    "What's the one thing you refuse to share?", "What's the most embarrassing item you have in your car/bag right now?", "What's the one piece of slang you secretly hate?", "What's the dumbest argument you've had?"
+                ],
+                pack2: [
+                    "What's the last time you laughed so hard you cried?", "What is your favorite cartoon character?", "What's the most embarrassing photo of yourself on your phone?", "What's the worst singing you've ever done in public?", 
+                    "What's the most useless piece of trivia you know?", "What's the one song you secretly belt out when alone?", "What's the weirdest noise I make when I sleep?", "What's the silliest thing you've bought this month?", 
+                    "What fictional world would you least like to live in?", "What's the most ridiculous injury you've had?", "What's the silliest thing you collect?", "What's the one TV show you're ashamed to admit you watch?", 
+                    "What's the most childish thing I do that you love?", "What is the worst fashion mistake you see people making today?", "What's the most embarrassing thing in your browsing history?", "What is your best knock-knock joke?", 
+                    "What's the silliest way you've tried to cheat on a diet?", "What's the most ridiculous thing you've worn on a plane?", "What's the one piece of advice you always ignore?", "What's the silliest fight you've walked away from?"
+                ],
+                pack3: [
+                    "What's the weirdest thing you've put in the microwave?", "What's the silliest lie you told today?", "What's the most embarrassing item I'd find in your fridge?", "What's the weirdest celebrity crush you had?", 
+                    "What's the most dramatic thing you've done for attention?", "What animal do you secretly think you could beat in a fight?", "What's the silliest reason you've quit a job?", "What ridiculous talent do you possess?", 
+                    "What's the dumbest reason you've gotten angry?", "What cartoon character best describes my personality?", "What's the most ridiculous rumor you started?", "What's the most embarrassing item you have in your bedroom?", 
+                    "What's the silliest way you've tried to sneak out of something?", "What's the one bad habit you pretend you don't have?", "What's the weirdest food you've eaten recently?", "What's the most surprising sound I make?", 
+                    "What's the most ridiculous thing you've seen me do?", "What's the one phrase you overuse?", "What's the worst meal I've ever made?", "What's one thing you pretend to be good at?"
+                ]
+            },
+            hypothetical: {
+                pack1: [
+                    "If you could only eat one food for the rest of your life, what would it be?", "If you could witness one historical event, which one?", "If you had 24 hours left to live, what would you do?", "If you could invent one holiday, what would it be?", 
+                    "If you could trade lives with anyone for a week, who would it be?", "If you had to change your name to a spice, what would you choose?", "If you could instantly learn any skill, what?", "If you could talk to one animal, which one?", 
+                    "If you had a warning label, what would it say?", "If you could only wear one color forever, what would it be?", "If you could eliminate one household chore forever, which one?", "If you were reincarnated, what object would you be?", 
+                    "If you could speak one sentence to the entire world, what would you say?", "If you could only communicate through one meme/GIF, which one?", "If you could erase one memory, yours or mine, which one?", "If you had a personal theme song, what?", 
+                    "If you could instantly solve one global crisis, what?", "If you could only speak in song lyrics or movie quotes?", "If you could be famous for anything, what?"
+                ],
+                pack2: [
+                    "If a zombie apocalypse started right now, what's your role?", "If you had to change our song to a joke song, which one?", "If you could only eat dessert for a week, which dessert?", "If you could spend one day with a historical figure, who?", 
+                    "If you had to live without one of your 5 senses, which one?", "If you could bring back one discontinued product, what?", "If you could only spend time with fictional characters, who?", "If you could have dinner with one fictional villain, who?", 
+                    "If you could relive any single day of your life, which one?", "If you could magically make me forget one thing you did, what?", "If you had to wear a ridiculous hat every day, what kind?", "If you could instantly master any musical instrument, which one?", 
+                    "If you could swap bodies with me for a day, what would you do?", "If you had an endless supply of something non-monetary, what?", "If you had to fight a historical figure, who?", "If you could only communicate in rhymes?", 
+                    "If you could have a personal theme song play everywhere you go, what?", "If you had to be addicted to one healthy thing, what?", "If you could have any job in the world with no risk, what?", "If you could invent a useless machine, what would it do?"
+                ],
+                pack3: [
+                    "If you had to change your job to a job based on a color, what job?", "If you could be a mythical creature, which one?", "If you had to live without heating or cooling forever?", "If you could only watch one movie or listen to one album for a year?", 
+                    "If you were a superhero, what would be your biggest weakness?", "If you could rename our relationship, what would the title be?", "If you could eliminate one household chore forever, which one?", "If you had to wear a nametag everywhere, what would it say?", 
+                    "If you could only eat one cuisine forever, what?", "If you could instantly perfect one skill, what?", "If you could solve one historical mystery, which one?", "If you could only shop in one store forever, which one?", 
+                    "If you had to live life according to one book, which book?", "If you could be fluent in a fictional language, which one?", "If you could have one piece of magical jewelry, what would it do?", "If you could only eat food shaped like triangles?", 
+                    "If you could have a conversation with your future self, what would you ask?", "If you had to communicate only through impressions?", "If you could design a new kind of animal, what?", "If you had to change my name to something ridiculous, what?"
+                ]
+            },
+            money: {
+                pack1: [
+                    "What's the most luxurious thing you've purchased?", "What's your biggest money fear?", "What's one thing you want to buy that you can't justify?", "What's the worst financial decision you've made?", 
+                    "What's your long-term retirement dream?", "What's one thing you regularly spend too much money on?", "What's a business idea you secretly wish you could launch?", "What's the most unusual way you've earned money?", 
+                    "What job do you secretly think is easiest?", "What's the most generous thing you've ever done with money?", "What's the most expensive impulse buy you've regretted?", "What's one financial goal we should hit this year?", 
+                    "What's the one thing you secretly wish I'd spend less money on?", "What's the biggest purchase you'd make if you won $10,000 today?", "What's one thing you wish you were taught about money?", "What's your philosophy on debt?", 
+                    "What's the most expensive meal you've ever eaten?", "What's one thing you save money on that I find weird?", "What's the biggest money mistake your parents made?", "What's the one financial goal you haven't told me?"
+                ],
+                pack2: [
+                    "How do you feel about our current financial situation (1-10)?", "What's your definition of being truly rich?", "What's the most embarrassing thing you splurged on?", "What's one thing you wish I'd spend less money on?", 
+                    "What's the most irresponsible loan you've taken out?", "What's one big purchase you wish we could make this year?", "What's the most you've ever lost gambling/betting?", "What's the biggest financial secret you keep from me?", 
+                    "What's one financial boundary we should set?", "What's the silliest reason you've ever saved money?", "What's the most ridiculous thing you've argued with me about money?", "What's your most significant career disappointment?", 
+                    "What's one thing you're willing to sacrifice financially for happiness?", "What's the biggest risk you've taken with your career?", "What's the one thing you think is the biggest waste of money?", "What's the biggest financial argument you've ever had with anyone?", 
+                    "What's the most important skill you learned at a job?", "What's one job you would quit immediately if you won a small sum?", "What's the one thing you'd splurge on that I would hate?", "What's one thing you wish I were better at saving for?"
+                ],
+                pack3: [
+                    "What's the most debt you've ever accumulated?", "What's the most valuable thing you own?", "What's the career move you're afraid to make?", "What's the thing you most envy about other people's finances?", 
+                    "What's your philosophy on tipping?", "What's the one thing you need financially to feel truly secure?", "What's the worst work environment you've experienced?", "What's one thing you're willing to sacrifice financially for happiness?", 
+                    "What's the one skill you learned at a job that has been most useful?", "What's the biggest financial argument you've ever had with anyone?", "What's the most annoying colleague you've ever worked with?", "What's one thing I don't know about your financial past?", 
+                    "What's the most money you've given away?", "What's the most passive income stream you dream of having?", "What's one money rule you refuse to follow?", "What is one thing you wish you were better at negotiating?", 
+                    "What's the one career path you ruled out quickly?", "What's one thing you've pretended to enjoy about a job?", "What's the one job you judge people for having?", "What's the most money you've ever spent on a date?"
+                ]
+            }
+        };
+
+        // --- CORE GAME LOGIC ---
+
+        function init() {
+            // Logic to populate the Category Grid using 'categoryTitles' and 'gamePrompts'
+            const grid = document.getElementById('selectionGrid');
+            grid.innerHTML = '';
+            let icons = ['💡', '🕰️', '❤️', '🤪', '🤯', '💰']; // Updated icons
+            let i = 0;
+
+            for (const categoryId in categoryTitles) {
+                if (categoryTitles.hasOwnProperty(categoryId)) {
+                    const icon = icons[i % icons.length];
+                    const packs = gamePrompts[categoryId];
+                    const packCount = packs ? Object.keys(packs).length : 0;
+                    const description = packCount > 1 ? `3 packs available.` : `${packCount} pack available.`;
+                    
+                    grid.innerHTML += `
+                        <div class="selection-card" onclick="showPacks('${categoryId}')">
+                            <div class="selection-icon">${icon}</div>
+                            <h3>${categoryTitles[categoryId]}</h3>
+                            <p class="selection-description">${description}</p>
+                        </div>
+                    `;
+                    i++;
+                }
+            }
+            document.getElementById('categorySelection').style.display = 'block';
+        }
+
+        function showPacks(categoryId) {
+            currentCategory = categoryId;
+            document.getElementById('categorySelection').classList.add('hidden');
+            document.getElementById('packSelection').classList.remove('hidden');
+            
+            document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
+            
+            const packsGrid = document.getElementById('packsGrid');
+            packsGrid.innerHTML = '';
+            
+            const categoryPacks = gamePrompts[categoryId];
+            let packIndex = 1;
+
+            for (const packId in categoryPacks) {
+                if (categoryPacks.hasOwnProperty(packId) && categoryPacks[packId].length > 0) {
+                    const promptsCount = categoryPacks[packId].length;
+                    
+                    const packCard = `
+                        <div class="pack-card" onclick="selectPack('${packId}')">
+                            <div class="pack-number">${packIndex}</div>
+                            <h3>PACK ${packIndex}</h3>
+                            <p class="pack-questions">${promptsCount} PROMPTS</p>
+                        </div>
+                    `;
+                    packsGrid.innerHTML += packCard;
+                    packIndex++;
+                }
+            }
+        }
+
+        function selectPack(packId) {
+            currentPack = packId;
+            currentPrompts = gamePrompts[currentCategory][packId];
+            
+            if (currentPrompts.length === 0) {
+                 alert(`Selected pack is empty. Please choose an active pack.`);
+                 return;
+            }
+
+            currentPromptIndex = 0;
+            
+            document.getElementById('packSelection').classList.add('hidden');
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const totalPrompts = currentPrompts.length;
+            const promptsPlayed = currentPromptIndex + 1;
+            const progress = (promptsPlayed / totalPrompts) * 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('promptCounter').textContent = `PROMPT ${promptsPlayed} OF ${totalPrompts}`;
+            
+            // --- Update Prompt Text ---
+            document.getElementById('promptText').textContent = PROMPT_PREAMBLE + currentPrompts[currentPromptIndex];
+            
+            document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
+            document.getElementById('nextBtn').textContent = currentPromptIndex === totalPrompts - 1 ? 'FINISH' : 'NEXT →';
+        }
+
+        function nextPrompt() {
+            if (currentPromptIndex === currentPrompts.length - 1) {
+                showEndScreen();
+            } else {
+                currentPromptIndex++;
+                updateDisplay();
+            }
+        }
+
+        function previousPrompt() {
+            if (currentPromptIndex > 0) {
+                currentPromptIndex--;
+                updateDisplay();
+            }
+        }
+
+        // --- BACK/QUIT FUNCTIONS ---
+        function backToCategories() {
+            document.getElementById('packSelection').classList.add('hidden');
+            document.getElementById('categorySelection').classList.remove('hidden');
+        }
+        function quitToPacks() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('packSelection').classList.remove('hidden');
+            currentPromptIndex = 0;
+        }
+        function showEndScreen() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'block';
+        }
+        function backToPackSelection() {
+            document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('packSelection').classList.remove('hidden');
+            currentPromptIndex = 0;
+        }
+        function backToGames() {
+            window.location.href = 'date-night.html';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
