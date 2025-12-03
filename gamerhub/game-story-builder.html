@@ -222,11 +222,11 @@
         .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
         
         /* Final Story View Modal Styling */
-        .story-modal-view { /* Renamed class for clarity */
+        .story-modal-view { 
             max-width: 800px;
             margin: 40px auto;
             width: 100%;
-            display: flex; /* Ensure display is flex when active */
+            display: none; 
             flex-direction: column;
             align-items: center;
         }
@@ -473,7 +473,6 @@
             let packIndex = 1;
 
             if (!starters || !Array.isArray(starters)) {
-                // This protects against the TypeError: Cannot read properties of undefined (reading 'forEach')
                 console.error("Story starters array not found for category:", categoryId);
                 return;
             }
@@ -537,7 +536,7 @@
                 counter.textContent = `(${MAX_SENTENCES} SENTENCES)`;
                 button.textContent = "STORY FINISHED";
                 button.disabled = true;
-                showEndScreen(true); // Forced end
+                viewFinalStory(true); // Forced end, jump straight to final modal
             } else {
                 button.textContent = "ADD SENTENCE";
                 button.disabled = false;
@@ -578,7 +577,12 @@
 
         // --- NEW FUNCTION: Finish Early ---
         function finishEarly() {
-            showEndScreen(false); // Not forced end
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'block';
+            
+            const messageElement = document.getElementById('endMessage');
+            messageElement.textContent = `The story has ${currentStory.length} sentences. Are you finished with your story, or do you want to keep writing?`;
+            document.querySelector('#endScreen h2').textContent = "STORY PAUSED! ⏸️";
         }
         
         // --- BACK/QUIT FUNCTIONS ---
@@ -587,35 +591,26 @@
             document.getElementById('packSelection').classList.remove('hidden');
         }
 
-        function showEndScreen(isForcedCompletion) {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'block';
-            
-            const messageElement = document.getElementById('endMessage');
-            if (isForcedCompletion) {
-                messageElement.textContent = "Congratulations! You reached the maximum length of the story.";
-                document.querySelector('#endScreen h2').textContent = "STORY COMPLETE! 🎉";
-            } else {
-                 messageElement.textContent = `The story has ${currentStory.length} sentences. Are you finished with your story, or do you want to keep writing?`;
-                 document.querySelector('#endScreen h2').textContent = "STORY PAUSED! ⏸️";
-            }
-        }
-        
         function continueStory() {
             document.getElementById('endScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'flex';
             document.getElementById('sentenceInput').focus();
         }
 
-        function viewFinalStory() {
-            // FIX: Ensure the end screen is hidden and the modal container is shown
+        function viewFinalStory(isForcedCompletion) {
+            // Logic change: If forced completion, simply display the final title and story.
+            // If called from the PAUSE screen, the pause screen is already visible and needs to be hidden.
             document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'none';
+
+            // Show the FINAL STORY MODAL (Bug fix: ensure visibility)
             document.getElementById('finalStoryModal').classList.remove('hidden');
             
-            document.getElementById('finalStoryTitle').textContent = "Your Completed Story!";
+            const completionTitle = isForcedCompletion ? "STORY COMPLETE! 🎉" : "STORY FINISHED EARLY!";
+            document.getElementById('finalStoryTitle').textContent = completionTitle;
             const finalStoryText = document.getElementById('finalStoryText');
             
-            // Clear existing text first
+            // Clear existing text and set header
             finalStoryText.innerHTML = `<p class="story-prompt-text">Start: ${currentPrompt}</p>`;
             
             currentStory.forEach((line) => {
@@ -632,6 +627,7 @@
         }
 
         function backToPackSelection() {
+            // Ensure all modals are reset before returning to pack selection
             document.getElementById('endScreen').style.display = 'none';
             document.getElementById('finalStoryModal').classList.add('hidden');
             document.getElementById('packSelection').classList.remove('hidden');
