@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        /* CSS STYLES (Omitted for brevity, using final approved version) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
         h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
@@ -68,7 +69,7 @@
         .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
         .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
 
-        /* FIXED: Player Choice Screen (Switched to WHITE background) */
+        /* FIXED: Player Choice Screen (White background) */
         .choice-screen {
             display: none; 
             text-align: center;
@@ -277,19 +278,26 @@
         let currentPromptIndex = 0;
         let currentCategory = '';
         let currentPack = '';
-        let currentPrompts = []; 
         let currentPlayer = 1; 
-        let history = []; // Stores { type, prompt, player } for each revealed challenge
+        let history = []; 
         const PROMPT_PER_PACK = 18; 
         
+        // Decks containing the remaining prompts for the current game session
+        let availableTruths = [];
+        let availableDares = [];
+
         const categoryTitles = {
-            'flirty': 'FLIRTY & FUN',
-            'deep': 'DEEP CONVERSATION',
-            'spicy': 'SPICY & DARING',
-            'past': 'NOSTALGIA & SECRETS',
-            'future': 'FUTURE & FANTASY',
-            'silly': 'SILLY & PHYSICAL',
+            'flirty': 'FLIRTY & FUN', 'deep': 'DEEP CONVERSATION', 'spicy': 'SPICY & DARING',
+            'past': 'NOSTALGIA & SECRETS', 'future': 'FUTURE & FANTASY', 'silly': 'SILLY & PHYSICAL',
         };
+        
+        // Utility function to get a random item from a list (now used for shuffling)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
         
         // --- TRUTH OR DARE PROMPT DATA (Truths and Dares separated for choice) ---
         const tdPrompts = {
@@ -422,6 +430,15 @@
         function selectPack(packId) {
             currentPack = packId;
             
+            // --- LOAD AND SHUFFLE DECKS ---
+            const data = tdPrompts[currentCategory][packId];
+            availableTruths = [...data.truths]; // Make copies
+            availableDares = [...data.dares]; // Make copies
+            
+            shuffleArray(availableTruths);
+            shuffleArray(availableDares);
+            // ----------------------------
+            
             // Reset game state
             history = [];
             currentPromptIndex = 0;
@@ -447,13 +464,20 @@
         }
 
         function revealPrompt(choiceType) {
-            const packData = tdPrompts[currentCategory][currentPack];
             let chosenPrompt;
 
             if (choiceType === 'TRUTH') {
-                chosenPrompt = getRandomItem(packData.truths);
+                if (availableTruths.length === 0) {
+                    alert("No more unique TRUTH questions left in this pack!");
+                    return;
+                }
+                chosenPrompt = availableTruths.pop(); // DRAW from the deck
             } else {
-                chosenPrompt = getRandomItem(packData.dares);
+                if (availableDares.length === 0) {
+                    alert("No more unique DARE challenges left in this pack!");
+                    return;
+                }
+                chosenPrompt = availableDares.pop(); // DRAW from the deck
             }
 
             // Store the selected prompt in history
@@ -504,11 +528,21 @@
                 // Decrement the virtual index
                 currentPromptIndex--;
                 
-                // Restore the player whose turn it was previously
-                currentPlayer = currentPlayer === 1 ? 2 : 1; 
+                // Find the prompt that was just revealed (to put it back)
+                const itemToRestore = history[history.length - 1]; 
+                
+                // Return the prompt to the deck it came from
+                if (itemToRestore.type === 'TRUTH') {
+                    availableTruths.unshift(itemToRestore.prompt); // Put back on top
+                } else {
+                    availableDares.unshift(itemToRestore.prompt);
+                }
                 
                 // Remove the last item from history (the challenge they just backed away from)
                 history.pop();
+                
+                // Restore the player whose turn it was previously
+                currentPlayer = currentPlayer === 1 ? 2 : 1; 
                 
                 // If history is not empty, reload the content of the *previous* turn
                 if (history.length > 0) {
