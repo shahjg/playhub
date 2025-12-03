@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* [STYLES ARE OMITTED FOR BREVITY, ASSUME THEY ARE COPIED FROM PREVIOUS RESPONSES] */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
         h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
@@ -50,7 +49,6 @@
 
         /* Pack Specific Styles */
         .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
-
         .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
         .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
         .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
@@ -70,8 +68,51 @@
         .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
         .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
 
-        /* Prompt Card (Always visible when playing) */
+        /* New styles for the Player Choice Screen */
+        .choice-screen {
+            display: none; 
+            text-align: center;
+            padding: 60px 50px; 
+            margin-bottom: 40px; 
+            min-height: 280px; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            background: #1a1a1a;
+            color: white; 
+            border: 4px solid #1a1a1a; 
+            box-shadow: 8px 8px 0 #e0e0e0; 
+        }
+        .choice-screen h2 {
+            font-size: 3.5rem;
+            color: white;
+            text-shadow: 3px 3px 0 #ff6b9d;
+            margin-bottom: 20px;
+        }
+        .choice-instruction {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 40px;
+        }
+        .choice-buttons {
+            display: flex;
+            gap: 20px;
+        }
+        .choice-buttons .primary {
+            padding: 18px 40px;
+            font-size: 1.5rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            border-color: #8b2e47;
+            box-shadow: 5px 5px 0 #8b2e47;
+            cursor: pointer;
+            color: white;
+        }
+
+        /* Prompt Card (Visible ONLY after choice) */
         .prompt-card { 
+            display: none;
             background: white; 
             color: #1a1a1a; 
             border: 4px solid #1a1a1a; 
@@ -79,7 +120,6 @@
             margin-bottom: 40px; 
             box-shadow: 8px 8px 0 #e0e0e0; 
             min-height: 280px; 
-            display: flex;
             flex-direction: column;
             align-items: center; 
             justify-content: center; 
@@ -94,36 +134,13 @@
             line-height: 1;
         }
 
-        .prompt-text { 
-            font-size: 1.8rem; 
-            line-height: 1.5; 
-            font-weight: 600; 
-            color: #1a1a1a; 
-        }
-
-        .answer-prompt {
-            font-size: 1rem;
-            color: #666;
-            font-weight: 700;
-            margin-top: 20px;
-        }
+        .prompt-text { font-size: 1.8rem; line-height: 1.5; font-weight: 600; color: #1a1a1a; }
+        .answer-prompt { font-size: 1rem; color: #666; font-weight: 700; margin-top: 20px; }
         
-        .navigation { 
-            display: flex; 
-            gap: 15px;
-            justify-content: center;
-        }
+        .navigation { display: flex; gap: 15px; justify-content: center; }
         .nav-btn { flex: 1; padding: 18px 30px; font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
-        .nav-btn.prev { 
-            background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0;
-            flex-grow: 0.5;
-        }
-        .nav-btn.prev:hover:not(:disabled) { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
-        .nav-btn.next { 
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; 
-            flex-grow: 1;
-        }
-        .nav-btn.next:hover:not(:disabled) { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #8b2e47; }
+        .nav-btn.prev { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; flex-grow: 0.5; }
+        .nav-btn.next { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; flex-grow: 1; }
         .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* End Screen */
@@ -131,19 +148,18 @@
         .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
         .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
         .end-actions { display: flex; flex-direction: column; gap: 15px; }
-        .action-btn { padding: 18px 40px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
         .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
         .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .container { padding: 0 20px; }
-            .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
+            .selection-header h2, .end-screen h2, .choice-screen h2 { font-size: 3.5rem; }
             .selection-grid { grid-template-columns: 1fr; } 
             .packs-grid { grid-template-columns: 1fr; }
-            .quit-btn { position: static; margin-bottom: 15px; display: block; width: 100%; }
+            .choice-buttons { flex-direction: column; gap: 10px; }
             .prompt-text { font-size: 1.4rem; }
-            .prompt-card { padding: 40px 30px; min-height: 240px; }
+            .prompt-card, .choice-screen { padding: 40px 30px; min-height: 240px; }
             .nav-btn { font-size: 1.1rem; padding: 15px 20px; }
         }
     </style>
@@ -170,43 +186,12 @@
                 </div>
 
                 <div class="selection-grid">
-                    
-                    <div class="selection-card" onclick="showPacks('flirty')">
-                        <div class="selection-icon">💋</div>
-                        <h3>FLIRTY & FUN</h3>
-                        <p class="selection-description">Light secrets and playful, romantic physical dares.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('deep')">
-                        <div class="selection-icon">💭</div>
-                        <h3>DEEP CONVERSATION</h3>
-                        <p class="selection-description">Serious questions on regrets, goals, and emotional connection.</p>
-                    </div>
-                    
-                    <div class="selection-card" onclick="showPacks('spicy')">
-                        <div class="selection-icon">🔥</div>
-                        <h3>SPICY & DARING</h3>
-                        <p class="selection-description">Intimate questions and sexy physical challenges.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('past')">
-                        <div class="selection-icon">🕰️</div>
-                        <h3>NOSTALGIA & SECRETS</h3>
-                        <p class="selection-description">Exposing embarrassing past moments, childhood secrets, and silly history.</p>
-                    </div>
-                    
-                    <div class="selection-card" onclick="showPacks('future')">
-                        <div class="selection-icon">✨</div>
-                        <h3>FUTURE & FANTASY</h3>
-                        <p class="selection-description">Hypothetical choices about dreams, goals, and unbelievable futures.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('silly')">
-                        <div class="selection-icon">🤪</div>
-                        <h3>SILLY & PHYSICAL</h3>
-                        <p class="selection-description">Focus on funny truths and silly physical dares to make your partner laugh.</p>
-                    </div>
-
+                    <div class="selection-card" onclick="showPacks('flirty')"> <div class="selection-icon">💋</div> <h3>FLIRTY & FUN</h3> <p class="selection-description">Light secrets and playful, romantic physical dares.</p> </div>
+                    <div class="selection-card" onclick="showPacks('deep')"> <div class="selection-icon">💭</div> <h3>DEEP CONVERSATION</h3> <p class="selection-description">Serious questions on regrets, goals, and emotional connection.</p> </div>
+                    <div class="selection-card" onclick="showPacks('spicy')"> <div class="selection-icon">🔥</div> <h3>SPICY & DARING</h3> <p class="selection-description">Intimate questions and sexy physical challenges.</p> </div>
+                    <div class="selection-card" onclick="showPacks('past')"> <div class="selection-icon">🕰️</div> <h3>NOSTALGIA & SECRETS</h3> <p class="selection-description">Exposing embarrassing past moments, childhood secrets, and silly history.</p> </div>
+                    <div class="selection-card" onclick="showPacks('future')"> <div class="selection-icon">✨</div> <h3>FUTURE & FANTASY</h3> <p class="selection-description">Hypothetical choices about dreams, goals, and unbelievable futures.</p> </div>
+                    <div class="selection-card" onclick="showPacks('silly')"> <div class="selection-icon">🤪</div> <h3>SILLY & PHYSICAL</h3> <p class="selection-description">Focus on funny truths and silly physical dares to make your partner laugh.</p> </div>
                 </div>
             </div>
 
@@ -235,10 +220,19 @@
                     <div class="prompt-counter" id="promptCounter">CHALLENGE 1 OF 18</div>
                 </div>
 
+                <div class="choice-screen" id="choiceScreen">
+                    <h2 id="currentPlayerTurn">PLAYER 1'S TURN</h2>
+                    <p class="choice-instruction">Choose your fate: Truth or Dare?</p>
+                    <div class="choice-buttons">
+                        <button class="action-btn primary" onclick="revealPrompt('TRUTH')">TRUTH</button>
+                        <button class="action-btn primary" onclick="revealPrompt('DARE')">DARE</button>
+                    </div>
+                </div>
+
                 <div class="prompt-card" id="promptCard">
                     <p class="prompt-label" id="typeLabel">TRUTH</p>
                     <p class="prompt-text" id="promptText">What is the most ridiculous fight you've ever started?</p>
-                    <p class="answer-prompt">Decide who is answering, then click next!</p>
+                    <p class="answer-prompt">Answer or Complete the Challenge, then click next!</p>
                 </div>
 
                 <div class="navigation">
@@ -249,9 +243,7 @@
 
             <div class="end-screen" id="endScreen">
                 <h2>YOU DID IT! 🎉</h2>
-                <p class="end-message">
-                    Hope you chose wisely! You survived the challenges.
-                </p>
+                <p class="end-message">Hope you chose wisely! You survived the challenges.</p>
                 <div class="end-actions">
                     <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
                     <button class="action-btn secondary" onclick="backToGames()">BACK TO DATE NIGHT</button>
@@ -259,8 +251,7 @@
             </div>
         </div>
 
-        <footer>
-            </footer>
+        <footer></footer>
     </div>
 
     <script>
@@ -268,7 +259,9 @@
         let currentPromptIndex = 0;
         let currentCategory = '';
         let currentPack = '';
-        let currentPrompts = [];
+        let currentPrompts = []; // Stores combined truth/dare lists on selection
+        let currentPlayer = 1; 
+        let history = []; // Stores { type, prompt, player } for each revealed challenge
         const PROMPT_PER_PACK = 18; 
         
         const categoryTitles = {
@@ -280,381 +273,98 @@
             'silly': 'SILLY & PHYSICAL',
         };
         
-        // Structure: category: { packID: [{type: 'TRUTH'/'DARE', prompt: '...'}, {...}], ... }
+        // --- TRUTH OR DARE PROMPT DATA (Truths and Dares separated for choice) ---
         const tdPrompts = {
             flirty: {
-                pack1: [
-                    { type: 'TRUTH', prompt: "What’s your current biggest physical turn-on?" },
-                    { type: 'DARE', prompt: "Give me a passionate kiss for 20 seconds." },
-                    { type: 'TRUTH', prompt: "What's the craziest thing you've done to impress a crush?" },
-                    { type: 'DARE', prompt: "Let me put makeup (or condiments) on your face." },
-                    { type: 'TRUTH', prompt: "What's the riskiest text message you've ever sent?" },
-                    { type: 'DARE', prompt: "Talk in a foreign accent for the next 5 minutes." },
-                    { type: 'TRUTH', prompt: "What's the most romantic thing I've done for you?" },
-                    { type: 'DARE', prompt: "Do your best catwalk strut across the room." },
-                    { type: 'TRUTH', prompt: "What's the most embarrassing clothing item you still own?" },
-                    { type: 'DARE', prompt: "Write a love poem about my left ear." },
-                    { type: 'TRUTH', prompt: "What fictional character do you wish I looked like?" },
-                    { type: 'DARE', prompt: "Blindfold me and feed me something." },
-                    { type: 'TRUTH', prompt: "What's your go-to sexy dance move?" },
-                    { type: 'DARE', prompt: "Do a dramatic reading of the last text message you sent." },
-                    { type: 'TRUTH', prompt: "What's the most money you've spent on an impulse buy?" },
-                    { type: 'DARE', prompt: "Take off your shirt and dance for 15 seconds." },
-                    { type: 'TRUTH', prompt: "What's the most ridiculous argument you've ever won?" },
-                    { type: 'DARE', prompt: "Let me give you a 30-second body massage." }
-                ],
-                pack2: [
-                    { type: 'TRUTH', prompt: "What’s one thing you find sexy about me that isn't physical?" },
-                    { type: 'DARE', prompt: "Let me tickle you for 30 seconds without laughing." },
-                    { type: 'TRUTH', prompt: "If you could only keep one memory of us, what would it be?" },
-                    { type: 'DARE', prompt: "Act out the first kiss we had." },
-                    { type: 'TRUTH', prompt: "What's your honest opinion about my friends?" },
-                    { type: 'DARE', prompt: "Put ice cubes down your pants for 10 seconds." },
-                    { type: 'TRUTH', prompt: "What movie star would you secretly cheat on me with (if there were no consequences)?" },
-                    { type: 'DARE', prompt: "Give me three compliments without using the letter 'E'." },
-                    { type: 'TRUTH', prompt: "What’s the most immature thing you do regularly?" },
-                    { type: 'DARE', prompt: "Sing a romantic song using only animal sounds." },
-                    { type: 'TRUTH', prompt: "What outfit do you think I look best in?" },
-                    { type: 'DARE', prompt: "Let me draw a permanent marker mustache on your face." },
-                    { type: 'TRUTH', prompt: "What’s the craziest food craving you've ever had?" },
-                    { type: 'DARE', prompt: "Propose to me dramatically using only song lyrics." },
-                    { type: 'TRUTH', prompt: "What's the strangest thing you find attractive?" },
-                    { type: 'DARE', prompt: "Wear your shirt backwards for the rest of the game." },
-                    { type: 'TRUTH', prompt: "What do you think is my worst habit?" },
-                    { type: 'DARE', prompt: "Try to lick your elbow." }
-                ],
-                pack3: [
-                    { type: 'TRUTH', prompt: "What’s one thing you regret telling me?" },
-                    { type: 'DARE', prompt: "Write the alphabet on my back using only your finger." },
-                    { type: 'TRUTH', prompt: "What's the most childish thing you still believe?" },
-                    { type: 'DARE', prompt: "Let me dress you for the next 10 minutes." },
-                    { type: 'TRUTH', prompt: "Who is your celebrity free pass?" },
-                    { type: 'DARE', prompt: "Try to fit your fist in your mouth." },
-                    { type: 'TRUTH', prompt: "What is your guilty pleasure TV show?" },
-                    { type: 'DARE', prompt: "Do the worm across the room." },
-                    { type: 'TRUTH', prompt: "What's the most romantic thing you've done that I don't know about?" },
-                    { type: 'DARE', prompt: "Take three large bites of a lemon." },
-                    { type: 'TRUTH', prompt: "What's the worst meal I’ve ever cooked?" },
-                    { type: 'DARE', prompt: "Attempt to juggle three random items." },
-                    { type: 'TRUTH', prompt: "What’s one habit I have that you secretly love?" },
-                    { type: 'DARE', prompt: "Give me a one-minute stand-up comedy routine." },
-                    { type: 'TRUTH', prompt: "What song describes our relationship best?" },
-                    { type: 'DARE', prompt: "Make me laugh without using words." },
-                    { type: 'TRUTH', prompt: "What’s the last thing you cried about?" },
-                    { type: 'DARE', prompt: "Pretend to be a traffic cop for two minutes." }
-                ],
+                pack1: {
+                    truths: [ "What’s your current biggest physical turn-on?", "What's the riskiest text message you've ever sent?", "What's the craziest thing you've done to impress a crush?", "What’s the most romantic thing I've done for you?", "What fictional character do you wish I looked like?", "What's the longest you've gone without a shower?", "What's your go-to sexy dance move?", "What's the most money you've spent on an impulse buy?", "What's the most embarrassing clothing item you still own?" ],
+                    dares: [ "Give me a passionate kiss for 20 seconds.", "Let me give you a 30-second body massage.", "Send a flirty text to someone randomly in your contacts.", "Do your best catwalk strut across the room.", "Let me put makeup (or condiments) on your face.", "Take off your shirt and dance for 15 seconds.", "Write a love poem about my left ear.", "Blindfold me and feed me something.", "Talk in a foreign accent for the next 5 minutes." ],
+                },
+                pack2: {
+                    truths: [ "What’s one thing you find sexy about me that isn't physical?", "If you could only keep one memory of us, what would it be?", "What's your honest opinion about my friends?", "What movie star would you secretly cheat on me with?", "What’s the most immature thing you do regularly?", "What outfit do you think I look best in?", "What’s the craziest food craving you've ever had?", "What's the strangest thing you find attractive?", "What do you think is my worst habit?" ],
+                    dares: [ "Let me tickle you for 30 seconds without laughing.", "Act out the first kiss we had.", "Put ice cubes down your pants for 10 seconds.", "Give me three compliments without using the letter 'E'.", "Sing a romantic song using only animal sounds.", "Let me draw a permanent marker mustache on your face.", "Propose to me dramatically using only song lyrics.", "Wear your shirt backwards for the rest of the game.", "Try to lick your elbow." ]
+                },
+                pack3: {
+                    truths: [ "What’s one thing you regret telling me?", "What's the most childish thing you still believe?", "Who is your celebrity free pass?", "What is your guilty pleasure TV show?", "What's the most romantic thing you've done that I don't know about?", "What's the worst meal I’ve ever cooked?", "What’s one habit I have that you secretly love?", "What song describes our relationship best?", "What’s the last thing you cried about?" ],
+                    dares: [ "Write the alphabet on my back using only your finger.", "Let me dress you for the next 10 minutes.", "Try to fit your fist in your mouth.", "Do the worm across the room.", "Take three large bites of a lemon.", "Attempt to juggle three random items.", "Give me a one-minute stand-up comedy routine.", "Make me laugh without using words.", "Pretend to be a traffic cop for two minutes." ]
+                }
             },
             deep: {
-                pack1: [
-                    { type: 'TRUTH', prompt: "What’s the one goal I don’t know about?" },
-                    { type: 'DARE', prompt: "Call a family member and tell them you love them." },
-                    { type: 'TRUTH', prompt: "What’s your biggest insecurity right now?" },
-                    { type: 'DARE', prompt: "Write down the three things you like most about me." },
-                    { type: 'TRUTH', prompt: "What's a secret dream you gave up on?" },
-                    { type: 'DARE', prompt: "Post a cringe-worthy status/story on social media right now." },
-                    { type: 'TRUTH', prompt: "What’s the one thing you always hide from everyone?" },
-                    { type: 'DARE', prompt: "Go outside and sing 'Twinkle Twinkle Little Star' loudly." },
-                    { type: 'TRUTH', prompt: "What's a major regret you wish you could undo?" },
-                    { type: 'DARE', prompt: "Do 25 push-ups (or sit-ups)." },
-                    { type: 'TRUTH', prompt: "Who is the last person you cried in front of?" },
-                    { type: 'DARE', prompt: "Show me the last 5 photos in your camera roll and explain them." },
-                    { type: 'TRUTH', prompt: "What’s one thing you need from me right now?" },
-                    { type: 'DARE', prompt: "Act like a monkey until you make me laugh." },
-                    { type: 'TRUTH', prompt: "What’s the biggest lie you've ever told your parents?" },
-                    { type: 'DARE', prompt: "Tell me a secret you've kept for over a year." },
-                    { type: 'TRUTH', prompt: "What did you learn from your last mistake?" },
-                    { type: 'DARE', prompt: "Tell me about the worst mistake you ever made." }
-                ],
-                pack2: [
-                    { type: 'TRUTH', prompt: "What's the deepest emotional pain you're still working through?" },
-                    { type: 'DARE', prompt: "Stare into my eyes for one minute without blinking." },
-                    { type: 'TRUTH', prompt: "What is your biggest fear about our relationship?" },
-                    { type: 'DARE', prompt: "Write down a quality you wish you possessed." },
-                    { type: 'TRUTH', prompt: "What's one thing you're deeply proud of me for?" },
-                    { type: 'DARE', prompt: "Tell me one thing you've never told anyone." },
-                    { type: 'TRUTH', prompt: "What does 'home' truly mean to you?" },
-                    { type: 'DARE', prompt: "Spend 5 minutes talking about a topic you passionately hate." },
-                    { type: 'TRUTH', prompt: "If you could change one thing about your personality, what would it be?" },
-                    { type: 'DARE', prompt: "Write a letter to your past self and read it out loud." },
-                    { type: 'TRUTH', prompt: "What makes you feel truly seen and understood?" },
-                    { type: 'DARE', prompt: "Explain a moment where you felt profound gratitude." },
-                    { type: 'TRUTH', prompt: "What is a sacrifice you made for our relationship?" },
-                    { type: 'DARE', prompt: "Confess one time you thought about breaking up with me." },
-                    { type: 'TRUTH', prompt: "What’s your opinion on our sex life right now (1-10)?" },
-                    { type: 'DARE', prompt: "Call your best friend and tell them how much you appreciate them." },
-                    { type: 'TRUTH', prompt: "What is a financial worry you have for our future?" },
-                    { type: 'DARE', prompt: "Name one thing you wish I'd stop doing." }
-                ],
-                pack3: [
-                    { type: 'TRUTH', prompt: "What is a secret shame you carry?" },
-                    { type: 'DARE', prompt: "Plan our dream trip right now (1 minute)." },
-                    { type: 'TRUTH', prompt: "What's the one thing you refuse to compromise on?" },
-                    { type: 'DARE', prompt: "Act out the last time you were truly angry." },
-                    { type: 'TRUTH', prompt: "What makes you feel unworthy of love?" },
-                    { type: 'DARE', prompt: "Read the most embarrassing text message you've ever received." },
-                    { type: 'TRUTH', prompt: "What do you value more: loyalty or honesty?" },
-                    { type: 'DARE', prompt: "Recite the Pledge of Allegiance while holding your breath." },
-                    { type: 'TRUTH', prompt: "What's a life goal you haven't told anyone about?" },
-                    { type: 'DARE', prompt: "Write a one-sentence summary of your life philosophy." },
-                    { type: 'TRUTH', prompt: "What's the biggest insecurity you have when arguing with me?" },
-                    { type: 'DARE', prompt: "Show me a talent that you rarely share with anyone." },
-                    { type: 'TRUTH', prompt: "What is the most irresponsible thing you've done with money?" },
-                    { type: 'DARE', prompt: "Dance passionately to a piece of classical music." },
-                    { type: 'TRUTH', prompt: "Who had the biggest impact on the person you are today?" },
-                    { type: 'DARE', prompt: "Give me the longest compliment you can think of." },
-                    { type: 'TRUTH', prompt: "What's your biggest personal weakness?" },
-                    { type: 'DARE', prompt: "Show me your best impression of me." }
-                ]
+                pack1: {
+                    truths: [ "What’s the one goal I don’t know about?", "What’s your biggest insecurity right now?", "What's a secret dream you gave up on?", "What’s the one thing you always hide from everyone?", "What's a major regret you wish you could undo?", "Who is the last person you cried in front of?", "What’s one thing you need from me right now?", "What’s the biggest lie you've ever told your parents?", "What did you learn from your last mistake?" ],
+                    dares: [ "Call a family member and tell them you love them.", "Write down the three things you like most about me.", "Post a cringe-worthy status/story on social media right now.", "Go outside and sing 'Twinkle Twinkle Little Star' loudly.", "Do 25 push-ups (or sit-ups).", "Show me the last 5 photos in your camera roll and explain them.", "Act like a monkey until you make me laugh.", "Tell me a secret you've kept for over a year.", "Tell me about the worst mistake you ever made." ]
+                },
+                pack2: {
+                    truths: [ "What's the deepest emotional pain you're still working through?", "What is your biggest fear about our relationship?", "What's one thing you're deeply proud of me for?", "What does 'home' truly mean to you?", "If you could change one thing about your personality, what would it be?", "What makes you feel truly seen and understood?", "What is a sacrifice you made for our relationship?", "What’s your opinion on our sex life right now (1-10)?", "What is a financial worry you have for our future?" ],
+                    dares: [ "Stare into my eyes for one minute without blinking.", "Write down a quality you wish you possessed.", "Tell me one thing you've never told anyone.", "Spend 5 minutes talking about a topic you passionately hate.", "Write a letter to your past self and read it out loud.", "Explain a moment where you felt profound gratitude.", "Confess one time you thought about breaking up with me.", "Call your best friend and tell them how much you appreciate them.", "Name one thing you wish I'd stop doing." ]
+                },
+                pack3: {
+                    truths: [ "What is a secret shame you carry?", "What's the one thing you refuse to compromise on?", "What makes you feel unworthy of love?", "What do you value more: loyalty or honesty?", "What's a life goal you haven't told anyone about?", "What's the biggest insecurity you have when arguing with me?", "What is the most irresponsible thing you've done with money?", "Who had the biggest impact on the person you are today?", "What's your biggest personal weakness?" ],
+                    dares: [ "Plan our dream trip right now (1 minute).", "Act out the last time you were truly angry.", "Read the most embarrassing text message you've ever received.", "Recite the Pledge of Allegiance while holding your breath.", "Write a one-sentence summary of your life philosophy.", "Show me a talent that you rarely share with anyone.", "Dance passionately to a piece of classical music.", "Give me the longest compliment you can think of.", "Show me your best impression of me." ]
+                }
             },
             spicy: {
-                pack1: [
-                    { type: 'TRUTH', prompt: "What's the craziest place you've ever hooked up?" },
-                    { type: 'DARE', prompt: "Take a piece of clothing off." },
-                    { type: 'TRUTH', prompt: "What's your biggest sexual fantasy?" },
-                    { type: 'DARE', prompt: "Show me the underwear you're currently wearing." },
-                    { type: 'TRUTH', prompt: "Who is the last person you fantasized about (outside of me)?" },
-                    { type: 'DARE', prompt: "Whisper a naughty fantasy directly in my ear." },
-                    { type: 'TRUTH', prompt: "What's your honest opinion on exhibitionism?" },
-                    { type: 'DARE', prompt: "Give me a slow, sensual body rub for one minute." },
-                    { type: 'TRUTH', prompt: "What's the most scandalous thing you've ever worn?" },
-                    { type: 'DARE', prompt: "Act out a movie scene using only seductive sounds." },
-                    { type: 'TRUTH', prompt: "What's the longest you've gone without intimacy?" },
-                    { type: 'DARE', prompt: "Bite your lip and maintain eye contact for 10 seconds." },
-                    { type: 'TRUTH', prompt: "What's the hottest thing you've ever seen me wear?" },
-                    { type: 'DARE', prompt: "Show me your best seductive walk." },
-                    { type: 'TRUTH', prompt: "What's a secret habit you have in bed?" },
-                    { type: 'DARE', prompt: "Write a very dirty word on your forehead." },
-                    { type: 'TRUTH', prompt: "What's the dirtiest phrase you know in a foreign language?" },
-                    { type: 'DARE', prompt: "Act out your favorite position." }
-                ],
-                pack2: [
-                    { type: 'TRUTH', prompt: "What's the sexiest scenario you’ve daydreamed about us?" },
-                    { type: 'DARE', prompt: "Take a selfie doing your best 'bedroom eyes'." },
-                    { type: 'TRUTH', prompt: "What's the biggest physical turn-off for you?" },
-                    { type: 'DARE', prompt: "Take a shot of something spicy (hot sauce, pepper)." },
-                    { type: 'TRUTH', prompt: "What's one thing you want to try in the bedroom soon?" },
-                    { type: 'DARE', prompt: "Give me a lap dance for 30 seconds." },
-                    { type: 'TRUTH', prompt: "What's your biggest deal-breaker in intimacy?" },
-                    { type: 'DARE', prompt: "Blindfold me and use only your hands to kiss my neck." },
-                    { type: 'TRUTH', prompt: "What’s the fastest you've ever fallen out of love?" },
-                    { type: 'DARE', prompt: "Whisper a compliment about my body I haven't heard before." },
-                    { type: 'TRUTH', prompt: "What is your ultimate 'free pass' celebrity?" },
-                    { type: 'DARE', prompt: "Make out with your arm as if it were me." },
-                    { type: 'TRUTH', prompt: "What's one thing I do that makes you instantly wet/hard?" },
-                    { type: 'DARE', prompt: "Do the slow motion run from Baywatch." },
-                    { type: 'TRUTH', prompt: "Have you ever made out with someone in this room (besides me)?" },
-                    { type: 'DARE', prompt: "Let me remove one piece of your clothing using only my teeth." },
-                    { type: 'TRUTH', prompt: "What’s the most fun you've had with a partner besides sex?" },
-                    { type: 'DARE', prompt: "Lick a line of salt off my hand." }
-                ],
-                pack3: [
-                    { type: 'TRUTH', prompt: "What's the most awkward sexual moment you’ve had with anyone?" },
-                    { type: 'DARE', prompt: "Kiss me from my ankle up to my knee." },
-                    { type: 'TRUTH', prompt: "Have you ever faked an orgasm (with me or someone else)?" },
-                    { type: 'DARE', prompt: "Write 'I love sex' on your chest/stomach with a washable marker." },
-                    { type: 'TRUTH', prompt: "What’s one thing you always hide from me about your sexual past?" },
-                    { type: 'DARE', prompt: "Act out three non-verbal signals you use to indicate you want sex." },
-                    { type: 'TRUTH', prompt: "Have you ever had a one-night stand that you regretted?" },
-                    { type: 'DARE', prompt: "Give me a two-minute foot massage." },
-                    { type: 'TRUTH', prompt: "What's the dirtiest thing you've done in a movie theater?" },
-                    { type: 'DARE', prompt: "Wear your pants backwards for the rest of the game." },
-                    { type: 'TRUTH', prompt: "What’s a secret fantasy you have that you think is too weird to share?" },
-                    { type: 'DARE', prompt: "Act out your partner's 'O' face." },
-                    { type: 'TRUTH', prompt: "What is one thing I do during sex that you want more of?" },
-                    { type: 'DARE', prompt: "Take off your bra or socks without using your hands." },
-                    { type: 'TRUTH', prompt: "What’s the biggest physical risk you’ve taken?" },
-                    { type: 'DARE', prompt: "Dance seductively to a nursery rhyme." },
-                    { type: 'TRUTH', prompt: "What is your favorite body part on me?" },
-                    { type: 'DARE', prompt: "Lick whipped cream off my cheek." }
-                ]
+                pack1: {
+                    truths: [ "What's the craziest place you've ever hooked up?", "What's your biggest sexual fantasy?", "Who is the last person you fantasized about (outside of me)?", "What's your honest opinion on exhibitionism?", "What's the most scandalous thing you've ever worn?", "What's the longest you've gone without intimacy?", "What's the hottest thing you've ever seen me wear?", "What's a secret habit you have in bed?", "What's the dirtiest phrase you know in a foreign language?" ],
+                    dares: [ "Take a piece of clothing off.", "Show me the underwear you're currently wearing.", "Whisper a naughty fantasy directly in my ear.", "Give me a slow, sensual body rub for one minute.", "Act out a movie scene using only seductive sounds.", "Bite your lip and maintain eye contact for 10 seconds.", "Show me your best seductive walk.", "Write a very dirty word on your forehead.", "Act out your favorite position." ]
+                },
+                pack2: {
+                    truths: [ "What's the sexiest scenario you’ve daydreamed about us?", "What's the biggest physical turn-off for you?", "What's one thing you want to try in the bedroom soon?", "What's your biggest deal-breaker in intimacy?", "What’s the fastest you've ever fallen out of love?", "What is your ultimate 'free pass' celebrity?", "What's one thing I do that makes you instantly wet/hard?", "Have you ever made out with someone in this room (besides me)?", "What’s the most fun you've had with a partner besides sex?" ],
+                    dares: [ "Take a selfie doing your best 'bedroom eyes'.", "Take a shot of something spicy (hot sauce, pepper).", "Give me a lap dance for 30 seconds.", "Blindfold me and use only your hands to kiss my neck.", "Whisper a compliment about my body I haven't heard before.", "Make out with your arm as if it were me.", "Do the slow motion run from Baywatch.", "Let me remove one piece of your clothing using only my teeth.", "Lick a line of salt off my hand." ]
+                },
+                pack3: {
+                    truths: [ "What's the most awkward sexual moment you’ve had with anyone?", "Have you ever faked an orgasm (with me or someone else)?", "What’s one thing you always hide from me about your sexual past?", "Have you ever had a one-night stand that you regretted?", "What's the dirtiest thing you've done in a movie theater?", "What’s a secret fantasy you have that you think is too weird to share?", "What is one thing I do during sex that you want more of?", "What’s the biggest physical risk you’ve taken?", "What is your favorite body part on me?" ],
+                    dares: [ "Kiss me from my ankle up to my knee.", "Write 'I love sex' on your chest/stomach with a washable marker.", "Act out three non-verbal signals you use to indicate you want sex.", "Give me a two-minute foot massage.", "Wear your pants backwards for the rest of the game.", "Act out your partner's 'O' face.", "Take off your bra or socks without using your hands.", "Dance seductively to a nursery rhyme.", "Lick whipped cream off my cheek." ]
+                }
             },
             past: {
-                pack1: [
-                    { type: 'TRUTH', prompt: "What’s the most embarrassing pet name you've had?" },
-                    { type: 'DARE', prompt: "Show me the worst haircut you've ever had a photo of." },
-                    { type: 'TRUTH', prompt: "What’s the biggest lie you told your best friend?" },
-                    { type: 'DARE', prompt: "Tell me about a time you almost got arrested." },
-                    { type: 'TRUTH', prompt: "What's the most irresponsible thing you've done?" },
-                    { type: 'DARE', prompt: "Call your mother and sing her a lullaby." },
-                    { type: 'TRUTH', prompt: "What's the worst fashion trend you followed?" },
-                    { type: 'DARE', prompt: "Write a poem about your current job." },
-                    { type: 'TRUTH', prompt: "What’s the dumbest thing you did to impress an ex?" },
-                    { type: 'DARE', prompt: "Act out your most embarrassing moment." },
-                    { type: 'TRUTH', prompt: "What's one thing about your family I don't know?" },
-                    { type: 'DARE', prompt: "Do 5 push-ups and yell your own name each time." },
-                    { type: 'TRUTH', prompt: "What’s the most immature way you’ve handled a breakup?" },
-                    { type: 'DARE', prompt: "Speak in a high-pitched voice until the next round." },
-                    { type: 'TRUTH', prompt: "What's a secret language you used as a kid?" },
-                    { type: 'DARE', prompt: "Show me the weirdest text thread you have." },
-                    { type: 'TRUTH', prompt: "What’s the most ridiculous rumor you started?" },
-                    { type: 'DARE', prompt: "Stare at the ceiling and clap every time I say 'The'." }
-                ],
-                pack2: [
-                    { type: 'TRUTH', prompt: "What's the most expensive thing you stole?" },
-                    { type: 'DARE', prompt: "Describe your partner in a haiku (5-7-5 syllables)." },
-                    { type: 'TRUTH', prompt: "What was your most regrettable teenage mistake?" },
-                    { type: 'DARE', prompt: "Pour a cup of water over your head." },
-                    { type: 'TRUTH', prompt: "What's one physical feature you used to hate but now love?" },
-                    { type: 'DARE', prompt: "Do an interpretive dance about your breakfast." },
-                    { type: 'TRUTH', prompt: "What’s the biggest lie on your resume?" },
-                    { type: 'DARE', prompt: "Let me pop any visible pimples on your face." },
-                    { type: 'TRUTH', prompt: "What's the most disgusting thing you've ever eaten?" },
-                    { type: 'DARE', prompt: "Try to touch your nose with your tongue." },
-                    { type: 'TRUTH', prompt: "What's the most embarrassing item you've bought recently?" },
-                    { type: 'DARE', prompt: "Show me your saddest face." },
-                    { type: 'TRUTH', prompt: "What's a secret skill or talent you have?" },
-                    { type: 'DARE', prompt: "Pretend to be a dinosaur for one minute." },
-                    { type: 'TRUTH', prompt: "What's the weirdest dream you've ever had?" },
-                    { type: 'DARE', prompt: "Draw a funny picture of your partner on a sticky note." },
-                    { type: 'TRUTH', prompt: "What's one thing you wish your parents knew about your past?" },
-                    { type: 'DARE', prompt: "Do the chicken dance loudly." }
-                ],
-                pack3: [
-                    { type: 'TRUTH', prompt: "What’s the biggest secret your family is hiding?" },
-                    { type: 'DARE', prompt: "Give me an honest, unedited impression of my singing voice." },
-                    { type: 'TRUTH', prompt: "What's the worst fight you've ever seen?" },
-                    { type: 'DARE', prompt: "Pretend the floor is lava and navigate the room." },
-                    { type: 'TRUTH', prompt: "What's your most expensive impulse purchase?" },
-                    { type: 'DARE', prompt: "Try to put your foot behind your head." },
-                    { type: 'TRUTH', prompt: "What's the most embarrassing thing you've done while drunk/high?" },
-                    { type: 'DARE', prompt: "Sing the first line of every song you can think of until I say stop." },
-                    { type: 'TRUTH', prompt: "What's one thing you regret saying to a friend?" },
-                    { type: 'DARE', prompt: "Make a ridiculous face and hold it for one minute." },
-                    { type: 'TRUTH', prompt: "What's the meanest thing you've ever done to a sibling?" },
-                    { type: 'DARE', prompt: "Eat a spoonful of a condiment you hate (e.g., mustard/mayo)." },
-                    { type: 'TRUTH', prompt: "What's one thing you wish I'd change about my appearance?" },
-                    { type: 'DARE', prompt: "Do a handstand against the wall for 10 seconds." },
-                    { type: 'TRUTH', prompt: "What's the most embarrassing text in your phone right now?" },
-                    { type: 'DARE', prompt: "Let me paint your nails the ugliest color I can find." },
-                    { type: 'TRUTH', prompt: "What’s a bad habit I have that you've given up trying to fix?" },
-                    { type: 'DARE', prompt: "Put on three layers of mismatched clothing." }
-                ]
+                pack1: {
+                    truths: [ "What’s the most embarrassing pet name you've had?", "What’s the biggest lie you told your best friend?", "What's the most irresponsible thing you've done?", "What's the worst fashion trend you followed?", "What’s the dumbest thing you did to impress an ex?", "What's one thing about your family I don't know?", "What’s the most immature way you’ve handled a breakup?", "What's a secret language you used as a kid?", "What’s the most ridiculous rumor you started?" ],
+                    dares: [ "Show me the worst haircut you've ever had a photo of.", "Tell me about a time you almost got arrested.", "Call your mother and sing her a lullaby.", "Write a poem about your current job.", "Act out your most embarrassing moment.", "Do 5 push-ups and yell your own name each time.", "Speak in a high-pitched voice until the next round.", "Show me the weirdest text thread you have.", "Stare at the ceiling and clap every time I say 'The'." ]
+                },
+                pack2: {
+                    truths: [ "What's the most expensive thing you stole?", "What was your most regrettable teenage mistake?", "What's one physical feature you used to hate but now love?", "What’s the biggest lie on your resume?", "What's the most disgusting thing you've ever eaten?", "What's the most embarrassing item you've bought recently?", "What's a secret skill or talent you have?", "What's the weirdest dream you've ever had?", "What's one thing you wish your parents knew about your past?" ],
+                    dares: [ "Describe your partner in a haiku (5-7-5 syllables).", "Pour a cup of water over your head.", "Do an interpretive dance about your breakfast.", "Let me pop any visible pimples on your face.", "Try to touch your nose with your tongue.", "Show me your saddest face.", "Pretend to be a dinosaur for one minute.", "Draw a funny picture of your partner on a sticky note.", "Do the chicken dance loudly." ]
+                },
+                pack3: {
+                    truths: [ "What’s the biggest secret your family is hiding?", "What's the worst fight you've ever seen?", "What's your most expensive impulse purchase?", "What's the most embarrassing thing you've done while drunk/high?", "What's one thing you regret saying to a friend?", "What's the meanest thing you've ever done to a sibling?", "What's one thing you wish I'd change about my appearance?", "What's the most embarrassing text in your phone right now?", "What’s a bad habit I have that you've given up trying to fix?" ],
+                    dares: [ "Give me an honest, unedited impression of my singing voice.", "Pretend the floor is lava and navigate the room.", "Try to put your foot behind your head.", "Sing the first line of every song you can think of until I say stop.", "Make a ridiculous face and hold it for one minute.", "Eat a spoonful of a condiment you hate (e.g., mustard/mayo).", "Do a handstand against the wall for 10 seconds.", "Let me paint your nails the ugliest color I can find.", "Put on three layers of mismatched clothing." ]
+                }
             },
             future: {
-                pack1: [
-                    { type: 'TRUTH', prompt: "What’s your secret dream job if money weren’t an issue?" },
-                    { type: 'DARE', prompt: "Plan our dream future home (where, style, 3 details) in 1 minute." },
-                    { type: 'TRUTH', prompt: "What’s the one country you MUST visit before you die?" },
-                    { type: 'DARE', prompt: "Close your eyes and point to a random spot on a map. We have to go there someday." },
-                    { type: 'TRUTH', prompt: "What's the biggest risk you want us to take together?" },
-                    { type: 'DARE', prompt: "Write down a ridiculous business idea and try to sell it to me in 30 seconds." },
-                    { type: 'TRUTH', prompt: "What's one major thing you want to accomplish in the next 5 years?" },
-                    { type: 'DARE', prompt: "Act out a future argument we might have." },
-                    { type: 'TRUTH', prompt: "What would you do if you won the lottery tomorrow?" },
-                    { type: 'DARE', prompt: "Draw a mascot for our future relationship." },
-                    { type: 'TRUTH', prompt: "What's one thing you hope never changes about our relationship?" },
-                    { type: 'DARE', prompt: "Try to break dance to a piece of classical music." },
-                    { type: 'TRUTH', prompt: "What would you do if you suddenly became famous?" },
-                    { type: 'DARE', prompt: "Act out a sci-fi character getting their powers." },
-                    { type: 'TRUTH', prompt: "What's the most significant thing you want to teach our future kids?" },
-                    { type: 'DARE', prompt: "Give a 30-second motivational speech about achieving greatness." },
-                    { type: 'TRUTH', prompt: "What's one quality you secretly judge other couples for lacking?" },
-                    { type: 'DARE', prompt: "Pretend you are a superhero and give yourself a ridiculous name." }
-                ],
-                pack2: [
-                    { type: 'TRUTH', prompt: "What's one thing you'd change about our current living situation?" },
-                    { type: 'DARE', prompt: "Create a secret handshake for us right now." },
-                    { type: 'TRUTH', prompt: "What would you do if you could fly for a day?" },
-                    { type: 'DARE', prompt: "Act out a dramatic scene from a silent film." },
-                    { type: 'TRUTH', prompt: "What's the biggest sacrifice you'd make for my dream?" },
-                    { type: 'DARE', prompt: "Call a random business and ask a ridiculous question." },
-                    { type: 'TRUTH', prompt: "What's the one celebrity interaction you would risk everything for?" },
-                    { type: 'DARE', prompt: "Try to lick your eyebrow." },
-                    { type: 'TRUTH', prompt: "What's one skill you want to master together?" },
-                    { type: 'DARE', prompt: "Blindly trust me to put a mystery item in your mouth." },
-                    { type: 'TRUTH', prompt: "What's one tradition you want us to start?" },
-                    { type: 'DARE', prompt: "Tell me a secret you’ve never told anyone." },
-                    { type: 'TRUTH', prompt: "What's one thing you hope I never tell anyone about you?" },
-                    { type: 'DARE', prompt: "Give me an honest, detailed critique of my last outfit." },
-                    { type: 'TRUTH', prompt: "What's your biggest pet peeve about society?" },
-                    { type: 'DARE', prompt: "Try to fit as many crackers/biscuits in your mouth as possible." },
-                    { type: 'TRUTH', prompt: "What's the biggest difference in our long-term vision?" },
-                    { type: 'DARE', prompt: "Recite the alphabet backward." }
-                ],
-                pack3: [
-                    { type: 'TRUTH', prompt: "What's the most unbelievable story about your life that is actually true?" },
-                    { type: 'DARE', prompt: "Act out a dramatic fight scene in slow motion." },
-                    { type: 'TRUTH', prompt: "If you could change one thing about your physical appearance, what would it be?" },
-                    { type: 'DARE', prompt: "Serenade me with an improvised song about my shoes." },
-                    { type: 'TRUTH', prompt: "What's the most impulsive decision you've ever made?" },
-                    { type: 'DARE', prompt: "Try to put on pants without using your hands." },
-                    { type: 'TRUTH', prompt: "What's the biggest secret fear you have for our future together?" },
-                    { type: 'DARE', prompt: "Make the sound of a chicken laying an egg." },
-                    { type: 'TRUTH', prompt: "What’s one thing you’ve learned from our relationship that surprised you?" },
-                    { type: 'DARE', prompt: "Give me a piggyback ride around the room." },
-                    { type: 'TRUTH', prompt: "If you could become invisible for a day, what would you do?" },
-                    { type: 'DARE', prompt: "Pretend to be a puppet while I control your arms." },
-                    { type: 'TRUTH', prompt: "What's the biggest life lesson you’ve learned from me?" },
-                    { type: 'DARE', prompt: "Let me try to balance a spoon on your nose." },
-                    { type: 'TRUTH', prompt: "What's the one thing you hope I never discover about your past?" },
-                    { type: 'DARE', prompt: "Eat a spoonful of plain sugar." },
-                    { type: 'TRUTH', prompt: "What’s the most difficult truth about yourself to admit?" },
-                    { type: 'DARE', prompt: "Blindly give me a handshake and tell me your best pickup line." }
-                ]
+                pack1: {
+                    truths: [ "What’s your secret dream job if money weren’t an issue?", "What’s the one country you MUST visit before you die?", "What's the biggest risk you want us to take together?", "What's one major thing you want to accomplish in the next 5 years?", "What would you do if you won the lottery tomorrow?", "What's one thing you hope never changes about our relationship?", "What would you do if you suddenly became famous?", "What's the most significant thing you want to teach our future kids?", "What's one quality you secretly judge other couples for lacking?" ],
+                    dares: [ "Plan our dream future home (where, style, 3 details) in 1 minute.", "Close your eyes and point to a random spot on a map. We have to go there someday.", "Write down a ridiculous business idea and try to sell it to me in 30 seconds.", "Act out a future argument we might have.", "Draw a mascot for our future relationship.", "Try to break dance to a piece of classical music.", "Act out a sci-fi character getting their powers.", "Give a 30-second motivational speech about achieving greatness.", "Pretend you are a superhero and give yourself a ridiculous name." ]
+                },
+                pack2: {
+                    truths: [ "What's one thing you'd change about our current living situation?", "What would you do if you could fly for a day?", "What's the biggest sacrifice you'd make for my dream?", "What's the one celebrity interaction you would risk everything for?", "What's one skill you want to master together?", "What's one tradition you want us to start?", "What's one thing you hope I never tell anyone about you?", "What's your biggest pet peeve about society?", "What's the biggest difference in our long-term vision?" ],
+                    dares: [ "Create a secret handshake for us right now.", "Act out a dramatic scene from a silent film.", "Call a random business and ask a ridiculous question.", "Try to lick your eyebrow.", "Blindly trust me to put a mystery item in your mouth.", "Tell me a secret you’ve never told anyone.", "Give me an honest, detailed critique of my last outfit.", "Try to fit as many crackers/biscuits in your mouth as possible.", "Recite the alphabet backward." ]
+                },
+                pack3: {
+                    truths: [ "What's the most unbelievable story about your life that is actually true?", "If you could change one thing about your physical appearance, what would it be?", "What's the most impulsive decision you've ever made?", "What's the biggest secret fear you have for our future together?", "What’s one thing you’ve learned from our relationship that surprised you?", "If you could become invisible for a day, what would you do?", "What's the biggest life lesson you’ve learned from me?", "What's the one thing you hope I never discover about your past?", "What’s the most difficult truth about yourself to admit?" ],
+                    dares: [ "Act out a dramatic fight scene in slow motion.", "Serenade me with an improvised song about my shoes.", "Try to put on pants without using your hands.", "Make the sound of a chicken laying an egg.", "Give me a piggyback ride around the room.", "Pretend to be a puppet while I control your arms.", "Let me try to balance a spoon on your nose.", "Eat a spoonful of plain sugar.", "Blindly give me a handshake and tell me your best pickup line." ]
+                }
             },
             silly: {
-                pack1: [
-                    { type: 'TRUTH', prompt: "What's the last childish thing you did alone?" },
-                    { type: 'DARE', prompt: "Do the Macarena for 30 seconds." },
-                    { type: 'TRUTH', prompt: "What's the silliest word you know?" },
-                    { type: 'DARE', prompt: "Try to imitate a famous cartoon character." },
-                    { type: 'TRUTH', prompt: "What's the most ridiculous gift you've ever received?" },
-                    { type: 'DARE', prompt: "Walk like a crab until the next round." },
-                    { type: 'TRUTH', prompt: "What's the silliest reason you've ever cried?" },
-                    { type: 'DARE', prompt: "Serenade me with a song about cheese." },
-                    { type: 'TRUTH', prompt: "What's the weirdest noise you can make?" },
-                    { type: 'DARE', prompt: "Try to peel a banana using only your feet." },
-                    { type: 'TRUTH', prompt: "What's the strangest food combination you secretly enjoy?" },
-                    { type: 'DARE', prompt: "Tell me a secret while singing it." },
-                    { type: 'TRUTH', prompt: "What's the one thing you refuse to share?" },
-                    { type: 'DARE', prompt: "Pretend to be a superhero whose power is eating vegetables." },
-                    { type: 'TRUTH', prompt: "What's the most embarrassing item you have in your car/bag right now?" },
-                    { type: 'DARE', prompt: "Do your best zombie impression." },
-                    { type: 'TRUTH', prompt: "What's the one piece of slang you secretly hate?" },
-                    { type: 'DARE', prompt: "Try to scare me by only whispering." }
-                ],
-                pack2: [
-                    { type: 'TRUTH', prompt: "What's the most ridiculous thing you bought this week?" },
-                    { type: 'DARE', prompt: "Do a dramatic movie death scene." },
-                    { type: 'TRUTH', prompt: "What's one thing you do when you think you're alone?" },
-                    { type: 'DARE', prompt: "Put socks on your hands and touch your face." },
-                    { type: 'TRUTH', prompt: "What’s the most embarrassing song you secretly love?" },
-                    { type: 'DARE', prompt: "Eat a cracker without making any noise." },
-                    { type: 'TRUTH', prompt: "What's the most childish punishment you've received as an adult?" },
-                    { type: 'DARE', prompt: "Pretend you are a mime stuck in a glass box." },
-                    { type: 'TRUTH', prompt: "What's the one bad movie you genuinely love?" },
-                    { type: 'DARE', prompt: "Try to balance a feather on your head for 10 seconds." },
-                    { type: 'TRUTH', prompt: "What's the weirdest thing you've worn in the past week?" },
-                    { type: 'DARE', prompt: "Only speak in riddles until the next turn." },
-                    { type: 'TRUTH', prompt: "What's a strange habit you picked up during lockdown?" },
-                    { type: 'DARE', prompt: "Walk around backward for the next two minutes." },
-                    { type: 'TRUTH', prompt: "What's the dumbest thing you've argued about recently?" },
-                    { type: 'DARE', prompt: "Act like a chicken crossing the road." },
-                    { type: 'TRUTH', prompt: "What's the most pointless piece of trivia you know?" },
-                    { type: 'DARE', prompt: "Let me draw a funny animal on your leg." }
-                ],
-                pack3: [
-                    { type: 'TRUTH', prompt: "What's the silliest dance you can do?" },
-                    { type: 'DARE', prompt: "Try to sing opera." },
-                    { type: 'TRUTH', prompt: "What's the weirdest thing you've found in my bag/car?" },
-                    { type: 'DARE', prompt: "Hide a random object and make me guess where it is using only 'hot' and 'cold'." },
-                    { type: 'TRUTH', prompt: "What's the strangest thing you've ever put in the microwave?" },
-                    { type: 'DARE', prompt: "Try to say three complicated tongue twisters correctly." },
-                    { type: 'TRUTH', prompt: "What's the most embarrassing injury you've sustained?" },
-                    { type: 'DARE', prompt: "Pretend to be stuck in slow motion." },
-                    { type: 'TRUTH', prompt: "What's the most awkward thing you’ve confessed to a child?" },
-                    { type: 'DARE', prompt: "Give me a tour of the room as if you were a historian." },
-                    { type: 'TRUTH', prompt: "What’s one thing you do that you hide from me?" },
-                    { type: 'DARE', prompt: "Balance a book on your head and dance for 20 seconds." },
-                    { type: 'TRUTH', prompt: "What’s the strangest rumor you've heard about me?" },
-                    { type: 'DARE', prompt: "Try to mimic the sound of a crying baby." },
-                    { type: 'TRUTH', prompt: "What's your most embarrassing physical feature?" },
-                    { type: 'DARE', prompt: "Pretend to be a washing machine on the spin cycle." },
-                    { type: 'TRUTH', prompt: "What's the weirdest thing you've seen me do?" },
-                    { type: 'DARE', prompt: "Speak only in movie quotes until the next turn." }
-                ]
+                pack1: {
+                    truths: [ "What's the last childish thing you did alone?", "What's the silliest word you know?", "What's the most ridiculous gift you've ever received?", "What's the silliest reason you've ever cried?", "What's the weirdest noise you can make?", "What's the strangest food combination you secretly enjoy?", "What's the one thing you refuse to share?", "What's the most embarrassing item you have in your car/bag right now?", "What's the one piece of slang you secretly hate?" ],
+                    dares: [ "Do the Macarena for 30 seconds.", "Try to imitate a famous cartoon character.", "Walk like a crab until the next round.", "Serenade me with a song about cheese.", "Try to peel a banana using only your feet.", "Tell me a secret while singing it.", "Pretend to be a superhero whose power is eating vegetables.", "Do your best zombie impression.", "Try to scare me by only whispering." ]
+                },
+                pack2: {
+                    truths: [ "What's the most ridiculous thing you bought this week?", "What's one thing you do when you think you're alone?", "What’s the most embarrassing song you secretly love?", "What's the most childish punishment you've received as an adult?", "What's the one bad movie you genuinely love?", "What's the weirdest thing you've worn in the past week?", "What's a strange habit you picked up during lockdown?", "What's the dumbest thing you've argued about recently?", "What's the most pointless piece of trivia you know?" ],
+                    dares: [ "Do a dramatic movie death scene.", "Put socks on your hands and touch your face.", "Eat a cracker without making any noise.", "Pretend you are a mime stuck in a glass box.", "Try to balance a feather on your head for 10 seconds.", "Only speak in riddles until the next turn.", "Walk around backward for the next two minutes.", "Act like a chicken crossing the road.", "Let me draw a funny animal on your leg." ]
+                },
+                pack3: {
+                    truths: [ "What's the silliest dance you can do?", "What's the weirdest thing you've found in my bag/car?", "What's the strangest thing you've ever put in the microwave?", "What's the most embarrassing injury you've sustained?", "What's the most awkward thing you’ve confessed to a child?", "What’s one thing you do that you hide from me?", "What’s the strangest rumor you've heard about me?", "What's your most embarrassing physical feature?", "What's the weirdest thing you've seen me do?" ],
+                    dares: [ "Try to sing opera.", "Hide a random object and make me guess where it is using only 'hot' and 'cold'.", "Try to say three complicated tongue twisters correctly.", "Pretend to be stuck in slow motion.", "Give me a tour of the room as if you were a historian.", "Balance a book on your head and dance for 20 seconds.", "Try to mimic the sound of a crying baby.", "Pretend to be a washing machine on the spin cycle.", "Speak only in movie quotes until the next turn." ]
+                }
             }
         };
+
+        // Utility function to get a random item from a list
+        function getRandomItem(list) {
+            return list[Math.floor(Math.random() * list.length)];
+        }
 
         // --- CORE GAME FUNCTIONS ---
         function init() {
@@ -675,8 +385,8 @@
             let packIndex = 1;
 
             for (const packId in categoryPrompts) {
-                if (categoryPrompts.hasOwnProperty(packId) && categoryPrompts[packId].length > 0) {
-                    const promptsCount = categoryPrompts[packId].length;
+                if (categoryPrompts.hasOwnProperty(packId) && categoryPrompts[packId].truths.length > 0) {
+                    const promptsCount = categoryPrompts[packId].truths.length + categoryPrompts[packId].dares.length;
                     
                     const packCard = `
                         <div class="pack-card" onclick="selectPack('${packId}')">
@@ -693,64 +403,153 @@
 
         function selectPack(packId) {
             currentPack = packId;
-            currentPrompts = tdPrompts[currentCategory][packId];
             
-            if (currentPrompts.length === 0) {
-                 alert(`Selected pack is empty. Please choose an active pack.`);
-                 return;
-            }
-
+            // Reset game state
+            history = [];
             currentPromptIndex = 0;
+            currentPlayer = 1; 
             
             document.getElementById('packSelection').classList.add('hidden');
             document.getElementById('gameScreen').style.display = 'block';
             
+            // Start the game loop
+            startTurn();
+        }
+
+        function startTurn() {
+            // Show the choice screen, hide the prompt card
+            document.getElementById('choiceScreen').style.display = 'flex';
+            document.getElementById('promptCard').style.display = 'none';
+
+            // Update player turn text
+            document.getElementById('currentPlayerTurn').textContent = `PLAYER ${currentPlayer}'S TURN`;
+
+            // Update progress bar and counter
             updateDisplay();
         }
 
-        function updateDisplay() {
-            const currentItem = currentPrompts[currentPromptIndex];
-            const totalPrompts = currentPrompts.length;
-            const promptsPlayed = currentPromptIndex + 1;
-            const progress = (promptsPlayed / totalPrompts) * 100;
+        function revealPrompt(choiceType) {
+            const packData = tdPrompts[currentCategory][currentPack];
+            let chosenPrompt;
+
+            if (choiceType === 'TRUTH') {
+                chosenPrompt = getRandomItem(packData.truths);
+            } else {
+                chosenPrompt = getRandomItem(packData.dares);
+            }
+
+            // Store the selected prompt in history
+            const historyItem = {
+                index: history.length,
+                type: choiceType,
+                prompt: chosenPrompt,
+                player: currentPlayer
+            };
+            history.push(historyItem);
             
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('promptCounter').textContent = `CHALLENGE ${promptsPlayed} OF ${totalPrompts}`;
-            
-            // Set the prompt type and text
-            document.getElementById('typeLabel').textContent = currentItem.type;
-            document.getElementById('promptText').textContent = currentItem.prompt;
-            
-            document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
-            document.getElementById('nextBtn').textContent = currentPromptIndex === totalPrompts - 1 ? 'FINISH' : 'NEXT →';
+            // Update the game screen with the chosen prompt
+            document.getElementById('typeLabel').textContent = choiceType;
+            document.getElementById('promptText').textContent = chosenPrompt;
+
+            // Show the prompt card, hide the choice screen
+            document.getElementById('choiceScreen').style.display = 'none';
+            document.getElementById('promptCard').style.display = 'flex';
         }
 
         function nextPrompt() {
-            if (currentPromptIndex === currentPrompts.length - 1) {
-                showEndScreen();
+            const totalPrompts = PROMPT_PER_PACK; 
+            
+            // Only proceed if a prompt has been revealed for the current turn
+            if (document.getElementById('promptCard').style.display === 'flex') {
+                
+                // If we are at the last prompt slot, finish the game
+                if (currentPromptIndex >= totalPrompts - 1) { 
+                    showEndScreen();
+                    return;
+                }
+                
+                // Increment the index for the next player's choice
+                currentPromptIndex++; 
+                
+                // Swap player turn
+                currentPlayer = currentPlayer === 1 ? 2 : 1; 
+                
+                // Start the new turn by showing the choice screen
+                startTurn();
             } else {
-                currentPromptIndex++;
-                updateDisplay();
+                 alert("Please choose Truth or Dare to continue!");
             }
         }
 
         function previousPrompt() {
             if (currentPromptIndex > 0) {
+                // If the prompt card is showing, the user is looking at the result of the choice
+                
+                // Decrement the virtual index
                 currentPromptIndex--;
+                
+                // Restore the player whose turn it was previously
+                currentPlayer = currentPlayer === 1 ? 2 : 1; 
+                
+                // Remove the last item from history (the challenge they just backed away from)
+                history.pop();
+                
+                // If history is not empty, reload the content of the *previous* turn
+                if (history.length > 0) {
+                     const lastItem = history[history.length - 1];
+                     
+                     // Display the choice screen for the player who originally chose this prompt
+                     document.getElementById('currentPlayerTurn').textContent = `PLAYER ${lastItem.player}'S TURN`;
+                     document.getElementById('typeLabel').textContent = lastItem.type;
+                     document.getElementById('promptText').textContent = lastItem.prompt;
+                     
+                     // Show the result of the choice
+                     document.getElementById('choiceScreen').style.display = 'none';
+                     document.getElementById('promptCard').style.display = 'flex';
+
+                } else {
+                    // If history is empty, reset to P1 choice screen
+                    currentPlayer = 1;
+                    startTurn();
+                }
                 updateDisplay();
             }
         }
+
+        function updateDisplay() {
+            const totalPrompts = PROMPT_PER_PACK;
+            const promptsPlayed = currentPromptIndex; // The number of completed slots
+            const progress = (promptsPlayed / totalPrompts) * 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('promptCounter').textContent = `CHALLENGE ${promptsPlayed + 1} OF ${totalPrompts}`;
+
+            document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
+            
+            const isFinalTurn = (currentPromptIndex === totalPrompts - 1);
+            if (isFinalTurn) {
+                document.getElementById('nextBtn').textContent = 'FINISH';
+            } else {
+                document.getElementById('nextBtn').textContent = 'NEXT →';
+            }
+        }
+
 
         // --- BACK/QUIT FUNCTIONS ---
         function backToCategories() {
             document.getElementById('packSelection').classList.add('hidden');
             document.getElementById('categorySelection').classList.remove('hidden');
+            history = [];
+            currentPromptIndex = 0;
+            currentPlayer = 1;
         }
 
         function quitToPacks() {
             document.getElementById('gameScreen').style.display = 'none';
             document.getElementById('packSelection').classList.remove('hidden');
+            history = [];
             currentPromptIndex = 0;
+            currentPlayer = 1;
         }
 
         function showEndScreen() {
@@ -761,7 +560,9 @@
         function backToPackSelection() {
             document.getElementById('endScreen').style.display = 'none';
             document.getElementById('packSelection').classList.remove('hidden');
+            history = [];
             currentPromptIndex = 0;
+            currentPlayer = 1;
         }
 
         function backToGames() {
