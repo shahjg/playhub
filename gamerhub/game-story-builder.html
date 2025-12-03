@@ -35,7 +35,7 @@
 
         /* General Content */
         .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
-        .hidden { display: none !important; }
+        .hidden { display: none !important; } /* Global visibility control */
 
         /* --- SELECTION SCREENS --- */
         .selection-screen { max-width: 800px; margin: 40px auto; }
@@ -49,7 +49,7 @@
         .selection-card { 
             background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; 
             transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; 
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
         .selection-card:hover { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
         .selection-icon { font-size: 3rem; margin-bottom: 15px; }
@@ -61,7 +61,7 @@
         .pack-card { 
             background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; 
             transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; 
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
         .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
         .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
@@ -108,7 +108,6 @@
             color: #ff6b9d; 
             margin: 0;
             line-height: 1;
-            /* Added shadow for punch */
             text-shadow: 1px 1px 0 rgba(0,0,0,0.1); 
         }
         .sentence-counter {
@@ -133,7 +132,7 @@
             min-height: 250px;
             max-height: 380px; 
             text-align: left;
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
         
         .story-display-card p {
@@ -162,7 +161,7 @@
             resize: none; 
             margin-bottom: 15px; 
             box-shadow: 3px 3px 0 #e0e0e0;
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
 
         #addSentenceBtn {
@@ -177,7 +176,7 @@
             box-shadow: 4px 4px 0 #8b2e47;
             cursor: pointer;
             transition: all 0.2s ease;
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
 
         #addSentenceBtn:hover:not(:disabled) {
@@ -212,7 +211,7 @@
             box-shadow: 3px 3px 0 #e0e0e0;
             cursor: pointer;
             transition: all 0.2s ease;
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
         
         /* End Screen */
@@ -223,11 +222,13 @@
         .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
         
         /* Final Story View Modal Styling */
-        #finalStoryModal {
+        .story-modal-view { 
             max-width: 800px;
             margin: 40px auto;
             width: 100%;
             display: none; 
+            flex-direction: column;
+            align-items: center;
         }
         #finalStoryTitle {
             font-size: 4rem;
@@ -244,7 +245,7 @@
         .action-btn { 
             padding: 20px 50px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; 
             border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; width: 100%; 
-            border-radius: var(--radius); /* Applied Polish */
+            border-radius: var(--radius); 
         }
         .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
         .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
@@ -344,16 +345,17 @@
                 <p class="end-message" id="endMessage">Are you finished with your story, or do you want to keep writing?</p>
                 
                 <div class="end-actions">
-                    <button class="action-btn primary" onclick="viewFinalStory()">READ FINAL STORY</button>
+                    <button class="action-btn primary" onclick="viewFinalStory(false)">READ FINAL STORY</button>
                     <button class="action-btn secondary" onclick="continueStory()">KEEP WRITING</button>
                 </div>
             </div>
 
             <!-- FINAL STORY MODAL -->
-            <div class="selection-screen hidden" id="finalStoryModal">
+            <div class="story-modal-view hidden" id="finalStoryModal">
                 <h2 id="finalStoryTitle" style="text-align: center;"></h2>
                 <div class="story-display-card" id="finalStoryText"></div>
                 <div class="end-actions" style="margin-top: 30px;">
+                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DATE NIGHT</button>
                     <button class="action-btn primary" onclick="backToPackSelection()">START NEW STORY</button>
                 </div>
             </div>
@@ -456,6 +458,8 @@
 
         function init() {
             document.getElementById('categorySelection').style.display = 'block';
+            // Set final modal to display: none on load
+            document.getElementById('finalStoryModal').style.display = 'none';
         }
 
         function showPacks(categoryId) {
@@ -535,10 +539,12 @@
                 counter.textContent = `(${MAX_SENTENCES} SENTENCES)`;
                 button.textContent = "STORY FINISHED";
                 button.disabled = true;
-                showEndScreen(true); // Forced end
+                viewFinalStory(true); // Forced end, jump straight to final modal
             } else {
                 button.textContent = "ADD SENTENCE";
                 button.disabled = false;
+                // Re-enable input if it was disabled by a previous finish
+                input.disabled = false;
             }
 
             // Scroll story display to bottom on new turn
@@ -576,7 +582,12 @@
 
         // --- NEW FUNCTION: Finish Early ---
         function finishEarly() {
-            showEndScreen(false); // Not forced end
+            // FIX: If story is empty or too short, warn user
+            if (currentStory.length < 3) {
+                 alert("Try to get at least a few sentences in before finishing!");
+                 return;
+            }
+            viewFinalStory(false); // Not forced end, jump straight to final modal
         }
         
         // --- BACK/QUIT FUNCTIONS ---
@@ -585,35 +596,19 @@
             document.getElementById('packSelection').classList.remove('hidden');
         }
 
-        function showEndScreen(isForcedCompletion) {
+        function viewFinalStory(isForcedCompletion) {
+            document.getElementById('endScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'block';
             
-            const messageElement = document.getElementById('endMessage');
-            if (isForcedCompletion) {
-                messageElement.textContent = "Congratulations! You reached the maximum length of the story.";
-                document.querySelector('#endScreen h2').textContent = "STORY COMPLETE! 🎉";
-            } else {
-                 messageElement.textContent = `The story has ${currentStory.length} sentences. Are you finished with your story, or do you want to keep writing?`;
-                 document.querySelector('#endScreen h2').textContent = "STORY PAUSED! ⏸️";
-            }
-        }
-        
-        function continueStory() {
-            document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'flex';
-            document.getElementById('sentenceInput').focus();
-        }
-
-        function viewFinalStory() {
-            // FIX: Ensure the end screen is hidden and the modal container is shown
-            document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('finalStoryModal').classList.remove('hidden');
+            // FIX: Use style.display = 'flex' instead of removing 'hidden' class for robustness
+            const modal = document.getElementById('finalStoryModal');
+            modal.style.display = 'flex'; 
             
-            document.getElementById('finalStoryTitle').textContent = "Your Completed Story!";
+            const completionTitle = isForcedCompletion ? "STORY COMPLETE! 🎉" : "STORY FINISHED EARLY!";
+            document.getElementById('finalStoryTitle').textContent = completionTitle;
             const finalStoryText = document.getElementById('finalStoryText');
             
-            // Clear existing text first
+            // Clear existing text and set header
             finalStoryText.innerHTML = `<p class="story-prompt-text">Start: ${currentPrompt}</p>`;
             
             currentStory.forEach((line) => {
@@ -630,8 +625,9 @@
         }
 
         function backToPackSelection() {
+            // Ensure all modals are reset before returning to pack selection
             document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('finalStoryModal').classList.add('hidden');
+            document.getElementById('finalStoryModal').style.display = 'none'; // FIX: Hide explicitly
             document.getElementById('packSelection').classList.remove('hidden');
             // Reset state
             currentStory = [];
