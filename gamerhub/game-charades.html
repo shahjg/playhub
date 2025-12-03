@@ -33,7 +33,7 @@
         .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
         .hidden { display: none !important; }
 
-        /* --- SCREEN STYLES (Mode, Category, Pack Selection) --- */
+        /* --- SCREEN STYLES (Category, Pack Selection) --- */
         .selection-screen { max-width: 800px; margin: 40px auto; }
         .selection-header { text-align: center; margin-bottom: 50px; }
         .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
@@ -192,32 +192,10 @@
 
         <div class="game-content">
             
-            <div class="selection-screen" id="modeSelection">
-                <div class="selection-header">
-                    <h2>COUPLES CHARADES</h2>
-                    <p>Choose your challenge: Act it out or Draw it out!</p>
-                </div>
-
-                <div class="selection-grid">
-                    <div class="selection-card" onclick="showCategories('charades')">
-                        <div class="selection-icon">🎭</div>
-                        <h3>CHARADES (ACTING)</h3>
-                        <p class="selection-description">Act out the prompt without speaking. Gets you moving and laughing.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showCategories('pictionary')">
-                        <div class="selection-icon">🎨</div>
-                        <h3>PICTIONARY (DRAWING)</h3>
-                        <p class="selection-description">Draw the prompt for your partner to guess. Paper and pen required!</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="selection-screen hidden" id="categorySelection">
-                <span class="back-link" onclick="backToModeSelection()">← Back to Mode Select</span>
+            <div class="selection-screen" id="categorySelection">
                 <div class="selection-header">
                     <h2>CHOOSE YOUR VIBE</h2>
-                    <p>Pick a category, then select a pack of prompts</p>
+                    <p>Pick a category, then select a pack of Charades prompts to act out.</p>
                 </div>
 
                 <div class="selection-grid">
@@ -275,7 +253,7 @@
                 <div class="turn-card" id="turnCard">
                     <h3 id="turnPlayer">PASS TO PLAYER 1</h3>
                     <p class="turn-instruction" id="turnInstruction">
-                        Player 1, click 'SHOW PROMPT' below once the other player looks away.
+                        Player 1, click 'SHOW PROMPT' below once the other player looks away. You are ACTING.
                     </p>
                     <button class="reveal-btn" id="showPromptBtn" onclick="showPromptCard()">SHOW PROMPT</button>
                 </div>
@@ -293,7 +271,7 @@
             <div class="end-screen" id="endScreen">
                 <h2>YOU DID IT! 🎉</h2>
                 <p class="end-message">
-                    Great connection and acting/drawing! Try another pack or a different mode.
+                    Great connection and acting! Try another pack.
                 </p>
                 <div class="end-actions">
                     <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
@@ -309,17 +287,11 @@
     <script>
         // --- GAME STATE & DATA ---
         let currentPromptIndex = 0;
-        let currentMode = ''; 
         let currentCategory = '';
         let currentPack = '';
         let currentPrompts = [];
         let currentPlayer = 1; // Start with Player 1
         const TOTAL_PROMPTS = 20; // 20 prompts per pack
-
-        const modeTitles = {
-            'charades': 'CHARADES (ACTING)',
-            'pictionary': 'PICTIONARY (DRAWING)'
-        };
 
         const categoryTitles = {
             'silly': 'SILLY & RANDOM',
@@ -327,8 +299,8 @@
             'sexy': 'FLIRTY & SEXY'
         };
         
-        // --- PROMPT BANKS (3 PACKS OF 20 PROMPTS EACH) ---
-        const promptBanks = {
+        // --- CHARADES PROMPT BANKS (3 PACKS OF 20 PROMPTS EACH) ---
+        const charadesPrompts = {
             silly: {
                 pack1: [ "Trying to assemble IKEA furniture", "A cat demanding food", "A very clumsy waiter", "Singing terribly in the shower", "Trying to parallel park", "Eating a giant messy burger", "A nervous public speaker", "Running for a bus", "Doing the laundry (and failing)", "A bird hitting a window", "Shaking a can of soda", "An opera singer breaking glass", "Trying to put on tight jeans", "A chef tasting bad food", "An awkward first date hug", "Invisible box challenge", "A ghost haunting a small room", "A dog chasing its own tail", "Getting tangled in Christmas lights", "A celebrity signing an autograph"],
                 pack2: [ "A bad marriage proposal", "A mime trapped in a box", "Trying to wake up gracefully", "Sneaking a snack in the kitchen", "Waving at the wrong person", "Being chased by a swarm of bees", "An evil villain monologue", "Trying to fold a fitted sheet", "A vampire scared of a cross", "Dancing to a polka", "A baby throwing a tantrum", "Tasting something sour", "Trying to open a jar", "A superhero flying away awkwardly", "Stepping on a lego", "Catching a massive fish", "A robot malfunctioning", "A waiter dropping a tray", "A person walking on a windy day", "Trying to sneeze quietly"],
@@ -336,7 +308,7 @@
             },
             romance: {
                 pack1: [ "Making out in the rain", "The first time we met", "Stolen kiss on a rooftop", "Planning our future home", "Couple's inside joke", "A surprise romantic getaway", "Having a deep conversation", "Writing a love letter", "Getting engaged", "Cuddling on the couch", "Sharing an umbrella", "A romantic picnic date", "Dancing slowly at a wedding", "Making breakfast in bed", "A perfect date night", "Warming my cold hands", "A big, heartfelt apology", "Gifting flowers", "Sharing a single scoop of ice cream", "Watching the sunset together"],
-                pack2: [ "Sharing headphones on a trip", "Your favorite memory of me", "A candlelit dinner", "Helping each other study", "A thoughtful surprise gift", "A long goodbye hug", "Walking hand-in-hand", "A trip to Paris", "Building a snowman together", "An awkward teenage crush", "Watching a sad movie together", "A long-distance call", "Whispering a secret", "Waking up next to you", "A romantic slow dance", "Making up after an argument", "A late-night talk", "Planning a future bucket list", "A cozy night by the fireplace", "Holding hands during a movie"],
+                pack2: [ "Sharing headphones on a trip", "Your favorite memory of me", "A candlelit dinner", "Helping each other study", "A thoughtful surprise gift", "A long goodbye hug", "Walking hand-in-hand", "A trip to Paris", "Building a snowman together", "An awkward teenage crush", "Watching a sad movie together", "A long-distance call", "Whispering a secret", "Waking up next to you", "A romantic slow dance", "Making up after an argument", "A late-night talk", "Planning a future bucket list", "A tender forehead kiss", "Holding hands during a movie"],
                 pack3: [ "A cheesy public proposal", "My biggest pet peeve", "Comforting me after a bad day", "The moment I fell for you", "Our favorite place to eat", "Discussing our life goals", "Forgiving a mistake", "A passionate debate", "Buying groceries together", "Folding laundry together", "Sharing a childhood fear", "A couple's massage", "Building a fort in the living room", "A midnight snack run", "A tender forehead kiss", "Giving a sweet compliment", "Snuggling after a fight", "Making up our own language", "Singing in the car together", "My worst habit"]
             },
             sexy: {
@@ -349,15 +321,11 @@
         // --- CORE GAME FUNCTIONS ---
 
         function init() {
-            document.getElementById('modeSelection').style.display = 'block';
+            // Start directly at Category Selection
+            document.getElementById('categorySelection').style.display = 'block';
         }
 
-        function showCategories(modeId) {
-            currentMode = modeId;
-            document.getElementById('modeSelection').classList.add('hidden');
-            document.getElementById('categorySelection').classList.remove('hidden');
-        }
-
+        // Renamed function to reflect skipping mode selection
         function showPacks(categoryId) {
             currentCategory = categoryId;
             document.getElementById('categorySelection').classList.add('hidden');
@@ -382,15 +350,15 @@
 
         function selectPack(packId) {
             currentPack = packId;
-            currentPrompts = promptBanks[currentCategory][packId];
+            // Pull prompts only from the CHARADES bank
+            currentPrompts = charadesPrompts[currentCategory][packId];
             currentPromptIndex = 0;
             currentPlayer = 1; // Reset to Player 1 for new game
             
             document.getElementById('packSelection').classList.add('hidden');
             document.getElementById('gameScreen').style.display = 'block';
             
-            // Set Mode Title
-            document.getElementById('modeTitle').textContent = modeTitles[currentMode];
+            document.getElementById('modeTitle').textContent = 'CHARADES (ACTING)'; // Fixed label
             
             updateDisplay();
         }
@@ -404,9 +372,8 @@
             document.getElementById('promptCounter').textContent = `PROMPT ${promptsPlayed} OF ${totalPrompts}`;
             
             // Update Turn Card Info
-            const action = currentMode === 'charades' ? 'ACTING' : 'DRAWING';
             document.getElementById('turnPlayer').textContent = `PASS TO PLAYER ${currentPlayer}`;
-            document.getElementById('turnInstruction').textContent = `Player ${currentPlayer}, click 'SHOW PROMPT' below once the other player looks away. You are ${action}.`;
+            document.getElementById('turnInstruction').textContent = `Player ${currentPlayer}, click 'SHOW PROMPT' below once the other player looks away. You are ACTING.`;
             
             // Set prompt text (still obscured)
             document.getElementById('promptText').textContent = currentPrompts[currentPromptIndex];
@@ -441,7 +408,7 @@
                 }
             } else {
                  // Prevent accidental advance if on turn card
-                 alert("Please click 'SHOW PROMPT' first to reveal the next challenge.");
+                 alert("Please click 'SHOW PROMPT' first to reveal the challenge.");
             }
         }
 
@@ -454,11 +421,6 @@
         }
 
         // --- BACK/QUIT FUNCTIONS ---
-
-        function backToModeSelection() {
-            document.getElementById('categorySelection').classList.add('hidden');
-            document.getElementById('modeSelection').classList.remove('hidden');
-        }
         
         function backToCategories() {
             document.getElementById('packSelection').classList.add('hidden');
