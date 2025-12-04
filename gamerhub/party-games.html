@@ -3,989 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Games - TheGaming.co</title>
+    <title>TheGaming.co - Social & Educational Games</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
-            /* Lighter blue palette */
+            --bg-dark: #081423;
+            --glass-header: rgba(8, 20, 35, 0.85);
             --blue: #60b8ff;
-            --blue-dark: #3a9eec;
-            --blue-deeper: #2080d0;
-            --blue-light: #c2e3ff;
-            --cyan: #40e0ff;
             --pink: #ff6b9d;
             --purple: #a445b2;
             --gold: #ffd93d;
-
-            --text-dark: #1a1a2e;
-            --text-muted-dark: #555;
+            --teal: #00f2ea;
             --text-white: #ffffff;
-            --text-muted-white: rgba(255, 255, 255, 0.75);
+            --text-muted: rgba(255, 255, 255, 0.6);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f8f9fa;
-            color: var(--text-dark);
+            background: var(--bg-dark);
+            color: var(--text-white);
             overflow-x: hidden;
-            min-height: 100vh;
         }
 
-        h1, h2, h3, h4 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
-        }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 
-        /* ========== HEADER ========== */
+        /* ========== THE HEADER (Centered Logo + Balanced Sides) ========== */
         header {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            padding: 18px 30px;
+            top: 0; left: 0; right: 0;
+            height: 72px;
+            z-index: 1000;
+            padding: 0 40px;
+            
+            /* The Magic Grid: Keeps logo perfectly centered regardless of side content */
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            background: linear-gradient(to bottom, rgba(8, 20, 35, 0.98) 0%, rgba(8, 20, 35, 0.95) 100%);
-            backdrop-filter: blur(12px);
+            
+            background: var(--glass-header);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        /* Left nav */
-        .header-left {
+        /* LEFT: Social Contexts */
+        .nav-left {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 24px;
         }
 
         .nav-link {
-            color: rgba(255, 255, 255, 0.65);
+            color: var(--text-muted);
             text-decoration: none;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            padding: 10px 16px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
+            transition: color 0.3s;
+            position: relative;
         }
 
-        .nav-link:hover {
-            color: var(--text-white);
-            background: rgba(255, 255, 255, 0.08);
+        .nav-link:hover, .nav-link.active { color: var(--text-white); }
+        
+        .nav-link.active::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+            height: 2px; background: var(--blue); box-shadow: 0 0 10px var(--blue);
         }
 
-        .nav-link.active {
-            color: var(--text-white);
-            background: rgba(96, 184, 255, 0.15);
-        }
-
-        /* Center logo */
-        .header-center {
-            display: flex;
-            justify-content: center;
-        }
-
-        .header-logo {
+        /* CENTER: Brand */
+        .header-center { display: flex; justify-content: center; }
+        
+        .logo {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.6rem;
+            font-size: 2rem;
             letter-spacing: 4px;
             color: var(--text-white);
             text-decoration: none;
-            position: relative;
-            padding-bottom: 4px;
+            /* Gradient Text Effect */
+            background: linear-gradient(to right, #fff, #c2e3ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .header-logo::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
-            border-radius: 2px;
-        }
-
-        /* Right - support */
-        .header-right {
+        /* RIGHT: Specialized & Utility */
+        .nav-right {
             display: flex;
+            align-items: center;
             justify-content: flex-end;
-            align-items: center;
+            gap: 16px;
         }
 
-        .support-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--pink);
-            text-decoration: none;
+        /* Distinct Style for Classroom to separate it from "Party" */
+        .edu-link {
             font-size: 0.85rem;
             font-weight: 700;
-            padding: 10px 18px;
-            border-radius: 10px;
+            color: var(--bg-dark);
+            background: var(--teal);
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .edu-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 15px rgba(0, 242, 234, 0.4);
+        }
+
+        .support-icon {
+            color: var(--pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px; height: 36px;
+            border-radius: 50%;
             border: 1px solid rgba(255, 107, 157, 0.3);
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
 
-        .support-btn:hover {
-            background: rgba(255, 107, 157, 0.12);
-            border-color: rgba(255, 107, 157, 0.5);
-        }
+        .support-icon:hover { background: rgba(255, 107, 157, 0.15); border-color: var(--pink); }
+        .support-icon svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .support-btn svg {
-            width: 14px;
-            height: 14px;
-            fill: var(--pink);
-        }
-
-        /* Mobile menu */
-        .mobile-menu-btn {
+        /* Mobile Hamburger */
+        .mobile-toggle {
             display: none;
-            background: none;
-            border: none;
-            color: var(--text-white);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background 0.3s ease;
+            background: none; border: none; color: white;
+            cursor: pointer; padding: 8px;
         }
 
-        .mobile-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-menu-btn svg {
-            width: 22px;
-            height: 22px;
-        }
-
-        /* ========== HERO SECTION (DARK - LIGHTER BLUE) ========== */
+        /* ========== HERO SECTION ========== */
         .hero {
-            min-height: 50vh;
+            min-height: 80vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
-            overflow: hidden;
-            padding: 120px 20px 80px;
-            background: radial-gradient(circle at 10% 0%, #2a4a6c 0%, #1a3050 50%, #0c1a28 100%);
-        }
-
-        /* Animated background glow */
-        .hero-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(circle at 30% 20%, rgba(96, 184, 255, 0.4) 0%, transparent 55%),
-                radial-gradient(circle at 75% 75%, rgba(64, 224, 255, 0.3) 0%, transparent 55%),
-                radial-gradient(circle at 50% 50%, rgba(194, 227, 255, 0.2) 0%, transparent 70%);
-            animation: bgPulse 8s ease-in-out infinite;
-        }
-
-        @keyframes bgPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.85; transform: scale(1.04); }
-        }
-
-        /* Twinkling stars */
-        .stars-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        .star {
-            position: absolute;
-            color: var(--blue-light);
-            opacity: 0.5;
-            animation: twinkle 3s ease-in-out infinite;
-        }
-
-        .star:nth-child(1) { left: 5%; top: 15%; font-size: 0.8rem; animation-delay: 0s; }
-        .star:nth-child(2) { left: 15%; top: 45%; font-size: 1rem; animation-delay: -0.5s; }
-        .star:nth-child(3) { left: 25%; top: 25%; font-size: 0.7rem; animation-delay: -1s; }
-        .star:nth-child(4) { left: 35%; top: 70%; font-size: 0.9rem; animation-delay: -1.5s; }
-        .star:nth-child(5) { left: 45%; top: 10%; font-size: 1.1rem; animation-delay: -2s; }
-        .star:nth-child(6) { left: 55%; top: 55%; font-size: 0.8rem; animation-delay: -0.3s; }
-        .star:nth-child(7) { left: 65%; top: 30%; font-size: 1rem; animation-delay: -1.2s; }
-        .star:nth-child(8) { left: 75%; top: 65%; font-size: 0.7rem; animation-delay: -2.2s; }
-        .star:nth-child(9) { left: 85%; top: 20%; font-size: 0.9rem; animation-delay: -0.8s; }
-        .star:nth-child(10) { left: 95%; top: 50%; font-size: 1.1rem; animation-delay: -1.8s; }
-        .star:nth-child(11) { left: 10%; top: 80%; font-size: 0.6rem; animation-delay: -2.5s; }
-        .star:nth-child(12) { left: 90%; top: 85%; font-size: 0.8rem; animation-delay: -0.2s; }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.3); }
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
             text-align: center;
+            padding: 120px 20px 60px;
+            position: relative;
+            background: radial-gradient(circle at 50% 30%, #1a3050 0%, #081423 60%);
         }
 
-        .hero-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 24px;
-            animation: iconFloat 3s ease-in-out infinite;
-        }
-
-        .hero-icon svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        @keyframes iconFloat {
-            0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-8px) rotate(2deg); }
-        }
-
-        .hero-title {
-            font-size: clamp(3rem, 8vw, 5.5rem);
-            line-height: 0.9;
-            margin-bottom: 15px;
-            background: linear-gradient(135deg, #ffffff 0%, var(--blue-light) 50%, var(--blue) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-players {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.6rem;
-            letter-spacing: 4px;
-            color: var(--blue-light);
-            margin-bottom: 20px;
-        }
-
-        .hero-desc {
-            font-size: 1.1rem;
-            color: var(--text-muted-white);
-            max-width: 480px;
-            margin: 0 auto;
-            line-height: 1.7;
-        }
-
-        /* ========== GAMES SECTION (WHITE) ========== */
-        .games-section {
-            background: #ffffff;
-            padding: 60px 20px 80px;
-        }
-
-        .games-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .category-block {
-            margin-bottom: 50px;
-        }
-
-        .category-block:last-child {
-            margin-bottom: 0;
-        }
-
-        .category-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 28px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .category-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .category-title h2 {
-            font-size: 2rem;
-            color: var(--text-dark);
-        }
-
-        .category-count {
-            font-family: 'Bebas Neue', sans-serif;
+        .hero-tag {
+            color: var(--blue);
             font-size: 0.9rem;
-            letter-spacing: 2px;
-            color: #888;
-            background: #f0f0f0;
-            padding: 8px 16px;
-            border-radius: 20px;
-        }
-
-        /* Game Cards - Light Theme */
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
-        }
-
-        .game-card {
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 16px;
-            padding: 28px 24px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--blue), var(--cyan));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .game-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--blue);
-            box-shadow: 0 12px 30px rgba(96, 184, 255, 0.2);
-        }
-
-        .game-card:hover::before {
-            opacity: 1;
-        }
-
-        .game-card h3 {
-            font-size: 1.7rem;
-            color: var(--text-dark);
-            line-height: 1.2;
-            margin-bottom: 12px;
-        }
-
-        .game-card p {
-            color: var(--text-muted-dark);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            min-height: 50px;
-        }
-
-        .game-card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .game-tags {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .tag {
-            background: rgba(96, 184, 255, 0.15);
-            color: var(--blue-dark);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
             font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .game-meta {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #888;
-            font-size: 0.8rem;
-            font-weight: 600;
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            line-height: 0.9;
+            margin-bottom: 24px;
         }
 
-        .play-indicator {
-            position: absolute;
-            bottom: 24px;
-            right: 24px;
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(96, 184, 255, 0.4);
-        }
-
-        .play-indicator svg {
-            width: 16px;
-            height: 16px;
-            fill: white;
-            margin-left: 2px;
-        }
-
-        .game-card:hover .play-indicator {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        /* ========== FOOTER (CENTERED) ========== */
-        footer {
-            background: #0a0a0f;
-            padding: 50px 20px 40px;
-            text-align: center;
-        }
-
-        .footer-border {
-            height: 3px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink));
-            background-size: 300% 100%;
-            animation: gradientSlide 6s linear infinite;
+        .hero p {
+            max-width: 500px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-muted);
             margin-bottom: 40px;
         }
 
-        @keyframes gradientSlide {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 300% 50%; }
+        /* Category Grid (The "What to do" solution) */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 20px;
+            margin-bottom: 80px;
         }
 
-        .footer-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-            letter-spacing: 4px;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .footer-tagline {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.9rem;
-            margin-bottom: 30px;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.6);
+        .cat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 32px;
             text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        .footer-divider {
-            width: 60px;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.15);
-            margin: 0 auto 25px;
-        }
-
-        .footer-legal {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
             display: flex;
-            gap: 25px;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 240px;
+        }
+
+        .cat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .cat-icon {
+            font-size: 2rem;
             margin-bottom: 20px;
         }
 
-        .footer-legal a {
-            color: rgba(255, 255, 255, 0.4);
+        .cat-title {
+            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .cat-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .cat-arrow {
+            margin-top: 20px;
+            align-self: flex-start;
+            color: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Specific Colors for Categories */
+        .cat-party { --accent: var(--blue); }
+        .cat-squad { --accent: var(--pink); }
+        .cat-edu { --accent: var(--teal); }
+        .cat-date { --accent: var(--purple); }
+
+        .cat-card:hover .cat-title { color: var(--accent); }
+
+        /* ========== MOBILE DRAWER ========== */
+        .drawer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: #050a12;
+            z-index: 999;
+            padding: 100px 30px 40px;
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+        }
+
+        .drawer.open { transform: translateY(0); opacity: 1; }
+
+        .drawer-group { margin-bottom: 40px; }
+        .drawer-label {
+            font-size: 0.8rem; color: #555; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 16px; font-weight: 700;
+        }
+
+        .drawer-link {
+            display: block;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            font-size: 0.8rem;
-            transition: color 0.3s ease;
+            margin-bottom: 12px;
         }
+        
+        .drawer-link.highlight { color: var(--teal); }
 
-        .footer-legal a:hover {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .footer-copyright {
-            color: rgba(255, 255, 255, 0.35);
-            font-size: 0.85rem;
-        }
-
-        /* ========== RESPONSIVE ========== */
+        /* Responsive Logic */
         @media (max-width: 900px) {
-            header {
-                grid-template-columns: 1fr auto 1fr;
-                padding: 14px 20px;
-            }
-
-            .header-left {
-                display: flex;
-                justify-content: flex-start;
-            }
-
-            .header-left .nav-link {
-                display: none;
-            }
-
-            .header-right .support-btn span {
-                display: none;
-            }
-
-            .header-right .support-btn {
-                padding: 10px 12px;
-            }
-
-            .mobile-menu-btn {
-                display: flex;
-                align-items: center;
-            }
-
-            .hero-title {
-                font-size: clamp(2.6rem, 9vw, 4rem);
-            }
-
-            .category-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .games-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 600px) {
-            header {
-                padding: 12px 16px;
-            }
-
-            .header-logo {
-                font-size: 1.3rem;
-                letter-spacing: 3px;
-            }
-
-            .hero {
-                min-height: 45vh;
-                padding: 100px 20px 60px;
-            }
-
-            .hero-icon {
-                width: 60px;
-                height: 60px;
-            }
-
-            .hero-title {
-                font-size: 2.8rem;
-            }
-
-            .hero-players {
-                font-size: 1.3rem;
-            }
-
-            .games-section {
-                padding: 40px 16px 60px;
-            }
-
-            .category-title h2 {
-                font-size: 1.6rem;
-            }
-
-            .game-card {
-                padding: 22px 18px;
-            }
-
-            .game-card h3 {
-                font-size: 1.4rem;
-            }
-
-            .game-meta {
-                flex-direction: column;
-                align-items: flex-end;
-                gap: 4px;
-            }
-
-            .footer-links {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .footer-legal {
-                flex-direction: column;
-                gap: 10px;
-            }
+            header { padding: 0 20px; height: 64px; }
+            .nav-left, .edu-link { display: none; }
+            .mobile-toggle { display: block; }
+            .logo { font-size: 1.5rem; }
+            
+            /* On mobile, center grid becomes: Hamburger | Logo | Heart */
+            header { grid-template-columns: 40px auto 40px; }
+            .nav-right { justify-content: flex-end; width: 100%; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ========== HEADER ========== -->
     <header>
-        <div class="header-left">
-            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <line x1="3" y1="6" x2="21" y2="6"/>
-                    <line x1="3" y1="12" x2="21" y2="12"/>
-                    <line x1="3" y1="18" x2="21" y2="18"/>
-                </svg>
-            </button>
-            <a href="date-night.html" class="nav-link">Date Night</a>
-            <a href="squad-games.html" class="nav-link">Squad</a>
-            <a href="party-games.html" class="nav-link active">Party</a>
-        </div>
+        <nav class="nav-left">
+            <a href="#" class="nav-link">Date Night</a>
+            <a href="#" class="nav-link">Squad</a>
+            <a href="#" class="nav-link">Party</a>
+        </nav>
+
+        <button class="mobile-toggle" onclick="toggleDrawer()">
+            <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
 
         <div class="header-center">
-            <a href="index.html" class="header-logo">THEGAMING.CO</a>
+            <a href="#" class="logo">THEGAMING.CO</a>
         </div>
 
-        <div class="header-right">
-            <a href="support.html" class="support-btn">
+        <nav class="nav-right">
+            <a href="#" class="edu-link">Classroom</a>
+            
+            <a href="#" class="support-icon">
                 <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                <span>Support</span>
             </a>
-        </div>
+        </nav>
     </header>
 
-    <!-- ========== HERO (DARK - LIGHTER BLUE) ========== -->
+    <div class="drawer" id="mobileDrawer">
+        <div class="drawer-group">
+            <div class="drawer-label">Social & Fun</div>
+            <a href="#" class="drawer-link">Party Games</a>
+            <a href="#" class="drawer-link">Squad Mode</a>
+            <a href="#" class="drawer-link">Date Night</a>
+        </div>
+
+        <div class="drawer-group">
+            <div class="drawer-label">Specialized</div>
+            <a href="#" class="drawer-link highlight">Classroom / Edu</a>
+            <a href="#" class="drawer-link">Kids Safe Mode</a>
+            <a href="#" class="drawer-link">Icebreakers</a>
+        </div>
+        
+        <div class="drawer-group">
+            <div class="drawer-label">Utility</div>
+            <a href="#" class="drawer-link" style="font-size: 1.5rem; color: #888;">Support Us</a>
+        </div>
+    </div>
+
     <section class="hero">
-        <div class="hero-bg"></div>
-        <div class="stars-bg" aria-hidden="true">
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-            <span class="star">✦</span>
-        </div>
+        <span class="hero-tag">Welcome to the Hub</span>
+        <h1>HOW ARE YOU PLAYING?</h1>
+        <p>Choose your vibe. We have specialized games for couples, wild parties, classrooms, and small groups.</p>
 
-        <div class="hero-content">
-            <div class="hero-icon">
-                <!-- Simple party popper SVG - works on all platforms -->
-                <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Popper cone -->
-                    <polygon points="8,56 24,40 32,48 16,64" fill="#60b8ff"/>
-                    <polygon points="8,56 24,40 20,36 4,52" fill="#3a9eec"/>
-                    <!-- Confetti dots -->
-                    <circle cx="36" cy="20" r="4" fill="#ff6b9d"/>
-                    <circle cx="48" cy="26" r="3.5" fill="#ffd93d"/>
-                    <circle cx="28" cy="14" r="3" fill="#40e0ff"/>
-                    <circle cx="52" cy="14" r="2.5" fill="#ff6b9d"/>
-                    <circle cx="42" cy="10" r="2" fill="#60b8ff"/>
-                    <circle cx="56" cy="22" r="2" fill="#ffd93d"/>
-                    <!-- Streamers -->
-                    <path d="M28 36 Q36 28 38 16" stroke="#ffd93d" stroke-width="3" stroke-linecap="round" fill="none"/>
-                    <path d="M32 40 Q44 32 50 22" stroke="#ff6b9d" stroke-width="3" stroke-linecap="round" fill="none"/>
-                    <path d="M36 44 Q50 40 54 30" stroke="#40e0ff" stroke-width="3" stroke-linecap="round" fill="none"/>
-                </svg>
-            </div>
-            <h1 class="hero-title">PARTY</h1>
-            <p class="hero-players">8 – 25 PLAYERS</p>
-            <p class="hero-desc">Social deduction, team battles, and chaotic fun. Games that get the whole room playing together.</p>
-        </div>
-    </section>
-
-    <!-- ========== GAMES (WHITE) ========== -->
-    <section class="games-section">
-        <div class="games-container">
-
-            <!-- SOCIAL DEDUCTION -->
-            <div class="category-block">
-                <div class="category-header">
-                    <div class="category-title">
-                        <h2>SOCIAL DEDUCTION</h2>
-                    </div>
-                    <span class="category-count">5 GAMES</span>
+        <div class="category-grid">
+            
+            <a href="party-games.html" class="cat-card cat-party">
+                <div>
+                    <div class="cat-icon">🎉</div>
+                    <h2 class="cat-title">The Party</h2>
+                    <p class="cat-desc">8+ Players. Chaos, social deduction, and loud fun.</p>
                 </div>
+                <div class="cat-arrow">Browse Party Games →</div>
+            </a>
 
-                <div class="games-grid">
-                    <div class="game-card" onclick="playGame('avalon')">
-                        <h3>Avalon</h3>
-                        <p>Uncover the spies hidden among King Arthur's knights. Vote on quests and use deduction to reveal the traitors.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Deception</span>
-                                <span class="tag">Strategy</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>5-10 players</span>
-                                <span>30 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('spyfall')">
-                        <h3>Spyfall</h3>
-                        <p>One player is a spy who doesn't know the location. Ask questions, find the spy, but don't reveal the location!</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Bluffing</span>
-                                <span class="tag">Quick</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-12 players</span>
-                                <span>15 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('werewolf')">
-                        <h3>Ultimate Werewolf</h3>
-                        <p>Villagers vs Werewolves in a deadly game of survival. Day discussions, night eliminations. Who can you trust?</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Classic</span>
-                                <span class="tag">Intense</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>6-20 players</span>
-                                <span>30 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('two-rooms')">
-                        <h3>Two Rooms & a Boom</h3>
-                        <p>Red team vs Blue team in two separate rooms. Swap hostages, share roles, and race to protect or capture the VIP.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Teams</span>
-                                <span class="tag">Chaos</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>10-30 players</span>
-                                <span>20 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('imposter')">
-                        <h3>Imposter</h3>
-                        <p>One player doesn't know the secret word. Give subtle clues to find the imposter without revealing the word itself.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Deduction</span>
-                                <span class="tag">Simple</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-10 players</span>
-                                <span>15 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
+            <a href="squad.html" class="cat-card cat-squad">
+                <div>
+                    <div class="cat-icon">🛋️</div>
+                    <h2 class="cat-title">The Squad</h2>
+                    <p class="cat-desc">3-6 Players. Couch play, icebreakers, and casual vibes.</p>
                 </div>
-            </div>
+                <div class="cat-arrow">Browse Squad Games →</div>
+            </a>
 
-            <!-- WORD & TEAM GAMES -->
-            <div class="category-block">
-                <div class="category-header">
-                    <div class="category-title">
-                        <h2>WORD & TEAM GAMES</h2>
-                    </div>
-                    <span class="category-count">6 GAMES</span>
+            <a href="classroom.html" class="cat-card cat-edu">
+                <div>
+                    <div class="cat-icon">🎓</div>
+                    <h2 class="cat-title">Classroom</h2>
+                    <p class="cat-desc">Education-focused. SFW content, vocabulary, and team building.</p>
                 </div>
+                <div class="cat-arrow" style="color: var(--teal);">Enter Classroom Mode →</div>
+            </a>
 
-                <div class="games-grid">
-                    <div class="game-card" onclick="playGame('codenames')">
-                        <h3>Codenames</h3>
-                        <p>Two spymasters give one-word clues to help teammates guess their team's words on the grid. Just don't hit the assassin.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Teams</span>
-                                <span class="tag">Clever</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-16 players</span>
-                                <span>20 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('npat')">
-                        <h3>Name Place Animal Thing</h3>
-                        <p>Race to fill categories with a random letter. Unique answers score 10, matches score 5, blanks score 0. Speed wins!</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Fast</span>
-                                <span class="tag">Competitive</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>3-20 players</span>
-                                <span>15 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('wavelength')">
-                        <h3>Wavelength</h3>
-                        <p>One player knows the target on a spectrum. Give a clue to help your team guess where it falls between two extremes.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Creative</span>
-                                <span class="tag">Debate</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-12 players</span>
-                                <span>30 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('charades')">
-                        <h3>Charades</h3>
-                        <p>Act out words or phrases without speaking. Your team races against the clock to guess what you're performing.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Active</span>
-                                <span class="tag">Classic</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-20 players</span>
-                                <span>20 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('monikers')">
-                        <h3>Monikers</h3>
-                        <p>Guess names and phrases through three rounds: describe freely, use one word, then act it out. Gets funnier every round.</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Hilarious</span>
-                                <span class="tag">Energetic</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-16 players</span>
-                                <span>30 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="game-card" onclick="playGame('herd-mentality')">
-                        <h3>Herd Mentality</h3>
-                        <p>Think like the crowd. Answer questions and try to match the majority. Don't get stuck with the dreaded Pink Cow!</p>
-                        <div class="game-card-footer">
-                            <div class="game-tags">
-                                <span class="tag">Fast-Paced</span>
-                                <span class="tag">Hilarious</span>
-                            </div>
-                            <div class="game-meta">
-                                <span>4-20 players</span>
-                                <span>15 min</span>
-                            </div>
-                        </div>
-                        <div class="play-indicator">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                    </div>
+            <a href="date-night.html" class="cat-card cat-date">
+                <div>
+                    <div class="cat-icon">🥂</div>
+                    <h2 class="cat-title">Date Night</h2>
+                    <p class="cat-desc">2 Players. Connection, questions, and intimacy.</p>
                 </div>
-            </div>
+                <div class="cat-arrow">Browse Couples →</div>
+            </a>
 
         </div>
     </section>
-
-    <!-- ========== FOOTER (CENTERED) ========== -->
-    <footer>
-        <div class="footer-border"></div>
-        
-        <span class="footer-logo">THEGAMING.CO</span>
-        <p class="footer-tagline">Free social games for couples, friends, and massive parties.</p>
-        
-        <div class="footer-links">
-            <a href="date-night.html">Date Night</a>
-            <a href="squad-games.html">Squad</a>
-            <a href="party-games.html">Party</a>
-            <a href="#">About Us</a>
-            <a href="#">Contact</a>
-            <a href="supporters.html">Our Supporters</a>
-        </div>
-        
-        <div class="footer-divider"></div>
-        
-        <div class="footer-legal">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-        </div>
-        
-        <p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p>
-    </footer>
 
     <script>
-        const configuredGames = [
-            'spyfall', 'imposter', 'codenames', 'werewolf', 'herd-mentality', 'charades'
-        ];
-
-        function playGame(gameId) {
-            if (configuredGames.includes(gameId)) {
-                window.location.href = `game-${gameId}.html`;
+        function toggleDrawer() {
+            const drawer = document.getElementById('mobileDrawer');
+            drawer.classList.toggle('open');
+            
+            // Toggle body scroll
+            if (drawer.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
             } else {
-                alert(`${gameId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} is coming soon!`);
+                document.body.style.overflow = 'auto';
             }
-        }
-
-        function toggleMobileMenu() {
-            // TODO: Implement mobile menu drawer
-            alert('Mobile menu coming soon!');
         }
     </script>
 </body>
