@@ -1,1103 +1,379 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In – TheGaming.co</title>
-    <meta name="description" content="Sign in to TheGaming.co to access your games and supporter perks.">
-    <meta name="robots" content="noindex,nofollow">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --pink: #ff6b9d;
-            --pink-dark: #c44569;
-            --blue: #4facfe;
-            --blue-dark: #0077cc;
-            --purple: #a445b2;
-            --purple-dark: #7a1052;
-            --gold: #ffd700;
-            --dark: #0a0a0f;
-            --teal: #00f2fe;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--dark);
-            color: white;
-            overflow-x: hidden;
-        }
-
-        h1, h2, h3, h4 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
-        }
-
-        a {
-            color: inherit;
-        }
-
-        /* ========== HEADER ========== */
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            padding: 14px 18px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: rgba(10, 10, 15, 0.88);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .nav-inner {
-            width: 100%;
-            max-width: 1100px;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .nav-left {
-            justify-self: flex-start;
-        }
-
-        .nav-right-wrapper {
-            justify-self: flex-end;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .header-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.6rem;
-            letter-spacing: 4px;
-            color: white;
-            text-decoration: none;
-            position: relative;
-            white-space: nowrap;
-        }
-
-        .header-logo::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: nowrap;
-        }
-
-        .auth-link {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.75);
-            text-decoration: none;
-            white-space: nowrap;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            transition: color 0.2s ease;
-        }
-
-        .auth-link:hover {
-            color: #ffffff;
-        }
-
-        .user-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 0;
-            transition: all 0.2s ease;
-        }
-
-        .user-pill:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-1px);
-        }
-
-        .user-initial {
-            text-transform: uppercase;
-        }
-
-        .nav-right-logged-in {
-            display: none; /* toggle this via JS when auth is wired up */
-        }
-
-        /* ========== SUPPORT SECTION (kept from index for consistency) ========== */
-        .support-section {
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
-            padding: 100px 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .support-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow: hidden;
-        }
-
-        .support-bg-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: orbFloat 20s ease-in-out infinite;
-        }
-
-        .support-bg-orb:nth-child(1) {
-            width: 400px;
-            height: 400px;
-            background: var(--pink);
-            top: -150px;
-            left: -100px;
-            animation-delay: 0s;
-        }
-
-        .support-bg-orb:nth-child(2) {
-            width: 300px;
-            height: 300px;
-            background: var(--purple);
-            bottom: -100px;
-            right: -50px;
-            animation-delay: -7s;
-        }
-
-        .support-bg-orb:nth-child(3) {
-            width: 250px;
-            height: 250px;
-            background: var(--gold);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: -14s;
-            opacity: 0.2;
-        }
-
-        @keyframes orbFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(50px, -30px) scale(1.1); }
-            50% { transform: translate(-30px, 50px) scale(0.95); }
-            75% { transform: translate(40px, 30px) scale(1.05); }
-        }
-
-        .support-container {
-            max-width: 900px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .support-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-        }
-
-        .support-left h2 {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 20px;
-        }
-
-        .support-left h2 .highlight {
-            background: linear-gradient(135deg, var(--gold), #ffed4a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .support-left > p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.8;
-            margin-bottom: 35px;
-        }
-
-        .support-perks {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 35px;
-        }
-
-        .perk-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .perk-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .support-cta-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .support-btn {
-            padding: 16px 32px;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-        }
-
-        .support-btn-primary {
-            background: linear-gradient(135deg, var(--pink), var(--purple));
-            color: white;
-            box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3);
-        }
-
-        .support-btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 50px rgba(255, 107, 157, 0.4);
-        }
-
-        .support-btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .support-btn-secondary:hover {
-            border-color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .support-right {
-            position: relative;
-        }
-
-        .leaderboard-preview {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 30px;
-            position: relative;
-        }
-
-        .leaderboard-preview::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
-        }
-
-        .leaderboard-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 25px;
-        }
-
-        .leaderboard-header h4 {
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .leaderboard-header a {
-            font-size: 0.85rem;
-            color: var(--pink);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .leaderboard-header a:hover {
-            text-decoration: underline;
-        }
-
-        .leaderboard-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .leaderboard-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .leaderboard-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .leaderboard-item.gold {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.02) 100%);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-        }
-
-        .lb-rank {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.3rem;
-            width: 30px;
-            text-align: center;
-        }
-
-        .leaderboard-item.gold .lb-rank { color: var(--gold); }
-        .leaderboard-item:nth-child(2) .lb-rank { color: #c0c0c0; }
-        .leaderboard-item:nth-child(3) .lb-rank { color: #cd7f32; }
-
-        .lb-name {
-            flex: 1;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .lb-amount {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            color: var(--pink);
-        }
-
-        .leaderboard-item.gold .lb-amount { color: var(--gold); }
-
-        .leaderboard-cta {
-            text-align: center;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .leaderboard-cta p {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .leaderboard-cta span {
-            color: var(--gold);
-            font-weight: 600;
-        }
-
-        /* ========== AUTH PAGE ========== */
-        .auth-page {
-            min-height: 100vh;
-            padding: 120px 16px 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background:
-                radial-gradient(circle at 15% 80%, rgba(255, 107, 157, 0.18), transparent 55%),
-                radial-gradient(circle at 85% 20%, rgba(79, 172, 254, 0.18), transparent 55%),
-                radial-gradient(circle at 50% 0%, rgba(164, 69, 178, 0.12), transparent 60%);
-        }
-
-        .auth-shell {
-            width: 100%;
-            max-width: 440px;
-        }
-
-        .auth-card {
-            background: rgba(5, 5, 12, 0.96);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 32px 28px 28px;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
-        }
-
-        .auth-title {
-            font-size: 2.4rem;
-            letter-spacing: 3px;
-            margin-bottom: 4px;
-        }
-
-        .auth-subtitle {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 24px;
-        }
-
-        .auth-google-btn {
-            width: 100%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 10px 16px;
-            background: #ffffff;
-            border-radius: 999px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #111111;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-        }
-
-        .auth-google-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
-            background: #f7f7f7;
-        }
-
-        .google-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: transparent;
-        }
-
-        .google-icon svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .auth-divider {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 22px 0;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-        }
-
-        .auth-divider span:nth-child(1),
-        .auth-divider span:nth-child(3) {
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18));
-        }
-
-        .auth-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .auth-label {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            text-align: left;
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.65);
-        }
-
-        .auth-input {
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            background: rgba(5, 5, 15, 0.9);
-            color: #ffffff;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-
-        .auth-input::placeholder {
-            color: rgba(255, 255, 255, 0.35);
-        }
-
-        .auth-input:focus {
-            border-color: var(--pink);
-            box-shadow: 0 0 0 1px rgba(255, 107, 157, 0.4);
-            background: rgba(10, 10, 25, 0.95);
-        }
-
-        .auth-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-top: 4px;
-        }
-
-        .auth-remember {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-        }
-
-        .auth-remember input[type="checkbox"] {
-            width: 14px;
-            height: 14px;
-            accent-color: var(--pink);
-        }
-
-        .auth-link-inline {
-            font-size: 0.8rem;
-            color: var(--pink);
-            text-decoration: none;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .auth-link-inline:hover {
-            text-decoration: underline;
-        }
-
-        .auth-submit-btn {
-            margin-top: 12px;
-            width: 100%;
-            border: none;
-            border-radius: 999px;
-            background: linear-gradient(135deg, var(--pink), var(--purple));
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 0.95rem;
-            padding: 11px 18px;
-            cursor: pointer;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            box-shadow: 0 12px 35px rgba(255, 107, 157, 0.5);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .auth-submit-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 16px 45px rgba(255, 107, 157, 0.7);
-        }
-
-        .auth-footer-text {
-            margin-top: 18px;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.55);
-            text-align: center;
-        }
-
-        /* ========== FOOTER ========== */
-        footer {
-            background: #000;
-            position: relative;
-        }
-
-        .footer-border {
-            height: 3px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink));
-            background-size: 300% 100%;
-            animation: gradientSlide 6s linear infinite;
-        }
-
-        @keyframes gradientSlide {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 300% 50%; }
-        }
-
-        .footer-main {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 70px 20px 50px;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 60px;
-            margin-bottom: 50px;
-        }
-
-        .footer-brand {
-            padding-right: 30px;
-        }
-
-        .footer-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 4px;
-            margin-bottom: 20px;
-            display: inline-block;
-            position: relative;
-        }
-
-        .footer-logo::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--pink), var(--purple));
-        }
-
-        .footer-brand > p {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.5);
-            line-height: 1.8;
-            margin-bottom: 25px;
-        }
-
-        .footer-column h5 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            margin-bottom: 25px;
-            color: white;
-        }
-
-        .footer-column ul {
-            list-style: none;
-        }
-
-        .footer-column li {
-            margin-bottom: 12px;
-        }
-
-        .footer-column a {
-            color: rgba(255, 255, 255, 0.5);
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .footer-column a:hover {
-            color: white;
-            transform: translateX(5px);
-        }
-
-        .footer-bottom {
-            padding-top: 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .footer-copyright {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .footer-legal {
-            display: flex;
-            gap: 30px;
-        }
-
-        .footer-legal a {
-            color: rgba(255, 255, 255, 0.4);
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: color 0.3s ease;
-        }
-
-        .footer-legal a:hover {
-            color: white;
-        }
-
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 900px) {
-            .support-grid {
-                grid-template-columns: 1fr;
-                gap: 50px;
-            }
-
-            .support-left {
-                text-align: center;
-            }
-
-            .support-perks {
-                align-items: center;
-            }
-
-            .support-cta-group {
-                justify-content: center;
-            }
-
-            .footer-grid {
-                grid-template-columns: 1fr;
-                gap: 40px;
-            }
-
-            .footer-brand {
-                grid-column: 1 / -1;
-                padding-right: 0;
-                text-align: center;
-            }
-
-            .footer-bottom {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .footer-legal {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 700px) {
-            header {
-                padding: 10px 14px;
-            }
-
-            .nav-inner {
-                max-width: 100%;
-                gap: 12px;
-            }
-
-            .nav-left {
-                display: none;
-            }
-
-            .header-logo {
-                font-size: 1.4rem;
-                letter-spacing: 3px;
-                justify-self: center;
-                text-align: center;
-            }
-
-            .header-actions {
-                gap: 10px;
-            }
-
-            .auth-page {
-                padding-top: 100px;
-                padding-bottom: 60px;
-            }
-
-            .auth-card {
-                padding: 26px 20px 24px;
-            }
-
-            .auth-title {
-                font-size: 2.1rem;
-            }
-
-            .auth-subtitle {
-                font-size: 0.9rem;
-            }
-
-            .auth-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .support-left h2 {
-                font-size: 2.5rem;
-            }
-
-            .support-cta-group {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .support-btn {
-                width: 100%;
-                text-align: center;
-            }
-
-            .footer-grid {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-
-            .footer-column a:hover {
-                transform: none;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In – TheGaming.co</title>
+  <meta name="description" content="Sign in to TheGaming.co to access your games and supporter perks.">
+  <meta name="robots" content="noindex,nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --pink: #ff6b9d;
+      --pink-dark: #c44569;
+      --blue: #4facfe;
+      --purple: #a445b2;
+      --gold: #ffd700;
+      --dark: #0a0a0f;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark);
+      color: white;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* HEADER */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 14px 18px;
+      background: rgba(10, 10, 15, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-inner {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      position: relative;
+    }
+
+    .header-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 4px;
+      color: white;
+      text-decoration: none;
+      position: relative;
+      white-space: nowrap;
+      justify-self: center;
+    }
+
+    .header-logo::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
+    }
+
+    .nav-right-wrapper {
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .auth-link {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.75);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: color 0.2s ease;
+    }
+
+    .auth-link:hover { color: white; }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .user-pill:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+
+    /* AUTH PAGE */
+    .auth-page {
+      min-height: 100vh;
+      padding: 120px 16px 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 15% 80%, rgba(255,107,157,0.18), transparent 55%),
+        radial-gradient(circle at 85% 20%, rgba(79,172,254,0.18), transparent 55%),
+        radial-gradient(circle at 50% 0%, rgba(164,69,178,0.12), transparent 60%);
+    }
+
+    .auth-shell { width: 100%; max-width: 440px; }
+
+    .auth-card {
+      background: rgba(5, 5, 12, 0.96);
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 32px 28px 28px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+    }
+
+    .auth-title { font-size: 2.4rem; letter-spacing: 3px; margin-bottom: 4px; }
+    .auth-subtitle { font-size: 0.95rem; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
+
+    .auth-google-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: #ffffff;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #111;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .auth-google-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 36px rgba(0,0,0,0.45);
+      background: #f7f7f7;
+    }
+
+    .auth-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 22px 0; font-size: 0.8rem;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase; letter-spacing: 0.12em;
+    }
+    .auth-divider span:nth-child(1),
+    .auth-divider span:nth-child(3) { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18)); }
+
+    .auth-form { display: flex; flex-direction: column; gap: 16px; }
+
+    .auth-label {
+      display: flex; flex-direction: column; gap: 6px;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: rgba(255,255,255,0.65);
+    }
+
+    .auth-input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(5,5,15,0.9);
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .auth-input:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 1px rgba(255,107,157,0.4);
+    }
+
+    .auth-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .auth-remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .auth-remember input[type="checkbox"] {
+      width: 14px; height: 14px; accent-color: var(--pink);
+    }
+
+    .auth-link-inline {
+      font-size: 0.8rem;
+      color: var(--pink);
+      text-decoration: none;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .auth-link-inline:hover { text-decoration: underline; }
+
+    .auth-submit-btn {
+      margin-top: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: white;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 11px 18px;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow: 0 12px 35px rgba(255,107,157,0.5);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .auth-submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 45px rgba(255,107,157,0.7);
+    }
+
+    .auth-footer-text {
+      margin-top: 18px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+    }
+
+    /* FOOTER */
+    footer {
+      background: #000;
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 2px solid rgba(255,255,255,0.1);
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.45);
+    }
+
+    /* MOBILE */
+    @media (max-width: 700px) {
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        position: relative;
+      }
+
+      .header-logo {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1.4rem;
+        letter-spacing: 3px;
+        text-align: center;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <!-- HEADER -->
+  <header>
+    <nav class="nav-inner">
+      <a href="index.html" class="header-logo">THEGAMING.CO</a>
+      <div class="nav-right-wrapper">
+        <a href="login.html" class="auth-link">Sign In</a>
+      </div>
+    </nav>
+  </header>
 
-    <header>
-        <nav class="nav-inner" aria-label="Main navigation">
-            <div class="nav-left"></div>
+  <!-- LOGIN -->
+  <main>
+    <section class="auth-page">
+      <div class="auth-shell">
+        <div class="auth-card">
+          <h1 class="auth-title">SIGN IN</h1>
+          <p class="auth-subtitle">Continue to TheGaming.co</p>
 
-            <a href="index.html" class="header-logo">THEGAMING.CO</a>
+          <button class="auth-google-btn" id="google-signin" type="button">
+            <span>Sign in with Google</span>
+          </button>
 
-            <div class="nav-right-wrapper">
-                <div class="header-actions nav-right-logged-out">
-                    <a href="login.html" class="auth-link">Sign In</a>
-                </div>
+          <div class="auth-divider"><span></span><span>or</span><span></span></div>
 
-                <div class="header-actions nav-right-logged-in">
-                    <button class="user-pill" type="button" aria-label="Account">
-                        <span class="user-initial">S</span>
-                    </button>
-                </div>
-            </div>
-        </nav>
-    </header>
+          <form class="auth-form" id="login-form">
+            <label class="auth-label">
+              Email
+              <input class="auth-input" id="login-email" type="email" required placeholder="you@example.com">
+            </label>
+            <label class="auth-label">
+              Password
+              <input class="auth-input" id="login-password" type="password" required placeholder="••••••••">
+            </label>
 
-    <main>
-        <section class="auth-page">
-            <div class="auth-shell">
-                <div class="auth-card">
-                    <h1 class="auth-title">SIGN IN</h1>
-                    <p class="auth-subtitle">Continue to TheGaming.co</p>
-
-                    <button class="auth-google-btn" type="button" id="google-signin">
-                        <span class="google-icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.2C12.2 13.02 17.56 9.5 24 9.5z"/>
-                                <path fill="#4285F4" d="M46.5 24.5c0-1.57-.14-3.08-.41-4.5H24v9h12.7c-.55 2.9-2.24 5.36-4.77 7.03l7.73 6c4.5-4.16 7.34-10.3 7.34-17.53z"/>
-                                <path fill="#FBBC05" d="M10.54 28.58C9.9 26.7 9.56 24.69 9.56 22.62c0-2.07.34-4.08.98-5.96l-7.98-6.2C.9 13.7 0 17.24 0 21c0 3.76.9 7.3 2.56 10.54l7.98-6.2z"/>
-                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-7.73-6c-2.14 1.44-4.88 2.3-8.17 2.3-6.44 0-11.8-3.52-13.92-8.52l-7.98 6.2C6.51 42.62 14.62 48 24 48z"/>
-                                <path fill="none" d="M0 0h48v48H0z"/>
-                            </svg>
-                        </span>
-                        <span>Sign in with Google</span>
-                    </button>
-
-                    <div class="auth-divider">
-                        <span></span>
-                        <span>or</span>
-                        <span></span>
-                    </div>
-
-                    <form class="auth-form" id="login-form">
-                        <label class="auth-label">
-                            Email
-                            <input
-                                class="auth-input"
-                                type="email"
-                                name="email"
-                                id="login-email"
-                                autocomplete="email"
-                                required
-                                placeholder="you@example.com">
-                        </label>
-
-                        <label class="auth-label">
-                            Password
-                            <input
-                                class="auth-input"
-                                type="password"
-                                name="password"
-                                id="login-password"
-                                autocomplete="current-password"
-                                required
-                                placeholder="••••••••">
-                        </label>
-
-                        <div class="auth-row">
-                            <label class="auth-remember">
-                                <input type="checkbox" name="remember">
-                                <span>Remember me on this device</span>
-                            </label>
-
-                            <a href="#" class="auth-link-inline">Forgot password?</a>
-                        </div>
-
-                        <button class="auth-submit-btn" type="submit">
-                            Sign In
-                        </button>
-                    </form>
-
-                    <p class="auth-footer-text">
-                        Haven't registered yet?
-                        <a href="register.html" class="auth-link-inline">Create an account</a>
-                    </p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="footer-border"></div>
-        
-        <div class="footer-main">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <div class="footer-logo">THEGAMING.CO</div>
-                    <p>Free social games for couples, friends, and massive parties. No downloads, no sign-ups — just instant fun with anyone, anywhere.</p>
-                </div>
-
-                <div class="footer-column">
-                    <h5>GAMES</h5>
-                    <ul>
-                        <li><a href="solo-games.html">Solo</a></li>
-                        <li><a href="date-night.html">Date Night</a></li>
-                        <li><a href="squad-games.html">Squad</a></li>
-                        <li><a href="party-games.html">Party</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h5>COMPANY</h5>
-                    <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="#">Contact</a></li>
-                        <li><a href="supporters.html">Our Supporters</a></li>
-                    </ul>
-                </div>
+            <div class="auth-row">
+              <label class="auth-remember">
+                <input type="checkbox"> Remember me
+              </label>
+              <a href="#" class="auth-link-inline">Forgot password?</a>
             </div>
 
-            <div class="footer-bottom">
-                <p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p>
-                <div class="footer-legal">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Cookie Settings</a>
-                </div>
-            </div>
+            <button class="auth-submit-btn" type="submit">Sign In</button>
+          </form>
+
+          <p class="auth-footer-text">
+            Haven't registered yet?
+            <a href="register.html" class="auth-link-inline">Create an account</a>
+          </p>
         </div>
-    </footer>
+      </div>
+    </section>
+  </main>
 
-    <!-- Supabase + auth wiring -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+  <!-- FOOTER -->
+  <footer>
+    © 2025 TheGaming.co — Free games, forever.
+  </footer>
 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <!-- SUPABASE AUTH -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const loggedOut = document.querySelector('.nav-right-logged-out');
-            const loggedIn  = document.querySelector('.nav-right-logged-in');
-            const userInitialEl = document.querySelector('.user-initial');
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            // Check if user is already logged in
-            try {
-                const { data, error } = await supabaseClient.auth.getUser();
-                if (!error && data && data.user) {
-                    if (loggedOut) loggedOut.style.display = 'none';
-                    if (loggedIn) loggedIn.style.display  = 'flex';
+    // Google Sign-In
+    document.getElementById('google-signin').addEventListener('click', async () => {
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/index.html' }
+      });
+      if (error) alert('Google sign-in failed: ' + error.message);
+    });
 
-                    if (userInitialEl && data.user.email) {
-                        userInitialEl.textContent = data.user.email.charAt(0).toUpperCase();
-                    }
-                } else {
-                    if (loggedOut) loggedOut.style.display = 'flex';
-                    if (loggedIn) loggedIn.style.display  = 'none';
-                }
-            } catch (err) {
-                if (loggedOut) loggedOut.style.display = 'flex';
-                if (loggedIn) loggedIn.style.display  = 'none';
-            }
+    // Email Sign-In
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
 
-            const googleBtn = document.getElementById('google-signin');
-            if (googleBtn) {
-                googleBtn.addEventListener('click', async () => {
-                    try {
-                        const { error } = await supabaseClient.auth.signInWithOAuth({
-                            provider: 'google',
-                            options: {
-                                redirectTo: window.location.origin + '/index.html'
-                            }
-                        });
-
-                        if (error) {
-                            console.error(error);
-                            alert('Google sign-in failed: ' + error.message);
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('Unexpected error with Google sign-in.');
-                    }
-                });
-            }
-
-            const loginForm = document.getElementById('login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-
-                    const emailInput = document.getElementById('login-email');
-                    const passwordInput = document.getElementById('login-password');
-                    const email = emailInput ? emailInput.value : '';
-                    const password = passwordInput ? passwordInput.value : '';
-
-                    if (!email || !password) {
-                        alert('Please enter your email and password.');
-                        return;
-                    }
-
-                    try {
-                        const { data, error } = await supabaseClient.auth.signInWithPassword({
-                            email,
-                            password
-                        });
-
-                        if (error) {
-                            console.error(error);
-                            alert('Sign-in failed: ' + error.message);
-                            return;
-                        }
-
-                        // On success, send them to the homepage (or dashboard later)
-                        window.location.href = 'index.html';
-                    } catch (err) {
-                        console.error(err);
-                        alert('Unexpected error while signing in.');
-                    }
-                });
-            }
-        });
-    </script>
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) return alert('Sign-in failed: ' + error.message);
+      window.location.href = 'index.html';
+    });
+  </script>
 </body>
 </html>
