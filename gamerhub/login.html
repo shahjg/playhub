@@ -109,32 +109,6 @@
             flex-wrap: nowrap;
         }
 
-        .support-header-btn {
-            background: rgba(255, 107, 157, 0.08);
-            border: 1px solid var(--pink);
-            color: var(--pink);
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            box-shadow: 0 0 10px rgba(255, 107, 157, 0.1);
-        }
-
-        .support-header-btn:hover {
-            background: var(--pink);
-            color: white;
-            box-shadow: 0 0 20px rgba(255, 107, 157, 0.5);
-            transform: translateY(-1px);
-        }
-
         .auth-link {
             font-size: 0.85rem;
             font-weight: 600;
@@ -180,7 +154,7 @@
             display: none; /* toggle this via JS when auth is wired up */
         }
 
-        /* ========== SUPPORT SECTION (CSS kept for header consistency) ========== */
+        /* ========== SUPPORT SECTION (kept from index for consistency) ========== */
         .support-section {
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
             padding: 100px 20px;
@@ -829,9 +803,7 @@
             }
 
             .nav-inner {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
+                max-width: 100%;
                 gap: 12px;
             }
 
@@ -842,6 +814,8 @@
             .header-logo {
                 font-size: 1.4rem;
                 letter-spacing: 3px;
+                justify-self: center;
+                text-align: center;
             }
 
             .header-actions {
@@ -901,23 +875,16 @@
 
     <header>
         <nav class="nav-inner" aria-label="Main navigation">
-            <div class="nav-left">
-            </div>
+            <div class="nav-left"></div>
 
             <a href="index.html" class="header-logo">THEGAMING.CO</a>
 
             <div class="nav-right-wrapper">
                 <div class="header-actions nav-right-logged-out">
-                    <button class="support-header-btn" type="button" onclick="scrollToSupport()">
-                        <span></span> Supporters
-                    </button>
                     <a href="login.html" class="auth-link">Sign In</a>
                 </div>
 
                 <div class="header-actions nav-right-logged-in">
-                    <button class="support-header-btn" type="button" onclick="scrollToSupport()">
-                        <span></span> Supporters
-                    </button>
                     <button class="user-pill" type="button" aria-label="Account">
                         <span class="user-initial">S</span>
                     </button>
@@ -933,7 +900,7 @@
                     <h1 class="auth-title">SIGN IN</h1>
                     <p class="auth-subtitle">Continue to TheGaming.co</p>
 
-                    <button class="auth-google-btn" type="button">
+                    <button class="auth-google-btn" type="button" id="google-signin">
                         <span class="google-icon" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
                                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.2C12.2 13.02 17.56 9.5 24 9.5z"/>
@@ -952,15 +919,29 @@
                         <span></span>
                     </div>
 
-                    <form class="auth-form" onsubmit="handleFakeLogin(event)">
+                    <form class="auth-form" id="login-form">
                         <label class="auth-label">
                             Email
-                            <input class="auth-input" type="email" name="email" autocomplete="email" required placeholder="you@example.com">
+                            <input
+                                class="auth-input"
+                                type="email"
+                                name="email"
+                                id="login-email"
+                                autocomplete="email"
+                                required
+                                placeholder="you@example.com">
                         </label>
 
                         <label class="auth-label">
                             Password
-                            <input class="auth-input" type="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+                            <input
+                                class="auth-input"
+                                type="password"
+                                name="password"
+                                id="login-password"
+                                autocomplete="current-password"
+                                required
+                                placeholder="••••••••">
                         </label>
 
                         <div class="auth-row">
@@ -979,7 +960,7 @@
 
                     <p class="auth-footer-text">
                         Haven't registered yet?
-                        <a href="#" class="auth-link-inline">Create an account</a>
+                        <a href="register.html" class="auth-link-inline">Create an account</a>
                     </p>
                 </div>
             </div>
@@ -1027,48 +1008,96 @@
         </div>
     </footer>
 
+    <!-- Supabase + auth wiring -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        function scrollToSupport() {
-            const el = document.querySelector('.support-section');
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
+        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
-        document.addEventListener('DOMContentLoaded', () => {
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.addEventListener('DOMContentLoaded', async () => {
             const loggedOut = document.querySelector('.nav-right-logged-out');
             const loggedIn  = document.querySelector('.nav-right-logged-in');
             const userInitialEl = document.querySelector('.user-initial');
 
-            const isLoggedIn = false; // swap when you wire real auth
+            // Check if user is already logged in
+            try {
+                const { data, error } = await supabaseClient.auth.getUser();
+                if (!error && data && data.user) {
+                    if (loggedOut) loggedOut.style.display = 'none';
+                    if (loggedIn) loggedIn.style.display  = 'flex';
 
-            if (!loggedOut || !loggedIn) return;
-
-            if (isLoggedIn) {
-                loggedOut.style.display = 'none';
-                loggedIn.style.display  = 'flex';
-
-                const fakeUsername = 'Shah';
-                if (userInitialEl && fakeUsername) {
-                    userInitialEl.textContent = fakeUsername.charAt(0).toUpperCase();
+                    if (userInitialEl && data.user.email) {
+                        userInitialEl.textContent = data.user.email.charAt(0).toUpperCase();
+                    }
+                } else {
+                    if (loggedOut) loggedOut.style.display = 'flex';
+                    if (loggedIn) loggedIn.style.display  = 'none';
                 }
-            } else {
-                loggedOut.style.display = 'flex';
-                loggedIn.style.display  = 'none';
+            } catch (err) {
+                if (loggedOut) loggedOut.style.display = 'flex';
+                if (loggedIn) loggedIn.style.display  = 'none';
             }
 
-            const googleBtn = document.querySelector('.auth-google-btn');
+            const googleBtn = document.getElementById('google-signin');
             if (googleBtn) {
-                googleBtn.addEventListener('click', () => {
-                    alert('Google Sign-In will go here once you hook up OAuth (e.g. Firebase / your backend).');
+                googleBtn.addEventListener('click', async () => {
+                    try {
+                        const { error } = await supabaseClient.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: {
+                                redirectTo: window.location.origin + '/index.html'
+                            }
+                        });
+
+                        if (error) {
+                            console.error(error);
+                            alert('Google sign-in failed: ' + error.message);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Unexpected error with Google sign-in.');
+                    }
+                });
+            }
+
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const emailInput = document.getElementById('login-email');
+                    const passwordInput = document.getElementById('login-password');
+                    const email = emailInput ? emailInput.value : '';
+                    const password = passwordInput ? passwordInput.value : '';
+
+                    if (!email || !password) {
+                        alert('Please enter your email and password.');
+                        return;
+                    }
+
+                    try {
+                        const { data, error } = await supabaseClient.auth.signInWithPassword({
+                            email,
+                            password
+                        });
+
+                        if (error) {
+                            console.error(error);
+                            alert('Sign-in failed: ' + error.message);
+                            return;
+                        }
+
+                        // On success, send them to the homepage (or dashboard later)
+                        window.location.href = 'index.html';
+                    } catch (err) {
+                        console.error(err);
+                        alert('Unexpected error while signing in.');
+                    }
                 });
             }
         });
-
-        function handleFakeLogin(e) {
-            e.preventDefault();
-            alert('This is a front-end demo. Connect this form to your real auth API when you are ready.');
-        }
     </script>
 </body>
 </html>
