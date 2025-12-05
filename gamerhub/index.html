@@ -22,11 +22,14 @@
 
     <meta name="theme-color" content="#0a0a0f">
 
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
+        /* CSS REMAINS UNCHANGED */
         * {
             margin: 0;
             padding: 0;
@@ -124,33 +127,6 @@
             flex-wrap: nowrap;
         }
 
-        /* Support button style (unused in header now, ok to keep for future) */
-        .support-header-btn {
-            background: rgba(255, 107, 157, 0.08);
-            border: 1px solid var(--pink);
-            color: var(--pink);
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            box-shadow: 0 0 10px rgba(255, 107, 157, 0.1);
-        }
-
-        .support-header-btn:hover {
-            background: var(--pink);
-            color: white;
-            box-shadow: 0 0 20px rgba(255, 107, 157, 0.5);
-            transform: translateY(-1px);
-        }
-
         .auth-link {
             font-size: 0.85rem;
             font-weight: 600;
@@ -193,7 +169,7 @@
         }
 
         .nav-right-logged-in {
-            display: none; /* toggle this via JS when auth is wired up */
+            display: none; /* default hidden, JS will flip this */
         }
 
         /* ========== HERO SECTION ========== */
@@ -1239,9 +1215,11 @@
                 </div>
 
                 <div class="header-actions nav-right-logged-in">
-                    <button class="user-pill" type="button" aria-label="Account">
-                        <span class="user-initial">S</span>
-                    </button>
+                    <a href="profile.html" class="auth-link" style="display:flex; align-items:center;">
+                        <button class="user-pill" type="button" aria-label="Account">
+                            <span class="user-initial">S</span>
+                        </button>
+                    </a>
                 </div>
             </div>
         </nav>
@@ -1481,17 +1459,52 @@
     </footer>
 
     <script>
-        function scrollToSupport() {
-            const el = document.querySelector('.support-section');
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
+      const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
-        // Later, when you hook up real auth:
-        // - hide .nav-right-logged-out
-        // - show .nav-right-logged-in
-        // - set .user-initial textContent from username
+      // Create Supabase client (anon key is safe for frontend; never use service_role here)
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = supabaseClient; // so login.html / profile.html can reuse it
+
+      function updateAuthUI(user) {
+        const loggedOutNav  = document.querySelector('.nav-right-logged-out');
+        const loggedInNav   = document.querySelector('.nav-right-logged-in');
+        const userInitialEl = document.querySelector('.user-initial');
+
+        if (user) {
+          // Logged in
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+          if (loggedInNav)  loggedInNav.style.setProperty('display', 'flex', 'important');
+
+          if (user.email && userInitialEl) {
+            userInitialEl.textContent = user.email.charAt(0).toUpperCase();
+          }
+        } else {
+          // Logged out
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+          if (loggedInNav)  loggedInNav.style.setProperty('display', 'none', 'important');
+        }
+      }
+
+      // 1) On page load, restore session (covers hard refresh, direct hits)
+      (async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        updateAuthUI(session?.user ?? null);
+      })();
+
+      // 2) Listen for future auth changes
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session?.user ?? null);
+      });
+
+      // Optional helper if you ever want to scroll from a header button
+      function scrollToSupport() {
+        const el = document.querySelector('.support-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      window.scrollToSupport = scrollToSupport;
     </script>
 </body>
 </html>
