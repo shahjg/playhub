@@ -191,6 +191,7 @@
       font-size: 0.95rem;
       outline: none;
       transition: border 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
     }
 
     .auth-input:focus {
@@ -257,6 +258,28 @@
       text-align: center;
     }
 
+    /* 👁 PASSWORD TOGGLE WRAPPER */
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.6);
+      padding: 4px;
+    }
+
+    .password-toggle:hover {
+      color: #ffffff;
+    }
+
     /* FOOTER */
     footer {
       background: #000;
@@ -318,9 +341,13 @@
               Email
               <input class="auth-input" id="login-email" type="email" required placeholder="you@example.com">
             </label>
+
             <label class="auth-label">
               Password
-              <input class="auth-input" id="login-password" type="password" required placeholder="••••••••">
+              <div class="password-wrapper">
+                <input class="auth-input" id="login-password" type="password" required placeholder="••••••••">
+                <button type="button" class="password-toggle" id="toggle-password" aria-label="Show password">👁</button>
+              </div>
             </label>
 
             <div class="auth-row">
@@ -355,7 +382,18 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Google Sign-In
+    // 👁 Password show/hide toggle
+    const passwordInput = document.getElementById('login-password');
+    const togglePasswordBtn = document.getElementById('toggle-password');
+
+    togglePasswordBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      togglePasswordBtn.textContent = isPassword ? '🙈' : '👁';
+      togglePasswordBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+
+    // Google Sign-In (will error until you configure Google OAuth in Supabase)
     document.getElementById('google-signin').addEventListener('click', async () => {
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
@@ -371,8 +409,14 @@
       const password = document.getElementById('login-password').value;
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) return alert('Sign-in failed: ' + error.message);
-      window.location.href = 'index.html';
+
+      if (error) {
+        alert('Sign-in failed: ' + error.message);
+        return;
+      }
+
+      // ✅ On success, go straight to profile so you can see you're logged in
+      window.location.href = 'profile.html';
     });
   </script>
 </body>
