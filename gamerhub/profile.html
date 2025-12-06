@@ -3,65 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Profile – TheGaming.co</title>
-  <meta name="description" content="Manage your TheGaming.co account and gamer profile.">
+  <title>Profile – TheGaming.co</title>
+  <meta name="description" content="Manage your profile on TheGaming.co.">
   <meta name="robots" content="noindex,nofollow">
-
-  <meta name="theme-color" content="#0a0a0f">
-
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
       --pink: #ff6b9d;
-      --pink-dark: #c44569;
       --blue: #4facfe;
-      --blue-dark: #0077cc;
       --purple: #a445b2;
-      --purple-dark: #7a1052;
-      --gold: #ffd700;
       --dark: #0a0a0f;
-      --dark-soft: #10101a;
+      --card-bg: rgba(5, 5, 12, 0.96);
+      --border-subtle: rgba(255,255,255,0.08);
+      --text-muted: rgba(255,255,255,0.6);
+      --text-softer: rgba(255,255,255,0.45);
     }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--dark);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255,107,157,0.2), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(79,172,254,0.18), transparent 55%),
+        radial-gradient(circle at 50% 100%, rgba(164,69,178,0.18), transparent 60%),
+        var(--dark);
       color: #fff;
       overflow-x: hidden;
+      min-height: 100vh;
     }
 
-    h1, h2, h3, h4 {
+    h1, h2, h3 {
       font-family: 'Bebas Neue', sans-serif;
       letter-spacing: 1px;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    a { color: inherit; text-decoration: none; }
 
-    /* ========== HEADER (same style as index) ========== */
+    /* HEADER */
     header {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       z-index: 100;
       padding: 14px 18px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       background: rgba(10, 10, 15, 0.88);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
@@ -71,21 +59,15 @@
     .nav-inner {
       width: 100%;
       max-width: 1100px;
+      margin: 0 auto;
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
       gap: 24px;
     }
 
-    .nav-left {
-      justify-self: flex-start;
-    }
-
-    .nav-right-wrapper {
-      justify-self: flex-end;
-      display: flex;
-      justify-content: flex-end;
-    }
+    .nav-left { justify-self: flex-start; }
+    .nav-right-wrapper { justify-self: flex-end; }
 
     .header-logo {
       font-family: 'Bebas Neue', sans-serif;
@@ -95,14 +77,14 @@
       text-decoration: none;
       position: relative;
       white-space: nowrap;
+      justify-self: center;
     }
 
     .header-logo::after {
       content: '';
       position: absolute;
       bottom: -2px;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
       height: 2px;
       background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
     }
@@ -110,24 +92,20 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 20px;
-      flex-wrap: nowrap;
+      gap: 16px;
     }
 
     .auth-link {
       font-size: 0.85rem;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.75);
-      text-decoration: none;
-      white-space: nowrap;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       transition: color 0.2s ease;
+      white-space: nowrap;
     }
 
-    .auth-link:hover {
-      color: #ffffff;
-    }
+    .auth-link:hover { color: #fff; }
 
     .user-pill {
       display: inline-flex;
@@ -136,887 +114,901 @@
       width: 32px;
       height: 32px;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.06);
-      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
       font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
       padding: 0;
-      transition: all 0.2s ease;
     }
 
-    .user-pill:hover {
-      background: rgba(255, 255, 255, 0.12);
-      transform: translateY(-1px);
-    }
+    .user-initial { text-transform: uppercase; }
 
-    .user-initial {
-      text-transform: uppercase;
-    }
+    .nav-right-logged-in { display: none; }
 
-    .nav-right-logged-in {
-      display: none; /* JS will flip this */
-    }
-
-    /* ========== PROFILE LAYOUT ========== */
-    .profile-main {
-      min-height: 100vh;
-      padding: 120px 16px 40px; /* offset header */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background:
-        radial-gradient(circle at top left, rgba(255, 107, 157, 0.18) 0%, transparent 55%),
-        radial-gradient(circle at bottom right, rgba(79, 172, 254, 0.2) 0%, transparent 55%),
-        radial-gradient(circle at center, rgba(164, 69, 178, 0.18) 0%, transparent 60%);
-    }
-
-    .profile-card {
-      width: 100%;
-      max-width: 720px;
-      background: rgba(16, 16, 26, 0.96);
-      border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(255, 255, 255, 0.02);
-      padding: 24px 24px 22px;
-      position: relative;
+    .user-name-label {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      max-width: 130px;
+      white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .profile-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(255, 107, 157, 0.15), transparent 60%);
-      opacity: 0.9;
-      pointer-events: none;
+    .user-header-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .profile-inner {
-      position: relative;
-      z-index: 1;
+    @media (max-width: 700px) {
+      .nav-inner {
+        max-width: 100%;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 12px;
+      }
+      .header-logo {
+        font-size: 1.4rem;
+        letter-spacing: 3px;
+        text-align: center;
+      }
+      .user-name-label { display: none; }
     }
 
-    .profile-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
+    /* MAIN LAYOUT */
+    .profile-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 96px 16px 40px;
+    }
+
+    .profile-title {
+      font-size: 2rem;
+      letter-spacing: 3px;
       margin-bottom: 16px;
     }
 
-    .profile-heading {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 24px;
+      align-items: flex-start;
     }
 
-    .profile-heading h1 {
-      font-size: 2.4rem;
-      line-height: 1;
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.6);
     }
 
-    .profile-subtext {
-      font-size: 0.92rem;
-      color: rgba(255, 255, 255, 0.65);
-    }
-
-    .plan-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .plan-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #4ade80;
-    }
-
-    .profile-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-
-    .back-link {
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.55);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-    }
-
-    .back-link:hover {
-      color: #fff;
-    }
-
-    .signout-btn {
-      padding: 8px 16px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      background: rgba(255, 255, 255, 0.06);
-      color: #fff;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .signout-btn:hover {
-      transform: translateY(-1px);
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    }
-
-    .profile-divider {
-      margin: 14px 0 18px;
-      border: none;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
-    }
-
-    .profile-sections {
+    /* LEFT SIDE */
+    .profile-sidebar {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
-    .section {
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 12px 14px 12px;
+    .profile-summary {
+      padding: 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .summary-top {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .avatar-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 999px;
+      background: conic-gradient(from 180deg, var(--pink), var(--blue), var(--purple), var(--pink));
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: #05050a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+
+    .summary-name {
+      font-size: 1.2rem;
+    }
+
+    .summary-tag {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .summary-email {
+      font-size: 0.8rem;
+      color: var(--text-softer);
+    }
+
+    .summary-pill {
+      display: inline-block;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 3px 9px;
+      font-size: 0.7rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .signout-btn {
+      width: 100%;
+      margin-top: 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.9);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
+    .signout-btn:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    .profile-nav-card {
+      padding: 10px 10px 12px;
+    }
+
+    .profile-nav-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-softer);
+      margin-bottom: 6px;
+    }
+
+    .profile-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .profile-nav-item {
+      border-radius: 999px;
+      border: none;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      text-align: left;
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .nav-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.28);
+    }
+
+    .profile-nav-item.active {
+      background: linear-gradient(135deg, rgba(255,107,157,0.22), rgba(79,172,254,0.18));
+      color: #fff;
+    }
+
+    .profile-nav-item.active .nav-dot {
+      background: linear-gradient(135deg, var(--pink), var(--blue));
+    }
+
+    /* RIGHT SIDE */
+    .profile-panel-card {
+      padding: 16px 16px 14px;
     }
 
     .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
     }
 
     .section-title {
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: rgba(255, 255, 255, 0.85);
+      font-size: 1.25rem;
     }
 
-    .section-note {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.55);
-    }
-
-    .field-row {
+    form {
       display: flex;
       flex-direction: column;
-      margin-top: 8px;
-      gap: 4px;
+      gap: 12px;
     }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px 16px;
+    }
+
+    .field-block-full { grid-column: 1 / -1; }
 
     .field-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .field-value {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: #fff;
-      word-break: break-all;
-    }
-
-    .field-value.muted {
-      color: rgba(255, 255, 255, 0.65);
-      font-weight: 400;
-    }
-
-    .field-inline {
       display: flex;
-      justify-content: space-between;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .pill-muted {
-      font-size: 0.75rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px dashed rgba(255, 255, 255, 0.24);
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .text-input {
-      width: 100%;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(0, 0, 0, 0.5);
-      color: #fff;
-      padding: 8px 12px;
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    }
-
-    .text-input::placeholder {
-      color: rgba(255, 255, 255, 0.35);
-    }
-
-    .text-input:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 1px rgba(79, 172, 254, 0.4);
-      background: rgba(0, 0, 0, 0.8);
-    }
-
-    .premium-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 215, 0, 0.4);
-      color: rgba(255, 215, 0, 0.9);
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    .premium-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(255, 215, 0, 0.9);
-    }
-
-    .color-options {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-    }
-
-    .color-dot {
-      width: 22px;
-      height: 22px;
-      border-radius: 999px;
-      border: 2px solid rgba(255, 255, 255, 0.5);
-      opacity: 0.4;
-      position: relative;
-      cursor: not-allowed;
-      background: #444;
-      padding: 0;
-    }
-
-    .color-dot span {
-      position: absolute;
-      inset: -1px;
-      border-radius: inherit;
-      border: 1px solid rgba(0, 0, 0, 0.5);
-    }
-
-    .color-dot.pink { background: var(--pink); }
-    .color-dot.blue { background: var(--blue); }
-    .color-dot.purple { background: var(--purple); }
-    .color-dot.gold { background: var(--gold); }
-
-    .color-dot-active {
-      box-shadow:
-        0 0 0 2px rgba(255, 255, 255, 0.9),
-        0 0 0 6px rgba(255, 255, 255, 0.2);
-    }
-
-    .upgrade-link {
-      margin-top: 10px;
-      font-size: 0.82rem;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .upgrade-link a {
-      color: var(--pink);
-      text-decoration: underline;
-    }
-
-    .profile-meta {
-      margin-top: 16px;
+      flex-direction: column;
+      gap: 5px;
       font-size: 0.78rem;
-      color: rgba(255, 255, 255, 0.55);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .field-input,
+    .field-textarea {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(5,5,15,0.9);
+      color: #fff;
+      font-size: 0.94rem;
+      outline: none;
+      width: 100%;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .field-input:focus,
+    .field-textarea:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 1px rgba(255,107,157,0.4);
+    }
+
+    .field-input[readonly] {
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+
+    .field-textarea {
+      resize: vertical;
+      min-height: 60px;
+      max-height: 150px;
+    }
+
+    .color-row {
       display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-preview {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: #ff6b9d;
+    }
+
+    .color-input {
+      border: none;
+      padding: 0;
+      width: 40px;
+      height: 24px;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .color-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-input::-webkit-color-swatch { border: none; border-radius: 999px; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .form-footer {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
     }
 
-    .profile-meta strong {
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .profile-save-row {
-      margin-top: 16px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .profile-save-status {
+    .status-bar {
       font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-softer);
+      min-height: 1.2em;
     }
+    .status-bar.error { color: #ffc0d2; }
+    .status-bar.success { color: #b7ffb3; }
 
     .save-btn {
       border-radius: 999px;
       border: none;
-      padding: 8px 18px;
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
+      background: linear-gradient(135deg, var(--pink), var(--purple));
       color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 8px 16px;
       cursor: pointer;
-      font-weight: 600;
-      opacity: 0.9;
-      transition: all 0.2s ease;
+      box-shadow: 0 12px 35px rgba(255,107,157,0.5);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
     }
 
-    .save-btn:hover {
-      opacity: 1;
+    .save-btn:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 16px 45px rgba(255,107,157,0.7);
     }
 
-    /* Loading */
-    .profile-loading {
-      font-size: 0.95rem;
-      color: rgba(255, 255, 255, 0.7);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      justify-content: center;
-      padding: 30px 0;
+    .save-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
     }
 
-    .loading-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.7);
-      animation: loadingBounce 1.2s infinite ease-in-out;
+    .minimal-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: #fff;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 12px;
+      cursor: pointer;
     }
 
-    .loading-dot:nth-child(2) { animation-delay: 0.15s; }
-    .loading-dot:nth-child(3) { animation-delay: 0.3s; }
-
-    @keyframes loadingBounce {
-      0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
-      40% { transform: translateY(-6px); opacity: 1; }
+    .minimal-btn:hover {
+      background: rgba(255,255,255,0.08);
     }
 
-    /* Responsive */
+    /* RESPONSIVE */
     @media (max-width: 900px) {
-      .profile-card {
-        padding: 20px 16px 18px;
-      }
-
-      .profile-main {
-        padding-top: 110px;
-      }
+      .profile-grid { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 700px) {
-      header {
-        padding: 10px 14px;
+    @media (max-width: 650px) {
+      .profile-shell { padding-top: 88px; }
+      .profile-title { font-size: 1.7rem; }
+      .field-grid { grid-template-columns: 1fr; }
+      .form-footer {
+        flex-direction: column-reverse;
+        align-items: flex-start;
       }
-
-      .nav-inner {
-        max-width: 100%;
-        gap: 12px;
-        grid-template-columns: 1fr auto 1fr;
-      }
-
-      .header-logo {
-        font-size: 1.4rem;
-        letter-spacing: 3px;
+      .save-btn {
+        width: 100%;
         text-align: center;
-        justify-self: center;
       }
-
-      .header-actions {
+      .profile-sidebar {
+        flex-direction: row;
         gap: 10px;
       }
-
-      .profile-top-row {
-        flex-direction: column;
-        align-items: flex-start;
+      .profile-sidebar .card {
+        flex: 1;
       }
-
-      .profile-actions {
-        align-items: flex-start;
+      .profile-nav-card {
+        padding: 8px;
       }
-    }
-
-    @media (max-width: 480px) {
-      .profile-heading h1 {
-        font-size: 2.1rem;
+      .profile-nav {
+        flex-direction: row;
+        justify-content: space-between;
       }
-
-      .profile-card {
-        border-radius: 18px;
+      .profile-nav-item {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.75rem;
+        padding-inline: 6px;
+      }
+      .profile-nav-label {
+        display: none;
       }
     }
   </style>
 </head>
 <body>
+  <!-- HEADER -->
   <header>
-    <nav class="nav-inner" aria-label="Main navigation">
+    <nav class="nav-inner">
       <div class="nav-left"></div>
 
       <a href="index.html" class="header-logo">THEGAMING.CO</a>
 
       <div class="nav-right-wrapper">
+        <!-- Logged OUT -->
         <div class="header-actions nav-right-logged-out">
           <a href="login.html" class="auth-link">Sign In</a>
         </div>
 
+        <!-- Logged IN -->
         <div class="header-actions nav-right-logged-in">
-          <a href="profile.html" class="auth-link" style="display:flex; align-items:center;">
-            <button class="user-pill" type="button" aria-label="Account">
+          <a href="profile.html" class="auth-link user-header-link">
+            <button type="button" class="user-pill" aria-label="Account">
               <span class="user-initial">?</span>
             </button>
+            <span class="user-name-label" id="header-username-label"></span>
           </a>
         </div>
       </div>
     </nav>
   </header>
 
-  <main class="profile-main">
-    <section class="profile-card" aria-labelledby="profile-title">
-      <div class="profile-inner">
-        <!-- Loading state -->
-        <div id="profile-loading" class="profile-loading">
-          <span>Checking your session</span>
-          <div style="display:flex; gap:4px;">
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
+  <!-- MAIN -->
+  <main class="profile-shell">
+    <h1 class="profile-title">Profile</h1>
+
+    <section class="profile-grid">
+      <!-- LEFT: profile + nav -->
+      <aside class="profile-sidebar">
+        <div class="card profile-summary">
+          <div class="summary-top">
+            <div class="avatar-circle">
+              <div class="avatar-inner">
+                <span id="avatar-initial">P</span>
+              </div>
+            </div>
+            <div>
+              <div class="summary-name" id="summary-display-name">Player One</div>
+              <div class="summary-tag" id="summary-gamertag">@yourtag</div>
+            </div>
           </div>
+          <div class="summary-email" id="summary-email">you@example.com</div>
+          <div class="summary-pill" id="account-pill">FREE</div>
+          <button id="sign-out-btn" class="signout-btn" type="button">Sign Out</button>
         </div>
 
-        <!-- Content -->
-        <div id="profile-content" style="display:none;">
-          <div class="profile-top-row">
-            <div class="profile-heading">
-              <div class="plan-pill">
-                <span class="plan-dot"></span>
-                <span id="profile-plan-text">Free Plan</span>
-              </div>
-              <h1 id="profile-title">Your Profile</h1>
-              <p class="profile-subtext">
-                Update your account details and gamer identity for TheGaming.co.
-              </p>
-            </div>
-            <div class="profile-actions">
-              <a href="index.html" class="back-link">
-                ← Back to Games
-              </a>
-              <button id="sign-out-btn" class="signout-btn" type="button">
-                Sign Out
-              </button>
-            </div>
-          </div>
-
-          <hr class="profile-divider">
-
-          <!-- FORM WRAPPING ALL EDITABLE FIELDS -->
-          <form id="profile-form" novalidate>
-            <div class="profile-sections">
-              <!-- ACCOUNT (read-only but inside form is fine) -->
-              <div class="section">
-                <div class="section-header">
-                  <div class="section-title">Account</div>
-                  <div class="section-note">Basic login details</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Email</div>
-                  <div id="profile-email" class="field-value">–</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">User ID</div>
-                  <div id="profile-id" class="field-value muted" style="font-size:0.8rem;">–</div>
-                </div>
-              </div>
-
-              <!-- GAMER PROFILE -->
-              <div class="section">
-                <div class="section-header">
-                  <div class="section-title">Gamer Profile</div>
-                  <div class="section-note">How your name appears in games</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Display Name</div>
-                  <input id="input-display-name" name="display_name" type="text" class="text-input" placeholder="Player">
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Gamer Tag</div>
-                  <input id="input-gamer-tag" name="gamer_tag" type="text" class="text-input" placeholder="e.g. DarkSlayer99">
-                  <div class="section-note">
-                    This is how you'll appear on leaderboards in the future.
-                  </div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Username Color</div>
-                  <div class="field-inline" style="margin-top:2px;">
-                    <div class="premium-pill">
-                      <span class="premium-dot"></span>
-                      <span>Premium Only</span>
-                    </div>
-                  </div>
-                  <div class="color-options" id="username-color-options">
-                    <button class="color-dot pink"   data-color="pink"   type="button"><span></span></button>
-                    <button class="color-dot blue"   data-color="blue"   type="button"><span></span></button>
-                    <button class="color-dot purple" data-color="purple" type="button"><span></span></button>
-                    <button class="color-dot gold"   data-color="gold"   type="button"><span></span></button>
-                  </div>
-                  <div class="section-note" style="margin-top:4px;">
-                    Unlock custom name colors with Premium later.
-                  </div>
-                </div>
-              </div>
-
-              <!-- BILLING & SUBSCRIPTION -->
-              <div class="section">
-                <div class="section-header">
-                  <div class="section-title">Billing & Subscription</div>
-                  <div class="section-note">Upgrade when you're ready</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Current Plan</div>
-                  <div id="billing-plan" class="field-value muted">Free – No card on file</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Billing Email</div>
-                  <div id="billing-email" class="field-value muted">Matches account email</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Premium Perks</div>
-                  <div class="field-value muted">
-                    Custom username colors, supporter flair, and more (planned).
-                  </div>
-                </div>
-
-                <div class="upgrade-link">
-                  Want to support the project? <a href="https://ko-fi.com/yourusername" target="_blank" rel="noopener">Buy a coffee</a> or <a href="supporters.html">join the supporters board</a>.
-                </div>
-              </div>
-
-              <!-- PERSONAL & PRIVACY -->
-              <div class="section">
-                <div class="section-header">
-                  <div class="section-title">Personal & Privacy</div>
-                  <div class="section-note">Your data, your control</div>
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Region</div>
-                  <input id="input-region" name="region" type="text" class="text-input" placeholder="e.g. Canada">
-                </div>
-
-                <div class="field-row">
-                  <div class="field-label">Data</div>
-                  <div class="field-value muted">
-                    We only store what we need to run your account and games. More controls will appear here as features roll out.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="profile-save-row">
-              <span id="profile-save-status" class="profile-save-status"></span>
-              <button id="profile-save-btn" class="save-btn" type="submit">Save Changes</button>
-            </div>
-          </form>
-
-          <div class="profile-meta">
-            <span>Signed in as <strong id="profile-email-inline">–</strong></span>
-            <span>Switch accounts by signing out and logging in with a different email.</span>
-          </div>
+        <div class="card profile-nav-card">
+          <div class="profile-nav-label">Sections</div>
+          <nav class="profile-nav" aria-label="Profile sections">
+            <button type="button" class="profile-nav-item active" data-tab="general">
+              <span class="nav-dot"></span> General
+            </button>
+            <button type="button" class="profile-nav-item" data-tab="billing">
+              <span class="nav-dot"></span> Billing
+            </button>
+            <button type="button" class="profile-nav-item" data-tab="premium">
+              <span class="nav-dot"></span> Premium
+            </button>
+          </nav>
         </div>
-      </div>
+      </aside>
+
+      <!-- RIGHT: panels -->
+      <section class="card profile-panel-card">
+        <form id="profile-form">
+          <!-- GENERAL -->
+          <div class="tab-panel active" id="panel-general">
+            <div class="section-header">
+              <h2 class="section-title">General</h2>
+            </div>
+
+            <div class="field-grid">
+              <div class="field-block-full">
+                <label class="field-label">
+                  Name
+                  <input
+                    id="display-name"
+                    type="text"
+                    class="field-input"
+                    maxlength="40"
+                    placeholder="Player One"
+                  >
+                </label>
+              </div>
+
+              <div>
+                <label class="field-label">
+                  Gamer Tag
+                  <input
+                    id="gamer-tag"
+                    type="text"
+                    class="field-input"
+                    maxlength="24"
+                    placeholder="PixelMage"
+                  >
+                </label>
+              </div>
+
+              <div>
+                <label class="field-label">
+                  Color
+                  <div class="color-row">
+                    <div id="color-preview" class="color-preview"></div>
+                    <input id="theme-color" type="color" class="color-input" value="#ff6b9d">
+                  </div>
+                </label>
+              </div>
+
+              <div class="field-block-full">
+                <label class="field-label">
+                  Bio
+                  <textarea
+                    id="bio"
+                    class="field-textarea"
+                    maxlength="240"
+                    placeholder="Quick bio (optional)"
+                  ></textarea>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- BILLING -->
+          <div class="tab-panel" id="panel-billing">
+            <div class="section-header">
+              <h2 class="section-title">Billing</h2>
+            </div>
+
+            <div class="field-grid">
+              <div class="field-block-full">
+                <label class="field-label">
+                  Email
+                  <input id="billing-email" type="email" class="field-input" readonly>
+                </label>
+              </div>
+
+              <div>
+                <label class="field-label">
+                  Status
+                  <input id="billing-status" type="text" class="field-input" readonly>
+                </label>
+              </div>
+
+              <div class="field-block-full">
+                <button type="button" class="minimal-btn" id="manage-billing-btn">
+                  Manage billing
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PREMIUM -->
+          <div class="tab-panel" id="panel-premium">
+            <div class="section-header">
+              <h2 class="section-title">Premium</h2>
+            </div>
+
+            <div class="field-grid">
+              <div>
+                <label class="field-label">
+                  Plan
+                  <input id="account-type" type="text" class="field-input" readonly>
+                </label>
+              </div>
+
+              <div>
+                <label class="field-label">
+                  Login
+                  <input id="login-method" type="text" class="field-input" readonly>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <div id="status-bar" class="status-bar"></div>
+            <button type="submit" id="save-btn" class="save-btn">Save</button>
+          </div>
+        </form>
+      </section>
     </section>
   </main>
 
+  <!-- SUPABASE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const SUPABASE_ANON_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
-    const supabaseClient = window.supabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabaseClient = supabaseClient;
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let currentUser = null;
-    let currentProfile = null;
-    let selectedUsernameColor = null;
+    // DOM refs
+    const displayNameInput   = document.getElementById('display-name');
+    const gamerTagInput      = document.getElementById('gamer-tag');
+    const themeColorInput    = document.getElementById('theme-color');
+    const colorPreview       = document.getElementById('color-preview');
+    const bioInput           = document.getElementById('bio');
+
+    const billingEmailInput  = document.getElementById('billing-email');
+    const billingStatusInput = document.getElementById('billing-status');
+    const accountTypeInput   = document.getElementById('account-type');
+    const loginMethodInput   = document.getElementById('login-method');
+
+    const avatarInitialEl    = document.getElementById('avatar-initial');
+    const summaryNameEl      = document.getElementById('summary-display-name');
+    const summaryTagEl       = document.getElementById('summary-gamertag');
+    const summaryEmailEl     = document.getElementById('summary-email');
+    const accountPillEl      = document.getElementById('account-pill');
+
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userInitialHeaderEl = document.querySelector('.user-initial');
+
+    const statusBar          = document.getElementById('status-bar');
+    const saveBtn            = document.getElementById('save-btn');
+    const signOutBtn         = document.getElementById('sign-out-btn');
+    const manageBillingBtn   = document.getElementById('manage-billing-btn');
+
+    let sessionUser = null;
+    let currentProfileRow = null;
+
+    function setStatus(msg, type = '') {
+      if (!statusBar) return;
+      statusBar.textContent = msg || '';
+      statusBar.classList.remove('error', 'success');
+      if (type) statusBar.classList.add(type);
+    }
+
+    function setSaving(isSaving) {
+      if (!saveBtn) return;
+      saveBtn.disabled = isSaving;
+      saveBtn.textContent = isSaving ? 'Saving…' : 'Save';
+    }
+
+    function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+      const base =
+        (gamer_tag && gamer_tag.trim()) ||
+        (display_name && display_name.trim()) ||
+        (user && user.email) ||
+        '';
+
+      const trimmed = base.trim();
+      if (headerUsernameLabel) {
+        if (!trimmed) {
+          headerUsernameLabel.textContent = '';
+          headerUsernameLabel.title = '';
+        } else {
+          const maxLen = 14;
+          let label = trimmed;
+          if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+          headerUsernameLabel.textContent = label;
+          headerUsernameLabel.title = trimmed;
+        }
+      }
+
+      if (userInitialHeaderEl && trimmed) {
+        userInitialHeaderEl.textContent = trimmed.charAt(0).toUpperCase();
+      }
+    }
 
     function updateAuthUI(user) {
-      const loggedOutNav  = document.querySelector('.nav-right-logged-out');
-      const loggedInNav   = document.querySelector('.nav-right-logged-in');
-      const userInitialEl = document.querySelector('.user-initial');
+      const loggedOutNav = document.querySelector('.nav-right-logged-out');
+      const loggedInNav  = document.querySelector('.nav-right-logged-in');
 
       if (user) {
         if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
         if (loggedInNav)  loggedInNav.style.setProperty('display', 'flex', 'important');
-
-        if (user.email && userInitialEl) {
-          userInitialEl.textContent = user.email.charAt(0).toUpperCase();
-        }
       } else {
         if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
         if (loggedInNav)  loggedInNav.style.setProperty('display', 'none', 'important');
       }
     }
 
-    async function loadOrCreateProfile(user) {
-      const { data, error } = await supabaseClient
+    function applyProfileToUI(profile, user) {
+      const displayName = profile.display_name || user.email.split('@')[0];
+      let gamerTag = profile.gamer_tag || '';
+
+      if (gamerTag && !gamerTag.startsWith('@')) gamerTag = '@' + gamerTag;
+
+      const color = profile.theme_color || '#ff6b9d';
+
+      // form
+      displayNameInput.value   = profile.display_name || '';
+      gamerTagInput.value      = gamerTag.replace(/^@/, '');
+      themeColorInput.value    = color;
+      colorPreview.style.background = color;
+      bioInput.value           = profile.bio || '';
+
+      // billing & premium info
+      billingEmailInput.value  = user.email;
+      billingStatusInput.value = (profile.account_type || 'free').toUpperCase();
+      accountTypeInput.value   = (profile.account_type || 'free').toUpperCase();
+      loginMethodInput.value   = user.app_metadata?.provider || 'email';
+
+      // summary
+      summaryNameEl.textContent  = displayName;
+      summaryTagEl.textContent   = gamerTag || 'No tag yet';
+      summaryEmailEl.textContent = user.email;
+
+      if (displayName) {
+        avatarInitialEl.textContent = displayName.trim().charAt(0).toUpperCase();
+      }
+
+      const type = (profile.account_type || 'free').toLowerCase();
+      accountPillEl.textContent = type === 'premium' ? 'PREMIUM' : 'FREE';
+
+      applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
+    }
+
+    async function getOrCreateProfileRow(user) {
+      const baseProfile = {
+        id: user.id,
+        email: user.email,
+        display_name: user.email.split('@')[0],
+        gamer_tag: null,
+        bio: null,
+        theme_color: '#ff6b9d',
+        account_type: 'free'
+      };
+
+      const { data, error, status } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .limit(1);
+        .single();
 
-      if (error) {
+      if (error && status !== 406) {
         console.error('Error loading profile:', error);
-        return null;
+        throw error;
       }
 
-      if (data && data.length > 0) {
-        return data[0];
-      }
+      if (data) return data;
 
-      const baseName = user.email && user.email.includes('@')
-        ? user.email.split('@')[0]
-        : 'Player';
-
-      const { data: insertData, error: insertError } = await supabaseClient
+      const { data: inserted, error: insertError } = await supabaseClient
         .from('profiles')
-        .insert({
-          id: user.id,
-          display_name: baseName,
-          plan: 'free'
-        })
-        .select('*')
-        .limit(1);
+        .insert(baseProfile)
+        .select()
+        .single();
 
       if (insertError) {
-        console.error('Error creating profile:', insertError);
-        return null;
+        console.error('Error creating profile row:', insertError);
+        throw insertError;
       }
 
-      return insertData[0];
+      return inserted;
     }
 
-    function setupColorDots(profile) {
-      const optionsContainer = document.getElementById('username-color-options');
-      const premiumPill = document.querySelector('.premium-pill');
-      if (!optionsContainer) return;
+    async function loadProfile() {
+      setStatus('Loading…');
+      setSaving(true);
 
-      const dots = Array.from(optionsContainer.querySelectorAll('.color-dot'));
-      const plan = profile?.plan || 'free';
-      selectedUsernameColor = profile?.username_color || null;
-
-      dots.forEach(dot => {
-        const color = dot.dataset.color;
-        dot.classList.remove('color-dot-active');
-
-        if (selectedUsernameColor === color) {
-          dot.classList.add('color-dot-active');
-        }
-
-        if (plan === 'premium') {
-          dot.style.opacity = '1';
-          dot.style.cursor = 'pointer';
-
-          dot.addEventListener('click', () => {
-            selectedUsernameColor = color;
-            dots.forEach(d => d.classList.remove('color-dot-active'));
-            dot.classList.add('color-dot-active');
-          });
-        } else {
-          dot.style.opacity = '0.4';
-          dot.style.cursor = 'not-allowed';
-        }
-      });
-
-      if (plan === 'premium' && premiumPill) {
-        const labelSpan = premiumPill.querySelector('span:last-child');
-        if (labelSpan) labelSpan.textContent = 'Premium Active';
-      }
-    }
-
-    function populateProfileUI(user, profile) {
-      const loadingEl      = document.getElementById('profile-loading');
-      const contentEl      = document.getElementById('profile-content');
-      const emailEl        = document.getElementById('profile-email');
-      const emailInlineEl  = document.getElementById('profile-email-inline');
-      const idEl           = document.getElementById('profile-id');
-      const displayNameIn  = document.getElementById('input-display-name');
-      const gamerTagIn     = document.getElementById('input-gamer-tag');
-      const regionIn       = document.getElementById('input-region');
-      const billingEmailEl = document.getElementById('billing-email');
-      const billingPlanEl  = document.getElementById('billing-plan');
-      const planTextEl     = document.getElementById('profile-plan-text');
-
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (contentEl) contentEl.style.display = 'block';
-
-      const email = user.email || '(no email)';
-      const id    = user.id || '-';
-
-      if (emailEl)       emailEl.textContent = email;
-      if (emailInlineEl) emailInlineEl.textContent = email;
-      if (idEl)          idEl.textContent = id;
-      if (billingEmailEl) billingEmailEl.textContent = email;
-
-      const baseName = email.includes('@') ? email.split('@')[0] : 'Player';
-
-      const displayName = profile?.display_name || baseName;
-      const gamerTag    = profile?.gamer_tag || '';
-      const region      = profile?.region || '';
-      const plan        = profile?.plan || 'free';
-
-      if (displayNameIn) displayNameIn.value = displayName;
-      if (gamerTagIn)    gamerTagIn.value    = gamerTag;
-      if (regionIn)      regionIn.value      = region;
-
-      if (billingPlanEl) {
-        billingPlanEl.textContent = plan === 'premium'
-          ? 'Premium – Billing managed externally'
-          : 'Free – No card on file';
-      }
-
-      if (planTextEl) {
-        planTextEl.textContent = plan === 'premium' ? 'Premium Plan' : 'Free Plan';
-      }
-
-      setupColorDots(profile);
-    }
-
-    async function saveProfileChanges() {
-      if (!currentUser) return;
-
-      const displayNameIn = document.getElementById('input-display-name');
-      const gamerTagIn    = document.getElementById('input-gamer-tag');
-      const regionIn      = document.getElementById('input-region');
-      const statusEl      = document.getElementById('profile-save-status');
-
-      const updates = {
-        id: currentUser.id,
-        display_name: displayNameIn?.value?.trim() || null,
-        gamer_tag: gamerTagIn?.value?.trim() || null,
-        region: regionIn?.value?.trim() || null
-      };
-
-      if (currentProfile?.plan === 'premium' && selectedUsernameColor) {
-        updates.username_color = selectedUsernameColor;
-      }
-
-      const { error } = await supabaseClient.from('profiles').upsert(updates);
+      const { data, error } = await supabaseClient.auth.getSession();
 
       if (error) {
-        console.error('Error saving profile:', error);
-        if (statusEl) {
-          statusEl.textContent = 'Could not save. Check backend (RLS/policies) and try again.';
-          statusEl.style.color = '#fca5a5';
-        }
+        console.error('getSession error:', error);
+        setSaving(false);
+        setStatus('Sign in again.', 'error');
         return;
       }
 
-      if (statusEl) {
-        statusEl.textContent = 'Saved.';
-        statusEl.style.color = '#a5f3fc';
-        setTimeout(() => {
-          statusEl.textContent = '';
-          statusEl.style.color = 'rgba(255,255,255,0.6)';
-        }, 2000);
-      }
-    }
-
-    async function initProfilePage() {
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) {
-        console.error('Error getting session:', error);
-      }
-
-      const session = data?.session || null;
-      const user = session?.user ?? null;
-
+      const user = data?.session?.user;
       if (!user) {
         window.location.href = 'login.html';
         return;
       }
 
-      currentUser = user;
+      sessionUser = user;
       updateAuthUI(user);
 
-      const profile = await loadOrCreateProfile(user);
-      currentProfile = profile || { plan: 'free' };
-
-      populateProfileUI(user, currentProfile);
-
-      const signOutBtn = document.getElementById('sign-out-btn');
-      if (signOutBtn) {
-        signOutBtn.addEventListener('click', async () => {
-          try {
-            await supabaseClient.auth.signOut();
-          } catch (err) {
-            console.error('Error signing out:', err);
-          } finally {
-            window.location.href = 'index.html';
-          }
-        });
-      }
-
-      const form = document.getElementById('profile-form');
-      if (form) {
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          await saveProfileChanges();
-        });
+      try {
+        const profile = await getOrCreateProfileRow(user);
+        currentProfileRow = profile;
+        applyProfileToUI(profile, user);
+        setStatus('');
+      } catch (err) {
+        console.error('Profile load/create failed:', err);
+        setStatus('Profile error. Check RLS/policies.', 'error');
+      } finally {
+        setSaving(false);
       }
     }
 
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
-      updateAuthUI(session?.user ?? null);
+    async function saveProfile(event) {
+      event.preventDefault();
+      if (!sessionUser) {
+        setStatus('No session. Sign in.', 'error');
+        return;
+      }
+
+      setSaving(true);
+      setStatus('Saving…');
+
+      let rawName = displayNameInput.value.trim();
+      let rawTag  = gamerTagInput.value.trim();
+      if (rawTag.startsWith('@')) rawTag = rawTag.slice(1);
+
+      const updates = {
+        display_name: rawName || null,
+        gamer_tag: rawTag || null,
+        bio: bioInput.value.trim() || null,
+        theme_color: themeColorInput.value || '#ff6b9d',
+        account_type: currentProfileRow?.account_type || 'free',
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .update(updates)
+          .eq('id', sessionUser.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Save error:', error);
+          setStatus('Could not save. Check RLS.', 'error');
+          return;
+        }
+
+        currentProfileRow = data;
+        applyProfileToUI(data, sessionUser);
+        setStatus('Saved.', 'success');
+      } catch (err) {
+        console.error('Unexpected save error:', err);
+        setStatus('Could not save. Check RLS.', 'error');
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    async function signOut() {
+      await supabaseClient.auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    // Tabs
+    function initTabs() {
+      const navItems = document.querySelectorAll('.profile-nav-item');
+      const panels   = document.querySelectorAll('.tab-panel');
+
+      navItems.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab');
+
+          navItems.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          panels.forEach(panel => {
+            panel.classList.toggle(
+              'active',
+              panel.id === 'panel-' + target
+            );
+          });
+        });
+      });
+    }
+
+    // Color preview sync
+    themeColorInput.addEventListener('input', () => {
+      colorPreview.style.background = themeColorInput.value;
     });
 
-    initProfilePage();
+    // Clear status when editing
+    [displayNameInput, gamerTagInput, bioInput, themeColorInput].forEach(el => {
+      el.addEventListener('input', () => setStatus(''));
+    });
+
+    document.getElementById('profile-form').addEventListener('submit', saveProfile);
+    if (signOutBtn) signOutBtn.addEventListener('click', signOut);
+
+    // Stripe placeholder — replace with real portal link later
+    if (manageBillingBtn) {
+      manageBillingBtn.addEventListener('click', () => {
+        alert('When you add Stripe, hook this button to your Stripe customer portal URL.');
+      });
+    }
+
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      const user = session ? session.user : null;
+      updateAuthUI(user);
+    });
+
+    initTabs();
+    loadProfile();
   </script>
 </body>
 </html>
