@@ -22,9 +22,6 @@
 
     <meta name="theme-color" content="#0a0a0f">
 
-    <!-- Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -127,6 +124,12 @@
             flex-wrap: nowrap;
         }
 
+        /* Both states hidden by default; JS or cache decides */
+        .nav-right-logged-out,
+        .nav-right-logged-in {
+            display: none;
+        }
+
         .auth-link {
             font-size: 0.85rem;
             font-weight: 600;
@@ -142,7 +145,7 @@
             color: #ffffff;
         }
 
-        /* User pill + dropdown */
+        /* User menu (logged-in state) */
         .user-menu-wrapper {
             position: relative;
         }
@@ -151,102 +154,120 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 10px;
+            padding: 4px 10px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(5, 5, 12, 0.86);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.04);
             cursor: pointer;
             font: inherit;
-            color: inherit;
+            color: #ffffff;
             outline: none;
             transition:
-                background 0.15s ease,
-                border-color 0.15s ease,
-                transform 0.1s ease;
+                background 0.2s ease,
+                transform 0.15s ease,
+                box-shadow 0.15s ease,
+                border-color 0.2s ease;
         }
 
         .user-pill:hover {
-            background: rgba(15, 15, 25, 0.96);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-1px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        }
+
+        .user-pill:focus-visible {
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.9);
+            border-color: rgba(79, 172, 254, 0.9);
         }
 
         .user-avatar {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             border-radius: 999px;
-            background: radial-gradient(circle at 30% 0%, var(--pink), var(--purple));
+            background:
+                radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+            border: 1px solid rgba(255, 255, 255, 0.24);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 700;
         }
 
-        #header-avatar-initial {
-            line-height: 1;
+        .user-avatar-initial {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
         .user-name-label {
+            font-family: 'Inter', sans-serif;
             font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
             color: rgba(255, 255, 255, 0.9);
-            max-width: 160px;
+            max-width: 140px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-transform: none;
         }
 
-        .user-chevron {
-            font-size: 0.6rem;
+        .user-caret {
+            font-size: 0.7rem;
             opacity: 0.7;
+            transform-origin: center;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .user-menu-wrapper.open .user-caret {
+            transform: rotate(180deg);
+            opacity: 1;
         }
 
         .user-menu {
             position: absolute;
             right: 0;
-            top: 110%;
-            min-width: 170px;
+            top: calc(100% + 8px);
+            min-width: 160px;
             background: rgba(5, 5, 12, 0.98);
-            border-radius: 14px;
-            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 6px;
-            display: none;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            z-index: 200;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+            padding: 6px 0;
+            opacity: 0;
+            transform: translateY(-6px);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 120;
         }
 
-        .user-menu.open {
-            display: block;
+        .user-menu-wrapper.open .user-menu {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
         .user-menu-item {
             width: 100%;
-            text-align: left;
-            padding: 8px 10px;
-            border-radius: 10px;
-            border: none;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.8);
+            padding: 8px 14px;
             font-size: 0.85rem;
-            font-weight: 500;
-            letter-spacing: 0.03em;
+            color: rgba(255, 255, 255, 0.88);
+            text-align: left;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
-            display: block;
         }
 
         .user-menu-item:hover {
             background: rgba(255, 255, 255, 0.06);
         }
 
-        .user-menu-signout {
-            color: rgba(255, 189, 189, 0.95);
-        }
-
-        .nav-right-logged-in {
-            display: none; /* default hidden, JS will flip this */
+        .user-menu-item:focus-visible {
+            outline: none;
+            background: rgba(79, 172, 254, 0.16);
         }
 
         /* ========== HERO SECTION ========== */
@@ -1224,7 +1245,6 @@
             .nav-inner {
                 max-width: 100%;
                 gap: 12px;
-                /* keep 3-column grid so logo stays centered */
                 grid-template-columns: 1fr auto 1fr;
             }
 
@@ -1241,10 +1261,6 @@
 
             .user-name-label {
                 max-width: 120px;
-            }
-
-            .user-pill {
-                padding: 5px 8px;
             }
         }
 
@@ -1292,7 +1308,7 @@
         <nav class="nav-inner" aria-label="Main navigation">
             <div class="nav-left"></div>
 
-            <!-- Logo sends you to root, not /index.html -->
+            <!-- Logo goes to root / -->
             <a href="/" class="header-logo">THEGAMING.CO</a>
 
             <div class="nav-right-wrapper">
@@ -1304,30 +1320,17 @@
                 <!-- Logged IN -->
                 <div class="header-actions nav-right-logged-in">
                     <div class="user-menu-wrapper">
-                        <button
-                            class="user-pill"
-                            id="user-pill"
-                            type="button"
-                            aria-haspopup="true"
-                            aria-expanded="false"
-                        >
+                        <button class="user-pill" type="button" aria-haspopup="true" aria-expanded="false">
                             <div class="user-avatar">
-                                <span id="header-avatar-initial">P</span>
+                                <span class="user-avatar-initial">P</span>
                             </div>
                             <span class="user-name-label" id="header-username-label"></span>
-                            <span class="user-chevron">▾</span>
+                            <span class="user-caret">▾</span>
                         </button>
 
-                        <div class="user-menu" id="user-menu" role="menu">
-                            <a href="profile.html" class="user-menu-item" role="menuitem">
-                                Profile
-                            </a>
-                            <button
-                                class="user-menu-item user-menu-signout"
-                                type="button"
-                                id="header-signout-btn"
-                                role="menuitem"
-                            >
+                        <div class="user-menu" role="menu">
+                            <a href="profile.html" class="user-menu-item" role="menuitem">Profile</a>
+                            <button type="button" class="user-menu-item" role="menuitem" id="user-menu-signout">
                                 Sign Out
                             </button>
                         </div>
@@ -1371,7 +1374,7 @@
                     <h2>SOLO</h2>
                     <p class="panel-players">1 PLAYER</p>
                     <p class="panel-desc">
-                        Master your skills with solo games, aim trainers, memory drills, and logic puzzles.
+                        Master your skills: solo games, aim trainers, memory drills, and logic puzzles.
                     </p>
                     <button class="panel-cta" type="button">Play Now →</button>
                     <p class="panel-games">Aim • Memory • Logic</p>
@@ -1570,52 +1573,81 @@
         </div>
     </footer>
 
+    <!-- SUPABASE + AUTH / HEADER LOGIC -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
       const SUPABASE_ANON_KEY =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      window.supabaseClient = supabaseClient;
 
-      const loggedOutNav = document.querySelector('.nav-right-logged-out');
-      const loggedInNav  = document.querySelector('.nav-right-logged-in');
-
+      const navLoggedOut = document.querySelector('.nav-right-logged-out');
+      const navLoggedIn  = document.querySelector('.nav-right-logged-in');
       const headerUsernameLabel = document.getElementById('header-username-label');
-      const headerAvatarInitial = document.getElementById('header-avatar-initial');
-      const userPill            = document.getElementById('user-pill');
-      const userMenu            = document.getElementById('user-menu');
-      const headerSignOutBtn    = document.getElementById('header-signout-btn');
+      const userAvatarInitialEl = document.querySelector('.user-avatar-initial');
+      const userMenuWrapper = document.querySelector('.user-menu-wrapper');
+      const userMenuToggle  = userMenuWrapper?.querySelector('.user-pill');
+      const userMenu        = userMenuWrapper?.querySelector('.user-menu');
+      const signOutBtn      = document.getElementById('user-menu-signout');
+
+      function updateAuthUI(user) {
+        if (user) {
+          if (navLoggedOut) navLoggedOut.style.display = 'none';
+          if (navLoggedIn)  navLoggedIn.style.display  = 'flex';
+        } else {
+          if (navLoggedOut) navLoggedOut.style.display = 'flex';
+          if (navLoggedIn)  navLoggedIn.style.display  = 'none';
+
+          if (headerUsernameLabel) {
+            headerUsernameLabel.textContent = '';
+            headerUsernameLabel.title = '';
+          }
+          if (userAvatarInitialEl) {
+            userAvatarInitialEl.textContent = 'P';
+          }
+        }
+      }
 
       function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+        const metaName =
+          (user && user.user_metadata && user.user_metadata.display_name) || null;
+
         const base =
-          (display_name && display_name.trim()) ||
           (gamer_tag && gamer_tag.trim()) ||
-          (user && user.email) ||
+          (display_name && display_name.trim()) ||
+          (metaName && metaName.trim()) ||
+          (user && user.email && user.email.split('@')[0]) ||
           '';
 
         const trimmed = base.trim();
-        if (!trimmed) return;
+        if (!trimmed) {
+          if (headerUsernameLabel) {
+            headerUsernameLabel.textContent = '';
+            headerUsernameLabel.title = '';
+          }
+          if (userAvatarInitialEl) {
+            userAvatarInitialEl.textContent = 'P';
+          }
+          try {
+            localStorage.removeItem('tgco_header_full');
+            localStorage.removeItem('tgco_header_label');
+          } catch (e) {}
+          return;
+        }
 
-        const maxLen = 14;
+        const maxLen = 16;
         let label = trimmed;
-        if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+        if (label.length > maxLen) {
+          label = label.slice(0, maxLen - 1) + '…';
+        }
 
         if (headerUsernameLabel) {
           headerUsernameLabel.textContent = label;
           headerUsernameLabel.title = trimmed;
         }
-
-        // Avatar initial prefers display name, then email prefix
-        let forInitial = '';
-        if (display_name && display_name.trim()) {
-          forInitial = display_name.trim();
-        } else if (user && user.email) {
-          forInitial = user.email.split('@')[0];
-        }
-
-        if (headerAvatarInitial && forInitial) {
-          headerAvatarInitial.textContent = forInitial.charAt(0).toUpperCase();
+        if (userAvatarInitialEl) {
+          userAvatarInitialEl.textContent = trimmed.charAt(0).toUpperCase() || 'P';
         }
 
         try {
@@ -1626,122 +1658,141 @@
         }
       }
 
-      async function loadHeaderProfile(user) {
-        if (!user) return;
+      function primeHeaderFromCache() {
+        try {
+          const cachedLabel = localStorage.getItem('tgco_header_label');
+          const cachedFull  = localStorage.getItem('tgco_header_full');
+
+          if (cachedLabel && cachedFull) {
+            if (headerUsernameLabel) {
+              headerUsernameLabel.textContent = cachedLabel;
+              headerUsernameLabel.title = cachedFull;
+            }
+            if (userAvatarInitialEl) {
+              userAvatarInitialEl.textContent = cachedFull.charAt(0).toUpperCase() || 'P';
+            }
+            if (navLoggedOut && navLoggedIn) {
+              navLoggedOut.style.display = 'none';
+              navLoggedIn.style.display  = 'flex';
+            }
+          } else {
+            if (navLoggedOut && navLoggedIn) {
+              navLoggedOut.style.display = 'flex';
+              navLoggedIn.style.display  = 'none';
+            }
+          }
+        } catch (e) {
+          if (navLoggedOut && navLoggedIn) {
+            navLoggedOut.style.display = 'flex';
+            navLoggedIn.style.display  = 'none';
+          }
+        }
+      }
+
+      primeHeaderFromCache();
+
+      async function loadSessionAndProfile() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          console.error('getSession error:', error);
+          updateAuthUI(null);
+          return;
+        }
+
+        const user = data?.session?.user ?? null;
+        if (!user) {
+          updateAuthUI(null);
+          try {
+            localStorage.removeItem('tgco_header_full');
+            localStorage.removeItem('tgco_header_label');
+          } catch (e) {}
+          return;
+        }
+
+        updateAuthUI(user);
 
         try {
-          const { data, error } = await supabaseClient
+          const { data: profile, error: profileError, status } = await supabaseClient
             .from('profiles')
             .select('display_name, gamer_tag')
             .eq('id', user.id)
             .single();
 
-          if (!error && data) {
-            applyHeaderNameFromProfile(data.display_name, data.gamer_tag, user);
-          } else {
-            applyHeaderNameFromProfile(null, null, user);
+          if (profileError && status !== 406) {
+            console.warn('Profile fetch error:', profileError);
           }
+
+          applyHeaderNameFromProfile(
+            profile?.display_name ?? null,
+            profile?.gamer_tag ?? null,
+            user
+          );
+        } catch (err) {
+          console.error('Profile fetch unexpected error:', err);
+          applyHeaderNameFromProfile(null, null, user);
+        }
+      }
+
+      async function signOut() {
+        try {
+          await supabaseClient.auth.signOut();
         } catch (e) {
-          console.error('Header profile load error:', e);
-          applyHeaderNameFromProfile(null, null, user);
+          console.error('Sign-out error:', e);
         }
+        try {
+          localStorage.removeItem('tgco_header_full');
+          localStorage.removeItem('tgco_header_label');
+        } catch (e) {}
+        window.location.href = '/';
       }
 
-      function updateAuthUI(user) {
-        if (user) {
-          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
-          if (loggedInNav)  loggedInNav.style.setProperty('display', 'flex', 'important');
-
-          // Quick fallback to email
-          applyHeaderNameFromProfile(null, null, user);
-          // Then refine with profile if it exists
-          loadHeaderProfile(user);
-        } else {
-          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-          if (loggedInNav)  loggedInNav.style.setProperty('display', 'none', 'important');
-        }
+      if (signOutBtn) {
+        signOutBtn.addEventListener('click', signOut);
       }
 
-      // Session on page load
-      (async () => {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        updateAuthUI(session?.user ?? null);
-      })();
-
-      // React to future auth changes
-      supabaseClient.auth.onAuthStateChange((_event, session) => {
-        updateAuthUI(session?.user ?? null);
-      });
-
-      // Dropdown logic
-      function closeUserMenu() {
-        if (!userMenu || !userPill) return;
-        userMenu.classList.remove('open');
-        userPill.setAttribute('aria-expanded', 'false');
-      }
-
-      function toggleUserMenu() {
-        if (!userMenu || !userPill) return;
-        const isOpen = userMenu.classList.contains('open');
-        if (isOpen) {
-          closeUserMenu();
-        } else {
-          userMenu.classList.add('open');
-          userPill.setAttribute('aria-expanded', 'true');
-        }
-      }
-
-      if (userPill) {
-        userPill.addEventListener('click', (event) => {
+      if (userMenuToggle && userMenuWrapper) {
+        userMenuToggle.addEventListener('click', (event) => {
           event.stopPropagation();
-          toggleUserMenu();
+          const isOpen = userMenuWrapper.classList.contains('open');
+          userMenuWrapper.classList.toggle('open', !isOpen);
+          userMenuToggle.setAttribute('aria-expanded', String(!isOpen));
         });
       }
 
       document.addEventListener('click', (event) => {
-        if (!userMenu || !userPill) return;
-        if (!userMenu.classList.contains('open')) return;
-
-        if (!userMenu.contains(event.target) && !userPill.contains(event.target)) {
-          closeUserMenu();
+        if (!userMenuWrapper) return;
+        if (!userMenuWrapper.contains(event.target)) {
+          userMenuWrapper.classList.remove('open');
+          if (userMenuToggle) {
+            userMenuToggle.setAttribute('aria-expanded', 'false');
+          }
         }
       });
 
       document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          closeUserMenu();
+        if (event.key === 'Escape' && userMenuWrapper && userMenuWrapper.classList.contains('open')) {
+          userMenuWrapper.classList.remove('open');
+          if (userMenuToggle) {
+            userMenuToggle.setAttribute('aria-expanded', 'false');
+            userMenuToggle.focus();
+          }
         }
       });
 
-      async function handleHeaderSignOut() {
-        try {
-          await supabaseClient.auth.signOut();
-        } catch (e) {
-          console.error('Sign out error:', e);
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        const user = session?.user ?? null;
+        updateAuthUI(user);
+        if (user) {
+          loadSessionAndProfile();
+        } else {
+          try {
+            localStorage.removeItem('tgco_header_full');
+            localStorage.removeItem('tgco_header_label');
+          } catch (e) {}
         }
+      });
 
-        try {
-          localStorage.removeItem('tgco_header_label');
-          localStorage.removeItem('tgco_header_full');
-        } catch (e) {
-          // ignore
-        }
-
-        window.location.href = '/';
-      }
-
-      if (headerSignOutBtn) {
-        headerSignOutBtn.addEventListener('click', handleHeaderSignOut);
-      }
-
-      // Optional helper if you ever want to scroll from a header button
-      function scrollToSupport() {
-        const el = document.querySelector('.support-section');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-      window.scrollToSupport = scrollToSupport;
+      loadSessionAndProfile();
     </script>
 </body>
 </html>
