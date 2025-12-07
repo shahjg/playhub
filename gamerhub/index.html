@@ -29,7 +29,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* ========== RESET ========== */
+        /* CSS REMAINS UNCHANGED */
         * {
             margin: 0;
             padding: 0;
@@ -127,12 +127,6 @@
             flex-wrap: nowrap;
         }
 
-        /* hide both until JS decides, to avoid flicker */
-        .nav-right-logged-out,
-        .nav-right-logged-in {
-            display: none;
-        }
-
         .auth-link {
             font-size: 0.85rem;
             font-weight: 600;
@@ -148,21 +142,34 @@
             color: #ffffff;
         }
 
-        /* header profile label (matches profile.html) */
-        .user-header-link {
+        .user-pill {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.2s ease;
         }
 
-        .user-name-label {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.9);
-            max-width: 160px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-transform: none;
+        .user-pill:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .user-initial {
+            text-transform: uppercase;
+        }
+
+        .nav-right-logged-in {
+            display: none; /* default hidden, JS will flip this */
         }
 
         /* ========== HERO SECTION ========== */
@@ -1140,6 +1147,7 @@
             .nav-inner {
                 max-width: 100%;
                 gap: 12px;
+                /* keep 3-column grid so logo stays centered */
                 grid-template-columns: 1fr auto 1fr;
             }
 
@@ -1152,10 +1160,6 @@
 
             .header-actions {
                 gap: 10px;
-            }
-
-            .user-name-label {
-                max-width: 120px;
             }
         }
 
@@ -1203,18 +1207,19 @@
         <nav class="nav-inner" aria-label="Main navigation">
             <div class="nav-left"></div>
 
-            <a href="index.html" class="header-logo">THEGAMING.CO</a>
+            <!-- 🔹 Changed href from "index.html" to "/" -->
+            <a href="/" class="header-logo">THEGAMING.CO</a>
 
             <div class="nav-right-wrapper">
-                <!-- Logged OUT -->
                 <div class="header-actions nav-right-logged-out">
                     <a href="login.html" class="auth-link">Sign In</a>
                 </div>
 
-                <!-- Logged IN -->
                 <div class="header-actions nav-right-logged-in">
-                    <a href="profile.html" class="auth-link user-header-link">
-                        <span class="user-name-label" id="header-username-label"></span>
+                    <a href="profile.html" class="auth-link" style="display:flex; align-items:center;">
+                        <button class="user-pill" type="button" aria-label="Account">
+                            <span class="user-initial">S</span>
+                        </button>
                     </a>
                 </div>
             </div>
@@ -1456,57 +1461,27 @@
 
     <script>
       const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-      const SUPABASE_ANON_KEY =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
       // Create Supabase client (anon key is safe for frontend; never use service_role here)
       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      window.supabaseClient = supabaseClient; // so other pages can reuse it if needed
-
-      // 🔹 Try to prime the header from what profile.html saved in localStorage
-      (function primeHeaderFromCache() {
-        try {
-          const cachedLabel = localStorage.getItem('tgco_header_label');
-          const cachedFull  = localStorage.getItem('tgco_header_full');
-
-          const nameEl       = document.getElementById('header-username-label');
-          const loggedOutNav = document.querySelector('.nav-right-logged-out');
-          const loggedInNav  = document.querySelector('.nav-right-logged-in');
-
-          if (cachedLabel && cachedFull && nameEl && loggedOutNav && loggedInNav) {
-            nameEl.textContent = cachedLabel;
-            nameEl.title = cachedFull;
-            loggedOutNav.style.display = 'none';
-            loggedInNav.style.display = 'flex';
-          }
-        } catch (e) {
-          // ignore cache errors
-        }
-      })();
+      window.supabaseClient = supabaseClient; // so login.html / profile.html can reuse it
 
       function updateAuthUI(user) {
-        const loggedOutNav = document.querySelector('.nav-right-logged-out');
-        const loggedInNav  = document.querySelector('.nav-right-logged-in');
-        const nameEl       = document.getElementById('header-username-label');
+        const loggedOutNav  = document.querySelector('.nav-right-logged-out');
+        const loggedInNav   = document.querySelector('.nav-right-logged-in');
+        const userInitialEl = document.querySelector('.user-initial');
 
         if (user) {
-          // Show logged-in section, hide "Sign In"
+          // Logged in
           if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
           if (loggedInNav)  loggedInNav.style.setProperty('display', 'flex', 'important');
 
-          // Fallback: if no cached profile label yet, use email prefix
-          if (nameEl && !nameEl.textContent && user.email) {
-            const base    = user.email.split('@')[0] || user.email;
-            const trimmed = base.trim();
-            const maxLen  = 14;
-            let label     = trimmed;
-            if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
-
-            nameEl.textContent = label;
-            nameEl.title = trimmed;
+          if (user.email && userInitialEl) {
+            userInitialEl.textContent = user.email.charAt(0).toUpperCase();
           }
         } else {
-          // Logged out – show "Sign In" and hide profile label
+          // Logged out
           if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
           if (loggedInNav)  loggedInNav.style.setProperty('display', 'none', 'important');
         }
