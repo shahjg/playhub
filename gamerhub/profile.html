@@ -454,6 +454,17 @@
     .minimal-btn:hover { background: rgba(255, 255, 255, 0.08); }
 
     /* Premium layout */
+    .premium-shell {
+      margin-top: 4px;
+      padding: 14px 14px 12px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255,107,157,0.32), transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(79,172,254,0.28), transparent 60%),
+        rgba(8, 8, 16, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
     .premium-grid {
       display: flex;
       flex-direction: column;
@@ -502,6 +513,17 @@
       border: 1px solid rgba(255, 255, 255, 0.25);
       padding: 3px 8px;
       color: rgba(255, 255, 255, 0.75);
+    }
+
+    .premium-cta-row {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .premium-cta-btn {
+      font-size: 0.8rem;
+      padding-inline: 18px;
     }
 
     /* RESPONSIVE DESKTOP → TABLET */
@@ -568,6 +590,19 @@
       }
 
       .save-btn {
+        width: 100%;
+        text-align: center;
+      }
+
+      .premium-shell {
+        padding: 12px;
+      }
+
+      .premium-cta-row {
+        justify-content: stretch;
+      }
+
+      .premium-cta-btn {
         width: 100%;
         text-align: center;
       }
@@ -703,49 +738,57 @@
               <h2 class="section-title">Premium</h2>
             </div>
 
-            <div class="premium-grid">
-              <div class="premium-plan-pill" id="premium-plan-pill">Free plan</div>
-              <p class="premium-note">
-                Premium unlocks deeper customization for your name, flair, and how your name shows up in lobbies.
-              </p>
+            <div class="premium-shell">
+              <div class="premium-grid">
+                <div class="premium-plan-pill" id="premium-plan-pill">Free plan</div>
+                <p class="premium-note">
+                  Premium unlocks deeper customization for your name, flair, and how your name shows up in lobbies.
+                </p>
 
-              <div class="premium-feature-row">
-                <div class="premium-feature-label">Name color</div>
-                <div class="premium-feature-control">
-                  <div class="color-row">
-                    <div id="color-preview" class="color-preview"></div>
-                    <!-- locked to premium in JS; default color still used for avatar/accent -->
-                    <input id="theme-color" type="color" class="color-input" value="#ff6b9d" disabled />
+                <div class="premium-feature-row">
+                  <div class="premium-feature-label">Name color</div>
+                  <div class="premium-feature-control">
+                    <div class="color-row">
+                      <div id="color-preview" class="color-preview"></div>
+                      <!-- locked to premium in JS; default color still used for avatar/accent -->
+                      <input id="theme-color" type="color" class="color-input" value="#ff6b9d" disabled />
+                    </div>
+                    <span class="premium-lock-tag">Premium feature</span>
                   </div>
-                  <span class="premium-lock-tag">Premium feature</span>
+                </div>
+
+                <div class="premium-feature-row">
+                  <div class="premium-feature-label">Profile flair</div>
+                  <div class="premium-feature-control">
+                    <input
+                      type="text"
+                      class="field-input"
+                      placeholder="✨ Example: Chaos curator"
+                      disabled
+                    />
+                    <span class="premium-lock-tag">Premium feature</span>
+                  </div>
+                </div>
+
+                <div class="premium-feature-row">
+                  <div class="premium-feature-label">Lobby nameplate</div>
+                  <div class="premium-feature-control">
+                    <select class="field-input" disabled>
+                      <option>Default dark</option>
+                      <option>Neon grid</option>
+                      <option>Arcade haze</option>
+                      <option>Gold spotlight</option>
+                      <option>Frosted glass</option>
+                    </select>
+                    <span class="premium-lock-tag">Premium feature</span>
+                  </div>
                 </div>
               </div>
 
-              <div class="premium-feature-row">
-                <div class="premium-feature-label">Profile flair</div>
-                <div class="premium-feature-control">
-                  <input
-                    type="text"
-                    class="field-input"
-                    placeholder="✨ Example: Chaos curator"
-                    disabled
-                  />
-                  <span class="premium-lock-tag">Premium feature</span>
-                </div>
-              </div>
-
-              <div class="premium-feature-row">
-                <div class="premium-feature-label">Lobby nameplate</div>
-                <div class="premium-feature-control">
-                  <select class="field-input" disabled>
-                    <option>Default dark</option>
-                    <option>Neon grid</option>
-                    <option>Arcade haze</option>
-                    <option>Gold spotlight</option>
-                    <option>Frosted glass</option>
-                  </select>
-                  <span class="premium-lock-tag">Premium feature</span>
-                </div>
+              <div class="premium-cta-row">
+                <button type="button" class="save-btn premium-cta-btn">
+                  Unlock premium (soon)
+                </button>
               </div>
             </div>
           </div>
@@ -827,34 +870,38 @@
       saveBtn.textContent = isSaving ? 'Saving…' : 'Save';
     }
 
+    // 🔹 Header: show ONLY gamer tag (as @tag). No email/display fallback.
     function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
-      const base =
-        (gamer_tag && gamer_tag.trim()) ||
-        (display_name && display_name.trim()) ||
-        (user && user.email) ||
-        '';
+      const rawTag = (gamer_tag || '').trim();
 
-      const trimmed = base.trim();
-      if (!trimmed) {
+      // if there is no gamer tag, clear + remove cache
+      if (!rawTag) {
         if (headerUsernameLabel) {
           headerUsernameLabel.textContent = '';
           headerUsernameLabel.title = '';
         }
+        try {
+          localStorage.removeItem('tgco_header_full');
+          localStorage.removeItem('tgco_header_label');
+        } catch (e) {
+          // ignore
+        }
         return;
       }
 
+      const fullTag = rawTag.startsWith('@') ? rawTag : '@' + rawTag;
       const maxLen = 14;
-      let label = trimmed;
+      let label = fullTag;
       if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
 
       if (headerUsernameLabel) {
         headerUsernameLabel.textContent = label;
-        headerUsernameLabel.title = trimmed;
+        headerUsernameLabel.title = fullTag;
       }
 
       // cache for instant load between pages
       try {
-        localStorage.setItem('tgco_header_full', trimmed);
+        localStorage.setItem('tgco_header_full', fullTag);
         localStorage.setItem('tgco_header_label', label);
       } catch (e) {
         // ignore
@@ -906,7 +953,7 @@
       // billing
       billingEmailInput.value = email;
 
-      // header
+      // header: only gamer tag
       applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
     }
 
