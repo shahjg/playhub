@@ -1,1126 +1,1716 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TheGaming.co – Date Night & Party Games</title>
-  <meta
-    name="description"
-    content="TheGaming.co – text-based date night and party games for couples, friends, and squads. No apps, just questions, dares, and chaos."
-  />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet"
-  />
-
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --pink: #ff6b9d;
-      --pink-dark: #c44569;
-      --pink-light: #ffd2e3;
-      --blue: #4facfe;
-      --purple: #a445b2;
-      --dark: #0a0a0f;
-      --card-bg: rgba(10, 10, 18, 0.98);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --text-muted: rgba(255, 255, 255, 0.6);
-      --text-softer: rgba(255, 255, 255, 0.45);
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 107, 157, 0.22), transparent 55%),
-        radial-gradient(circle at 100% 0%, rgba(79, 172, 254, 0.18), transparent 55%),
-        radial-gradient(circle at 50% 100%, rgba(164, 69, 178, 0.25), transparent 60%),
-        var(--dark);
-      color: #fff;
-      overflow-x: hidden;
-      min-height: 100vh;
-    }
-
-    h1, h2, h3 {
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 1px;
-    }
-
-    a { color: inherit; text-decoration: none; }
-
-    /* HEADER */
-    header {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      padding: 14px 18px;
-      background: rgba(10, 10, 15, 0.86);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .nav-inner {
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 24px;
-    }
-
-    .nav-left {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      font-size: 0.78rem;
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
-    }
-
-    .nav-link {
-      color: rgba(255, 255, 255, 0.70);
-      padding-bottom: 2px;
-    }
-
-    .nav-link:hover {
-      color: #fff;
-    }
-
-    .support-pill {
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      padding: 5px 10px;
-      font-size: 0.76rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .support-pill-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: radial-gradient(circle, var(--pink), var(--purple));
-      box-shadow: 0 0 8px rgba(255, 107, 157, 0.7);
-    }
-
-    .support-pill:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .nav-right-wrapper { justify-self: flex-end; }
-
-    .header-logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.6rem;
-      letter-spacing: 4px;
-      color: white;
-      text-decoration: none;
-      position: relative;
-      white-space: nowrap;
-      justify-self: center;
-    }
-
-    .header-logo::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: nowrap;
-      justify-content: flex-end;
-    }
-
-    /* hide both until JS decides, to avoid flicker */
-    .nav-right-logged-out,
-    .nav-right-logged-in {
-      display: none;
-    }
-
-    .auth-link {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.75);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      transition: color 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .auth-link:hover { color: #fff; }
-
-    /* USER PILL + DROPDOWN (same as profile) */
-    .user-menu-wrapper {
-      position: relative;
-    }
-
-    .user-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px 4px 6px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.04);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .user-pill:hover {
-      background: rgba(255, 255, 255, 0.08);
-      transform: translateY(-1px);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
-    }
-
-    .user-pill-avatar {
-      width: 26px;
-      height: 26px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .user-pill-initial {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.1rem;
-      letter-spacing: 1px;
-      color: #ffffff;
-    }
-
-    .user-pill-label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      max-width: 150px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .user-pill-caret {
-      font-size: 0.7rem;
-      opacity: 0.7;
-      margin-left: 2px;
-    }
-
-    .user-menu {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 8px;
-      min-width: 170px;
-      padding: 6px;
-      border-radius: 14px;
-      background: rgba(10, 10, 15, 0.97);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.8);
-      opacity: 0;
-      transform: translateY(-4px);
-      pointer-events: none;
-      transition: opacity 0.15s ease, transform 0.15s ease;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      z-index: 120;
-    }
-
-    .user-menu.open {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
-    .user-menu-item {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 9px;
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.9);
-      background: none;
-      border: none;
-      text-align: left;
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .user-menu-item:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .user-menu-item span {
-      flex: 1;
-    }
-
-    /* HERO */
-    .page-shell {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 96px 18px 40px;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-      gap: 26px;
-      align-items: center;
-      margin-top: 12px;
-      margin-bottom: 40px;
-    }
-
-    .hero-kicker {
-      font-size: 0.8rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 8px;
-    }
-
-    .hero-title {
-      font-size: 2.7rem;
-      line-height: 1;
-      margin-bottom: 10px;
-    }
-
-    .hero-gradient-text {
-      background: linear-gradient(120deg, #ffffff, var(--pink-light), #ffe4ff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .hero-subtitle {
-      font-size: 0.98rem;
-      color: rgba(255, 255, 255, 0.78);
-      max-width: 430px;
-      line-height: 1.6;
-      margin-bottom: 14px;
-    }
-
-    .hero-meta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 16px;
-      font-size: 0.83rem;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .meta-pill {
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 4px 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .meta-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: var(--pink);
-    }
-
-    .hero-cta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .hero-cta-primary {
-      border-radius: 999px;
-      border: none;
-      background: linear-gradient(135deg, var(--pink), var(--purple));
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.9rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      padding: 10px 20px;
-      cursor: pointer;
-      box-shadow: 0 14px 40px rgba(255, 107, 157, 0.65);
-    }
-
-    .hero-cta-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 18px 50px rgba(255, 107, 157, 0.8);
-    }
-
-    .hero-cta-secondary {
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .hero-cta-secondary span {
-      text-decoration: underline;
-      text-decoration-style: dotted;
-    }
-
-    /* MODE GRID */
-    .mode-grid-wrapper {
-      margin-top: 10px;
-    }
-
-    .section-kicker {
-      font-size: 0.8rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 6px;
-    }
-
-    .section-title {
-      font-size: 1.7rem;
-      margin-bottom: 16px;
-    }
-
-    .mode-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .mode-card {
-      position: relative;
-      border-radius: 18px;
-      padding: 14px 14px 13px;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
-        rgba(7, 7, 15, 0.98);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.7);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      cursor: default;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-    }
-
-    .mode-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
-      border-color: rgba(255, 255, 255, 0.18);
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 107, 157, 0.22), transparent 55%),
-        rgba(7, 7, 15, 0.98);
-    }
-
-    .mode-pill-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.7rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .mode-tag-pill {
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      padding: 3px 8px;
-      font-size: 0.7rem;
-    }
-
-    .mode-name-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 10px;
-    }
-
-    .mode-name {
-      font-size: 1.4rem;
-    }
-
-    .mode-meta {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .mode-desc {
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.78);
-      line-height: 1.5;
-      min-height: 2.3em;
-    }
-
-    .mode-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.72rem;
-      color: var(--text-softer);
-      margin-top: 4px;
-    }
-
-    .mode-tags {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .mode-tag {
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .mode-cta {
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      opacity: 0.8;
-    }
-
-    /* HOW IT WORKS */
-    .how-it-works {
-      margin-top: 40px;
-      padding: 16px 16px 18px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.10), transparent 55%),
-        rgba(7, 7, 15, 0.98);
-      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.7);
-    }
-
-    .how-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      font-size: 0.9rem;
-    }
-
-    .how-step-title {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .how-step-text {
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* FOOTER */
-    footer {
-      padding: 22px 18px 28px;
-      margin-top: 40px;
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(3, 3, 8, 0.9);
-    }
-
-    .footer-shell {
-      max-width: 1100px;
-      margin: 0 auto;
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.72);
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 900px) {
-      .hero {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .hero {
-        margin-top: 4px;
-      }
-      .mode-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .how-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 700px) {
-      .nav-inner {
-        grid-template-columns: auto 1fr auto;
-        gap: 10px;
-      }
-      .nav-left {
-        display: none;
-      }
-      .header-logo {
-        font-size: 1.4rem;
-        letter-spacing: 3px;
-        text-align: center;
-      }
-      .page-shell {
-        padding-top: 90px;
-      }
-      .hero {
-        margin-top: 0;
-      }
-      .mode-grid {
-        grid-template-columns: 1fr;
-      }
-      .how-grid {
-        grid-template-columns: 1fr;
-      }
-      .user-pill-label {
-        max-width: 110px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .hero-title {
-        font-size: 2.3rem;
-      }
-      .user-pill-label {
-        max-width: 90px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Party Games, Trivia & Tests – TheGaming.co</title>
+    <meta name="description" content="Play free party games, date-night questions, squad games, and massive live trivia for 1–100+ players. No downloads, no sign-ups — just instant fun in your browser.">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="https://thegaming.co/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Free Party Games, Trivia & Tests – TheGaming.co">
+    <meta property="og:description" content="Free social games for solo players, couples, squads, and massive parties. Play together anywhere, right in your browser.">
+    <meta property="og:url" content="https://thegaming.co/">
+    <meta property="og:site_name" content="TheGaming.co">
+    <meta property="og:image" content="https://thegaming.co/og-image.jpg">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Free Party Games, Trivia & Tests – TheGaming.co">
+    <meta name="twitter:description" content="Free social games for solo players, couples, squads, and massive parties.">
+    <meta name="twitter:image" content="https://thegaming.co/og-image.jpg">
+
+    <meta name="theme-color" content="#0a0a0f">
+
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --pink: #ff6b9d;
+            --pink-dark: #c44569;
+            --blue: #4facfe;
+            --blue-dark: #0077cc;
+            --purple: #a445b2;
+            --purple-dark: #7a1052;
+            --gold: #ffd700;
+            --dark: #0a0a0f;
+            --teal: #00f2fe;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.88);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-inner {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-left {
+            justify-self: flex-start;
+        }
+
+        .nav-right-wrapper {
+            justify-self: flex-end;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 4px;
+            color: white;
+            text-decoration: none;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .header-logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: nowrap;
+        }
+
+        .auth-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            white-space: nowrap;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+        }
+
+        .auth-link:hover {
+            color: #ffffff;
+        }
+
+        /* hide logged-in by default; JS will flip */
+        .nav-right-logged-in {
+            display: none;
+        }
+
+        /* ======= USER MENU (logged in) ======= */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.04);
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: none;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .user-menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-menu-name {
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-menu-caret {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .user-menu-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 140px;
+            padding: 6px;
+            border-radius: 12px;
+            background: rgba(6, 6, 12, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            display: none;
+            z-index: 200;
+        }
+
+        .user-menu.open .user-menu-dropdown {
+            display: block;
+        }
+
+        .user-menu-item {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.8rem;
+            padding: 7px 8px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            display: block;
+            text-decoration: none;
+        }
+
+        .user-menu-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* ========== HERO SECTION ========== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 80px 20px 40px; /* top padding to clear fixed header */
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 107, 157, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(79, 172, 254, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(164, 69, 178, 0.1) 0%, transparent 50%);
+            animation: gradientShift 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(3deg); }
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 2.5s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 1.5s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 4.5s; }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 900px;
+            margin-top: 40px;
+        }
+
+        .hero-tagline {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            font-size: clamp(3.2rem, 8vw, 5rem);
+            line-height: 1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-players {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 3px;
+            margin-bottom: 35px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .hero-players span {
+            background: linear-gradient(90deg, var(--pink), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .free-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
+            padding: 16px 40px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border-radius: 50px;
+            box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+            margin-bottom: 50px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .free-badge::before {
+            content: '✦';
+            font-size: 1rem;
+        }
+
+        .free-badge::after {
+            content: '✦';
+            font-size: 1rem;
+        }
+
+        .scroll-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: bounce 2s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        .scroll-indicator .arrow {
+            width: 24px;
+            height: 24px;
+            border-right: 2px solid rgba(255, 255, 255, 0.5);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+            transform: rotate(45deg);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        /* ========== FULL SCREEN CATEGORIES (4-PILLAR) ========== */
+        .categories-section {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .category-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 30px;
+            position: relative;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .category-panel:hover {
+            flex: 1.15;
+        }
+
+        .category-panel:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            bottom: 10%;
+            right: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.1), transparent);
+            z-index: 10;
+        }
+
+        /* SOLO Panel */
+        .panel-solo {
+            background: linear-gradient(135deg, #e0fbff 0%, #c0f2ff 100%);
+        }
+
+        .panel-solo::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            right: -120px;
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.4) 0%, transparent 70%);
+            transition: all 0.5s ease;
+            opacity: 0.7;
+        }
+
+        .panel-solo:hover::before {
+            transform: scale(1.4);
+            opacity: 1;
+        }
+
+        /* DUOS Panel */
+        .panel-date {
+            background: linear-gradient(135deg, #fff5f8 0%, #ffe0eb 100%);
+        }
+
+        .panel-date::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(255, 107, 157, 0.25) 0%, transparent 70%);
+            transition: all 0.5s ease;
+            opacity: 0.6;
+        }
+
+        .panel-date:hover::before {
+            transform: scale(1.5);
+            opacity: 1;
+        }
+
+        .hearts-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .floating-heart {
+            position: absolute;
+            color: var(--pink);
+            font-size: 1.2rem;
+            opacity: 0.2;
+            animation: floatHeart 12s linear infinite;
+        }
+
+        .floating-heart:nth-child(1) { left: 15%; animation-delay: 0s; }
+        .floating-heart:nth-child(2) { left: 35%; animation-delay: -3s; font-size: 0.9rem; }
+        .floating-heart:nth-child(3) { left: 55%; animation-delay: -6s; }
+        .floating-heart:nth-child(4) { left: 75%; animation-delay: -9s; font-size: 1.4rem; }
+        .floating-heart:nth-child(5) { left: 90%; animation-delay: -4s; }
+
+        @keyframes floatHeart {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.2; }
+            100% { transform: translateY(-50px) rotate(15deg); opacity: 0; }
+        }
+
+        /* Squad Panel */
+        .panel-squad {
+            background: linear-gradient(135deg, #f0f8ff 0%, #dbeeff 100%);
+        }
+
+        .panel-squad::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(79, 172, 254, 0.25) 0%, transparent 70%);
+            transition: all 0.5s ease;
+            opacity: 0.6;
+        }
+
+        .panel-squad:hover::before {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+
+        .stars-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .floating-star {
+            position: absolute;
+            color: var(--blue);
+            opacity: 0.25;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        .floating-star:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; font-size: 1rem; }
+        .floating-star:nth-child(2) { left: 85%; top: 15%; animation-delay: -1s; font-size: 1.3rem; }
+        .floating-star:nth-child(3) { left: 20%; top: 75%; animation-delay: -2s; font-size: 0.9rem; }
+        .floating-star:nth-child(4) { left: 70%; top: 80%; animation-delay: -0.5s; font-size: 1.1rem; }
+        .floating-star:nth-child(5) { left: 50%; top: 40%; animation-delay: -1.5s; font-size: 1.2rem; }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        /* Party Panel */
+        .panel-party {
+            background: linear-gradient(135deg, #faf5ff 0%, #f0e0ff 100%);
+        }
+
+        .panel-party::before {
+            content: '';
+            position: absolute;
+            bottom: -100px;
+            right: -100px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(164, 69, 178, 0.25) 0%, transparent 70%);
+            transition: all 0.5s ease;
+            opacity: 0.6;
+        }
+
+        .panel-party:hover::before {
+            transform: scale(1.5);
+            opacity: 1;
+        }
+
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0.4;
+            animation: confettiFall 8s linear infinite;
+        }
+
+        .confetti:nth-child(1) { left: 10%; background: var(--pink); animation-delay: 0s; border-radius: 50%; }
+        .confetti:nth-child(2) { left: 25%; background: var(--blue); animation-delay: -2s; }
+        .confetti:nth-child(3) { left: 45%; background: #ffd93d; animation-delay: -4s; border-radius: 50%; }
+        .confetti:nth-child(4) { left: 65%; background: var(--purple); animation-delay: -6s; }
+        .confetti:nth-child(5) { left: 80%; background: #00f2fe; animation-delay: -3s; border-radius: 50%; }
+        .confetti:nth-child(6) { left: 90%; background: var(--pink); animation-delay: -5s; }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Panel Content */
+        .panel-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 320px;
+        }
+
+        .panel-icon {
+            font-size: 4.5rem;
+            margin-bottom: 25px;
+            display: block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .panel-content h2 {
+            font-size: 3.2rem;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .panel-players {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        .panel-solo .panel-players { color: var(--teal); }
+        .panel-date .panel-players { color: var(--pink-dark); }
+        .panel-squad .panel-players { color: var(--blue-dark); }
+        .panel-party .panel-players { color: var(--purple); }
+
+        .panel-desc {
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .panel-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 38px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+
+        .panel-solo .panel-cta {
+            background: linear-gradient(135deg, var(--teal), var(--blue));
+            box-shadow: 0 10px 35px rgba(0, 242, 254, 0.4);
+        }
+
+        .panel-date .panel-cta {
+            background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+            box-shadow: 0 10px 35px rgba(255, 107, 157, 0.4);
+        }
+
+        .panel-squad .panel-cta {
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            box-shadow: 0 10px 35px rgba(79, 172, 254, 0.4);
+        }
+
+        .panel-party .panel-cta {
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            box-shadow: 0 10px 35px rgba(164, 69, 178, 0.4);
+        }
+
+        .category-panel:hover .panel-cta {
+            transform: translateY(-3px);
+        }
+
+        .panel-solo:hover .panel-cta { box-shadow: 0 15px 45px rgba(0, 242, 254, 0.5); }
+        .panel-date:hover .panel-cta { box-shadow: 0 15px 45px rgba(255, 107, 157, 0.5); }
+        .panel-squad:hover .panel-cta { box-shadow: 0 15px 45px rgba(79, 172, 254, 0.5); }
+        .panel-party:hover .panel-cta { box-shadow: 0 15px 45px rgba(164, 69, 178, 0.5); }
+
+        .panel-games {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: #999;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========== AD ZONE ========== */
+        .ad-zone {
+            background: #f0f0f5;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        .ad-placeholder {
+            background: #e5e5ea;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 25px;
+            max-width: 728px;
+            margin: 0 auto;
+            color: #999;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ========== SUPPORT SECTION ========== */
+        .support-section {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+            padding: 100px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .support-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+        }
+
+        .support-bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+
+        .support-bg-orb:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            background: var(--pink);
+            top: -150px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .support-bg-orb:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            background: var(--purple);
+            bottom: -100px;
+            right: -50px;
+            animation-delay: -7s;
+        }
+
+        .support-bg-orb:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            background: var(--gold);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -14s;
+            opacity: 0.2;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -30px) scale(1.1); }
+            50% { transform: translate(-30px, 50px) scale(0.95); }
+            75% { transform: translate(40px, 30px) scale(1.05); }
+        }
+
+        .support-container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .support-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .support-left h2 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .support-left h2 .highlight {
+            background: linear-gradient(135deg, var(--gold), #ffed4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .support-left > p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.8;
+            margin-bottom: 35px;
+        }
+
+        .support-perks {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .perk-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .perk-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .support-cta-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .support-btn {
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .support-btn-primary {
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            color: white;
+            box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3);
+        }
+
+        .support-btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(255, 107, 157, 0.4);
+        }
+
+        .support-btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .support-btn-secondary:hover {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .support-right {
+            position: relative;
+        }
+
+        .leaderboard-preview {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .leaderboard-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
+        }
+
+        .leaderboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .leaderboard-header h4 {
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .leaderboard-header a {
+            font-size: 0.85rem;
+            color: var(--pink);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .leaderboard-header a:hover {
+            text-decoration: underline;
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .leaderboard-item.gold {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.02) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .lb-rank {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .leaderboard-item.gold .lb-rank { color: var(--gold); }
+        .leaderboard-item:nth-child(2) .lb-rank { color: #c0c0c0; }
+        .leaderboard-item:nth-child(3) .lb-rank { color: #cd7f32; }
+
+        .lb-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .lb-amount {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: var(--pink);
+        }
+
+        .leaderboard-item.gold .lb-amount { color: var(--gold); }
+
+        .leaderboard-cta {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .leaderboard-cta p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .leaderboard-cta span {
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            background: #000;
+            position: relative;
+        }
+
+        .footer-border {
+            height: 3px;
+            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink));
+            background-size: 300% 100%;
+            animation: gradientSlide 6s linear infinite;
+        }
+
+        @keyframes gradientSlide {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        .footer-main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 70px 20px 50px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 50px;
+        }
+
+        .footer-brand {
+            padding-right: 30px;
+        }
+
+        .footer-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            display: inline-block;
+            position: relative;
+        }
+
+        .footer-logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--pink), var(--purple));
+        }
+
+        .footer-brand > p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .footer-column h5 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+            color: white;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 12px;
+        }
+
+        .footer-column a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-column a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-copyright {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .footer-legal {
+            display: flex;
+            gap: 30px;
+        }
+
+        .footer-legal a {
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-legal a:hover {
+            color: white;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 900px) {
+            .categories-section {
+                flex-direction: column;
+                min-height: auto;
+            }
+
+            .category-panel {
+                min-height: 450px;
+            }
+
+            .category-panel:hover {
+                flex: 1;
+            }
+
+            .category-panel:not(:last-child)::after {
+                top: auto;
+                bottom: 0;
+                left: 10%;
+                right: 10%;
+                width: auto;
+                height: 1px;
+                background: linear-gradient(to right, transparent, rgba(0,0,0,0.1), transparent);
+            }
+
+            .support-grid {
+                grid-template-columns: 1fr;
+                gap: 50px;
+            }
+
+            .support-left {
+                text-align: center;
+            }
+
+            .support-perks {
+                align-items: center;
+            }
+
+            .support-cta-group {
+                justify-content: center;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .footer-brand {
+                grid-column: 1 / -1;
+                padding-right: 0;
+                text-align: center;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-legal {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 10px 14px;
+            }
+
+            .nav-inner {
+                max-width: 100%;
+                gap: 12px;
+                /* keep 3-column grid so logo stays centered */
+                grid-template-columns: 1fr auto 1fr;
+            }
+
+            .header-logo {
+                font-size: 1.4rem;
+                letter-spacing: 3px;
+                text-align: center;
+                justify-self: center;
+            }
+
+            .header-actions {
+                gap: 10px;
+            }
+
+            .user-menu-name {
+                max-width: 120px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hero-title {
+                font-size: 3.2rem;
+            }
+
+            .hero-players {
+                font-size: 1.5rem;
+            }
+
+            .panel-content h2 {
+                font-size: 2.5rem;
+            }
+
+            .support-left h2 {
+                font-size: 2.5rem;
+            }
+
+            .support-cta-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .support-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .footer-column a:hover {
+                transform: none;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- HEADER -->
-  <header>
-    <nav class="nav-inner">
-      <div class="nav-left">
-        <div class="nav-links">
-          <a href="#games" class="nav-link">Games</a>
-          <a href="#how-it-works" class="nav-link">How it works</a>
+
+    <header>
+        <nav class="nav-inner" aria-label="Main navigation">
+            <div class="nav-left"></div>
+
+            <!-- logo goes to root so you don't see /index.html -->
+            <a href="/" class="header-logo">THEGAMING.CO</a>
+
+            <div class="nav-right-wrapper">
+                <!-- Logged OUT -->
+                <div class="header-actions nav-right-logged-out">
+                    <a href="login.html" class="auth-link">Sign In</a>
+                </div>
+
+                <!-- Logged IN -->
+                <div class="header-actions nav-right-logged-in">
+                    <div class="user-menu" id="user-menu">
+                        <button
+                            type="button"
+                            class="user-menu-toggle"
+                            id="user-menu-toggle"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                        >
+                            <span class="user-menu-name" id="header-username-label"></span>
+                            <span class="user-menu-caret">▾</span>
+                        </button>
+                        <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu">
+                            <a href="profile.html" class="user-menu-item" role="menuitem">
+                                Profile
+                            </a>
+                            <button
+                                type="button"
+                                class="user-menu-item"
+                                id="user-menu-signout"
+                                role="menuitem"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+
+            <div class="hero-content">
+                <p class="hero-tagline">Free Social Games</p>
+                <h1 class="hero-title">PLAY TOGETHER.<br>ANYWHERE.</h1>
+                <p class="hero-players">Games for <span>1 – 100+</span> Players</p>
+                <div class="free-badge">100% Free Forever</div>
+
+                <div class="scroll-indicator" onclick="document.querySelector('.categories-section').scrollIntoView({ behavior: 'smooth' })">
+                    <span>Choose Your Mode</span>
+                    <div class="arrow"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="categories-section">
+            <a href="solo-games.html" class="category-panel panel-solo" aria-label="Solo tests and skill games">
+                <div class="panel-content">
+                    <span class="panel-icon">⚡</span>
+                    <h2>SOLO</h2>
+                    <p class="panel-players">1 PLAYER</p>
+                    <p class="panel-desc">
+                        Master your skills. solo games , aim trainers, memory drills, and logic puzzles.
+                    </p>
+                    <button class="panel-cta" type="button">Play Now →</button>
+                    <p class="panel-games">Aim • Memory • Logic</p>
+                </div>
+            </a>
+
+            <a href="date-night.html" class="category-panel panel-date" aria-label="2 player connection and rivalry games">
+                <div class="hearts-container" aria-hidden="true">
+                    <span class="floating-heart">♥</span>
+                    <span class="floating-heart">♥</span>
+                    <span class="floating-heart">♥</span>
+                    <span class="floating-heart">♥</span>
+                    <span class="floating-heart">♥</span>
+                </div>
+                <div class="panel-content">
+                    <span class="panel-icon">🤝</span>
+                    <h2>DUOS</h2>
+                    <p class="panel-players">2 PLAYERS</p>
+                    <p class="panel-desc">
+                        Connection & rivalry. Deep questions for date night, 1v1 versus battles, and friendship tests.
+                    </p>
+                    <button class="panel-cta" type="button">Play Now →</button>
+                    <p class="panel-games">Date Night • Versus • Friends</p>
+                </div>
+            </a>
+
+            <a href="squad-games.html" class="category-panel panel-squad" aria-label="Squad games for 3 to 15 players">
+                <div class="stars-container" aria-hidden="true">
+                    <span class="floating-star">★</span>
+                    <span class="floating-star">★</span>
+                    <span class="floating-star">★</span>
+                    <span class="floating-star">★</span>
+                    <span class="floating-star">★</span>
+                </div>
+                <div class="panel-content">
+                    <span class="panel-icon">👥</span>
+                    <h2>SQUAD</h2>
+                    <p class="panel-players">3 – 15 PLAYERS</p>
+                    <p class="panel-desc">
+                        Social deduction & voice games. Spyfall-style bluffing, charades, and chaos for living room game nights.
+                    </p>
+                    <button class="panel-cta" type="button">Play Now →</button>
+                    <p class="panel-games">Deduction • Acting • Chaos</p>
+                </div>
+            </a>
+
+            <a href="party-games.html" class="category-panel panel-party" aria-label="Party games for 10 to 100 plus players">
+                <div class="confetti-container" aria-hidden="true">
+                    <span class="confetti"></span>
+                    <span class="confetti"></span>
+                    <span class="confetti"></span>
+                    <span class="confetti"></span>
+                    <span class="confetti"></span>
+                    <span class="confetti"></span>
+                </div>
+                <div class="panel-content">
+                    <span class="panel-icon">🎉</span>
+                    <h2>PARTY</h2>
+                    <p class="panel-players">10 – 100+ PLAYERS</p>
+                    <p class="panel-desc">
+                        Massive trivia & live polls. One host screen, many phones. The ultimate crowd controller for parties and events.
+                    </p>
+                    <button class="panel-cta" type="button">Play Now →</button>
+                    <p class="panel-games">Trivia • Polls • Icebreakers</p>
+                </div>
+            </a>
+        </section>
+
+        <div class="ad-zone">
+            <div class="ad-placeholder">
+                Ad Space — 728×90 Leaderboard
+            </div>
         </div>
-        <a href="#support" class="support-pill">
-          <span class="support-pill-dot"></span>
-          <span>Support Us</span>
-        </a>
-      </div>
 
-      <a href="/" class="header-logo">THEGAMING.CO</a>
+        <section class="support-section">
+            <div class="support-bg">
+                <div class="support-bg-orb"></div>
+                <div class="support-bg-orb"></div>
+                <div class="support-bg-orb"></div>
+            </div>
 
-      <div class="nav-right-wrapper">
-        <!-- Logged OUT -->
-        <div class="header-actions nav-right-logged-out">
-          <a href="login.html" class="auth-link">Sign In</a>
+            <div class="support-container">
+                <div class="support-grid">
+                    <div class="support-left">
+                        <h2>SUPPORT<br><span class="highlight">THEGAMING.CO</span></h2>
+                        <p>Help keep the games free. Get your name, gamertag, or business on our supporters page. Every contribution counts.</p>
+                        
+                        <div class="support-perks">
+                            <div class="perk-item">
+                                <div class="perk-icon">✨</div>
+                                <span>Your name displayed however you want</span>
+                            </div>
+                            <div class="perk-item">
+                                <div class="perk-icon">🏆</div>
+                                <span>Ranked on our supporters page</span>
+                            </div>
+                            <div class="perk-item">
+                                <div class="perk-icon">♾️</div>
+                                <span>Stays up forever</span>
+                            </div>
+                        </div>
+
+                        <div class="support-cta-group">
+                            <a href="https://ko-fi.com/yourusername" class="support-btn support-btn-primary" target="_blank" rel="noopener">
+                                ☕ Support Now
+                            </a>
+                            <a href="supporters.html" class="support-btn support-btn-secondary">
+                                View Leaderboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="support-right">
+                        <div class="leaderboard-preview">
+                            <div class="leaderboard-header">
+                                <h4>TOP SUPPORTERS</h4>
+                                <a href="supporters.html">See all →</a>
+                            </div>
+
+                            <div class="leaderboard-list">
+                                <div class="leaderboard-item gold">
+                                    <span class="lb-rank">👑</span>
+                                    <span class="lb-name">xXDarkSlayer99Xx</span>
+                                    <span class="lb-amount">$120</span>
+                                </div>
+                                <div class="leaderboard-item">
+                                    <span class="lb-rank">2</span>
+                                    <span class="lb-name">Joe's Pizza NYC</span>
+                                    <span class="lb-amount">$75</span>
+                                </div>
+                                <div class="leaderboard-item">
+                                    <span class="lb-rank">3</span>
+                                    <span class="lb-name">@SarahPlaysGames</span>
+                                    <span class="lb-amount">$50</span>
+                                </div>
+                                <div class="leaderboard-item">
+                                    <span class="lb-rank">4</span>
+                                    <span class="lb-name">Mike from Accounting</span>
+                                    <span class="lb-amount">$45</span>
+                                </div>
+                                <div class="leaderboard-item">
+                                    <span class="lb-rank">5</span>
+                                    <span class="lb-name">GameNight Gang</span>
+                                    <span class="lb-amount">$25</span>
+                                </div>
+                            </div>
+
+                            <div class="leaderboard-cta">
+                                <p>Support with <span>any amount</span> to get listed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-border"></div>
+        
+        <div class="footer-main">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="footer-logo">THEGAMING.CO</div>
+                    <p>Free social games for couples, friends, and massive parties. No downloads, no sign-ups — just instant fun with anyone, anywhere.</p>
+                </div>
+
+                <div class="footer-column">
+                    <h5>GAMES</h5>
+                    <ul>
+                        <li><a href="solo-games.html">Solo</a></li>
+                        <li><a href="date-night.html">Date Night</a></li>
+                        <li><a href="squad-games.html">Squad</a></li>
+                        <li><a href="party-games.html">Party</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h5>COMPANY</h5>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="supporters.html">Our Supporters</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Cookie Settings</a>
+                </div>
+            </div>
         </div>
+    </footer>
 
-        <!-- Logged IN -->
-        <div class="header-actions nav-right-logged-in">
-          <div class="user-menu-wrapper">
-            <button
-              class="user-pill"
-              type="button"
-              id="user-menu-button"
-              aria-haspopup="true"
-              aria-expanded="false"
-            >
-              <span class="user-pill-avatar">
-                <span class="user-pill-initial">P</span>
-              </span>
-              <span class="user-pill-label" id="header-username-label"></span>
-              <span class="user-pill-caret">▾</span>
-            </button>
+    <script>
+      const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+      const SUPABASE_ANON_KEY =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
-            <div class="user-menu" id="user-menu" role="menu">
-              <a href="profile.html" class="user-menu-item" role="menuitem">
-                <span>Profile</span>
-              </a>
-              <button
-                type="button"
-                class="user-menu-item"
-                id="user-menu-signout"
-                role="menuitem"
-              >
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
-  </header>
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = supabaseClient;
 
-  <!-- MAIN -->
-  <main class="page-shell">
-    <!-- HERO -->
-    <section class="hero">
-      <div>
-        <div class="hero-kicker">Text-based party games</div>
-        <h1 class="hero-title">
-          <span class="hero-gradient-text">Date nights, squads,</span><br />
-          and gloriously unhinged questions.
-        </h1>
-        <p class="hero-subtitle">
-          TheGaming.co gives you game-night decks you can play anywhere:
-          at home, on FaceTime, or with friends crammed around one couch.
-        </p>
+      const headerUsernameLabel = document.getElementById('header-username-label');
+      const loggedOutNav  = document.querySelector('.nav-right-logged-out');
+      const loggedInNav   = document.querySelector('.nav-right-logged-in');
+      const userMenu      = document.getElementById('user-menu');
+      const userMenuToggle   = document.getElementById('user-menu-toggle');
+      const userMenuDropdown = document.getElementById('user-menu-dropdown');
+      const userMenuSignOut  = document.getElementById('user-menu-signout');
 
-        <div class="hero-meta-row">
-          <div class="meta-pill">
-            <span class="meta-dot"></span>
-            <span>2–8+ players</span>
-          </div>
-          <div class="meta-pill">
-            <span class="meta-dot"></span>
-            <span>No app downloads</span>
-          </div>
-          <div class="meta-pill">
-            <span class="meta-dot"></span>
-            <span>Print or play on screen</span>
-          </div>
-        </div>
-
-        <div class="hero-cta-row">
-          <button class="hero-cta-primary" onclick="document.getElementById('games').scrollIntoView({ behavior: 'smooth' });">
-            Explore game modes
-          </button>
-          <div class="hero-cta-secondary">
-            Or <span>scroll to see what fits your crew</span>.
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <!-- You can swap this later for an image or mockup -->
-        <div class="how-it-works" style="margin-top:0;">
-          <div class="section-kicker">How it feels</div>
-          <h2 class="section-title">Like game night, not homework.</h2>
-          <div class="how-grid">
-            <div>
-              <div class="how-step-title">No prep needed</div>
-              <p class="how-step-text">
-                Pick a mode, read the prompt, and go. No boards, no downloads, just vibes.
-              </p>
-            </div>
-            <div>
-              <div class="how-step-title">Choose your chaos level</div>
-              <p class="how-step-text">
-                From chill reflection to full “did-we-just-say-that” energy.
-              </p>
-            </div>
-            <div>
-              <div class="how-step-title">Replayable decks</div>
-              <p class="how-step-text">
-                New questions, twists, and routes every time you play.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- GAME MODES -->
-    <section class="mode-grid-wrapper" id="games">
-      <div class="section-kicker">Game Modes</div>
-      <h2 class="section-title">Pick a lane for tonight.</h2>
-
-      <div class="mode-grid">
-        <!-- SOLO -->
-        <article class="mode-card">
-          <div class="mode-pill-row">
-            <span class="mode-tag-pill">Solo</span>
-            <span class="mode-meta">Best for: Reset nights</span>
-          </div>
-          <div class="mode-name-row">
-            <h3 class="mode-name">Solo</h3>
-          </div>
-          <p class="mode-desc">
-            Guided questions, micro-challenges, and journaling-style prompts you can play on your own.
-          </p>
-          <div class="mode-footer">
-            <div class="mode-tags">
-              <span class="mode-tag">Self-reflection</span>
-              <span class="mode-tag">Cozy</span>
-            </div>
-            <span class="mode-cta">Coming soon</span>
-          </div>
-        </article>
-
-        <!-- DUOS -->
-        <article class="mode-card">
-          <div class="mode-pill-row">
-            <span class="mode-tag-pill">Couples</span>
-            <span class="mode-meta">Best for: 2 players</span>
-          </div>
-          <div class="mode-name-row">
-            <h3 class="mode-name">Duos</h3>
-          </div>
-          <p class="mode-desc">
-            Check-ins, inside jokes, and playful “would you rather” rounds made for two.
-          </p>
-          <div class="mode-footer">
-            <div class="mode-tags">
-              <span class="mode-tag">Light + deep</span>
-              <span class="mode-tag">Low pressure</span>
-            </div>
-            <span class="mode-cta">Coming soon</span>
-          </div>
-        </article>
-
-        <!-- DATE NIGHT -->
-        <article class="mode-card">
-          <div class="mode-pill-row">
-            <span class="mode-tag-pill">Date Night</span>
-            <span class="mode-meta">Best for: Stay-ins</span>
-          </div>
-          <div class="mode-name-row">
-            <h3 class="mode-name">Date Night</h3>
-          </div>
-          <p class="mode-desc">
-            Flirty dares, “tell me the story” prompts, and cards that finally get past “how was your day”.
-          </p>
-          <div class="mode-footer">
-            <div class="mode-tags">
-              <span class="mode-tag">Romantic</span>
-              <span class="mode-tag">Intentional</span>
-            </div>
-            <span class="mode-cta">Coming soon</span>
-          </div>
-        </article>
-
-        <!-- VERSUS -->
-        <article class="mode-card">
-          <div class="mode-pill-row">
-            <span class="mode-tag-pill">Versus</span>
-            <span class="mode-meta">Best for: Competitive friends</span>
-          </div>
-          <div class="mode-name-row">
-            <h3 class="mode-name">Versus</h3>
-          </div>
-          <p class="mode-desc">
-            Trivia, quickfire questions, and “defend your answer” rounds. Talk trash, stay friends.
-          </p>
-          <div class="mode-footer">
-            <div class="mode-tags">
-              <span class="mode-tag">Competitive</span>
-              <span class="mode-tag">Fast-paced</span>
-            </div>
-            <span class="mode-cta">Coming soon</span>
-          </div>
-        </article>
-
-        <!-- FRIENDS -->
-        <article class="mode-card">
-          <div class="mode-pill-row">
-            <span class="mode-tag-pill">Friends</span>
-            <span class="mode-meta">Best for: 3–6 players</span>
-          </div>
-          <div class="mode-name-row">
-            <h3 class="mode-name">Friends</h3>
-          </div>
-          <p class="mode-desc">
-            Story rounds, “who’s most likely to” chaos, and team prompts for your core group.
-          </p>
-          <div class="mode-footer">
-            <div class="mode-tags">
-              <span class="mode-tag">Group energy</span>
-              <span class="mode-tag">Chill</span>
-            </div>
-            <span class="mode-cta">Coming soon</span>
-          </div>
-        </article>
-
-        <!-- SQUAD -->
-        <article class="mode-card">
-          <div class="mode-pill-row">
-            <span class="mode-tag-pill">Squad</span>
-            <span class="mode-meta">Best for: Big groups</span>
-          </div>
-          <div class="mode-name-row">
-            <h3 class="mode-name">Squad</h3>
-          </div>
-          <p class="mode-desc">
-            Deduction, acting, chaos. Think “party game night” but it lives in your phone or printout.
-          </p>
-          <div class="mode-footer">
-            <div class="mode-tags">
-              <span class="mode-tag">Deduction</span>
-              <span class="mode-tag">Acting</span>
-              <span class="mode-tag">Chaos</span>
-            </div>
-            <span class="mode-cta">Coming soon</span>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- HOW IT WORKS (SCROLL TARGET) -->
-    <section class="how-it-works" id="how-it-works">
-      <div class="section-kicker">How it works</div>
-      <h2 class="section-title">You bring the people. We bring the prompts.</h2>
-      <div class="how-grid">
-        <div>
-          <div class="how-step-title">1. Pick a mode</div>
-          <p class="how-step-text">
-            Choose Solo, Duos, Date Night, Versus, Friends, or Squad based on who’s actually in the room.
-          </p>
-        </div>
-        <div>
-          <div class="how-step-title">2. Deal the chaos</div>
-          <p class="how-step-text">
-            Read the card out loud, follow the twist, and see where the conversation actually goes.
-          </p>
-        </div>
-        <div>
-          <div class="how-step-title">3. Play again, differently</div>
-          <p class="how-step-text">
-            Cards are replayable. New order, new answers, new inside jokes every time.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- SUPPORT (placeholder anchor) -->
-    <section id="support" style="margin-top: 36px;">
-      <div class="section-kicker">Support Us</div>
-      <h2 class="section-title">Help us build ridiculous, wholesome chaos.</h2>
-      <p style="max-width: 600px; color: rgba(255,255,255,0.78); font-size: 0.95rem; line-height: 1.6;">
-        This is where your “Support Us” options will live – think early access decks, printables,
-        and maybe a secret supporters-only mode. For now, just know you’re early. 🫶
-      </p>
-    </section>
-  </main>
-
-  <footer>
-    <div class="footer-shell">
-      <span>© <span id="year"></span> TheGaming.co</span>
-      <span>Made for people who talk too much and not enough.</span>
-    </div>
-  </footer>
-
-  <!-- SUPABASE -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const headerUsernameLabel = document.getElementById('header-username-label');
-    const userAvatarInitialEl = document.querySelector('.user-pill-initial');
-
-    function updateYear() {
-      const y = document.getElementById('year');
-      if (y) y.textContent = new Date().getFullYear();
-    }
-    updateYear();
-
-    function primeHeaderFromCache() {
-      if (!headerUsernameLabel || !userAvatarInitialEl) return;
-      try {
-        const cachedLabel = localStorage.getItem('tgco_header_label');
-        const cachedFull = localStorage.getItem('tgco_header_full');
-
-        if (!cachedLabel || !cachedFull) return;
-
-        headerUsernameLabel.textContent = cachedLabel;
-        headerUsernameLabel.title = cachedFull;
-        userAvatarInitialEl.textContent = cachedFull.charAt(0).toUpperCase() || 'P';
-
-        const loggedOutNav = document.querySelector('.nav-right-logged-out');
-        const loggedInNav = document.querySelector('.nav-right-logged-in');
-
-        if (loggedOutNav) loggedOutNav.style.display = 'none';
-        if (loggedInNav) loggedInNav.style.display = 'flex';
-      } catch (e) {
-        console.warn('Error priming header from cache', e);
-      }
-    }
-
-    function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
-      const metaName =
-        (user && user.user_metadata && user.user_metadata.display_name) || null;
-
-      const base =
-        (display_name && display_name.trim()) ||
-        (metaName && metaName.trim()) ||
-        (gamer_tag && gamer_tag.trim()) ||
-        (user && user.email && user.email.split('@')[0]) ||
-        '';
-
-      const trimmed = base.trim();
-      if (!trimmed) {
-        if (headerUsernameLabel) {
-          headerUsernameLabel.textContent = '';
-          headerUsernameLabel.removeAttribute('title');
-        }
-        if (userAvatarInitialEl) {
-          userAvatarInitialEl.textContent = 'P';
-        }
+      // Use same cache keys as profile.html so the name matches instantly
+      (function primeHeaderFromCache() {
         try {
-          localStorage.removeItem('tgco_header_full');
-          localStorage.removeItem('tgco_header_label');
-        } catch (e) {}
-        return;
-      }
+          const cachedLabel = localStorage.getItem('tgco_header_label');
+          const cachedFull  = localStorage.getItem('tgco_header_full');
 
-      const maxLen = 16;
-      let label = trimmed;
-      if (label.length > maxLen) {
-        label = label.slice(0, maxLen - 1) + '…';
-      }
+          if (cachedLabel && headerUsernameLabel && loggedOutNav && loggedInNav) {
+            headerUsernameLabel.textContent = cachedLabel;
+            headerUsernameLabel.title = cachedFull || cachedLabel;
+            loggedOutNav.style.setProperty('display', 'none', 'important');
+            loggedInNav.style.setProperty('display', 'flex', 'important');
+          }
+        } catch (e) {
+          // ignore cache errors
+        }
+      })();
 
-      if (headerUsernameLabel) {
-        headerUsernameLabel.textContent = label;
-        headerUsernameLabel.title = trimmed;
-      }
-      if (userAvatarInitialEl) {
-        userAvatarInitialEl.textContent = trimmed.charAt(0).toUpperCase() || 'P';
-      }
+      function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+        const base =
+          (gamer_tag && gamer_tag.trim()) ||
+          (display_name && display_name.trim()) ||
+          (user && user.email) ||
+          '';
 
-      try {
-        localStorage.setItem('tgco_header_full', trimmed);
-        localStorage.setItem('tgco_header_label', label);
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    function updateAuthUI(user) {
-      const loggedOutNav = document.querySelector('.nav-right-logged-out');
-      const loggedInNav = document.querySelector('.nav-right-logged-in');
-
-      if (user) {
-        if (loggedOutNav) loggedOutNav.style.display = 'none';
-        if (loggedInNav) loggedInNav.style.display = 'flex';
-      } else {
-        if (loggedOutNav) loggedOutNav.style.display = 'flex';
-        if (loggedInNav) loggedInNav.style.display = 'none';
-      }
-    }
-
-    async function loadHeaderProfile(user) {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabaseClient
-          .from('profiles')
-          .select('display_name, gamer_tag')
-          .eq('id', user.id)
-          .single();
-
-        if (!error && data) {
-          applyHeaderNameFromProfile(data.display_name, data.gamer_tag, user);
+        const trimmed = base.trim();
+        if (!trimmed) {
+          if (headerUsernameLabel) {
+            headerUsernameLabel.textContent = '';
+            headerUsernameLabel.title = '';
+          }
           return;
         }
-      } catch (e) {
-        console.warn('Error loading header profile:', e);
+
+        // show as user typed (no forced caps), but truncate if super long
+        const maxLen = 18;
+        let label = trimmed;
+        if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+
+        if (headerUsernameLabel) {
+          headerUsernameLabel.textContent = label;
+          headerUsernameLabel.title = trimmed;
+        }
+
+        // cache for instant load between pages
+        try {
+          localStorage.setItem('tgco_header_full', trimmed);
+          localStorage.setItem('tgco_header_label', label);
+        } catch (e) {
+          // ignore
+        }
       }
 
-      const metaName =
-        (user.user_metadata && user.user_metadata.display_name) || null;
-      applyHeaderNameFromProfile(metaName, null, user);
-    }
-
-    async function handleAuthOnLoad() {
-      primeHeaderFromCache();
-
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) {
-        console.error('getSession error:', error);
-        updateAuthUI(null);
-        return;
+      function updateAuthUI(user) {
+        if (user) {
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+          if (loggedInNav)  loggedInNav.style.setProperty('display', 'flex', 'important');
+        } else {
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+          if (loggedInNav)  loggedInNav.style.setProperty('display', 'none', 'important');
+        }
       }
 
-      const user = data?.session?.user || null;
-      updateAuthUI(user);
-      if (user) {
-        loadHeaderProfile(user);
+      async function loadSessionAndProfile() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          console.error('getSession error:', error);
+          updateAuthUI(null);
+          return;
+        }
+
+        const user = data?.session?.user ?? null;
+        updateAuthUI(user);
+
+        if (!user) return;
+
+        try {
+          const { data: profile, error: profErr, status } = await supabaseClient
+            .from('profiles')
+            .select('display_name,gamer_tag')
+            .eq('id', user.id)
+            .single();
+
+          if (profErr && status !== 406) {
+            console.error('profile load error:', profErr);
+            applyHeaderNameFromProfile(null, null, user);
+            return;
+          }
+
+          if (profile) {
+            applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
+          } else {
+            applyHeaderNameFromProfile(null, null, user);
+          }
+        } catch (err) {
+          console.error('profile error:', err);
+          applyHeaderNameFromProfile(null, null, user);
+        }
       }
-    }
 
-    async function signOut() {
-      await supabaseClient.auth.signOut();
-      try {
-        localStorage.removeItem('tgco_header_label');
-        localStorage.removeItem('tgco_header_full');
-      } catch (e) {
-        // ignore
-      }
-      window.location.href = '/';
-    }
+      // Run on load
+      loadSessionAndProfile();
 
-    // HEADER user menu dropdown
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userMenu = document.getElementById('user-menu');
-    const userMenuSignOut = document.getElementById('user-menu-signout');
-    let userMenuOpen = false;
+      // React to auth changes
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        const user = session?.user ?? null;
+        updateAuthUI(user);
 
-    function setUserMenuOpen(open) {
-      userMenuOpen = open;
-      if (!userMenuButton || !userMenu) return;
-      if (open) {
-        userMenu.classList.add('open');
-        userMenuButton.setAttribute('aria-expanded', 'true');
-      } else {
-        userMenu.classList.remove('open');
-        userMenuButton.setAttribute('aria-expanded', 'false');
-      }
-    }
-
-    if (userMenuButton && userMenu) {
-      userMenuButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        setUserMenuOpen(!userMenuOpen);
+        if (user) {
+          loadSessionAndProfile();
+        } else {
+          try {
+            localStorage.removeItem('tgco_header_label');
+            localStorage.removeItem('tgco_header_full');
+          } catch (e) {}
+          if (headerUsernameLabel) {
+            headerUsernameLabel.textContent = '';
+            headerUsernameLabel.title = '';
+          }
+        }
       });
 
-      document.addEventListener('click', () => {
-        if (userMenuOpen) setUserMenuOpen(false);
-      });
+      // User menu toggle
+      if (userMenu && userMenuToggle && userMenuDropdown) {
+        userMenuToggle.addEventListener('click', () => {
+          const isOpen = userMenu.classList.contains('open');
+          userMenu.classList.toggle('open', !isOpen);
+          userMenuToggle.setAttribute('aria-expanded', String(!isOpen));
+        });
 
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') setUserMenuOpen(false);
-      });
-    }
+        document.addEventListener('click', (event) => {
+          if (!userMenu.contains(event.target)) {
+            userMenu.classList.remove('open');
+            userMenuToggle.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
 
-    if (userMenuSignOut) {
-      userMenuSignOut.addEventListener('click', (event) => {
-        event.preventDefault();
-        setUserMenuOpen(false);
-        signOut();
-      });
-    }
+      async function signOut() {
+        await supabaseClient.auth.signOut();
+        try {
+          localStorage.removeItem('tgco_header_label');
+          localStorage.removeItem('tgco_header_full');
+        } catch (e) {}
+        window.location.href = '/';
+      }
 
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
-      const user = session ? session.user : null;
-      updateAuthUI(user);
-      if (user) loadHeaderProfile(user);
-    });
+      if (userMenuSignOut) {
+        userMenuSignOut.addEventListener('click', (event) => {
+          event.preventDefault();
+          signOut();
+        });
+      }
 
-    handleAuthOnLoad();
-  </script>
+      // Optional helper if you ever want to scroll from a header button
+      function scrollToSupport() {
+        const el = document.querySelector('.support-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      window.scrollToSupport = scrollToSupport;
+    </script>
 </body>
 </html>
