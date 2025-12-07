@@ -901,7 +901,7 @@
         setStatus('');
       } catch (err) {
         console.error('Profile load/create failed:', err);
-        setStatus('Profile error. Check RLS/policies.', 'error');
+        setStatus('Profile error. Check RLS/policies (see console).', 'error');
       } finally {
         setSaving(false);
       }
@@ -939,8 +939,9 @@
           .single();
 
         if (error) {
-          console.error('Save error:', error);
-          setStatus('Could not save. Check RLS.', 'error');
+          console.error('Supabase save error', error);
+          alert('Could not save profile: ' + (error.message || 'Unknown error'));
+          setStatus('Could not save profile.', 'error');
           return;
         }
 
@@ -948,8 +949,9 @@
         applyProfileToUI(data, sessionUser);
         setStatus('Saved.', 'success');
       } catch (err) {
-        console.error('Unexpected save error:', err);
-        setStatus('Could not save. Check RLS.', 'error');
+        console.error('Unexpected save error', err);
+        alert('Could not save profile: ' + (err.message || 'Unknown error'));
+        setStatus('Could not save profile.', 'error');
       } finally {
         setSaving(false);
       }
