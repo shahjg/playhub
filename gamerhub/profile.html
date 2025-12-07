@@ -96,9 +96,10 @@
       display: flex;
       align-items: center;
       gap: 16px;
+      flex-wrap: nowrap;
     }
 
-    /* hide both until JS decides, to avoid weird flicker */
+    /* hide both until JS decides, to avoid flicker */
     .nav-right-logged-out,
     .nav-right-logged-in {
       display: none;
@@ -116,20 +117,114 @@
 
     .auth-link:hover { color: #fff; }
 
-    .user-header-link {
+    /* USER PILL + DROPDOWN (same as index) */
+    .user-menu-wrapper {
+      position: relative;
+    }
+
+    .user-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      padding: 4px 10px 4px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .user-name-label {
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.9);
-      max-width: 160px;
+    .user-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .user-pill-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .user-pill-initial {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: #ffffff;
+    }
+
+    .user-pill-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      max-width: 150px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-transform: none;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .user-pill-caret {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-left: 2px;
+    }
+
+    .user-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      min-width: 170px;
+      padding: 6px;
+      border-radius: 14px;
+      background: rgba(10, 10, 15, 0.97);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.8);
+      opacity: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 120;
+    }
+
+    .user-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .user-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.9);
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .user-menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .user-menu-item span {
+      flex: 1;
     }
 
     @media (max-width: 700px) {
@@ -143,8 +238,14 @@
         letter-spacing: 3px;
         text-align: center;
       }
-      .user-name-label {
-        max-width: 120px;
+      .user-pill-label {
+        max-width: 110px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .user-pill-label {
+        max-width: 90px;
       }
     }
 
@@ -754,7 +855,6 @@
     <nav class="nav-inner">
       <div class="nav-left"></div>
 
-      <!-- Same logo behavior as index -->
       <a href="/" class="header-logo">THEGAMING.CO</a>
 
       <div class="nav-right-wrapper">
@@ -765,9 +865,35 @@
 
         <!-- Logged IN -->
         <div class="header-actions nav-right-logged-in">
-          <a href="profile.html" class="auth-link user-header-link">
-            <span class="user-name-label" id="header-username-label"></span>
-          </a>
+          <div class="user-menu-wrapper">
+            <button
+              class="user-pill"
+              type="button"
+              id="user-menu-button"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <span class="user-pill-avatar">
+                <span class="user-pill-initial">P</span>
+              </span>
+              <span class="user-pill-label" id="header-username-label"></span>
+              <span class="user-pill-caret">▾</span>
+            </button>
+
+            <div class="user-menu" id="user-menu" role="menu">
+              <a href="profile.html" class="user-menu-item" role="menuitem">
+                <span>Profile</span>
+              </a>
+              <button
+                type="button"
+                class="user-menu-item"
+                id="user-menu-signout"
+                role="menuitem"
+              >
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
@@ -834,7 +960,7 @@
                     maxlength="40"
                     placeholder="Player One"
                   />
-                  <span class="field-helper">This is the name you’ll see across games.</span>
+                  <span class="field-helper">This is the name you’ll see across games. It must be unique.</span>
                 </label>
               </div>
 
@@ -848,7 +974,7 @@
                     maxlength="24"
                     placeholder="PixelMage"
                   />
-                  <span class="field-helper">This is how your name shows up to others in lobbies.</span>
+                  <span class="field-helper">Optional handle (like @PixelMage) shown in lobbies.</span>
                 </label>
               </div>
             </div>
@@ -1004,27 +1130,6 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 🔹 Try to show username instantly from localStorage to avoid that 0.5s flicker
-    (function primeHeaderFromCache() {
-      try {
-        const cachedLabel = localStorage.getItem('tgco_header_label');
-        const cachedFull = localStorage.getItem('tgco_header_full');
-
-        const nameEl = document.getElementById('header-username-label');
-        const loggedOutNav = document.querySelector('.nav-right-logged-out');
-        const loggedInNav = document.querySelector('.nav-right-logged-in');
-
-        if (cachedLabel && cachedFull && nameEl && loggedOutNav && loggedInNav) {
-          nameEl.textContent = cachedLabel;
-          nameEl.title = cachedFull;
-          loggedOutNav.style.display = 'none';
-          loggedInNav.style.display = 'flex';
-        }
-      } catch (e) {
-        // ignore cache errors
-      }
-    })();
-
     // DOM refs
     const displayNameInput = document.getElementById('display-name');
     const gamerTagInput = document.getElementById('gamer-tag');
@@ -1041,6 +1146,7 @@
     const premiumPlanPillEl = document.getElementById('premium-plan-pill');
 
     const headerUsernameLabel = document.getElementById('header-username-label');
+    const userAvatarInitialEl = document.querySelector('.user-pill-initial');
 
     const statusBar = document.getElementById('status-bar');
     const saveBtn = document.getElementById('save-btn');
@@ -1063,33 +1169,69 @@
       saveBtn.textContent = isSaving ? 'Saving…' : 'Save';
     }
 
+    function primeHeaderFromCache() {
+      if (!headerUsernameLabel || !userAvatarInitialEl) return;
+      try {
+        const cachedLabel = localStorage.getItem('tgco_header_label');
+        const cachedFull = localStorage.getItem('tgco_header_full');
+
+        if (!cachedLabel || !cachedFull) return;
+
+        headerUsernameLabel.textContent = cachedLabel;
+        headerUsernameLabel.title = cachedFull;
+        userAvatarInitialEl.textContent = cachedFull.charAt(0).toUpperCase() || 'P';
+
+        const loggedOutNav = document.querySelector('.nav-right-logged-out');
+        const loggedInNav = document.querySelector('.nav-right-logged-in');
+
+        if (loggedOutNav) loggedOutNav.style.display = 'none';
+        if (loggedInNav) loggedInNav.style.display = 'flex';
+      } catch (e) {
+        console.warn('Error priming header from cache', e);
+      }
+    }
+
     function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
-      // 👉 Prefer DISPLAY NAME first (what you set at register/profile)
+      const metaName =
+        (user && user.user_metadata && user.user_metadata.display_name) || null;
+
       const base =
         (display_name && display_name.trim()) ||
+        (metaName && metaName.trim()) ||
         (gamer_tag && gamer_tag.trim()) ||
-        (user && user.email) ||
+        (user && user.email && user.email.split('@')[0]) ||
         '';
 
       const trimmed = base.trim();
       if (!trimmed) {
         if (headerUsernameLabel) {
           headerUsernameLabel.textContent = '';
-          headerUsernameLabel.title = '';
+          headerUsernameLabel.removeAttribute('title');
         }
+        if (userAvatarInitialEl) {
+          userAvatarInitialEl.textContent = 'P';
+        }
+        try {
+          localStorage.removeItem('tgco_header_full');
+          localStorage.removeItem('tgco_header_label');
+        } catch (e) {}
         return;
       }
 
-      const maxLen = 14;
+      const maxLen = 16;
       let label = trimmed;
-      if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+      if (label.length > maxLen) {
+        label = label.slice(0, maxLen - 1) + '…';
+      }
 
       if (headerUsernameLabel) {
         headerUsernameLabel.textContent = label;
         headerUsernameLabel.title = trimmed;
       }
+      if (userAvatarInitialEl) {
+        userAvatarInitialEl.textContent = trimmed.charAt(0).toUpperCase() || 'P';
+      }
 
-      // cache for instant load between pages
       try {
         localStorage.setItem('tgco_header_full', trimmed);
         localStorage.setItem('tgco_header_label', label);
@@ -1104,10 +1246,10 @@
 
       if (user) {
         if (loggedOutNav) loggedOutNav.style.display = 'none';
-        if (loggedInNav)  loggedInNav.style.display = 'flex';
+        if (loggedInNav) loggedInNav.style.display = 'flex';
       } else {
         if (loggedOutNav) loggedOutNav.style.display = 'flex';
-        if (loggedInNav)  loggedInNav.style.display = 'none';
+        if (loggedInNav) loggedInNav.style.display = 'none';
       }
     }
 
@@ -1232,6 +1374,35 @@
       let rawTag = gamerTagInput.value.trim();
       if (rawTag.startsWith('@')) rawTag = rawTag.slice(1);
 
+      // Uniqueness check for display_name
+      if (rawName) {
+        try {
+          const { data: dupRows, error: dupError } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('display_name', rawName)
+            .neq('id', sessionUser.id);
+
+          if (dupError) {
+            console.error('Name uniqueness check error:', dupError);
+            setStatus('Could not check name. Try again.', 'error');
+            setSaving(false);
+            return;
+          }
+
+          if (dupRows && dupRows.length > 0) {
+            setStatus('That display name is taken. Try another.', 'error');
+            setSaving(false);
+            return;
+          }
+        } catch (checkErr) {
+          console.error('Unexpected uniqueness check error:', checkErr);
+          setStatus('Could not check name. Try again.', 'error');
+          setSaving(false);
+          return;
+        }
+      }
+
       const accountType = (currentProfileRow?.account_type || 'free').toLowerCase();
       const isPremium = accountType === 'premium';
 
@@ -1280,7 +1451,7 @@
       } catch (e) {
         // ignore
       }
-      window.location.href = 'index.html';
+      window.location.href = '/';
     }
 
     // Tabs
@@ -1303,17 +1474,21 @@
     }
 
     // Color preview sync (for when premium unlocks it)
-    themeColorInput.addEventListener('input', () => {
-      colorPreview.style.background = themeColorInput.value;
-      setStatus('');
-    });
+    if (themeColorInput && colorPreview) {
+      themeColorInput.addEventListener('input', () => {
+        colorPreview.style.background = themeColorInput.value;
+        setStatus('');
+      });
+    }
 
     // Clear status when editing basic fields
     [displayNameInput, gamerTagInput].forEach((el) => {
+      if (!el) return;
       el.addEventListener('input', () => setStatus(''));
     });
 
-    document.getElementById('profile-form').addEventListener('submit', saveProfile);
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) profileForm.addEventListener('submit', saveProfile);
     if (signOutBtn) signOutBtn.addEventListener('click', signOut);
 
     // Stripe placeholder — hook this to your Stripe customer portal later
@@ -1329,7 +1504,49 @@
     });
 
     initTabs();
+    primeHeaderFromCache();
     loadProfile();
+
+    // Header user menu dropdown
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+    let userMenuOpen = false;
+
+    function setUserMenuOpen(open) {
+      userMenuOpen = open;
+      if (!userMenuButton || !userMenu) return;
+      if (open) {
+        userMenu.classList.add('open');
+        userMenuButton.setAttribute('aria-expanded', 'true');
+      } else {
+        userMenu.classList.remove('open');
+        userMenuButton.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    if (userMenuButton && userMenu) {
+      userMenuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setUserMenuOpen(!userMenuOpen);
+      });
+
+      document.addEventListener('click', () => {
+        if (userMenuOpen) setUserMenuOpen(false);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setUserMenuOpen(false);
+      });
+    }
+
+    if (userMenuSignOut) {
+      userMenuSignOut.addEventListener('click', (event) => {
+        event.preventDefault();
+        setUserMenuOpen(false);
+        signOut();
+      });
+    }
   </script>
 </body>
 </html>
