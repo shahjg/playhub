@@ -8,6 +8,11 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="canonical" href="https://thegaming.co/register">
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
   <meta property="og:type" content="website">
   <meta property="og:title" content="Create Your Account – TheGaming.co">
   <meta property="og:description" content="Sign up to get more from TheGaming.co – free social games for solo players, couples, squads, and parties.">
@@ -30,18 +35,21 @@
 
     :root {
       --pink: #ff6b9d;
-      --pink-dark: #c44569;
       --blue: #4facfe;
       --purple: #a445b2;
-      --gold: #ffd700;
       --dark: #0a0a0f;
     }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--dark);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255, 107, 157, 0.15), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(79, 172, 254, 0.15), transparent 55%),
+        radial-gradient(circle at 50% 100%, rgba(164, 69, 178, 0.12), transparent 60%),
+        var(--dark);
       color: white;
       overflow-x: hidden;
+      min-height: 100vh;
     }
 
     h1, h2, h3, h4 {
@@ -51,12 +59,17 @@
 
     a { color: inherit; text-decoration: none; }
 
-    /* ===== HEADER (same behavior as login.html) ===== */
+    /* ========== HEADER - MATCHES INDEX.HTML ========== */
     header {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 100;
-      padding: 14px 18px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
       background: rgba(10, 10, 15, 0.88);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
@@ -70,7 +83,17 @@
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      position: relative;
+      gap: 24px;
+    }
+
+    .nav-left {
+      justify-self: flex-start;
+    }
+
+    .nav-right-wrapper {
+      justify-self: flex-end;
+      display: flex;
+      justify-content: flex-end;
     }
 
     .header-logo {
@@ -88,64 +111,192 @@
       content: '';
       position: absolute;
       bottom: -2px;
-      left: 0; right: 0;
+      left: 0;
+      right: 0;
       height: 2px;
       background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
     }
 
-    .nav-right-wrapper {
-      justify-self: end;
+    .header-actions {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
+    }
+
+    .nav-right-logged-out,
+    .nav-right-logged-in {
+      display: none !important;
     }
 
     .auth-link {
       font-size: 0.85rem;
       font-weight: 600;
-      color: rgba(255,255,255,0.75);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      transition: color 0.2s ease;
+      color: rgba(255, 255, 255, 0.75);
+      text-decoration: none;
       white-space: nowrap;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s ease;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
     }
 
-    .auth-link:hover { color: white; }
+    .auth-link:hover {
+      color: #ffffff;
+    }
 
-    /* ===== REGISTER PAGE LAYOUT ===== */
+    /* USER PILL */
+    .user-menu-wrapper {
+      position: relative;
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      color: inherit;
+    }
+
+    .user-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .user-pill-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .user-pill-skeleton {
+      width: 100px;
+      height: 36px;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.04) 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .user-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 170px;
+      padding: 6px;
+      border-radius: 14px;
+      background: rgba(10, 10, 15, 0.97);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.8);
+      opacity: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 120;
+    }
+
+    .user-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .user-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.9);
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none;
+    }
+
+    .user-menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ========== MOBILE HEADER ========== */
+    @media (max-width: 700px) {
+      header {
+        height: 56px;
+        padding: 0 14px;
+      }
+
+      .nav-inner {
+        gap: 12px;
+      }
+
+      .header-logo {
+        font-size: 1.4rem;
+        letter-spacing: 3px;
+      }
+
+      .header-actions {
+        gap: 12px;
+      }
+    }
+
+    /* ========== AUTH PAGE ========== */
     .auth-page {
       min-height: 100vh;
-      padding: 120px 16px 80px;
+      padding: 100px 16px 60px;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
-      background:
-        radial-gradient(circle at 15% 80%, rgba(255,107,157,0.18), transparent 55%),
-        radial-gradient(circle at 85% 20%, rgba(79,172,254,0.18), transparent 55%),
-        radial-gradient(circle at 50% 0%, rgba(164,69,178,0.12), transparent 60%);
     }
 
-    .auth-shell { width: 100%; max-width: 480px; }
+    .auth-shell {
+      width: 100%;
+      max-width: 480px;
+    }
 
     .auth-card {
-      background: rgba(5,5,12,0.96);
+      background: rgba(15, 15, 25, 0.95);
       border-radius: 24px;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 32px 28px 26px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 36px 32px 32px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
     }
 
     .auth-title {
-      font-size: 2.4rem;
+      font-size: 2.5rem;
       letter-spacing: 3px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     .auth-subtitle {
       font-size: 0.95rem;
-      color: rgba(255,255,255,0.6);
-      margin-bottom: 24px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 28px;
+      line-height: 1.5;
     }
 
     .auth-google-btn {
@@ -154,7 +305,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      padding: 10px 16px;
+      padding: 12px 18px;
       background: #ffffff;
       border-radius: 999px;
       border: none;
@@ -162,23 +313,22 @@
       font-weight: 600;
       font-size: 0.95rem;
       color: #111111;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .auth-google-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 36px rgba(0,0,0,0.45);
-      background: #f7f7f7;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
     }
 
     .auth-divider {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin: 22px 0;
+      gap: 12px;
+      margin: 24px 0;
       font-size: 0.8rem;
-      color: rgba(255,255,255,0.4);
+      color: rgba(255, 255, 255, 0.4);
       text-transform: uppercase;
       letter-spacing: 0.12em;
     }
@@ -187,7 +337,7 @@
     .auth-divider span:nth-child(3) {
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18));
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .auth-form {
@@ -201,32 +351,31 @@
       flex-direction: column;
       gap: 6px;
       text-align: left;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.65);
+      color: rgba(255, 255, 255, 0.65);
     }
 
     .auth-input {
       padding: 10px 12px;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(5,5,15,0.9);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(5, 5, 15, 0.9);
       color: #ffffff;
       font-size: 0.95rem;
       outline: none;
-      transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
     }
 
     .auth-input::placeholder {
-      color: rgba(255,255,255,0.35);
+      color: rgba(255, 255, 255, 0.35);
     }
 
     .auth-input:focus {
       border-color: var(--pink);
-      box-shadow: 0 0 0 1px rgba(255,107,157,0.4);
-      background: rgba(10,10,25,0.95);
+      box-shadow: 0 0 0 1px rgba(255, 107, 157, 0.4);
     }
 
     .auth-row {
@@ -243,28 +392,31 @@
       align-items: center;
       gap: 8px;
       font-size: 0.8rem;
-      color: rgba(255,255,255,0.7);
+      color: rgba(255, 255, 255, 0.7);
       cursor: pointer;
     }
 
     .auth-remember input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       accent-color: var(--pink);
+      cursor: pointer;
     }
 
     .auth-link-inline {
       font-size: 0.8rem;
       color: var(--pink);
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 600;
       white-space: nowrap;
     }
 
-    .auth-link-inline:hover { text-decoration: underline; }
+    .auth-link-inline:hover {
+      text-decoration: underline;
+    }
 
     .auth-submit-btn {
-      margin-top: 12px;
+      margin-top: 8px;
       width: 100%;
       border: none;
       border-radius: 999px;
@@ -272,68 +424,81 @@
       color: #ffffff;
       font-weight: 700;
       font-size: 0.95rem;
-      padding: 11px 18px;
+      padding: 12px 20px;
       cursor: pointer;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      box-shadow: 0 12px 35px rgba(255,107,157,0.5);
+      box-shadow: 0 12px 35px rgba(255, 107, 157, 0.5);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .auth-submit-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 16px 45px rgba(255,107,157,0.7);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 45px rgba(255, 107, 157, 0.7);
     }
 
-    .auth-footer-text {
-      margin-top: 18px;
+    .auth-message {
+      margin-top: 16px;
+      padding: 10px 14px;
+      border-radius: 10px;
       font-size: 0.85rem;
-      color: rgba(255,255,255,0.55);
       text-align: center;
+      display: none;
     }
 
-    .auth-message-error { color: #ff6b6b; }
-    .auth-message-success { color: #7fffb0; }
+    .auth-message.visible {
+      display: block;
+    }
 
-    /* ===== FOOTER (same as login.html) ===== */
+    .auth-message.error {
+      background: rgba(255, 107, 157, 0.15);
+      color: #ffb3c9;
+      border: 1px solid rgba(255, 107, 157, 0.3);
+    }
+
+    .auth-message.success {
+      background: rgba(79, 172, 254, 0.15);
+      color: #a8d8ff;
+      border: 1px solid rgba(79, 172, 254, 0.3);
+    }
+
+    .auth-note {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ========== FOOTER ========== */
     footer {
       background: #000;
       text-align: center;
       padding: 40px 20px;
-      border-top: 2px solid rgba(255,255,255,0.1);
-      font-size: 0.9rem;
-      color: rgba(255,255,255,0.45);
+      border-top: 2px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.4);
     }
 
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 700px) {
-      .nav-inner {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        position: relative;
-      }
-
-      .header-logo {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.4rem;
-        letter-spacing: 3px;
-        text-align: center;
-      }
-
-      .auth-page {
-        padding-top: 100px;
-        padding-bottom: 60px;
-      }
-
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 600px) {
       .auth-card {
-        padding: 26px 20px 24px;
+        padding: 28px 24px 24px;
       }
 
-      .auth-title { font-size: 2.1rem; }
-      .auth-subtitle { font-size: 0.9rem; }
+      .auth-title {
+        font-size: 2.2rem;
+      }
+
+      .auth-subtitle {
+        font-size: 0.9rem;
+      }
+
+      .auth-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
     }
   </style>
 </head>
@@ -341,10 +506,39 @@
 <body>
   <!-- HEADER -->
   <header>
-    <nav class="nav-inner" aria-label="Main navigation">
-      <a href="index.html" class="header-logo">THEGAMING.CO</a>
+    <nav class="nav-inner">
+      <div class="nav-left"></div>
+
+      <a href="/" class="header-logo">THEGAMING.CO</a>
+
       <div class="nav-right-wrapper">
-        <a href="login.html" class="auth-link">Sign In</a>
+        <div class="header-actions">
+          <!-- SKELETON LOADER -->
+          <div class="user-pill-skeleton" id="auth-skeleton"></div>
+
+          <!-- LOGGED OUT STATE -->
+          <div class="nav-right-logged-out">
+            <a href="login.html" class="auth-link">Sign In</a>
+          </div>
+
+          <!-- LOGGED IN STATE -->
+          <div class="nav-right-logged-in">
+            <div class="user-menu-wrapper">
+              <button class="user-pill" type="button" id="user-menu-button" aria-haspopup="true" aria-expanded="false">
+                <span class="user-pill-label" id="header-username-label">Player</span>
+              </button>
+  
+              <div class="user-menu" id="user-menu" role="menu">
+                <a href="profile.html" class="user-menu-item" role="menuitem">
+                  <span>Profile</span>
+                </a>
+                <button type="button" class="user-menu-item" id="user-menu-signout" role="menuitem">
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </nav>
   </header>
@@ -356,7 +550,7 @@
         <div class="auth-card">
           <h1 class="auth-title">CREATE ACCOUNT</h1>
           <p class="auth-subtitle">
-            Set up your player profile for TheGaming.co. Perks and saved progress will roll out over time.
+            Join TheGaming.co to unlock profile features, track stats, and sync your experience across all games.
           </p>
 
           <button class="auth-google-btn" id="google-signup" type="button">
@@ -391,7 +585,7 @@
             <div class="auth-row">
               <label class="auth-remember">
                 <input type="checkbox" name="acceptTerms" id="accept-terms" required>
-                <span>I agree to the Terms &amp; Privacy</span>
+                <span>I agree to Terms & Privacy</span>
               </label>
 
               <a href="login.html" class="auth-link-inline">Already have an account?</a>
@@ -402,10 +596,10 @@
             </button>
           </form>
 
-          <p id="register-message" class="auth-footer-text" aria-live="polite"></p>
+          <div id="register-message" class="auth-message"></div>
 
-          <p class="auth-footer-text" style="margin-top: 10px;">
-            <strong>Note:</strong> If email confirmation is enabled, you’ll need to check your inbox to finish setting things up.
+          <p class="auth-note">
+            <strong>Note:</strong> You'll receive an email to confirm your account before you can sign in.
           </p>
         </div>
       </div>
@@ -425,7 +619,111 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Google sign-up (same API for sign-in + sign-up)
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    // Prime header from cache
+    function primeHeaderFromCache() {
+      try {
+        const cachedLabel = localStorage.getItem('tgco_header_label');
+        const cachedFull = localStorage.getItem('tgco_header_full');
+
+        if (cachedLabel && cachedFull) {
+          headerUsernameLabel.textContent = cachedLabel;
+          headerUsernameLabel.title = cachedFull;
+          
+          if (authSkeleton) authSkeleton.style.display = 'none';
+          if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+        } else {
+          if (authSkeleton) authSkeleton.style.display = 'none';
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        }
+      } catch (e) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+      }
+    }
+
+    function updateAuthUI(user) {
+      if (authSkeleton) authSkeleton.style.display = 'none';
+
+      if (user) {
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+        if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+      } else {
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
+      }
+    }
+
+    // Check session on load
+    async function checkSession() {
+      const { data } = await supabaseClient.auth.getSession();
+      const user = data?.session?.user ?? null;
+      updateAuthUI(user);
+    }
+
+    // User menu dropdown
+    let userMenuOpen = false;
+
+    function setUserMenuOpen(open) {
+      userMenuOpen = open;
+      if (!userMenuButton || !userMenu) return;
+      if (open) {
+        userMenu.classList.add('open');
+        userMenuButton.setAttribute('aria-expanded', 'true');
+      } else {
+        userMenu.classList.remove('open');
+        userMenuButton.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    if (userMenuButton && userMenu) {
+      userMenuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setUserMenuOpen(!userMenuOpen);
+      });
+
+      document.addEventListener('click', () => {
+        if (userMenuOpen) setUserMenuOpen(false);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setUserMenuOpen(false);
+      });
+    }
+
+    async function signOut() {
+      await supabaseClient.auth.signOut();
+      try {
+        localStorage.removeItem('tgco_header_label');
+        localStorage.removeItem('tgco_header_full');
+      } catch (e) {}
+      window.location.href = '/';
+    }
+
+    if (userMenuSignOut) {
+      userMenuSignOut.addEventListener('click', (event) => {
+        event.preventDefault();
+        setUserMenuOpen(false);
+        signOut();
+      });
+    }
+
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      const user = session ? session.user : null;
+      updateAuthUI(user);
+    });
+
+    primeHeaderFromCache();
+    checkSession();
+
+    // Google sign-up
     document.getElementById('google-signup').addEventListener('click', async () => {
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
@@ -433,38 +731,40 @@
           redirectTo: window.location.origin + '/index.html'
         }
       });
-      if (error) alert('Google sign-up failed: ' + error.message);
+      if (error) {
+        showMessage('Google sign-up failed: ' + error.message, 'error');
+      }
     });
+
+    // Message helper
+    function showMessage(text, type) {
+      const msgEl = document.getElementById('register-message');
+      msgEl.textContent = text;
+      msgEl.className = 'auth-message visible ' + type;
+    }
 
     // Email/password sign-up
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const displayName = document.getElementById('display-name').value.trim();
-      const email       = document.getElementById('register-email').value.trim();
-      const password    = document.getElementById('register-password').value;
-      const confirm     = document.getElementById('register-confirm').value;
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value;
+      const confirm = document.getElementById('register-confirm').value;
       const acceptTerms = document.getElementById('accept-terms').checked;
-      const msgEl       = document.getElementById('register-message');
-
-      msgEl.textContent = '';
-      msgEl.classList.remove('auth-message-error', 'auth-message-success');
 
       if (!displayName || !email || !password || !confirm) {
-        msgEl.textContent = 'Please fill out all fields.';
-        msgEl.classList.add('auth-message-error');
+        showMessage('Please fill out all fields.', 'error');
         return;
       }
 
       if (password !== confirm) {
-        msgEl.textContent = 'Passwords do not match. Try again.';
-        msgEl.classList.add('auth-message-error');
+        showMessage('Passwords do not match. Try again.', 'error');
         return;
       }
 
       if (!acceptTerms) {
-        msgEl.textContent = 'You need to agree to the Terms & Privacy to continue.';
-        msgEl.classList.add('auth-message-error');
+        showMessage('You must agree to the Terms & Privacy to continue.', 'error');
         return;
       }
 
@@ -477,16 +777,11 @@
       });
 
       if (error) {
-        msgEl.textContent = 'Sign-up failed: ' + error.message;
-        msgEl.classList.add('auth-message-error');
+        showMessage('Sign-up failed: ' + error.message, 'error');
         return;
       }
 
-      msgEl.textContent = 'Account created! Check your email to confirm your account, then you can sign in.';
-      msgEl.classList.add('auth-message-success');
-
-      // Optional: redirect after a short delay
-      // setTimeout(() => { window.location.href = 'login.html'; }, 2500);
+      showMessage('Account created! Check your email to confirm, then sign in.', 'success');
     });
   </script>
 </body>
