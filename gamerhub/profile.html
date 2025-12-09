@@ -1153,452 +1153,434 @@
   </main>
 
   <!-- SUPABASE -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+  const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+  const SUPABASE_ANON_KEY =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // DOM refs
-    const authSkeleton = document.getElementById('auth-skeleton');
-    const displayNameInput = document.getElementById('display-name');
-    const gamerTagInput = document.getElementById('gamer-tag');
-    const themeColorInput = document.getElementById('theme-color');
-    const colorPreview = document.getElementById('color-preview');
+  // DOM refs
+  const authSkeleton = document.getElementById('auth-skeleton');
+  const displayNameInput = document.getElementById('display-name');
+  const gamerTagInput = document.getElementById('gamer-tag');
+  const themeColorInput = document.getElementById('theme-color');
+  const colorPreview = document.getElementById('color-preview');
 
-    const emailNewsletterCheckbox = document.getElementById('email-newsletter');
-    const emailNewGamesCheckbox = document.getElementById('email-new-games');
-    const emailSponsoredCheckbox = document.getElementById('email-sponsored');
+  const emailNewsletterCheckbox = document.getElementById('email-newsletter');
+  const emailNewGamesCheckbox = document.getElementById('email-new-games');
+  const emailSponsoredCheckbox = document.getElementById('email-sponsored');
 
-    const avatarInitialEl = document.getElementById('avatar-initial');
-    const summaryNameEl = document.getElementById('summary-display-name');
-    const summaryTagEl = document.getElementById('summary-gamertag');
-    const summaryEmailEl = document.getElementById('summary-email');
-    const premiumPlanPillEl = document.getElementById('premium-plan-pill');
+  const avatarInitialEl = document.getElementById('avatar-initial');
+  const summaryNameEl = document.getElementById('summary-display-name');
+  const summaryTagEl = document.getElementById('summary-gamertag');
+  const summaryEmailEl = document.getElementById('summary-email');
+  const premiumPlanPillEl = document.getElementById('premium-plan-pill');
 
-    const infoEmailEl = document.getElementById('info-email');
-    const infoAccountTypeEl = document.getElementById('info-account-type');
-    const infoMemberSinceEl = document.getElementById('info-member-since');
+  const infoEmailEl = document.getElementById('info-email');
+  const infoAccountTypeEl = document.getElementById('info-account-type');
+  const infoMemberSinceEl = document.getElementById('info-member-since');
 
-    const headerUsernameLabel = document.getElementById('header-username-label');
-    const loggedOutNav = document.querySelector('.nav-right-logged-out');
-    const loggedInNav = document.querySelector('.nav-right-logged-in');
+  const headerUsernameLabel = document.getElementById('header-username-label');
+  const loggedOutNav = document.querySelector('.nav-right-logged-out');
+  const loggedInNav = document.querySelector('.nav-right-logged-in');
 
-    const statusBar = document.getElementById('status-bar');
-    const saveBtn = document.getElementById('save-btn');
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userMenu = document.getElementById('user-menu');
-    const userMenuSignOut = document.getElementById('user-menu-signout');
+  const statusBar = document.getElementById('status-bar');
+  const saveBtn = document.getElementById('save-btn');
+  const userMenuButton = document.getElementById('user-menu-button');
+  const userMenu = document.getElementById('user-menu');
+  const userMenuSignOut = document.getElementById('user-menu-signout');
 
-    let sessionUser = null;
-    let currentProfileRow = null;
+  let sessionUser = null;
+  let currentProfileRow = null;
 
-    function setStatus(msg, type = '') {
-      if (!statusBar) return;
-      
-      statusBar.className = 'status-bar';
-      
-      if (type === 'success') {
-        statusBar.innerHTML = '<span class="status-icon">✓</span>' + msg;
-        statusBar.classList.add('success', 'visible');
-      } else if (type === 'error') {
-        statusBar.innerHTML = '<span class="status-icon">✕</span>' + msg;
-        statusBar.classList.add('error', 'visible');
+  function setStatus(msg, type = '') {
+    if (!statusBar) return;
+    
+    statusBar.className = 'status-bar';
+    
+    if (type === 'success') {
+      statusBar.innerHTML = '<span class="status-icon">✓</span>' + msg;
+      statusBar.classList.add('success', 'visible');
+    } else if (type === 'error') {
+      statusBar.innerHTML = '<span class="status-icon">✕</span>' + msg;
+      statusBar.classList.add('error', 'visible');
+    } else {
+      statusBar.textContent = msg;
+    }
+
+    if (type) {
+      setTimeout(() => {
+        statusBar.classList.remove('visible');
+      }, 3000);
+    }
+  }
+
+  function setSaving(isSaving) {
+    if (!saveBtn) return;
+    saveBtn.disabled = isSaving;
+    saveBtn.textContent = isSaving ? 'Saving…' : 'Save';
+  }
+
+  function primeHeaderFromCache() {
+    try {
+      const cachedLabel = localStorage.getItem('tgco_header_label');
+      const cachedFull = localStorage.getItem('tgco_header_full');
+
+      if (cachedLabel && cachedFull) {
+        headerUsernameLabel.textContent = cachedLabel;
+        headerUsernameLabel.title = cachedFull;
+        
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
       } else {
-        statusBar.textContent = msg;
-      }
-
-      // Auto-hide after 3 seconds
-      if (type) {
-        setTimeout(() => {
-          statusBar.classList.remove('visible');
-        }, 3000);
-      }
-    }
-
-    function setSaving(isSaving) {
-      if (!saveBtn) return;
-      saveBtn.disabled = isSaving;
-      saveBtn.textContent = isSaving ? 'Saving…' : 'Save';
-    }
-
-    function primeHeaderFromCache() {
-      try {
-        const cachedLabel = localStorage.getItem('tgco_header_label');
-        const cachedFull = localStorage.getItem('tgco_header_full');
-
-        if (cachedLabel && cachedFull) {
-          headerUsernameLabel.textContent = cachedLabel;
-          headerUsernameLabel.title = cachedFull;
-          
-          if (authSkeleton) authSkeleton.style.display = 'none';
-          if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
-        } else {
-          if (authSkeleton) authSkeleton.style.display = 'none';
-          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-        }
-      } catch (e) {
         if (authSkeleton) authSkeleton.style.display = 'none';
         if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
       }
-    }
-
-    function updateAuthUI(user, isFromCache = false) {
+    } catch (e) {
       if (authSkeleton) authSkeleton.style.display = 'none';
-
-      if (user) {
-        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
-        if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
-      } else {
-        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-        if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
-        
-        if (!isFromCache) {
-          try {
-            localStorage.removeItem('tgco_header_label');
-            localStorage.removeItem('tgco_header_full');
-          } catch (e) {}
-        }
-      }
+      if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
     }
+  }
 
-    function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
-      const base =
-        (display_name && display_name.trim()) ||
-        (gamer_tag && gamer_tag.trim()) ||
-        (user && user.email && user.email.split('@')[0]) ||
-        '';
+  function updateAuthUI(user, isFromCache = false) {
+    if (authSkeleton) authSkeleton.style.display = 'none';
 
-      const trimmed = base.trim();
-      if (!trimmed) {
-        headerUsernameLabel.textContent = 'Player';
-        headerUsernameLabel.title = '';
-        return;
-      }
-
-      const maxLen = 16;
-      let label = trimmed;
-      if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
-
-      headerUsernameLabel.textContent = label;
-      headerUsernameLabel.title = trimmed;
-
-      try {
-        localStorage.setItem('tgco_header_full', trimmed);
-        localStorage.setItem('tgco_header_label', label);
-      } catch (e) {}
-    }
-
-    function applyProfileToUI(profile, user) {
-      const email = user.email || '';
-      const baseName = profile.display_name || email.split('@')[0] || 'Player';
-      let gamerTag = profile.gamer_tag || '';
-      if (gamerTag && !gamerTag.startsWith('@')) gamerTag = '@' + gamerTag;
-
-      const color = profile.theme_color || '#ff6b9d';
-      const accountType = (profile.account_type || 'free').toLowerCase();
-      const isPremium = accountType === 'premium';
-
-      // form fields
-      displayNameInput.value = profile.display_name || '';
-      gamerTagInput.value = gamerTag.replace(/^@/, '');
-
-      themeColorInput.value = color;
-      colorPreview.style.background = color;
-      themeColorInput.disabled = !isPremium;
-
-      // Email preferences
-      emailNewsletterCheckbox.checked = profile.email_newsletter !== false;
-      emailNewGamesCheckbox.checked = profile.email_new_games !== false;
-      emailSponsoredCheckbox.checked = profile.email_sponsored === true;
-
-      // Account info
-      infoEmailEl.textContent = email;
-      infoAccountTypeEl.textContent = isPremium ? 'Premium' : 'Free';
+    if (user) {
+      if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+      if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+    } else {
+      if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+      if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
       
-      // Member since - SPECIFIC DATE FORMAT
-      if (user.created_at) {
-        const date = new Date(user.created_at);
-        const options = { month: 'short', day: 'numeric', year: 'numeric' };
-        infoMemberSinceEl.textContent = date.toLocaleDateString('en-US', options);
-      } else {
-        infoMemberSinceEl.textContent = 'Recently';
-      }
-
-      // summary
-      summaryNameEl.textContent = baseName;
-      summaryTagEl.textContent = gamerTag || 'No tag yet';
-      summaryEmailEl.textContent = email;
-
-      avatarInitialEl.textContent = baseName.trim().charAt(0).toUpperCase() || 'P';
-
-      premiumPlanPillEl.textContent = isPremium ? 'Premium plan' : 'Free plan';
-
-      // header
-      applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
-    }
-
-    async function getOrCreateProfileRow(user) {
-      const baseProfile = {
-        id: user.id,
-        email: user.email,
-        display_name: user.email.split('@')[0],
-        gamer_tag: null,
-        theme_color: '#ff6b9d',
-        account_type: 'free',
-        email_newsletter: true,
-        email_new_games: true,
-        email_sponsored: false
-      };
-
-      const { data, error, status } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && status !== 406) {
-        console.error('Error loading profile:', error);
-        throw error;
-      }
-
-      if (data) return data;
-
-      const { data: inserted, error: insertError } = await supabaseClient
-        .from('profiles')
-        .insert(baseProfile)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating profile row:', insertError);
-        throw insertError;
-      }
-
-      return inserted;
-    }
-
-    async function loadProfile() {
-      setStatus('Loading…');
-      setSaving(true);
-
-      const { data, error } = await supabaseClient.auth.getSession();
-
-      if (error) {
-        console.error('getSession error:', error);
-        setSaving(false);
-        setStatus('Sign in again.', 'error');
-        return;
-      }
-
-      const user = data?.session?.user;
-      if (!user) {
-        window.location.href = 'login.html';
-        return;
-      }
-
-      sessionUser = user;
-      updateAuthUI(user);
-
-      try {
-        const profile = await getOrCreateProfileRow(user);
-        currentProfileRow = profile;
-        applyProfileToUI(profile, user);
-        setStatus('');
-      } catch (err) {
-        console.error('Profile load/create failed:', err);
-        setStatus('Profile error. Check RLS/policies.', 'error');
-      } finally {
-        setSaving(false);
-      }
-    }
-
-    async function saveProfile(event) {
-      event.preventDefault();
-      if (!sessionUser) {
-        setStatus('No session. Sign in.', 'error');
-        return;
-      }
-
-      setSaving(true);
-      setStatus('Saving…');
-
-      let rawName = displayNameInput.value.trim();
-      let rawTag = gamerTagInput.value.trim();
-      if (rawTag.startsWith('@')) rawTag = rawTag.slice(1);
-
-      // Uniqueness check for display_name
-      if (rawName) {
+      if (!isFromCache) {
         try {
-          const { data: dupRows, error: dupError } = await supabaseClient
-            .from('profiles')
-            .select('id')
-            .eq('display_name', rawName)
-            .neq('id', sessionUser.id);
+          localStorage.removeItem('tgco_header_label');
+          localStorage.removeItem('tgco_header_full');
+        } catch (e) {}
+      }
+    }
+  }
 
-          if (dupError) {
-            console.error('Name uniqueness check error:', dupError);
-            setStatus('Could not check name. Try again.', 'error');
-            setSaving(false);
-            return;
-          }
+  function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+    const base =
+      (display_name && display_name.trim()) ||
+      (gamer_tag && gamer_tag.trim()) ||
+      (user && user.email && user.email.split('@')[0]) ||
+      '';
 
-          if (dupRows && dupRows.length > 0) {
-            setStatus('That display name is taken. Try another.', 'error');
-            setSaving(false);
-            return;
-          }
-        } catch (checkErr) {
-          console.error('Unexpected uniqueness check error:', checkErr);
+    const trimmed = base.trim();
+    if (!trimmed) {
+      headerUsernameLabel.textContent = 'Player';
+      headerUsernameLabel.title = '';
+      return;
+    }
+
+    const maxLen = 16;
+    let label = trimmed;
+    if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+
+    headerUsernameLabel.textContent = label;
+    headerUsernameLabel.title = trimmed;
+
+    try {
+      localStorage.setItem('tgco_header_full', trimmed);
+      localStorage.setItem('tgco_header_label', label);
+    } catch (e) {}
+  }
+
+  function applyProfileToUI(profile, user) {
+    const email = user.email || '';
+    const baseName = profile.display_name || email.split('@')[0] || 'Player';
+    let gamerTag = profile.gamer_tag || '';
+    if (gamerTag && !gamerTag.startsWith('@')) gamerTag = '@' + gamerTag;
+
+    const color = profile.theme_color || '#ff6b9d';
+    const accountType = (profile.account_type || 'free').toLowerCase();
+    const isPremium = accountType === 'premium';
+
+    displayNameInput.value = profile.display_name || '';
+    gamerTagInput.value = gamerTag.replace(/^@/, '');
+
+    themeColorInput.value = color;
+    colorPreview.style.background = color;
+    themeColorInput.disabled = !isPremium;
+
+    emailNewsletterCheckbox.checked = profile.email_newsletter !== false;
+    emailNewGamesCheckbox.checked = profile.email_new_games !== false;
+    emailSponsoredCheckbox.checked = profile.email_sponsored === true;
+
+    infoEmailEl.textContent = email;
+    infoAccountTypeEl.textContent = isPremium ? 'Premium' : 'Free';
+    
+    if (user.created_at) {
+      const date = new Date(user.created_at);
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      infoMemberSinceEl.textContent = date.toLocaleDateString('en-US', options);
+    } else {
+      infoMemberSinceEl.textContent = 'Recently';
+    }
+
+    summaryNameEl.textContent = baseName;
+    summaryTagEl.textContent = gamerTag || 'No tag yet';
+    summaryEmailEl.textContent = email;
+
+    avatarInitialEl.textContent = baseName.trim().charAt(0).toUpperCase() || 'P';
+
+    premiumPlanPillEl.textContent = isPremium ? 'Premium plan' : 'Free plan';
+
+    applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
+  }
+
+  async function getOrCreateProfileRow(user) {
+    const baseProfile = {
+      id: user.id,
+      email: user.email,
+      display_name: user.email.split('@')[0],
+      gamer_tag: null,
+      theme_color: '#ff6b9d',
+      account_type: 'free',
+      email_newsletter: true,
+      email_new_games: true,
+      email_sponsored: false
+    };
+
+    const { data, error, status } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && status !== 406) {
+      console.error('Error loading profile:', error);
+      throw error;
+    }
+
+    if (data) return data;
+
+    const { data: inserted, error: insertError } = await supabaseClient
+      .from('profiles')
+      .insert(baseProfile)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error creating profile row:', insertError);
+      throw insertError;
+    }
+
+    return inserted;
+  }
+
+  async function loadProfile() {
+    setStatus('Loading…');
+    setSaving(true);
+
+    const { data, error } = await supabaseClient.auth.getSession();
+
+    if (error) {
+      console.error('getSession error:', error);
+      setSaving(false);
+      setStatus('Sign in again.', 'error');
+      return;
+    }
+
+    const user = data?.session?.user;
+    if (!user) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    sessionUser = user;
+    updateAuthUI(user);
+
+    try {
+      const profile = await getOrCreateProfileRow(user);
+      currentProfileRow = profile;
+      applyProfileToUI(profile, user);
+      setStatus('');
+    } catch (err) {
+      console.error('Profile load/create failed:', err);
+      setStatus('Profile error. Check RLS/policies.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveProfile(event) {
+    event.preventDefault();
+    if (!sessionUser) {
+      setStatus('No session. Sign in.', 'error');
+      return;
+    }
+
+    setSaving(true);
+    setStatus('Saving…');
+
+    let rawName = displayNameInput.value.trim();
+    let rawTag = gamerTagInput.value.trim();
+    if (rawTag.startsWith('@')) rawTag = rawTag.slice(1);
+
+    if (rawName) {
+      try {
+        const { data: dupRows, error: dupError } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('display_name', rawName)
+          .neq('id', sessionUser.id);
+
+        if (dupError) {
+          console.error('Name uniqueness check error:', dupError);
           setStatus('Could not check name. Try again.', 'error');
           setSaving(false);
           return;
         }
-      }
 
-      const accountType = (currentProfileRow?.account_type || 'free').toLowerCase();
-      const isPremium = accountType === 'premium';
-
-      const themeColor = isPremium
-        ? (themeColorInput.value || currentProfileRow?.theme_color || '#ff6b9d')
-        : (currentProfileRow?.theme_color || '#ff6b9d');
-
-      const updates = {
-        display_name: rawName || null,
-        gamer_tag: rawTag || null,
-        theme_color: themeColor,
-        account_type: currentProfileRow?.account_type || 'free',
-        email_newsletter: emailNewsletterCheckbox.checked,
-        email_new_games: emailNewGamesCheckbox.checked,
-        email_sponsored: emailSponsoredCheckbox.checked,
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        const { data, error } = await supabaseClient
-          .from('profiles')
-          .update(updates)
-          .eq('id', sessionUser.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Save error:', error);
-          setStatus('Could not save. Check RLS.', 'error');
+        if (dupRows && dupRows.length > 0) {
+          setStatus('That display name is taken. Try another.', 'error');
+          setSaving(false);
           return;
         }
-
-        currentProfileRow = data;
-        applyProfileToUI(data, sessionUser);
-        setStatus('Changes saved', 'success');
-      } catch (err) {
-        console.error('Unexpected save error:', err);
-        setStatus('Could not save. Check RLS.', 'error');
-      } finally {
+      } catch (checkErr) {
+        console.error('Unexpected uniqueness check error:', checkErr);
+        setStatus('Could not check name. Try again.', 'error');
         setSaving(false);
+        return;
       }
     }
 
-    // FIXED: Now awaits signOut before redirect
-    async function signOut() {
-      // Clear cache FIRST
-      try {
-        localStorage.removeItem('tgco_header_label');
-        localStorage.removeItem('tgco_header_full');
-      } catch (e) {}
-      
-      // AWAIT the sign out (THIS WAS THE BUG)
-      await supabaseClient.auth.signOut();
-      
-      // Then redirect
-      window.location.href = '/';
+    const accountType = (currentProfileRow?.account_type || 'free').toLowerCase();
+    const isPremium = accountType === 'premium';
+
+    const themeColor = isPremium
+      ? (themeColorInput.value || currentProfileRow?.theme_color || '#ff6b9d')
+      : (currentProfileRow?.theme_color || '#ff6b9d');
+
+    const updates = {
+      display_name: rawName || null,
+      gamer_tag: rawTag || null,
+      theme_color: themeColor,
+      account_type: currentProfileRow?.account_type || 'free',
+      email_newsletter: emailNewsletterCheckbox.checked,
+      email_new_games: emailNewGamesCheckbox.checked,
+      email_sponsored: emailSponsoredCheckbox.checked,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .update(updates)
+        .eq('id', sessionUser.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Save error:', error);
+        setStatus('Could not save. Check RLS.', 'error');
+        return;
+      }
+
+      currentProfileRow = data;
+      applyProfileToUI(data, sessionUser);
+      setStatus('Changes saved', 'success');
+    } catch (err) {
+      console.error('Unexpected save error:', err);
+      setStatus('Could not save. Check RLS.', 'error');
+    } finally {
+      setSaving(false);
     }
+  }
 
-    // Tabs
-    function initTabs() {
-      const navItems = document.querySelectorAll('.profile-nav-item');
-      const panels = document.querySelectorAll('.tab-panel');
+  async function signOut() {
+    try {
+      localStorage.removeItem('tgco_header_label');
+      localStorage.removeItem('tgco_header_full');
+    } catch (e) {}
+    
+    await supabaseClient.auth.signOut();
+    window.location.href = '/';
+  }
 
-      navItems.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const target = btn.getAttribute('data-tab');
+  function initTabs() {
+    const navItems = document.querySelectorAll('.profile-nav-item');
+    const panels = document.querySelectorAll('.tab-panel');
 
-          navItems.forEach((b) => b.classList.remove('active'));
-          btn.classList.add('active');
+    navItems.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
 
-          panels.forEach((panel) => {
-            panel.classList.toggle('active', panel.id === 'panel-' + target);
-          });
+        navItems.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        panels.forEach((panel) => {
+          panel.classList.toggle('active', panel.id === 'panel-' + target);
         });
       });
-    }
+    });
+  }
 
-    // Color preview sync
-    if (themeColorInput && colorPreview) {
-      themeColorInput.addEventListener('input', () => {
-        colorPreview.style.background = themeColorInput.value;
-        setStatus('');
-      });
-    }
+  if (themeColorInput && colorPreview) {
+    themeColorInput.addEventListener('input', () => {
+      colorPreview.style.background = themeColorInput.value;
+      setStatus('');
+    });
+  }
 
-    // Clear status when editing
-    [displayNameInput, gamerTagInput, emailNewsletterCheckbox, emailNewGamesCheckbox, emailSponsoredCheckbox].forEach((el) => {
-      if (!el) return;
-      el.addEventListener('input', () => statusBar.classList.remove('visible'));
-      el.addEventListener('change', () => statusBar.classList.remove('visible'));
+  [displayNameInput, gamerTagInput, emailNewsletterCheckbox, emailNewGamesCheckbox, emailSponsoredCheckbox].forEach((el) => {
+    if (!el) return;
+    el.addEventListener('input', () => statusBar.classList.remove('visible'));
+    el.addEventListener('change', () => statusBar.classList.remove('visible'));
+  });
+
+  const profileForm = document.getElementById('profile-form');
+  if (profileForm) profileForm.addEventListener('submit', saveProfile);
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    const user = session ? session.user : null;
+    updateAuthUI(user);
+  });
+
+  let userMenuOpen = false;
+
+  function setUserMenuOpen(open) {
+    userMenuOpen = open;
+    if (!userMenuButton || !userMenu) return;
+    if (open) {
+      userMenu.classList.add('open');
+      userMenuButton.setAttribute('aria-expanded', 'true');
+    } else {
+      userMenu.classList.remove('open');
+      userMenuButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  if (userMenuButton && userMenu) {
+    userMenuButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setUserMenuOpen(!userMenuOpen);
     });
 
-    const profileForm = document.getElementById('profile-form');
-    if (profileForm) profileForm.addEventListener('submit', saveProfile);
-
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
-      const user = session ? session.user : null;
-      updateAuthUI(user);
+    document.addEventListener('click', () => {
+      if (userMenuOpen) setUserMenuOpen(false);
     });
 
-    // Header user menu dropdown
-    let userMenuOpen = false;
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setUserMenuOpen(false);
+    });
+  }
 
-    function setUserMenuOpen(open) {
-      userMenuOpen = open;
-      if (!userMenuButton || !userMenu) return;
-      if (open) {
-        userMenu.classList.add('open');
-        userMenuButton.setAttribute('aria-expanded', 'true');
-      } else {
-        userMenu.classList.remove('open');
-        userMenuButton.setAttribute.setAttribute('aria-expanded', 'false');
-      }
-    }
+  if (userMenuSignOut) {
+    userMenuSignOut.addEventListener('click', (event) => {
+      event.preventDefault();
+      setUserMenuOpen(false);
+      signOut();
+    });
+  }
 
-    if (userMenuButton && userMenu) {
-      userMenuButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        setUserMenuOpen(!userMenuOpen);
-      });
-
-      document.addEventListener('click', () => {
-        if (userMenuOpen) setUserMenuOpen(false);
-      });
-
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') setUserMenuOpen(false);
-      });
-    }
-
-    if (userMenuSignOut) {
-      userMenuSignOut.addEventListener('click', (event) => {
-        event.preventDefault();
-        setUserMenuOpen(false);
-        signOut();
-      });
-    }
-
-    initTabs();
-    primeHeaderFromCache();
-    loadProfile();
-  </script>
+  initTabs();
+  primeHeaderFromCache();
+  loadProfile();
+</script>
 </body>
 </html>
