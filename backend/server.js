@@ -2,22 +2,93 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration for frontend
+// CORS configuration for Socket.io
 const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true
-  }
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 
 app.use(cors());
+
+// STRIPE WEBHOOK - MUST BE BEFORE express.json()
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.log('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const userId = session.metadata.user_id;
+
+    await supabase
+      .from('profiles')
+      .update({ account_type: 'premium' })
+      .eq('id', userId);
+
+    console.log(`User ${userId} upgraded to premium`);
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object;
+    const userId = subscription.metadata.user_id;
+
+    await supabase
+      .from('profiles')
+      .update({ account_type: 'free' })
+      .eq('id', userId);
+
+    console.log(`User ${userId} downgraded to free`);
+  }
+
+  res.json({ received: true });
+});
+
 app.use(express.json());
+
+// STRIPE CHECKOUT - MUST BE AFTER express.json()
+app.post('/create-checkout-session', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price: 'price_1ScbQvExT6JNJPgqCxT0qdHc',
+        quantity: 1,
+      }],
+      mode: 'subscription',
+      success_url: 'https://thegaming.co/profile.html?success=true',
+      cancel_url: 'https://thegaming.co/profile.html?canceled=true',
+      metadata: { user_id: userId }
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Stripe error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 console.log('Frontend URL:', process.env.FRONTEND_URL);
 
