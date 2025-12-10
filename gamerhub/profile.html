@@ -776,6 +776,7 @@
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     const STRIPE_PUBLISHABLE_KEY = 'pk_test_51ScbMYExT6JNJPgqDMC9qwfzN1qwA17tuLYL0MirtLtBBIT1M0qmNsEQECYNrCzna6qWuzpk0NkUAySHpg3ms1cE00MpLvZMxS';
+    const RAILWAY_URL = 'https://web-production-519c7.up.railway.app';
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
@@ -926,14 +927,14 @@
       currentUser = user;
 
       const { data: profile, error } = await supabaseClient
-        .from('profile')
+        .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
       if (error) {
         console.error('Error loading profile:', error);
-        showStatus('Error loading profile', 'error');
+        showStatus('Error loading profile: ' + error.message, 'error');
         return;
       }
 
@@ -969,7 +970,7 @@
       const gamerTag = document.getElementById('gamer-tag').value.trim();
 
       const { error } = await supabaseClient
-        .from('profile')
+        .from('profiles')
         .update({
           display_name: displayName,
           gamer_tag: gamerTag
@@ -989,7 +990,7 @@
     // Save email preferences
     document.getElementById('save-email-prefs').addEventListener('click', async () => {
       const { error } = await supabaseClient
-        .from('profile')
+        .from('profiles')
         .update({
           email_newsletter: document.getElementById('email-newsletter').checked,
           email_new_games: document.getElementById('email-new-games').checked,
@@ -999,7 +1000,7 @@
 
       if (error) {
         console.error('Error updating preferences:', error);
-        showStatus('Error updating preferences', 'error');
+        showStatus('Error updating preferences: ' + error.message, 'error');
         return;
       }
 
@@ -1017,8 +1018,12 @@
       btnLoading.style.display = 'inline-flex';
 
       try {
-        // Call your backend to create checkout session
-        const response = await fetch('https://your-railway-backend.railway.app/create-checkout-session', {
+        console.log('Creating checkout session...');
+        console.log('Railway URL:', RAILWAY_URL);
+        console.log('User ID:', currentUser.id);
+        console.log('Email:', currentUser.email);
+
+        const response = await fetch(`${RAILWAY_URL}/create-checkout-session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1029,10 +1034,18 @@
           })
         });
 
-        const { sessionId } = await response.json();
+        console.log('Response status:', response.status);
 
-        // Redirect to Stripe Checkout
-        const { error } = await stripe.redirectToCheckout({ sessionId });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error:', errorText);
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Session created:', data.sessionId);
+
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
 
         if (error) {
           console.error('Stripe error:', error);
@@ -1043,7 +1056,7 @@
         }
       } catch (error) {
         console.error('Error:', error);
-        showStatus('Error starting payment process', 'error');
+        showStatus('Error starting payment: ' + error.message, 'error');
         btn.disabled = false;
         btnText.style.display = 'inline';
         btnLoading.style.display = 'none';
@@ -1054,7 +1067,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
       showStatus('🎉 Welcome to Premium! Your features are now active.', 'success');
-      // Clean URL
       window.history.replaceState({}, document.title, '/profile.html');
     } else if (urlParams.get('canceled') === 'true') {
       showStatus('Payment was canceled. You can upgrade anytime!', 'error');
