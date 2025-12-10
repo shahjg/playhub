@@ -771,15 +771,12 @@
 
   <!-- SUPABASE & STRIPE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://js.stripe.com/v3/"></script>
   <script>
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-    const STRIPE_PUBLISHABLE_KEY = 'pk_test_51ScbMYExT6JNJPgqDMC9qwfzN1qwA17tuLYL0MirtLtBBIT1M0qmNsEQECYNrCzna6qWuzpk0NkUAySHpg3ms1cE00MpLvZMxS';
     const RAILWAY_URL = 'https://web-production-519c7.up.railway.app';
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
 
     let currentUser = null;
     let currentProfile = null;
@@ -1018,11 +1015,6 @@
       btnLoading.style.display = 'inline-flex';
 
       try {
-        console.log('Creating checkout session...');
-        console.log('Railway URL:', RAILWAY_URL);
-        console.log('User ID:', currentUser.id);
-        console.log('Email:', currentUser.email);
-
         const response = await fetch(`${RAILWAY_URL}/create-checkout-session`, {
           method: 'POST',
           headers: {
@@ -1034,8 +1026,6 @@
           })
         });
 
-        console.log('Response status:', response.status);
-
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Server error:', errorText);
@@ -1043,17 +1033,10 @@
         }
 
         const data = await response.json();
-        console.log('Session created:', data.sessionId);
+        
+        // Redirect directly to Stripe Checkout
+        window.location.href = data.url;
 
-        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-
-        if (error) {
-          console.error('Stripe error:', error);
-          showStatus('Payment failed: ' + error.message, 'error');
-          btn.disabled = false;
-          btnText.style.display = 'inline';
-          btnLoading.style.display = 'none';
-        }
       } catch (error) {
         console.error('Error:', error);
         showStatus('Error starting payment: ' + error.message, 'error');
