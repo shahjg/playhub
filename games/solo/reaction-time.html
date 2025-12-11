@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* INHERITING YOUR CORE STYLES */
         :root {
             --teal: #00d9a5;
             --red: #ff4757;
@@ -28,15 +27,33 @@
             min-height: 100vh;
         }
 
-        /* SIMPLE NAV FOR GAME PAGE */
+        /* NAVIGATION */
         .game-nav {
-            padding: 20px;
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .back-link { color: rgba(255,255,255,0.6); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-        .back-link:hover { color: white; }
+        
+        .back-link { 
+            color: rgba(255,255,255,0.6); 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--teal); }
+
+        .game-title-nav {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
 
         /* GAME AREA */
         .game-container {
@@ -59,92 +76,130 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background-color 0.1s ease;
             user-select: none;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.05);
+            text-align: center;
+            padding: 20px;
         }
 
-        /* STATES */
-        .click-area.waiting { background: var(--red); }
-        .click-area.go { background: var(--teal); }
+        /* GAME STATES */
+        .click-area.waiting { background: var(--red); box-shadow: 0 0 50px rgba(255, 71, 87, 0.3); }
+        .click-area.go { background: var(--teal); box-shadow: 0 0 50px rgba(0, 217, 165, 0.4); }
         
-        .click-icon { font-size: 4rem; margin-bottom: 10px; }
-        .click-text { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 2px; }
-        .click-sub { font-size: 1rem; opacity: 0.8; margin-top: 10px; }
+        .click-icon { font-size: 4rem; margin-bottom: 20px; }
+        .click-text { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 2px; line-height: 1; margin-bottom: 10px; }
+        .click-sub { font-size: 1.1rem; opacity: 0.7; }
 
         /* RESULTS & SAVE */
         .result-panel {
             margin-top: 30px;
             text-align: center;
             display: none; /* Hidden by default */
+            animation: fadeIn 0.3s ease;
         }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
-        .score-display { font-size: 2rem; font-weight: 800; color: var(--teal); margin-bottom: 15px; }
+        .score-display { font-size: 3rem; font-family: 'Bebas Neue', sans-serif; color: var(--teal); margin-bottom: 20px; }
 
         .btn {
-            padding: 12px 24px;
+            padding: 14px 32px;
             border-radius: 50px;
             border: none;
             font-weight: 700;
             cursor: pointer;
             font-size: 1rem;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .btn-primary { background: white; color: var(--dark); }
-        .btn-primary:hover { transform: scale(1.05); }
+        .btn-primary { 
+            background: white; 
+            color: var(--dark); 
+            box-shadow: 0 5px 20px rgba(255,255,255,0.2);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,255,255,0.3); }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
         /* LEADERBOARD SECTION */
         .leaderboard-section {
             width: 100%;
-            max-width: 600px;
-            margin: 40px auto;
-            background: rgba(255,255,255,0.05);
+            max-width: 500px;
+            margin-top: 50px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 16px;
-            padding: 20px;
+            padding: 25px;
         }
 
-        .lb-header { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; margin-bottom: 15px; color: var(--teal); }
+        .lb-header { 
+            font-family: 'Bebas Neue', sans-serif; 
+            font-size: 1.4rem; 
+            margin-bottom: 20px; 
+            color: rgba(255,255,255,0.9); 
+            text-align: center;
+            letter-spacing: 1px;
+        }
         
+        .lb-list { display: flex; flex-direction: column; gap: 8px; }
+
         .lb-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.9rem;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            font-size: 0.95rem;
         }
-        .lb-row:last-child { border-bottom: none; }
-        .lb-rank { width: 30px; color: rgba(255,255,255,0.5); }
-        .lb-name { flex: 1; font-weight: 600; }
-        .lb-score { color: var(--teal); font-family: 'monospace'; }
+        
+        .lb-row.top-rank { background: linear-gradient(90deg, rgba(0, 217, 165, 0.1), transparent); border: 1px solid rgba(0, 217, 165, 0.2); }
+
+        .lb-rank { width: 30px; font-weight: 700; color: rgba(255,255,255,0.4); }
+        .lb-name { flex: 1; font-weight: 600; color: white; }
+        .lb-score { color: var(--teal); font-weight: 700; font-family: 'monospace'; font-size: 1.1rem; }
+
+        /* MOBILE TWEAKS */
+        @media (max-width: 600px) {
+            .click-text { font-size: 2.5rem; }
+            .click-area { height: 350px; }
+            .lb-name { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        }
 
     </style>
 </head>
 <body>
 
     <nav class="game-nav">
-        <a href="/solo.html" class="back-link">← BACK TO SOLO</a>
-        <div style="font-weight:700;">REACTION TIME</div>
-    </nav>
+        <a href="/solo.html" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            BACK TO MENU
+        </a>
+        <div class="game-title-nav">REACTION TIME</div>
+        <div style="width: 80px;"></div> </nav>
 
     <div class="game-container">
         
-        <div id="game-board" class="click-area" onmousedown="handleGameClick()">
+        <div id="game-board" class="click-area" onmousedown="handleGameClick()" ontouchstart="handleGameClick()">
             <div class="click-icon">⚡</div>
             <div class="click-text" id="status-text">CLICK TO START</div>
-            <div class="click-sub" id="sub-text">When red turns green, click as fast as you can.</div>
+            <div class="click-sub" id="sub-text">Wait for green, then click instantly.</div>
         </div>
 
         <div class="result-panel" id="result-panel">
             <div class="score-display" id="final-score">0 ms</div>
-            <button class="btn btn-primary" id="save-btn" onclick="saveScore()">SAVE SCORE TO LEADERBOARD</button>
-            <p id="login-warning" style="font-size:0.8rem; color:#aaa; margin-top:10px; display:none;">Sign in to save scores</p>
+            <button class="btn btn-primary" id="save-btn" onclick="saveScore()">SAVE TO LEADERBOARD</button>
+            <p id="login-warning" style="font-size:0.85rem; color:rgba(255,255,255,0.5); margin-top:15px; display:none;">
+                <a href="/login.html" style="color:var(--teal); text-decoration:underline;">Sign In</a> to save your score
+            </p>
         </div>
 
         <div class="leaderboard-section">
-            <div class="lb-header">GLOBAL TOP 5 (Low Score is Better)</div>
-            <div id="lb-list">
-                <div class="lb-row"><span style="opacity:0.5;">Loading scores...</span></div>
+            <div class="lb-header">🏆 TOP 5 PLAYERS</div>
+            <div id="lb-list" class="lb-list">
+                <div class="lb-row"><span style="opacity:0.5; width:100%; text-align:center;">Loading scores...</span></div>
             </div>
         </div>
     </div>
@@ -172,7 +227,9 @@
     const loginWarning = document.getElementById('login-warning');
 
     // --- 3. GAME LOGIC ---
-    function handleGameClick() {
+    function handleGameClick(e) {
+        if(e) e.preventDefault(); // Prevent double firing on touch devices
+
         if (state === 'idle' || state === 'result') {
             startGame();
         } else if (state === 'waiting') {
@@ -185,10 +242,10 @@
     function startGame() {
         state = 'waiting';
         resultPanel.style.display = 'none';
+        
         board.className = 'click-area waiting';
-        board.style.backgroundColor = '#ff4757'; // Red
         statusText.textContent = "WAIT FOR GREEN...";
-        subText.textContent = "";
+        subText.textContent = "Don't click yet!";
         
         // Random time between 2s and 5s
         const randomTime = Math.floor(Math.random() * 3000) + 2000;
@@ -196,8 +253,8 @@
         timerId = setTimeout(() => {
             state = 'green';
             board.className = 'click-area go';
-            board.style.backgroundColor = '#00d9a5'; // Green
-            statusText.textContent = "CLICK!";
+            statusText.textContent = "CLICK NOW!";
+            subText.textContent = "";
             startTime = Date.now();
         }, randomTime);
     }
@@ -205,9 +262,17 @@
     function tooEarly() {
         clearTimeout(timerId);
         state = 'result';
-        board.style.backgroundColor = '#2a2a3d'; // Reset
+        board.className = 'click-area';
         statusText.textContent = "TOO SOON!";
-        subText.textContent = "Click to try again";
+        subText.textContent = "You clicked before it turned green.";
+        
+        // No save button for failure
+        resultPanel.style.display = 'none'; 
+        
+        // Brief timeout before letting them try again so they don't spam click
+        setTimeout(() => {
+            subText.textContent = "Click anywhere to try again";
+        }, 500);
     }
 
     function endGame() {
@@ -216,7 +281,6 @@
         state = 'result';
         
         board.className = 'click-area';
-        board.style.backgroundColor = '#2a2a3d'; // Reset
         statusText.textContent = `${currentScore} ms`;
         subText.textContent = "Click to try again";
         
@@ -259,11 +323,12 @@
 
         if (error) {
             console.error(error);
-            alert('Error saving score');
+            alert('Error saving score. Make sure you ran the SQL script in Supabase!');
             saveBtn.textContent = 'ERROR';
+            saveBtn.disabled = false;
         } else {
             saveBtn.textContent = 'SAVED!';
-            fetchLeaderboard(); // Refresh list
+            fetchLeaderboard(); // Refresh list immediately
         }
     }
 
@@ -271,15 +336,14 @@
         const lbList = document.getElementById('lb-list');
         
         // Fetch top 5 scores, joined with profile data
-        // Note: For Reaction Time, LOWER score is better (ascending)
         const { data, error } = await supabase
             .from('solo_scores')
             .select(`
                 score,
-                profiles (display_name)
+                profiles (display_name, gamer_tag)
             `)
             .eq('game_id', GAME_ID)
-            .order('score', { ascending: true }) 
+            .order('score', { ascending: true }) // Lower is better
             .limit(5);
 
         if (error) {
@@ -289,14 +353,17 @@
 
         lbList.innerHTML = '';
         if (data.length === 0) {
-            lbList.innerHTML = '<div class="lb-row">No scores yet. Be the first!</div>';
+            lbList.innerHTML = '<div class="lb-row"><span style="width:100%; text-align:center; opacity:0.5;">No scores yet. Be the first!</span></div>';
             return;
         }
 
         data.forEach((entry, index) => {
-            const name = entry.profiles?.display_name || 'Anonymous';
+            // Prefer display_name, fallback to gamer_tag, then anonymous
+            const name = entry.profiles?.display_name || entry.profiles?.gamer_tag || 'Anonymous Player';
+            const isTop = index === 0;
+            
             const html = `
-                <div class="lb-row">
+                <div class="lb-row ${isTop ? 'top-rank' : ''}">
                     <span class="lb-rank">#${index + 1}</span>
                     <span class="lb-name">${name}</span>
                     <span class="lb-score">${entry.score} ms</span>
