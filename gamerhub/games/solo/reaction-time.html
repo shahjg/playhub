@@ -1803,11 +1803,7 @@
 
             const { data, error } = await supabaseClient
                 .from('solo_scores')
-                .select(`
-                    score,
-                    created_at,
-                    profiles (display_name, gamer_tag)
-                `)
+                .select('score, created_at, user_id')
                 .eq('game_id', GAME_ID)
                 .eq('user_id', user.id)
                 .order('score', { ascending: true })
@@ -1824,10 +1820,17 @@
                 return;
             }
 
+            // Fetch user's profile separately
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('display_name, gamer_tag')
+                .eq('id', user.id)
+                .single();
+
             lbList.innerHTML = '';
             
             data.forEach((entry, index) => {
-                const name = entry.profiles?.display_name || entry.profiles?.gamer_tag || 'You';
+                const name = profile?.display_name || profile?.gamer_tag || 'You';
                 const topClass = index === 0 ? 'top-1' : '';
                 
                 const date = new Date(entry.created_at);
@@ -1845,14 +1848,10 @@
             return;
         }
         
-        // Global or Today leaderboards
+        // Global or Today leaderboards - fetch with manual join
         let query = supabaseClient
             .from('solo_scores')
-            .select(`
-                score,
-                created_at,
-                profiles (display_name, gamer_tag)
-            `)
+            .select('score, created_at, user_id')
             .eq('game_id', GAME_ID)
             .order('score', { ascending: true })
             .limit(10);
@@ -1882,10 +1881,26 @@
             return;
         }
 
+        // Fetch all profiles for the users in the leaderboard
+        const userIds = data.map(entry => entry.user_id);
+        const { data: profiles } = await supabaseClient
+            .from('profiles')
+            .select('id, display_name, gamer_tag')
+            .in('id', userIds);
+
+        // Create a map of user_id to profile
+        const profileMap = {};
+        if (profiles) {
+            profiles.forEach(profile => {
+                profileMap[profile.id] = profile;
+            });
+        }
+
         lbList.innerHTML = '';
         
         data.forEach((entry, index) => {
-            const name = entry.profiles?.display_name || entry.profiles?.gamer_tag || 'Anonymous';
+            const profile = profileMap[entry.user_id];
+            const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
             const topClass = index === 0 ? 'top-1' : '';
             
             const row = document.createElement('div');
