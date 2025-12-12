@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typing Speed Test – Free Online WPM & Accuracy Game | TheGaming.co</title>
+  <meta name="description" content="Test your typing speed (WPM) and accuracy. Free online typing test with global leaderboards. See how fast you type compared to the world on TheGaming.co." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://thegaming.co/games/solo/typing-test.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Typing Speed Test – Free WPM & Accuracy Game" />
+  <meta property="og:description" content="Type the text as fast as you can. Track WPM + accuracy. Compete on global leaderboards." />
+  <meta property="og:url" content="https://thegaming.co/games/solo/typing-test.html" />
+  <meta property="og:site_name" content="TheGaming.co" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Typing Speed Test – Free WPM & Accuracy Game" />
+  <meta name="twitter:description" content="Type fast. Track WPM + accuracy. Compete globally on TheGaming.co." />
+
+  <meta name="theme-color" content="#0a0a0f" />
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --teal: #00d9a5;
+      --teal-dark: #00b386;
+      --teal-light: #e0fff8;
+      --cyan: #06b6d4;
+      --pink: #ff6b9d;
+      --blue: #4facfe;
+      --purple: #a855f7;
+      --red: #ff4757;
+      --red-dark: #e84155;
+
+      --dark: #0a0a0f;
+      --text-dark: #1a1a2e;
+      --text-muted: #6b7280;
+
+      --card: #ffffff;
+      --border: rgba(0, 217, 165, 0.18);
+      --shadow: rgba(0, 217, 165, 0.12);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+      color: var(--text-dark);
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ========== HEADER - SAME AS YOUR TEMPLATE ========== */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      background: rgba(10, 10, 15, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .nav-inner {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-left { justify-self: flex-start; }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+    }
+    .back-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      transform: translateX(-2px);
+    }
+    .back-btn svg { width: 16px; height: 16px; }
+
+    .header-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 4px;
+      color: white;
+      position: relative;
+      white-space: nowrap;
+      justify-self: center;
+    }
+    .header-logo::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
+    }
+
+    .nav-right-wrapper {
+      justify-self: flex-end;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-right-logged-out,
+    .nav-right-logged-in {
+      display: none !important;
+    }
+
+    .auth-link {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.75);
+      white-space: nowrap;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s ease;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .auth-link:hover { color: #fff; }
+
+    .user-menu-wrapper { position: relative; }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      color: inherit;
+      font-family: inherit;
+    }
+    .user-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
+
+    .user-pill-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .user-pill-skeleton {
+      width: 100px;
+      height: 36px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .user-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 170px;
+      padding: 6px;
+      border-radius: 14px;
+      background: rgba(10,10,15,0.97);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.8);
+      opacity: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      backdrop-filter: blur(10px);
+      z-index: 120;
+    }
+    .user-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .user-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.9);
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .user-menu-item:hover { background: rgba(255,255,255,0.08); }
+
+    /* ========== MAIN ========== */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding-top: 60px;
+    }
+
+    .game-hero {
+      background: radial-gradient(circle at 10% 0%, #0d4a40 0%, #082e28 50%, #041a16 100%);
+      padding: 60px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .game-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(0,217,165,0.25) 0%, transparent 55%),
+        radial-gradient(circle at 75% 75%, rgba(0,179,134,0.18) 0%, transparent 55%),
+        radial-gradient(circle at 50% 50%, rgba(179,255,240,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .stars-bg-hero {
+      position: absolute; inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .star-hero {
+      position: absolute;
+      color: #b3fff0;
+      opacity: 0.4;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+
+    .star-hero:nth-child(1) { left: 10%; top: 20%; font-size: 0.8rem; animation-delay: 0s; }
+    .star-hero:nth-child(2) { left: 25%; top: 60%; font-size: 1rem; animation-delay: -0.5s; }
+    .star-hero:nth-child(3) { left: 40%; top: 30%; font-size: 0.7rem; animation-delay: -1s; }
+    .star-hero:nth-child(4) { left: 60%; top: 70%; font-size: 0.9rem; animation-delay: -1.5s; }
+    .star-hero:nth-child(5) { left: 75%; top: 25%; font-size: 1.1rem; animation-delay: -2s; }
+    .star-hero:nth-child(6) { left: 90%; top: 50%; font-size: 0.8rem; animation-delay: -0.3s; }
+
+    @keyframes twinkle {
+      0%,100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.3); }
+    }
+
+    .game-hero-content { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+
+    .game-icon {
+      width: 70px; height: 70px;
+      margin: 0 auto 20px;
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+    @keyframes iconFloat {
+      0%,100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-8px) rotate(2deg); }
+    }
+    .game-icon svg { width: 100%; height: 100%; }
+
+    .game-hero-title {
+      font-size: clamp(3rem, 8vw, 4.5rem);
+      line-height: 0.95;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 0%, #b3fff0 50%, var(--teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 3px;
+    }
+
+    .game-hero-desc {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.72);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    .game-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-wrapper::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(0,217,165,0.12) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(79,172,254,0.10) 0%, transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(255,107,157,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      animation: gradientShift 15s ease infinite;
+    }
+    @keyframes gradientShift {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* Top stats */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,217,165,0.08);
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,217,165,0.15);
+      border-color: rgba(0,217,165,0.30);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+      color: var(--teal);
+    }
+
+    /* Controls bar */
+    .controls {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 8px 30px var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-left { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .control-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    .pill-group {
+      display: inline-flex;
+      background: rgba(0,217,165,0.08);
+      padding: 4px;
+      border-radius: 12px;
+      gap: 6px;
+    }
+    .pill {
+      border: none;
+      background: transparent;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .pill:hover { color: var(--teal); }
+    .pill.active {
+      background: #fff;
+      color: var(--teal);
+      box-shadow: 0 2px 8px rgba(0,217,165,0.15);
+    }
+    .pill:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .live-metrics {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .metric {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,217,165,0.16);
+      background: rgba(0,217,165,0.05);
+      min-width: 120px;
+    }
+    .metric .k {
+      font-size: 0.72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .metric .v {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.45rem;
+      letter-spacing: 1px;
+      color: var(--text-dark);
+    }
+    .metric .v strong { color: var(--teal); font-weight: 900; }
+
+    /* Typing board */
+    .typing-board {
+      background: var(--card);
+      border-radius: 24px;
+      border: 3px solid rgba(0,217,165,0.20);
+      box-shadow: 0 8px 30px var(--shadow);
+      overflow: hidden;
+    }
+
+    .typing-top {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .typing-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.7rem;
+      letter-spacing: 2px;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border: 1px solid rgba(0,217,165,0.22);
+      background: rgba(0,217,165,0.08);
+      color: var(--teal-dark);
+      white-space: nowrap;
+    }
+
+    .status-chip.idle {
+      border-color: rgba(79,172,254,0.22);
+      background: rgba(79,172,254,0.08);
+      color: #2563eb;
+    }
+    .status-chip.running {
+      border-color: rgba(0,217,165,0.25);
+      background: rgba(0,217,165,0.10);
+      color: var(--teal-dark);
+    }
+    .status-chip.done {
+      border-color: rgba(255,71,87,0.22);
+      background: rgba(255,71,87,0.08);
+      color: var(--red-dark);
+    }
+
+    .typing-body { padding: 18px; }
+
+    .text-box {
+      border-radius: 18px;
+      border: 2px solid rgba(0,0,0,0.06);
+      background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+      padding: 16px 16px;
+      line-height: 1.9;
+      font-size: 1.06rem;
+      color: var(--text-dark);
+      min-height: 160px;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .text-box::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 30% 40%, rgba(0,217,165,0.07) 0%, transparent 55%),
+        radial-gradient(circle at 70% 60%, rgba(79,172,254,0.05) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .text-content { position: relative; z-index: 1; }
+
+    .char {
+      padding: 0 0.3px;
+      border-radius: 4px;
+      transition: background 0.1s ease;
+    }
+    .char.correct { color: #0f172a; background: rgba(16,185,129,0.14); }
+    .char.incorrect { color: #0f172a; background: rgba(255,71,87,0.18); }
+    .char.current {
+      background: rgba(0,217,165,0.18);
+      outline: 2px solid rgba(0,217,165,0.35);
+    }
+
+    .input-wrap {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .typing-input {
+      width: 100%;
+      border-radius: 16px;
+      border: 2px solid rgba(0,0,0,0.08);
+      padding: 14px 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+    .typing-input:focus {
+      border-color: rgba(0,217,165,0.55);
+      box-shadow: 0 0 0 6px rgba(0,217,165,0.10);
+    }
+    .typing-input:disabled {
+      opacity: 0.65;
+      background: rgba(0,0,0,0.02);
+      cursor: not-allowed;
+    }
+
+    .helper-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .helper-row span strong { color: var(--teal-dark); }
+
+    .btn {
+      padding: 14px 22px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 800;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(0,217,165,0.30);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,217,165,0.38); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text-dark);
+      border: 2px solid rgba(0,217,165,0.30);
+    }
+    .btn-secondary:hover { background: var(--teal-light); border-color: var(--teal); transform: translateY(-2px); }
+
+    /* Results */
+    .result-panel {
+      background: #fff;
+      border: 2px solid rgba(0,217,165,0.20);
+      border-radius: 20px;
+      padding: 26px;
+      text-align: center;
+      display: none;
+      animation: slideUp 0.35s ease;
+      box-shadow: 0 8px 30px rgba(0,217,165,0.12);
+    }
+    .result-panel.show { display: block; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .result-box {
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(0,217,165,0.05);
+      padding: 14px 12px;
+    }
+
+    .result-big {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 4.2rem;
+      letter-spacing: 2px;
+      color: var(--teal);
+      line-height: 1;
+      text-shadow: 0 4px 20px rgba(0,217,165,0.28);
+      margin-bottom: 8px;
+    }
+    .result-label {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .result-rating {
+      font-size: 1.2rem;
+      font-weight: 900;
+      margin-top: 14px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .rating-legendary { background: linear-gradient(135deg, #ffd700, #ffed4a); color: #1a1a2e; box-shadow: 0 6px 20px rgba(255,215,0,0.25); }
+    .rating-excellent { background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; box-shadow: 0 6px 20px rgba(0,217,165,0.25); }
+    .rating-good { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; box-shadow: 0 6px 20px rgba(79,172,254,0.25); }
+    .rating-average { background: rgba(107,114,128,0.15); color: var(--text-dark); border: 2px solid rgba(107,114,128,0.25); }
+    .rating-slow { background: rgba(255,71,87,0.12); color: var(--red-dark); border: 2px solid rgba(255,71,87,0.30); }
+
+    .result-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .login-prompt {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .login-prompt a {
+      color: var(--teal);
+      text-decoration: underline;
+      font-weight: 800;
+    }
+    .login-prompt a:hover { color: var(--teal-dark); }
+
+    /* Leaderboard */
+    .leaderboard-section {
+      background: #fff;
+      border: 2px solid rgba(0,217,165,0.20);
+      border-radius: 20px;
+      padding: 26px;
+      box-shadow: 0 8px 30px rgba(0,217,165,0.12);
+    }
+
+    .lb-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid rgba(0,217,165,0.14);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .lb-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-dark);
+    }
+
+    .lb-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(0,217,165,0.08);
+      padding: 4px;
+      border-radius: 12px;
+      flex-wrap: wrap;
+    }
+
+    .lb-tab {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .lb-tab:hover { color: var(--teal); }
+    .lb-tab:disabled { opacity: 0.55; cursor: not-allowed; }
+    .lb-tab.active {
+      background: #fff;
+      color: var(--teal);
+      box-shadow: 0 2px 8px rgba(0,217,165,0.15);
+    }
+
+    .lb-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: rgba(0,217,165,0.05);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .lb-row:hover {
+      background: rgba(0,217,165,0.10);
+      transform: translateX(4px);
+      border-color: rgba(0,217,165,0.20);
+    }
+
+    .lb-row.top-1 {
+      background: linear-gradient(90deg, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0.05) 100%);
+      border: 2px solid rgba(255,215,0,0.35);
+      box-shadow: 0 4px 16px rgba(255,215,0,0.18);
+    }
+
+    .lb-rank {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      width: 40px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .lb-row.top-1 .lb-rank { color: #ffd700; }
+
+    .lb-name {
+      flex: 1;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lb-score {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: var(--teal);
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .lb-empty {
+      text-align: center;
+      padding: 28px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    /* ========== FOOTER - SAME AS YOUR TEMPLATE ========== */
+    footer {
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      margin-top: auto;
+    }
+
+    .footer-border {
+      height: 3px;
+      background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink));
+      background-size: 300% 100%;
+      animation: gradientSlide 6s linear infinite;
+    }
+    @keyframes gradientSlide {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    .footer-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .footer-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      animation: blobFloat 20s ease-in-out infinite;
+    }
+    .footer-blob:nth-child(1) {
+      width: 400px; height: 400px;
+      background: var(--pink);
+      top: -200px; left: -100px;
+    }
+    .footer-blob:nth-child(2) {
+      width: 350px; height: 350px;
+      background: var(--blue);
+      bottom: -150px; right: -80px;
+      animation-delay: -7s;
+    }
+    .footer-blob:nth-child(3) {
+      width: 300px; height: 300px;
+      background: var(--purple);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -14s;
+    }
+    @keyframes blobFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(30px,-30px) scale(1.1); }
+      66% { transform: translate(-30px,30px) scale(0.9); }
+    }
+
+    .footer-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 20px 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-hero {
+      text-align: center;
+      margin-bottom: 50px;
+      padding-bottom: 50px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 6px;
+      margin-bottom: 16px;
+      display: inline-block;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .footer-tagline {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.6;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-bottom: 50px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .footer-column { text-align: center; }
+    .footer-column h5 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      color: rgba(255,255,255,0.9);
+    }
+    .footer-column ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-column a {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+    .footer-column a:hover { color: var(--teal); }
+
+    .footer-bottom {
+      padding-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+    }
+
+    .footer-copyright {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 16px;
+    }
+
+    .footer-legal {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .footer-legal a {
+      color: rgba(255,255,255,0.4);
+      font-size: 0.8rem;
+      transition: color 0.2s ease;
+    }
+    .footer-legal a:hover { color: #fff; }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 700px) {
+      header { height: 56px; padding: 0 14px; }
+      .nav-inner { gap: 12px; }
+      .header-logo { font-size: 1.4rem; letter-spacing: 3px; }
+      .back-btn { padding: 6px 12px; font-size: 0.75rem; }
+
+      .game-hero { padding: 40px 20px; }
+      .game-icon { width: 52px; height: 52px; }
+      .game-hero-title { font-size: 2.6rem; }
+      .game-hero-desc { font-size: 0.92rem; }
+
+      .game-wrapper { padding: 28px 16px 40px; }
+      .stats-bar { grid-template-columns: 1fr; gap: 10px; }
+      .stat-card { padding: 12px; }
+      .stat-value { font-size: 1.55rem; }
+
+      .controls { padding: 14px; }
+      .metric { min-width: 46%; flex: 1; }
+
+      .text-box { min-height: 150px; font-size: 1.0rem; line-height: 1.85; }
+      .result-main { grid-template-columns: 1fr; }
+      .result-big { font-size: 3.6rem; }
+
+      .leaderboard-section { padding: 20px; }
+      .lb-title { font-size: 1.3rem; }
+      .lb-tab { font-size: 0.75rem; padding: 8px 12px; }
+
+      .footer-main { padding: 50px 20px 30px; }
+      .footer-logo { font-size: 2.2rem; }
+      .footer-links { grid-template-columns: 1fr; gap: 30px; }
+    }
+
+    @media (max-width: 400px) {
+      .game-hero-title { font-size: 2.1rem; }
+      .result-big { font-size: 3.1rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav class="nav-inner">
+      <div class="nav-left">
+        <a href="../../solo.html" class="back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+          Back
+        </a>
+      </div>
+
+      <a href="/" class="header-logo">THEGAMING.CO</a>
+
+      <div class="nav-right-wrapper">
+        <div class="header-actions">
+          <div class="user-pill-skeleton" id="auth-skeleton"></div>
+
+          <div class="nav-right-logged-out">
+            <a href="/login.html" class="auth-link">Sign In</a>
+          </div>
+
+          <div class="nav-right-logged-in">
+            <div class="user-menu-wrapper">
+              <button class="user-pill" type="button" id="user-menu-button" aria-haspopup="true" aria-expanded="false">
+                <span class="user-pill-label" id="header-username-label">Player</span>
+              </button>
+
+              <div class="user-menu" id="user-menu" role="menu">
+                <a href="/profile.html" class="user-menu-item" role="menuitem">
+                  <span>Profile</span>
+                </a>
+                <button type="button" class="user-menu-item" id="user-menu-signout" role="menuitem">
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </nav>
+  </header>
+
+  <main>
+    <section class="game-hero">
+      <div class="stars-bg-hero" aria-hidden="true">
+        <span class="star-hero">&#10022;</span>
+        <span class="star-hero">&#10022;</span>
+        <span class="star-hero">&#10022;</span>
+        <span class="star-hero">&#10022;</span>
+        <span class="star-hero">&#10022;</span>
+        <span class="star-hero">&#10022;</span>
+      </div>
+
+      <div class="game-hero-content">
+        <div class="game-icon">
+          <!-- Keyboard icon -->
+          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="18" width="48" height="28" rx="6" fill="none" stroke="#00d9a5" stroke-width="4" />
+            <rect x="14" y="24" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="22" y="24" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="30" y="24" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="38" y="24" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="46" y="24" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="14" y="32" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="22" y="32" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="30" y="32" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="38" y="32" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="46" y="32" width="6" height="6" rx="2" fill="#b3fff0" />
+            <rect x="18" y="40" width="28" height="4" rx="2" fill="#00d9a5" />
+          </svg>
+        </div>
+
+        <h1 class="game-hero-title">TYPING SPEED</h1>
+        <p class="game-hero-desc">Type the text as fast and accurately as you can. Track WPM + accuracy and compete globally.</p>
+      </div>
+    </section>
+
+    <div class="game-wrapper">
+      <div class="game-container">
+
+        <div class="stats-bar">
+          <div class="stat-card">
+            <div class="stat-label">Attempts</div>
+            <div class="stat-value" id="stat-attempts">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Best</div>
+            <div class="stat-value" id="stat-best">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Average</div>
+            <div class="stat-value" id="stat-avg">—</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="control-left">
+            <div class="pill-group" aria-label="Select duration">
+              <button class="pill active" data-seconds="30" id="dur-30">30s</button>
+              <button class="pill" data-seconds="60" id="dur-60">60s</button>
+              <button class="pill" data-seconds="120" id="dur-120">120s</button>
+            </div>
+
+            <button class="btn btn-secondary" id="new-text-btn" type="button">New Text</button>
+          </div>
+
+          <div class="control-right">
+            <div class="live-metrics">
+              <div class="metric">
+                <div class="k">Time Left</div>
+                <div class="v"><strong id="time-left">60</strong>s</div>
+              </div>
+              <div class="metric">
+                <div class="k">WPM</div>
+                <div class="v"><strong id="live-wpm">0</strong></div>
+              </div>
+              <div class="metric">
+                <div class="k">Accuracy</div>
+                <div class="v"><strong id="live-acc">100</strong>%</div>
+              </div>
+              <div class="metric">
+                <div class="k">Errors</div>
+                <div class="v"><strong id="live-err">0</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="typing-board">
+          <div class="typing-top">
+            <div class="typing-title">⌨️ Type This</div>
+            <div class="status-chip idle" id="status-chip">Ready • Start typing</div>
+          </div>
+
+          <div class="typing-body">
+            <div class="text-box" aria-label="Text to type">
+              <div class="text-content" id="text-content"></div>
+            </div>
+
+            <div class="input-wrap">
+              <input
+                class="typing-input"
+                id="typing-input"
+                type="text"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="Click here and start typing..."
+              />
+              <div class="helper-row">
+                <span>Tip: <strong>Don’t paste</strong> — just type naturally.</span>
+                <span><strong id="progress-count">0</strong>/<strong id="total-count">0</strong> chars</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-panel" id="result-panel">
+          <div class="result-big" id="result-wpm">0</div>
+          <div class="result-label">Words Per Minute</div>
+
+          <div class="result-rating" id="result-rating">Good</div>
+
+          <div class="result-main">
+            <div class="result-box">
+              <div class="result-label">Accuracy</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text-dark);" id="result-acc">100%</div>
+            </div>
+            <div class="result-box">
+              <div class="result-label">Errors</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text-dark);" id="result-err">0</div>
+            </div>
+            <div class="result-box">
+              <div class="result-label">Correct Chars</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text-dark);" id="result-correct">0</div>
+            </div>
+          </div>
+
+          <div class="result-actions">
+            <button class="btn btn-primary" id="save-btn" type="button">Save to Leaderboard</button>
+            <button class="btn btn-secondary" id="retry-btn" type="button">Try Again</button>
+          </div>
+
+          <div class="login-prompt" id="login-prompt" style="display:none;">
+            <a href="/login.html">Sign in</a> to save your score
+          </div>
+        </div>
+
+        <div class="leaderboard-section">
+          <div class="lb-header">
+            <h3 class="lb-title">🏆 Leaderboard</h3>
+            <div class="lb-tabs">
+              <button class="lb-tab active" id="tab-global" data-type="global">Global</button>
+              <button class="lb-tab" id="tab-today" data-type="today">Today</button>
+              <button class="lb-tab" id="tab-personal" data-type="personal" disabled>My Best</button>
+            </div>
+          </div>
+
+          <div class="lb-list" id="lb-list">
+            <div class="lb-empty">Loading leaderboard...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-border"></div>
+    <div class="footer-bg">
+      <div class="footer-blob"></div>
+      <div class="footer-blob"></div>
+      <div class="footer-blob"></div>
+    </div>
+
+    <div class="footer-main">
+      <div class="footer-hero">
+        <h2 class="footer-logo">THEGAMING.CO</h2>
+        <p class="footer-tagline">Free social games for couples, squads, and massive parties. No downloads, no sign-ups — just instant fun.</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-column">
+          <h5>GAMES</h5>
+          <ul>
+            <li><a href="/solo.html">Solo</a></li>
+            <li><a href="/duos.html">Duos</a></li>
+            <li><a href="/squad-games.html">Squad</a></li>
+            <li><a href="/party-games.html">Party</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h5>COMMUNITY</h5>
+          <ul>
+            <li><a href="/supporters.html">Supporters</a></li>
+            <li><a href="#">Suggest a Game</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h5>COMPANY</h5>
+          <ul>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Advertise</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Settings</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const GAME_ID = 'typing-test';
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFhc2UiLCJyZWYiOiJ0dnZpdnRtenpvZnN5ZWhhdHpsdmwiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2NDg5MTE4NiwiZXhwIjoyMDgwNDY3MTg2fQ.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
+
+    // ========== AUTH HEADER ==========
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    (function primeHeaderFromCache() {
+      try {
+        const cachedLabel = localStorage.getItem('tgco_header_label');
+        const cachedFull = localStorage.getItem('tgco_header_full');
+        if (cachedLabel && cachedFull) {
+          headerUsernameLabel.textContent = cachedLabel;
+          headerUsernameLabel.title = cachedFull;
+          if (authSkeleton) authSkeleton.style.display = 'none';
+          if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+        } else {
+          if (authSkeleton) authSkeleton.style.display = 'none';
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        }
+      } catch (e) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+      }
+    })();
+
+    function updateAuthUI(user) {
+      if (authSkeleton) authSkeleton.style.display = 'none';
+      if (user) {
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+        if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+      } else {
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
+        try {
+          localStorage.removeItem('tgco_header_label');
+          localStorage.removeItem('tgco_header_full');
+        } catch (e) {}
+      }
+    }
+
+    function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+      const base = (display_name && display_name.trim()) || (gamer_tag && gamer_tag.trim()) || (user && user.email && user.email.split('@')[0]) || '';
+      const trimmed = base.trim();
+      if (!trimmed) {
+        headerUsernameLabel.textContent = 'Player';
+        headerUsernameLabel.title = '';
+        return;
+      }
+      const maxLen = 16;
+      let label = trimmed;
+      if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+      headerUsernameLabel.textContent = label;
+      headerUsernameLabel.title = trimmed;
+
+      try {
+        localStorage.setItem('tgco_header_full', trimmed);
+        localStorage.setItem('tgco_header_label', label);
+      } catch (e) {}
+    }
+
+    async function loadSessionAndProfile() {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) { updateAuthUI(null); return; }
+      const user = data?.session?.user ?? null;
+      updateAuthUI(user);
+      if (!user) return;
+
+      try {
+        const { data: profile, error: profErr, status } = await supabaseClient
+          .from('profiles')
+          .select('display_name,gamer_tag')
+          .eq('id', user.id)
+          .single();
+
+        if (profErr && status !== 406) { applyHeaderNameFromProfile(null, null, user); return; }
+        if (profile) applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
+        else applyHeaderNameFromProfile(null, null, user);
+      } catch (err) {
+        applyHeaderNameFromProfile(null, null, user);
+      }
+    }
+
+    loadSessionAndProfile();
+
+    let userMenuOpen = false;
+    function setUserMenuOpen(open) {
+      userMenuOpen = open;
+      if (!userMenuButton || !userMenu) return;
+      if (open) {
+        userMenu.classList.add('open');
+        userMenuButton.setAttribute('aria-expanded', 'true');
+      } else {
+        userMenu.classList.remove('open');
+        userMenuButton.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    if (userMenuButton && userMenu) {
+      userMenuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setUserMenuOpen(!userMenuOpen);
+      });
+      document.addEventListener('click', () => { if (userMenuOpen) setUserMenuOpen(false); });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setUserMenuOpen(false); });
+    }
+
+    async function signOut() {
+      try {
+        localStorage.removeItem('tgco_header_label');
+        localStorage.removeItem('tgco_header_full');
+      } catch (e) {}
+      await supabaseClient.auth.signOut();
+      window.location.href = '/';
+    }
+
+    if (userMenuSignOut) {
+      userMenuSignOut.addEventListener('click', (event) => {
+        event.preventDefault();
+        setUserMenuOpen(false);
+        signOut();
+      });
+    }
+
+    // ========== TYPING GAME LOGIC ==========
+    const statusChip = document.getElementById('status-chip');
+    const textContentEl = document.getElementById('text-content');
+    const typingInput = document.getElementById('typing-input');
+
+    const timeLeftEl = document.getElementById('time-left');
+    const liveWpmEl = document.getElementById('live-wpm');
+    const liveAccEl = document.getElementById('live-acc');
+    const liveErrEl = document.getElementById('live-err');
+
+    const progressCountEl = document.getElementById('progress-count');
+    const totalCountEl = document.getElementById('total-count');
+
+    const resultPanel = document.getElementById('result-panel');
+    const resultWpm = document.getElementById('result-wpm');
+    const resultAcc = document.getElementById('result-acc');
+    const resultErr = document.getElementById('result-err');
+    const resultCorrect = document.getElementById('result-correct');
+    const resultRating = document.getElementById('result-rating');
+
+    const saveBtn = document.getElementById('save-btn');
+    const retryBtn = document.getElementById('retry-btn');
+    const loginPrompt = document.getElementById('login-prompt');
+    const newTextBtn = document.getElementById('new-text-btn');
+
+    const statAttempts = document.getElementById('stat-attempts');
+    const statBest = document.getElementById('stat-best');
+    const statAvg = document.getElementById('stat-avg');
+
+    const durButtons = Array.from(document.querySelectorAll('.pill[data-seconds]'));
+
+    let durationSeconds = 60;
+    let interval = null;
+    let startedAt = null;
+    let ended = false;
+
+    let testText = '';
+    let currentUser = null;
+
+    // Session stats
+    let attempts = 0;
+    let wpmScores = [];
+
+    const WORDS = [
+      "the","of","to","and","a","in","is","you","that","it","he","was","for","on","are","as","with","his","they","I",
+      "at","be","this","have","from","or","one","had","by","word","but","not","what","all","were","we","when","your",
+      "can","said","there","use","an","each","which","she","do","how","their","if","will","up","other","about","out",
+      "many","then","them","these","so","some","her","would","make","like","him","into","time","has","look","two",
+      "more","write","go","see","number","no","way","could","people","my","than","first","water","been","call","who",
+      "oil","its","now","find","long","down","day","did","get","come","made","may","part","over","new","sound","take",
+      "only","little","work","know","place","years","live","me","back","give","most","very","after","thing","our",
+      "just","name","good","sentence","man","think","say","great","where","help","through","much","before","line","right",
+      "too","means","old","any","same","tell","boy","follow","came","want","show","also","around","form","three","small",
+      "set","put","end","does","another","well","large","must","big","even","such","because","turn","here","why","ask",
+      "went","men","read","need","land","different","home","us","move","try","kind","hand","picture","again","change",
+      "off","play","spell","air","away","animal","house","point","page","letter","mother","answer","found","study","still",
+      "learn","should","America","world","high","every","near","add","food","between","own","below","country","plant",
+      "last","school","father","keep","tree","never","start","city","earth","eyes","light","thought","head","under"
+    ];
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function buildText(targetLen = 260) {
+      const arr = [];
+      while (arr.join(' ').length < targetLen) {
+        arr.push(WORDS[randInt(0, WORDS.length - 1)]);
+      }
+      // add punctuation occasionally
+      let text = arr.join(' ');
+      text = text.replace(/\b(i)\b/g, 'I');
+      const punct = [",", ".", ";"];
+      // sprinkle punctuation
+      let out = '';
+      for (let i = 0; i < text.length; i++) {
+        out += text[i];
+        if (i > 0 && i % 60 === 0 && text[i] === ' ') {
+          out = out.trimEnd() + punct[randInt(0, punct.length - 1)] + ' ';
+        }
+      }
+      return out.trim();
+    }
+
+    function renderText(text) {
+      textContentEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < text.length; i++) {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.dataset.i = String(i);
+        span.textContent = text[i];
+        frag.appendChild(span);
+      }
+      textContentEl.appendChild(frag);
+
+      totalCountEl.textContent = text.length;
+      progressCountEl.textContent = '0';
+      setCurrentChar(0);
+    }
+
+    function setCurrentChar(index) {
+      const prev = textContentEl.querySelector('.char.current');
+      if (prev) prev.classList.remove('current');
+      const cur = textContentEl.querySelector(`.char[data-i="${index}"]`);
+      if (cur) cur.classList.add('current');
+    }
+
+    function setStatus(mode) {
+      statusChip.classList.remove('idle','running','done');
+      if (mode === 'idle') {
+        statusChip.classList.add('idle');
+        statusChip.textContent = 'Ready • Start typing';
+      } else if (mode === 'running') {
+        statusChip.classList.add('running');
+        statusChip.textContent = 'Live • Keep going';
+      } else {
+        statusChip.classList.add('done');
+        statusChip.textContent = 'Finished • Results below';
+      }
+    }
+
+    function setDuration(seconds) {
+      if (startedAt || ended) return; // lock duration mid-run
+      durationSeconds = seconds;
+      timeLeftEl.textContent = String(durationSeconds);
+      durButtons.forEach(b => b.classList.toggle('active', Number(b.dataset.seconds) === seconds));
+    }
+
+    durButtons.forEach(btn => {
+      btn.addEventListener('click', () => setDuration(Number(btn.dataset.seconds)));
+    });
+
+    function resetLive() {
+      clearInterval(interval);
+      interval = null;
+      startedAt = null;
+      ended = false;
+
+      typingInput.value = '';
+      typingInput.disabled = false;
+
+      timeLeftEl.textContent = String(durationSeconds);
+      liveWpmEl.textContent = '0';
+      liveAccEl.textContent = '100';
+      liveErrEl.textContent = '0';
+
+      resultPanel.classList.remove('show');
+      setStatus('idle');
+
+      // regenerate chars state
+      const chars = textContentEl.querySelectorAll('.char');
+      chars.forEach(c => c.classList.remove('correct','incorrect','current'));
+      progressCountEl.textContent = '0';
+      setCurrentChar(0);
+      updateSaveVisibility();
+    }
+
+    function newText() {
+      testText = buildText(durationSeconds === 120 ? 380 : (durationSeconds === 30 ? 210 : 280));
+      renderText(testText);
+      resetLive();
+    }
+
+    newTextBtn.addEventListener('click', () => {
+      if (startedAt && !ended) return; // don't allow mid-run
+      newText();
+    });
+
+    retryBtn.addEventListener('click', () => {
+      // same text, just restart
+      resetLive();
+      typingInput.focus();
+    });
+
+    // prevent paste (optional)
+    typingInput.addEventListener('paste', (e) => {
+      e.preventDefault();
+    });
+
+    function calcStats(typed) {
+      const max = Math.min(typed.length, testText.length);
+      let correct = 0;
+      for (let i = 0; i < max; i++) {
+        if (typed[i] === testText[i]) correct++;
+      }
+      const errors = typed.length - correct;
+      const acc = typed.length === 0 ? 100 : Math.round((correct / typed.length) * 100);
+      return { correct, errors, acc, typedLen: typed.length };
+    }
+
+    function updateTextClasses(typed) {
+      const max = Math.min(typed.length, testText.length);
+      // mark typed part
+      for (let i = 0; i < testText.length; i++) {
+        const el = textContentEl.querySelector(`.char[data-i="${i}"]`);
+        if (!el) continue;
+
+        if (i < typed.length) {
+          el.classList.remove('current');
+          if (i < max && typed[i] === testText[i]) {
+            el.classList.add('correct');
+            el.classList.remove('incorrect');
+          } else {
+            el.classList.add('incorrect');
+            el.classList.remove('correct');
+          }
+        } else {
+          el.classList.remove('correct','incorrect');
+        }
+      }
+      const idx = Math.min(typed.length, testText.length - 1);
+      setCurrentChar(idx);
+      progressCountEl.textContent = String(Math.min(typed.length, testText.length));
+    }
+
+    function computeWPM(correctChars, seconds) {
+      const minutes = seconds / 60;
+      if (minutes <= 0) return 0;
+      // standard: 5 chars = 1 word
+      return Math.max(0, Math.round((correctChars / 5) / minutes));
+    }
+
+    function tick() {
+      const now = performance.now();
+      const elapsed = (now - startedAt) / 1000;
+      const remaining = Math.max(0, durationSeconds - elapsed);
+      timeLeftEl.textContent = String(Math.ceil(remaining));
+
+      const typed = typingInput.value;
+      const { correct, errors, acc } = calcStats(typed);
+
+      const wpm = computeWPM(correct, elapsed > 0 ? elapsed : 0.001);
+      liveWpmEl.textContent = String(wpm);
+      liveAccEl.textContent = String(acc);
+      liveErrEl.textContent = String(errors);
+
+      if (remaining <= 0) {
+        finishTest();
+      }
+    }
+
+    function startTestIfNeeded() {
+      if (startedAt || ended) return;
+      startedAt = performance.now();
+      setStatus('running');
+      // lock duration buttons mid-run
+      interval = setInterval(tick, 120);
+    }
+
+    function finishTest() {
+      if (ended) return;
+      ended = true;
+      clearInterval(interval);
+      interval = null;
+
+      typingInput.disabled = true;
+      setStatus('done');
+
+      const typed = typingInput.value;
+      const elapsed = durationSeconds; // fixed duration result (clean)
+      const { correct, errors, acc } = calcStats(typed);
+      const finalWpm = computeWPM(correct, elapsed);
+
+      // update session stats
+      attempts++;
+      wpmScores.push(finalWpm);
+      statAttempts.textContent = String(attempts);
+      statBest.textContent = Math.max(...wpmScores) + ' WPM';
+      const avg = Math.round(wpmScores.reduce((a,b)=>a+b,0) / wpmScores.length);
+      statAvg.textContent = avg + ' WPM';
+
+      // results
+      resultWpm.textContent = String(finalWpm);
+      resultAcc.textContent = acc + '%';
+      resultErr.textContent = String(errors);
+      resultCorrect.textContent = String(correct);
+
+      // rating
+      let r = '', cls = '';
+      if (finalWpm >= 100) { r = '🔥 LEGENDARY'; cls = 'rating-legendary'; }
+      else if (finalWpm >= 80) { r = '⚡ EXCELLENT'; cls = 'rating-excellent'; }
+      else if (finalWpm >= 55) { r = '✓ GOOD'; cls = 'rating-good'; }
+      else if (finalWpm >= 35) { r = '~ AVERAGE'; cls = 'rating-average'; }
+      else { r = '🐢 SLOW'; cls = 'rating-slow'; }
+      resultRating.textContent = r;
+      resultRating.className = 'result-rating ' + cls;
+
+      resultPanel.classList.add('show');
+
+      // enable save
+      currentScore = finalWpm;
+      updateSaveVisibility();
+
+      fetchLeaderboard();
+    }
+
+    typingInput.addEventListener('input', () => {
+      if (ended) return;
+      startTestIfNeeded();
+      const typed = typingInput.value;
+      updateTextClasses(typed);
+    });
+
+    // init first text
+    newText();
+
+    // ========== SAVE + LEADERBOARD (WPM higher is better) ==========
+    let currentScore = 0;
+    let currentLeaderboardType = 'global';
+
+    const tabGlobal = document.getElementById('tab-global');
+    const tabToday = document.getElementById('tab-today');
+    const tabPersonal = document.getElementById('tab-personal');
+
+    tabGlobal.addEventListener('click', () => {
+      currentLeaderboardType = 'global';
+      tabGlobal.classList.add('active');
+      tabToday.classList.remove('active');
+      tabPersonal.classList.remove('active');
+      fetchLeaderboard();
+    });
+
+    tabToday.addEventListener('click', () => {
+      currentLeaderboardType = 'today';
+      tabToday.classList.add('active');
+      tabGlobal.classList.remove('active');
+      tabPersonal.classList.remove('active');
+      fetchLeaderboard();
+    });
+
+    tabPersonal.addEventListener('click', () => {
+      currentLeaderboardType = 'personal';
+      tabPersonal.classList.add('active');
+      tabGlobal.classList.remove('active');
+      tabToday.classList.remove('active');
+      fetchLeaderboard();
+    });
+
+    async function updateSaveVisibility() {
+      const { data } = await supabaseClient.auth.getSession();
+      currentUser = data?.session?.user ?? null;
+
+      if (currentUser) {
+        saveBtn.style.display = 'inline-block';
+        loginPrompt.style.display = 'none';
+        saveBtn.textContent = 'Save to Leaderboard';
+        saveBtn.disabled = false;
+        tabPersonal.disabled = false;
+      } else {
+        saveBtn.style.display = 'none';
+        loginPrompt.style.display = ended ? 'block' : 'none';
+        tabPersonal.disabled = true;
+        if (currentLeaderboardType === 'personal') {
+          currentLeaderboardType = 'global';
+          tabGlobal.classList.add('active');
+          tabPersonal.classList.remove('active');
+        }
+      }
+    }
+
+    // Keep UI in sync with auth changes
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null;
+      updateAuthUI(user);
+      if (user) {
+        await loadSessionAndProfile();
+        tabPersonal.disabled = false;
+      } else {
+        tabPersonal.disabled = true;
+      }
+      updateSaveVisibility();
+    });
+
+    saveBtn.addEventListener('click', saveScore);
+
+    async function saveScore() {
+      if (!currentUser || !ended || !currentScore) return;
+
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+
+      const { error } = await supabaseClient
+        .from('solo_scores')
+        .insert({
+          user_id: currentUser.id,
+          game_id: GAME_ID,
+          score: currentScore
+        });
+
+      if (error) {
+        console.error('Save error:', error);
+        saveBtn.textContent = 'Error Saving';
+        setTimeout(() => {
+          saveBtn.textContent = 'Save to Leaderboard';
+          saveBtn.disabled = false;
+        }, 2000);
+      } else {
+        saveBtn.textContent = 'Saved! ✓';
+        fetchLeaderboard();
+      }
+    }
+
+    async function fetchLeaderboard() {
+      const lbList = document.getElementById('lb-list');
+      lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
+
+      // Personal Best (highest WPM first)
+      if (currentLeaderboardType === 'personal') {
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        const user = sessionData?.session?.user;
+
+        if (!user) {
+          lbList.innerHTML = '<div class="lb-empty">Sign in to see your personal best scores</div>';
+          return;
+        }
+
+        const { data, error } = await supabaseClient
+          .from('solo_scores')
+          .select('score, created_at, user_id')
+          .eq('game_id', GAME_ID)
+          .eq('user_id', user.id)
+          .order('score', { ascending: false })
+          .limit(10);
+
+        if (error) {
+          console.error('Personal leaderboard error:', error);
+          lbList.innerHTML = '<div class="lb-empty">Error loading your scores</div>';
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          lbList.innerHTML = '<div class="lb-empty">No scores yet. Play to set your record!</div>';
+          return;
+        }
+
+        lbList.innerHTML = '';
+        data.forEach((entry, index) => {
+          const topClass = index === 0 ? 'top-1' : '';
+          const date = new Date(entry.created_at);
+          const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+          const row = document.createElement('div');
+          row.className = `lb-row ${topClass}`;
+          row.innerHTML = `
+            <div class="lb-rank">${index === 0 ? '👑' : '#' + (index + 1)}</div>
+            <div class="lb-name">${dateStr} • ${timeStr}</div>
+            <div class="lb-score">${entry.score} WPM</div>
+          `;
+          lbList.appendChild(row);
+        });
+
+        return;
+      }
+
+      // Global/Today (highest WPM first)
+      let query = supabaseClient
+        .from('solo_scores')
+        .select('score, created_at, user_id')
+        .eq('game_id', GAME_ID)
+        .order('score', { ascending: false })
+        .limit(10);
+
+      if (currentLeaderboardType === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        query = query.gte('created_at', today.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Leaderboard error:', error);
+        lbList.innerHTML = '<div class="lb-empty">Error loading leaderboard</div>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        const emptyMsg = currentLeaderboardType === 'today'
+          ? 'No scores today yet. Be the first!'
+          : 'No scores yet. Be the first!';
+        lbList.innerHTML = `<div class="lb-empty">${emptyMsg}</div>`;
+        return;
+      }
+
+      const userIds = data.map(e => e.user_id);
+      const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('id, display_name, gamer_tag')
+        .in('id', userIds);
+
+      const profileMap = {};
+      if (profiles) profiles.forEach(p => profileMap[p.id] = p);
+
+      lbList.innerHTML = '';
+      data.forEach((entry, index) => {
+        const profile = profileMap[entry.user_id];
+        const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+        const topClass = index === 0 ? 'top-1' : '';
+
+        const row = document.createElement('div');
+        row.className = `lb-row ${topClass}`;
+        row.innerHTML = `
+          <div class="lb-rank">${index === 0 ? '👑' : '#' + (index + 1)}</div>
+          <div class="lb-name">${name}</div>
+          <div class="lb-score">${entry.score} WPM</div>
+        `;
+        lbList.appendChild(row);
+      });
+    }
+
+    // init auth-dependent UI + leaderboard
+    updateSaveVisibility();
+    fetchLeaderboard();
+  </script>
+</body>
+</html>
