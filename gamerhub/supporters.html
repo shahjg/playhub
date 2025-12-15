@@ -3,94 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supporters – Hall of Legends | TheGaming.co</title>
-    <meta name="description" content="Meet the legends who keep TheGaming.co free for everyone. View our top supporters leaderboard and find out how to get your name listed forever.">
+    <title>Hall of Champions – Our Supporters | TheGaming.co</title>
+    <meta name="description" content="Meet the legends who keep TheGaming.co free for everyone. Support us and get your name, brand, or channel displayed forever.">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="https://thegaming.co/supporters.html">
 
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Hall of Champions – Our Supporters | TheGaming.co">
+    <meta property="og:description" content="Meet the legends who keep TheGaming.co free for everyone.">
+    <meta property="og:url" content="https://thegaming.co/supporters.html">
+
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
             --pink: #ff6b9d;
-            --pink-dark: #c44569;
-            --blue: #4facfe;
-            --blue-dark: #0077cc;
-            --purple: #a445b2;
-            --purple-dark: #7a1052;
+            --pink-dark: #e84a7f;
+            --purple: #a855f7;
             --gold: #ffd700;
-            --silver: #c0c0c0;
+            --gold-dark: #c9a800;
+            --gold-glow: rgba(255, 215, 0, 0.3);
+            --silver: #a8b4c0;
             --bronze: #cd7f32;
-            --dark: #0a0a0f;
+            --dark: #08080c;
+            --dark-card: #0c0c12;
+            --text-light: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.45);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background: var(--dark);
-            color: white;
+            color: var(--text-light);
+            overflow-x: hidden;
             min-height: 100vh;
         }
 
-        h1, h2, h3, h4 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
+        h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+        a { color: inherit; text-decoration: none; }
+
+        /* ========== UNIFIED BACKGROUND ========== */
+        .page-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse 100% 60% at 50% 0%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse 80% 50% at 20% 60%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 80% 50% at 80% 80%, rgba(255, 215, 0, 0.04) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0a10 0%, #08080c 100%);
+            pointer-events: none;
+            z-index: 0;
         }
 
-        a {
-            color: inherit;
-            text-decoration: none;
+        /* Floating hearts */
+        .floating-elements {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
         }
 
-        /* ========== HEADER (MATCHES SITE SHELL) ========== */
+        .float-heart {
+            position: absolute;
+            font-size: 1.2rem;
+            opacity: 0.15;
+            animation: floatUp 18s infinite linear;
+        }
+
+        .float-heart:nth-child(1) { left: 5%; animation-delay: 0s; }
+        .float-heart:nth-child(2) { left: 15%; animation-delay: -3s; font-size: 0.9rem; }
+        .float-heart:nth-child(3) { left: 28%; animation-delay: -7s; }
+        .float-heart:nth-child(4) { left: 42%; animation-delay: -2s; font-size: 1.4rem; }
+        .float-heart:nth-child(5) { left: 58%; animation-delay: -10s; }
+        .float-heart:nth-child(6) { left: 72%; animation-delay: -5s; font-size: 1rem; }
+        .float-heart:nth-child(7) { left: 85%; animation-delay: -12s; }
+        .float-heart:nth-child(8) { left: 95%; animation-delay: -8s; font-size: 0.8rem; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-10vh) rotate(20deg); opacity: 0; }
+        }
+
+        /* ========== HEADER ========== */
         header {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 100;
-            padding: 14px 18px;
+            height: 60px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            background: rgba(10, 10, 15, 0.88);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0 18px;
+            background: rgba(8, 8, 12, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 107, 157, 0.1);
         }
 
         .nav-inner {
             width: 100%;
             max-width: 1100px;
+            margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
             gap: 24px;
         }
 
-        .nav-left {
-            justify-self: flex-start;
+        .nav-left { justify-self: flex-start; }
+        .nav-right-wrapper { justify-self: flex-end; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255, 107, 157, 0.08);
+            border: 1px solid rgba(255, 107, 157, 0.15);
+            color: rgba(255, 107, 157, 0.8);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
         }
 
-        .nav-right-wrapper {
-            justify-self: flex-end;
-            display: flex;
-            justify-content: flex-end;
+        .back-btn:hover {
+            background: rgba(255, 107, 157, 0.15);
+            border-color: rgba(255, 107, 157, 0.3);
+            color: var(--pink);
+            transform: translateX(-2px);
         }
+
+        .back-btn svg { width: 16px; height: 16px; }
 
         .header-logo {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.6rem;
             letter-spacing: 4px;
             color: white;
-            text-decoration: none;
             position: relative;
-            white-space: nowrap;
             justify-self: center;
         }
 
@@ -98,146 +160,155 @@
             content: '';
             position: absolute;
             bottom: -2px;
-            left: 0;
-            right: 0;
+            left: 0; right: 0;
             height: 2px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
+            background: linear-gradient(90deg, var(--pink), var(--purple), var(--pink));
         }
 
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: nowrap;
-        }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
 
         .auth-link {
             font-size: 0.85rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.75);
-            text-decoration: none;
-            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.7);
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            transition: color 0.2s ease;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
         }
+        .auth-link:hover { color: white; }
 
-        .auth-link:hover {
-            color: #ffffff;
-        }
+        .user-menu-wrapper { position: relative; }
 
         .user-pill {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
+            height: 36px;
+            padding: 0 16px;
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            font-size: 0.85rem;
-            font-weight: 700;
+            background: rgba(255, 255, 255, 0.04);
             cursor: pointer;
-            padding: 0;
-            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .user-pill:hover { background: rgba(255, 255, 255, 0.08); }
+        .user-pill-label { font-size: 0.85rem; font-weight: 600; color: rgba(255, 255, 255, 0.9); }
+
+        .user-pill-skeleton {
+            width: 100px;
+            height: 36px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
 
-        .user-pill:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-1px);
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        .user-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 170px;
+            padding: 6px;
+            border-radius: 14px;
+            background: rgba(12, 12, 18, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transform: translateY(-4px);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            z-index: 120;
         }
+        .user-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
-        .user-initial {
-            text-transform: uppercase;
+        .user-menu-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
         }
+        .user-menu-item:hover { background: rgba(255, 107, 157, 0.1); color: var(--pink); }
 
-        .nav-right-logged-in {
-            display: none; /* toggle this via JS when auth is wired up */
-        }
-
-        /* MOBILE: keep grid so logo stays centered */
-        @media (max-width: 700px) {
-            header {
-                padding: 10px 14px;
-            }
-
-            .nav-inner {
-                grid-template-columns: 1fr auto 1fr;
-                gap: 12px;
-            }
-
-            .header-logo {
-                font-size: 1.4rem;
-                letter-spacing: 3px;
-                justify-self: center;
-            }
-
-            .header-actions {
-                gap: 10px;
-            }
+        /* ========== PAGE CONTENT ========== */
+        .page-content {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ========== HERO ========== */
         .hero {
+            padding: 140px 20px 50px;
             text-align: center;
-            padding: 100px 20px 60px; /* extra top to clear fixed header */
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 30% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 50%, rgba(255, 107, 157, 0.1) 0%, transparent 50%);
         }
 
         .hero-content {
-            position: relative;
-            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .hero h1 {
-            font-size: 4rem;
-            margin-bottom: 15px;
-            background: linear-gradient(135deg, var(--gold), #fff, var(--gold));
+        .hero-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            display: block;
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.4));
+            animation: trophyBounce 3s ease-in-out infinite;
+        }
+
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.02); }
+        }
+
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(3rem, 10vw, 5rem);
+            letter-spacing: 8px;
+            line-height: 1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--gold) 50%, var(--pink) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .hero p {
-            font-size: 1.2rem;
+        .hero-subtitle {
+            font-size: 1.1rem;
             color: rgba(255, 255, 255, 0.6);
-            max-width: 500px;
-            margin: 0 auto 30px;
             line-height: 1.7;
+            margin-bottom: 30px;
         }
 
-        .donate-cta {
+        .hero-cta {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: linear-gradient(135deg, var(--pink), var(--purple));
             padding: 16px 40px;
             border-radius: 50px;
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            color: white;
             font-weight: 700;
             font-size: 1rem;
             letter-spacing: 1px;
             text-transform: uppercase;
-            text-decoration: none;
-            color: white;
             box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3);
             transition: all 0.3s ease;
         }
 
-        .donate-cta:hover {
+        .hero-cta:hover {
             transform: translateY(-3px);
             box-shadow: 0 15px 50px rgba(255, 107, 157, 0.4);
         }
@@ -246,11 +317,29 @@
         .stats-bar {
             display: flex;
             justify-content: center;
-            gap: 60px;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.02);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 80px;
+            padding: 50px 20px;
+            position: relative;
+        }
+
+        .stats-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 157, 0.2), transparent);
+        }
+
+        .stats-bar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 157, 0.2), transparent);
         }
 
         .stat {
@@ -259,180 +348,263 @@
 
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
+            font-size: 4rem;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-value.count {
             background: linear-gradient(135deg, var(--pink), var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
+        .stat-value.infinite {
+            background: linear-gradient(135deg, var(--gold), #ffed4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 5rem;
+        }
+
         .stat-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 5px;
+            letter-spacing: 3px;
+            font-weight: 600;
         }
 
-        /* ========== LEADERBOARD ========== */
-        .leaderboard-section {
-            max-width: 700px;
+        /* ========== MAIN CONTENT ========== */
+        main {
+            flex: 1;
+            padding: 30px 20px 80px;
+        }
+
+        .container {
+            max-width: 750px;
             margin: 0 auto;
-            padding: 60px 20px 100px;
         }
 
-        .leaderboard-header {
+        /* ========== SECTION HEADER ========== */
+        .section-header {
             text-align: center;
             margin-bottom: 40px;
         }
 
-        .leaderboard-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+        .section-header h2 {
+            font-size: 2.2rem;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            color: white;
         }
 
-        .leaderboard-header p {
-            color: rgba(255, 255, 255, 0.5);
+        .section-header p {
+            color: var(--text-muted);
             font-size: 0.95rem;
         }
 
-        /* Top 3 Podium */
+        /* ========== PODIUM (TOP 3) ========== */
         .podium {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 15px;
-            margin-bottom: 50px;
-            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 40px;
+            align-items: end;
         }
 
         .podium-spot {
             text-align: center;
-            padding: 25px 20px;
+            padding: 24px 16px;
             border-radius: 16px;
             position: relative;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease;
         }
 
-        .podium-spot:hover {
-            transform: translateY(-5px);
-        }
+        .podium-spot:hover { transform: translateY(-5px); }
 
-        .podium-spot.first {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
-            border: 2px solid rgba(255, 215, 0, 0.3);
+        .podium-spot.gold {
+            background: linear-gradient(180deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.03) 100%);
+            border: 2px solid var(--gold);
             order: 2;
-            min-width: 180px;
-            padding: 35px 25px;
+            padding: 35px 20px;
+            min-height: 200px;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.15);
+            animation: goldPulse 4s ease-in-out infinite;
         }
 
-        .podium-spot.second {
-            background: linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(192, 192, 192, 0.05) 100%);
-            border: 2px solid rgba(192, 192, 192, 0.3);
+        @keyframes goldPulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.1); }
+            50% { box-shadow: 0 0 70px rgba(255, 215, 0, 0.2); }
+        }
+
+        .podium-spot.silver {
+            background: linear-gradient(180deg, rgba(168, 180, 192, 0.12) 0%, rgba(168, 180, 192, 0.02) 100%);
+            border: 2px solid var(--silver);
             order: 1;
-            min-width: 150px;
+            min-height: 170px;
         }
 
-        .podium-spot.third {
-            background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(205, 127, 50, 0.05) 100%);
-            border: 2px solid rgba(205, 127, 50, 0.3);
+        .podium-spot.bronze {
+            background: linear-gradient(180deg, rgba(205, 127, 50, 0.12) 0%, rgba(205, 127, 50, 0.02) 100%);
+            border: 2px solid var(--bronze);
             order: 3;
-            min-width: 150px;
+            min-height: 150px;
         }
 
         .podium-rank {
             font-size: 2.5rem;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
-        .podium-spot.first .podium-rank { color: var(--gold); }
-        .podium-spot.second .podium-rank { color: var(--silver); }
-        .podium-spot.third .podium-rank { color: var(--bronze); }
+        .podium-spot.gold .podium-rank { font-size: 3rem; }
 
         .podium-name {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
+            color: white;
             margin-bottom: 8px;
             word-break: break-word;
+            line-height: 1.3;
         }
 
-        .podium-spot.first .podium-name {
-            font-size: 1.3rem;
+        .podium-spot.gold .podium-name { font-size: 1.15rem; }
+
+        .podium-message {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 8px;
+            word-break: break-word;
+            line-height: 1.4;
         }
 
-        .podium-amount {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 1px;
+        .podium-empty {
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        .podium-spot.first .podium-amount { color: var(--gold); }
-        .podium-spot.second .podium-amount { color: var(--silver); }
-        .podium-spot.third .podium-amount { color: var(--bronze); }
-
-        /* Rest of leaderboard */
-        .leaderboard-list {
+        /* ========== SUPPORTERS LIST ========== */
+        .supporters-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            list-style: none;
-            padding-left: 0;
+            gap: 8px;
         }
 
-        .leaderboard-item {
-            display: flex;
+        .supporter-row {
+            display: grid;
+            grid-template-columns: 40px 1fr;
             align-items: center;
-            gap: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 16px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
-            padding: 18px 25px;
+            border: 1px solid transparent;
             transition: all 0.3s ease;
         }
 
-        .leaderboard-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px);
+        .supporter-row:hover {
+            background: rgba(255, 107, 157, 0.05);
+            border-color: rgba(255, 107, 157, 0.1);
+            transform: translateX(4px);
         }
 
-        .item-rank {
+        .supporter-rank {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: rgba(255, 255, 255, 0.3);
-            min-width: 40px;
+            font-size: 1.2rem;
+            color: rgba(255, 107, 157, 0.5);
+            text-align: center;
         }
 
-        .item-name {
-            flex: 1;
+        .supporter-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .supporter-name {
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            color: white;
             word-break: break-word;
         }
 
-        .item-amount {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.3rem;
+        .supporter-message {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+            word-break: break-word;
+        }
+
+        /* Loading state */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .loading-row {
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-state a {
             color: var(--pink);
-            letter-spacing: 1px;
+            font-weight: 600;
         }
 
         /* ========== JOIN CTA ========== */
         .join-section {
+            margin-top: 60px;
             text-align: center;
-            padding: 80px 20px;
-            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(164, 69, 178, 0.1) 100%);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 60px 30px;
+            background: rgba(255, 107, 157, 0.03);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 107, 157, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .join-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 157, 0.3), transparent);
         }
 
         .join-section h2 {
-            font-size: 3rem;
-            margin-bottom: 15px;
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .join-section p {
+        .join-section > p {
             color: rgba(255, 255, 255, 0.6);
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             margin-bottom: 30px;
             max-width: 450px;
             margin-left: auto;
@@ -444,7 +616,7 @@
             display: flex;
             justify-content: center;
             gap: 40px;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
             flex-wrap: wrap;
         }
 
@@ -453,401 +625,480 @@
             align-items: center;
             gap: 10px;
             color: rgba(255, 255, 255, 0.7);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .perk-icon {
             font-size: 1.3rem;
         }
 
-        .join-section .donate-cta {
-            margin-top: 0;
+        .join-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 45px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3);
+            transition: all 0.3s ease;
         }
 
-        /* ========== FOOTER (MATCHES INDEX) ========== */
+        .join-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(255, 107, 157, 0.4);
+        }
+
+        /* ========== FOOTER ========== */
         footer {
-            background: #000;
+            background: #050508;
+            margin-top: auto;
             position: relative;
+            z-index: 2;
         }
 
         .footer-border {
-            height: 3px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink));
-            background-size: 300% 100%;
-            animation: gradientSlide 6s linear infinite;
+            height: 2px;
+            background: linear-gradient(90deg, var(--pink), var(--purple), var(--pink));
+            background-size: 200% 100%;
+            animation: borderFlow 4s linear infinite;
         }
 
-        @keyframes gradientSlide {
+        @keyframes borderFlow {
             0% { background-position: 0% 50%; }
-            100% { background-position: 300% 50%; }
+            100% { background-position: 200% 50%; }
         }
 
         .footer-main {
             max-width: 1100px;
             margin: 0 auto;
-            padding: 70px 20px 50px;
+            padding: 40px 20px 25px;
         }
 
-        .footer-grid {
+        .footer-links {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 60px;
-            margin-bottom: 50px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-bottom: 30px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .footer-brand {
-            padding-right: 30px;
-        }
-
-        .footer-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 4px;
-            margin-bottom: 20px;
-            display: inline-block;
-            position: relative;
-        }
-
-        .footer-logo::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--pink), var(--purple));
-        }
-
-        .footer-brand > p {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.5);
-            line-height: 1.8;
-            margin-bottom: 25px;
-        }
+        .footer-column { text-align: center; }
 
         .footer-column h5 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
+            font-size: 0.85rem;
             letter-spacing: 2px;
-            margin-bottom: 25px;
-            color: white;
-        }
-
-        .footer-column ul {
-            list-style: none;
-        }
-
-        .footer-column li {
             margin-bottom: 12px;
+            color: var(--pink);
         }
 
-        .footer-column a {
-            color: rgba(255, 255, 255, 0.5);
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .footer-column a:hover {
-            color: white;
-            transform: translateX(5px);
-        }
+        .footer-column ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .footer-column a { color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; }
+        .footer-column a:hover { color: var(--pink); }
 
         .footer-bottom {
-            padding-top: 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 107, 157, 0.08);
+            text-align: center;
         }
 
         .footer-copyright {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .footer-legal {
-            display: flex;
-            gap: 30px;
-        }
-
-        .footer-legal a {
-            color: rgba(255, 255, 255, 0.4);
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: color 0.3s ease;
-        }
-
-        .footer-legal a:hover {
-            color: white;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.25);
         }
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 600px) {
-            .hero h1 {
-                font-size: 2.8rem;
-            }
+            header { height: 56px; padding: 0 14px; }
+            .header-logo { font-size: 1.4rem; }
+            .back-btn { padding: 6px 12px; font-size: 0.75rem; }
 
-            .stats-bar {
-                flex-direction: column;
-                gap: 30px;
-            }
+            .hero { padding: 110px 20px 40px; }
+            .hero-icon { font-size: 4rem; }
+            .hero-title { font-size: 2.8rem; letter-spacing: 5px; }
 
-            .podium {
-                flex-direction: column;
-                align-items: center;
-            }
+            .stats-bar { gap: 50px; padding: 40px 20px; }
+            .stat-value { font-size: 3rem; }
+            .stat-value.infinite { font-size: 4rem; }
 
-            .podium-spot {
-                width: 100%;
-                max-width: 280px;
-            }
+            main { padding: 20px 14px 60px; }
 
-            .podium-spot.first,
-            .podium-spot.second,
-            .podium-spot.third {
-                order: unset;
-            }
+            .podium { gap: 8px; }
+            .podium-spot { padding: 16px 10px; border-radius: 12px; }
+            .podium-spot.gold { padding: 24px 14px; min-height: 160px; }
+            .podium-spot.silver { min-height: 140px; }
+            .podium-spot.bronze { min-height: 125px; }
+            .podium-rank { font-size: 2rem; }
+            .podium-spot.gold .podium-rank { font-size: 2.5rem; }
+            .podium-name { font-size: 0.85rem; }
+            .podium-spot.gold .podium-name { font-size: 0.95rem; }
 
-            .leaderboard-item {
-                padding: 15px 18px;
-                gap: 15px;
-            }
+            .supporter-row { padding: 14px 16px; gap: 12px; }
+            .supporter-rank { font-size: 1rem; }
+            .supporter-name { font-size: 0.9rem; }
 
-            .join-perks {
-                flex-direction: column;
-                gap: 15px;
-            }
+            .join-section { padding: 50px 20px; }
+            .join-section h2 { font-size: 2rem; }
+            .join-perks { flex-direction: column; gap: 15px; align-items: center; }
 
-            .footer-grid {
-                grid-template-columns: 1fr;
-                gap: 40px;
-            }
-
-            .footer-brand {
-                grid-column: 1 / -1;
-                padding-right: 0;
-                text-align: center;
-            }
-
-            .footer-bottom {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .footer-legal {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .footer-column a:hover {
-                transform: none;
-            }
+            .footer-links { grid-template-columns: 1fr; gap: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ========== HEADER (SITE-WIDE) ========== -->
-    <header>
-        <nav class="nav-inner" aria-label="Main navigation">
-            <div class="nav-left"></div>
-
-            <a href="index.html" class="header-logo">THEGAMING.CO</a>
-
-            <div class="nav-right-wrapper">
-                <div class="header-actions nav-right-logged-out">
-                    <a href="login.html" class="auth-link">Sign In</a>
-                </div>
-
-                <div class="header-actions nav-right-logged-in">
-                    <button class="user-pill" type="button" aria-label="Account">
-                        <span class="user-initial">S</span>
-                    </button>
-                </div>
-            </div>
-        </nav>
-    </header>
-
-    <!-- ========== HERO ========== -->
-    <section class="hero">
-        <div class="hero-content">
-            <h1>🏆 HALL OF LEGENDS</h1>
-            <p>These amazing humans keep TheGaming.co free for everyone. Want your name up here?</p>
-            <a href="https://ko-fi.com/yourusername" class="donate-cta" target="_blank" rel="noopener noreferrer">
-                ☕ Support Us
-            </a>
-        </div>
-    </section>
-
-    <!-- ========== STATS ========== -->
-    <div class="stats-bar">
-        <div class="stat">
-            <div class="stat-value">$847</div>
-            <div class="stat-label">Total Raised</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">42</div>
-            <div class="stat-label">Supporters</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">∞</div>
-            <div class="stat-label">Gratitude</div>
-        </div>
+    <div class="page-bg"></div>
+    <div class="floating-elements">
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
+        <span class="float-heart">♥</span>
     </div>
 
-    <!-- ========== LEADERBOARD ========== -->
-    <section class="leaderboard-section">
-        <div class="leaderboard-header">
-            <h2>TOP SUPPORTERS</h2>
-            <p>Ranked by total contributions</p>
-        </div>
+    <div class="page-content">
+        <header>
+            <nav class="nav-inner">
+                <div class="nav-left">
+                    <a href="/" class="back-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        Home
+                    </a>
+                </div>
+                <a href="/" class="header-logo">THEGAMING.CO</a>
+                <div class="nav-right-wrapper">
+                    <div class="header-actions">
+                        <div class="user-pill-skeleton" id="auth-skeleton"></div>
+                        <div class="nav-right-logged-out">
+                            <a href="/login.html" class="auth-link">Sign In</a>
+                        </div>
+                        <div class="nav-right-logged-in">
+                            <div class="user-menu-wrapper">
+                                <button class="user-pill" type="button" id="user-menu-button">
+                                    <span class="user-pill-label" id="header-username-label">Player</span>
+                                </button>
+                                <div class="user-menu" id="user-menu">
+                                    <a href="/profile.html" class="user-menu-item">Profile</a>
+                                    <a href="/playhub/gamerhub/leaderboards.html" class="user-menu-item">Leaderboards</a>
+                                    <button type="button" class="user-menu-item" id="user-menu-signout">Sign Out</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
 
-        <!-- Top 3 Podium -->
-        <div class="podium">
-            <div class="podium-spot second">
-                <div class="podium-rank">🥈</div>
-                <div class="podium-name">Joe's Pizza NYC</div>
-                <div class="podium-amount">$75</div>
+        <section class="hero">
+            <div class="hero-content">
+                <span class="hero-icon">🏆</span>
+                <h1 class="hero-title">HALL OF CHAMPIONS</h1>
+                <p class="hero-subtitle">These incredible humans keep TheGaming.co free for everyone. Support us and get your name, brand, or channel displayed here forever.</p>
+                <a href="https://ko-fi.com/thegamingco" class="hero-cta" target="_blank" rel="noopener">
+                    ☕ Become a Champion
+                </a>
             </div>
-            <div class="podium-spot first">
-                <div class="podium-rank">👑</div>
-                <div class="podium-name">xXDarkSlayer99Xx</div>
-                <div class="podium-amount">$120</div>
-            </div>
-            <div class="podium-spot third">
-                <div class="podium-rank">🥉</div>
-                <div class="podium-name">@SarahPlaysGames</div>
-                <div class="podium-amount">$50</div>
-            </div>
-        </div>
+        </section>
 
-        <!-- Rest of Leaderboard -->
-        <ol class="leaderboard-list">
-            <li class="leaderboard-item">
-                <span class="item-rank">4</span>
-                <span class="item-name">Mike from Accounting</span>
-                <span class="item-amount">$45</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">5</span>
-                <span class="item-name">youtube.com/CoolGamingChannel</span>
-                <span class="item-amount">$40</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">6</span>
-                <span class="item-name">Anonymous</span>
-                <span class="item-amount">$35</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">7</span>
-                <span class="item-name">Taylor &amp; Jordan 💕</span>
-                <span class="item-amount">$30</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">8</span>
-                <span class="item-name">GameNight Gang</span>
-                <span class="item-amount">$25</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">9</span>
-                <span class="item-name">Chris R.</span>
-                <span class="item-amount">$20</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">10</span>
-                <span class="item-name">twitch.tv/ProGamerMom</span>
-                <span class="item-amount">$15</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">11</span>
-                <span class="item-name">Best Boss Ever ☕</span>
-                <span class="item-amount">$10</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">12</span>
-                <span class="item-name">Riley</span>
-                <span class="item-amount">$5</span>
-            </li>
-            <li class="leaderboard-item">
-                <span class="item-rank">13</span>
-                <span class="item-name">Night Owl Studios</span>
-                <span class="item-amount">$5</span>
-            </li>
-        </ol>
-    </section>
-
-    <!-- ========== JOIN CTA ========== -->
-    <section class="join-section">
-        <h2>JOIN THE LEADERBOARD</h2>
-        <p>Support TheGaming.co and get your name, gamertag, or brand displayed here forever.</p>
-        
-        <div class="join-perks">
-            <div class="perk">
-                <span class="perk-icon">✨</span>
-                <span>Any name you want</span>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value count" id="supporter-count">—</div>
+                <div class="stat-label">Champions</div>
             </div>
-            <div class="perk">
-                <span class="perk-icon">🔗</span>
-                <span>Link your channel/business</span>
-            </div>
-            <div class="perk">
-                <span class="perk-icon">♾️</span>
-                <span>Stays up forever</span>
+            <div class="stat">
+                <div class="stat-value infinite">∞</div>
+                <div class="stat-label">Gratitude</div>
             </div>
         </div>
 
-        <a href="https://ko-fi.com/yourusername" class="donate-cta" target="_blank" rel="noopener noreferrer">
-            ☕ Support &amp; Get Listed
-        </a>
-    </section>
-
-    <!-- ========== FOOTER (SITE-WIDE) ========== -->
-    <footer>
-        <div class="footer-border"></div>
-        
-        <div class="footer-main">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <div class="footer-logo">THEGAMING.CO</div>
-                    <p>Free social games for couples, friends, and massive parties. No downloads, no sign-ups — just instant fun with anyone, anywhere.</p>
+        <main>
+            <div class="container">
+                <div class="section-header">
+                    <h2>ALL CHAMPIONS</h2>
+                    <p>Ranked by total contributions</p>
                 </div>
 
-                <div class="footer-column">
-                    <h5>GAMES</h5>
-                    <ul>
-                        <li><a href="solo-games.html">Solo</a></li>
-                        <li><a href="date-night.html">Date Night</a></li>
-                        <li><a href="squad-games.html">Squad</a></li>
-                        <li><a href="party-games.html">Party</a></li>
-                    </ul>
+                <!-- Podium (Top 3) -->
+                <div class="podium" id="podium">
+                    <div class="podium-spot silver" id="podium-2">
+                        <div class="podium-rank">🥈</div>
+                        <div class="podium-name podium-empty">—</div>
+                    </div>
+                    <div class="podium-spot gold" id="podium-1">
+                        <div class="podium-rank">👑</div>
+                        <div class="podium-name podium-empty">—</div>
+                    </div>
+                    <div class="podium-spot bronze" id="podium-3">
+                        <div class="podium-rank">🥉</div>
+                        <div class="podium-name podium-empty">—</div>
+                    </div>
                 </div>
+
+                <!-- Full List -->
+                <div class="supporters-list" id="supporters-list">
+                    <div class="loading-state">
+                        <div class="loading-row"></div>
+                        <div class="loading-row"></div>
+                        <div class="loading-row"></div>
+                        <div class="loading-row"></div>
+                        <div class="loading-row"></div>
+                    </div>
+                </div>
+
+                <!-- Join CTA -->
+                <section class="join-section">
+                    <h2>JOIN THE CHAMPIONS</h2>
+                    <p>Support TheGaming.co and get your name, gamertag, business, or channel displayed here forever.</p>
+                    
+                    <div class="join-perks">
+                        <div class="perk">
+                            <span class="perk-icon">✨</span>
+                            <span>Any name you want</span>
+                        </div>
+                        <div class="perk">
+                            <span class="perk-icon">💬</span>
+                            <span>Add a shoutout message</span>
+                        </div>
+                        <div class="perk">
+                            <span class="perk-icon">♾️</span>
+                            <span>Displayed forever</span>
+                        </div>
+                    </div>
+
+                    <a href="https://ko-fi.com/thegamingco" class="join-btn" target="_blank" rel="noopener">
+                        ☕ Support & Get Listed
+                    </a>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-border"></div>
+            <div class="footer-main">
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h5>GAMES</h5>
+                        <ul>
+                            <li><a href="/solo.html">Solo</a></li>
+                            <li><a href="/duos.html">Duos</a></li>
+                            <li><a href="/squad-games.html">Squad</a></li>
+                            <li><a href="/party-games.html">Party</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h5>COMMUNITY</h5>
+                        <ul>
+                            <li><a href="/playhub/gamerhub/leaderboards.html">Leaderboards</a></li>
+                            <li><a href="/supporters.html">Hall of Champions</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h5>COMPANY</h5>
+                        <ul>
+                            <li><a href="/about.html">About</a></li>
+                            <li><a href="#">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+<script>
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Auth elements
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    // Auth UI
+    function updateAuthUI(user) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (user) {
+            loggedOutNav?.style.setProperty('display', 'none', 'important');
+            loggedInNav?.style.setProperty('display', 'flex', 'important');
+        } else {
+            loggedOutNav?.style.setProperty('display', 'flex', 'important');
+            loggedInNav?.style.setProperty('display', 'none', 'important');
+        }
+    }
+
+    async function loadSessionAndProfile() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) return updateAuthUI(null);
+        const user = data?.session?.user ?? null;
+        updateAuthUI(user);
+        if (!user) return;
+        const { data: profile } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
+        if (profile) {
+            const name = profile.display_name || profile.gamer_tag || user.email.split('@')[0];
+            headerUsernameLabel.textContent = name.length > 16 ? name.slice(0, 15) + '…' : name;
+        }
+    }
+
+    loadSessionAndProfile();
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session?.user ?? null);
+        if (session?.user) loadSessionAndProfile();
+    });
+
+    let userMenuOpen = false;
+    userMenuButton?.addEventListener('click', (e) => { e.stopPropagation(); userMenuOpen = !userMenuOpen; userMenu.classList.toggle('open', userMenuOpen); });
+    document.addEventListener('click', () => { userMenuOpen = false; userMenu?.classList.remove('open'); });
+    userMenuSignOut?.addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.href = '/'; });
+
+    // ========== LOAD SUPPORTERS ==========
+    async function loadSupporters() {
+        const supporterCountEl = document.getElementById('supporter-count');
+        const supportersListEl = document.getElementById('supporters-list');
+
+        try {
+            // Try the aggregated view first
+            let { data: supporters, error } = await supabaseClient
+                .from('supporters_leaderboard')
+                .select('display_name, message, lifetime_total, donation_count')
+                .order('lifetime_total', { ascending: false });
+
+            // Fallback to direct table if view doesn't exist
+            if (error) {
+                const result = await supabaseClient
+                    .from('supporters')
+                    .select('display_name, message, amount')
+                    .eq('is_public', true)
+                    .order('amount', { ascending: false });
                 
-                <div class="footer-column">
-                    <h5>COMPANY</h5>
-                    <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="#">Contact</a></li>
-                        <li><a href="supporters.html">Our Supporters</a></li>
-                    </ul>
-                </div>
-            </div>
+                supporters = result.data;
+                error = result.error;
+            }
 
-            <div class="footer-bottom">
-                <p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p>
-                <div class="footer-legal">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Cookie Settings</a>
+            if (error) throw error;
+
+            // Update supporter count
+            const count = supporters?.length || 0;
+            supporterCountEl.textContent = count;
+
+            // If no supporters
+            if (!supporters || supporters.length === 0) {
+                supportersListEl.innerHTML = `
+                    <div class="empty-state">
+                        <p>Be the first champion!</p>
+                        <a href="https://ko-fi.com/thegamingco" target="_blank">Support Now →</a>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render podium (top 3)
+            renderPodium(supporters.slice(0, 3));
+
+            // Render remaining list (4+)
+            renderList(supporters.slice(3));
+
+        } catch (err) {
+            console.error('Error loading supporters:', err);
+            supporterCountEl.textContent = '0';
+            supportersListEl.innerHTML = `
+                <div class="empty-state">
+                    <p>Be the first champion!</p>
+                    <a href="https://ko-fi.com/thegamingco" target="_blank">Support Now →</a>
                 </div>
-            </div>
-        </div>
-    </footer>
+            `;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderPodium(top3) {
+        const positions = [
+            { rank: 1, spotId: 'podium-1' },
+            { rank: 2, spotId: 'podium-2' },
+            { rank: 3, spotId: 'podium-3' }
+        ];
+
+        positions.forEach(({ rank, spotId }) => {
+            const spot = document.getElementById(spotId);
+            const supporter = top3[rank - 1];
+            const nameEl = spot.querySelector('.podium-name');
+            
+            // Remove any existing message element
+            const existingMsg = spot.querySelector('.podium-message');
+            if (existingMsg) existingMsg.remove();
+
+            if (supporter) {
+                nameEl.textContent = supporter.display_name;
+                nameEl.classList.remove('podium-empty');
+
+                // Add message if exists
+                if (supporter.message) {
+                    const msgEl = document.createElement('div');
+                    msgEl.className = 'podium-message';
+                    msgEl.textContent = `"${supporter.message}"`;
+                    spot.appendChild(msgEl);
+                }
+            } else {
+                nameEl.textContent = '—';
+                nameEl.classList.add('podium-empty');
+            }
+        });
+    }
+
+    function renderList(supporters) {
+        const listEl = document.getElementById('supporters-list');
+
+        if (!supporters || supporters.length === 0) {
+            listEl.innerHTML = '';
+            return;
+        }
+
+        listEl.innerHTML = supporters.map((supporter, index) => {
+            const rank = index + 4; // Start from 4
+            const name = escapeHtml(supporter.display_name);
+            const message = supporter.message ? escapeHtml(supporter.message) : '';
+
+            return `
+                <div class="supporter-row">
+                    <div class="supporter-rank">${rank}</div>
+                    <div class="supporter-info">
+                        <div class="supporter-name">${name}</div>
+                        ${message ? `<div class="supporter-message">"${message}"</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Load supporters on page load
+    loadSupporters();
+
+    // Refresh every 2 minutes
+    setInterval(loadSupporters, 2 * 60 * 1000);
+</script>
 
 </body>
 </html>
