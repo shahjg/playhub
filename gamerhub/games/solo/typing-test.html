@@ -424,6 +424,8 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 2px solid rgba(0, 217, 165, 0.15);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .typing-title {
@@ -438,6 +440,8 @@
             font-size: 2rem;
             color: var(--teal);
             letter-spacing: 1px;
+            min-width: 60px;
+            text-align: right;
         }
 
         .typing-timer.warning {
@@ -446,6 +450,87 @@
 
         .typing-timer.danger {
             color: var(--red);
+        }
+
+        .duration-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .duration-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            background: rgba(0, 217, 165, 0.08);
+            border: 2px solid transparent;
+        }
+
+        .duration-pill:hover {
+            color: var(--teal);
+            background: rgba(0, 217, 165, 0.15);
+        }
+
+        .duration-pill.active {
+            background: var(--teal);
+            color: white;
+            border-color: var(--teal);
+        }
+
+        .duration-pill:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .lb-duration-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(0, 217, 165, 0.1);
+            flex-wrap: wrap;
+        }
+
+        .lb-duration-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .lb-duration-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .lb-duration-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            background: rgba(0, 217, 165, 0.06);
+            border: 1px solid rgba(0, 217, 165, 0.12);
+        }
+
+        .lb-duration-btn:hover {
+            color: var(--teal);
+            border-color: rgba(0, 217, 165, 0.25);
+            background: rgba(0, 217, 165, 0.1);
+        }
+
+        .lb-duration-btn.active {
+            background: var(--teal);
+            color: white;
+            border-color: var(--teal);
         }
 
         .text-display {
@@ -977,6 +1062,33 @@
                 padding: 8px 12px;
             }
 
+            .duration-selector {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .duration-pill {
+                flex: 1;
+                text-align: center;
+                padding: 8px 10px;
+            }
+
+            .lb-duration-filter {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .lb-duration-btns {
+                width: 100%;
+            }
+
+            .lb-duration-btn {
+                flex: 1;
+                text-align: center;
+            }
+
             .footer-links {
                 grid-template-columns: 1fr;
             }
@@ -1013,6 +1125,9 @@
                             </button>
                 
                             <div class="user-menu" id="user-menu" role="menu">
+                                <a href="/leaderboards.html" class="user-menu-item" role="menuitem">
+                                    <span>Leaderboards</span>
+                                </a>
                                 <a href="/profile.html" class="user-menu-item" role="menuitem">
                                     <span>Profile</span>
                                 </a>
@@ -1069,6 +1184,12 @@
                 <div class="typing-board">
                     <div class="typing-header">
                         <div class="typing-title">⌨️ Type This Text</div>
+                        <div class="duration-selector">
+                            <button class="duration-pill" data-duration="15">15s</button>
+                            <button class="duration-pill" data-duration="30">30s</button>
+                            <button class="duration-pill active" data-duration="60">60s</button>
+                            <button class="duration-pill" data-duration="120">2m</button>
+                        </div>
                         <div class="typing-timer" id="timer">60s</div>
                     </div>
                     <div class="text-display" id="text-display"></div>
@@ -1127,6 +1248,17 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <div class="lb-duration-filter">
+                        <span class="lb-duration-label">Duration:</span>
+                        <div class="lb-duration-btns">
+                            <button class="lb-duration-btn" data-duration="15">15s</button>
+                            <button class="lb-duration-btn" data-duration="30">30s</button>
+                            <button class="lb-duration-btn active" data-duration="60">60s</button>
+                            <button class="lb-duration-btn" data-duration="120">2m</button>
+                        </div>
+                    </div>
+                    
                     <div class="lb-list" id="lb-list">
                         <div class="lb-empty">Loading leaderboard...</div>
                     </div>
@@ -1175,7 +1307,6 @@
     </footer>
 
 <script>
-    const GAME_ID = 'typing-test';
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     
@@ -1259,7 +1390,9 @@
     }
 
     // ========== GAME LOGIC ==========
-    const DURATION = 60;
+    let duration = 60; // Current selected duration
+    let leaderboardDuration = 60; // Duration for leaderboard filter
+    
     const WORDS = [
         "the","of","to","and","a","in","is","you","that","it","he","was","for","on","are","as","with","his","they","I",
         "at","be","this","have","from","or","one","had","by","word","but","not","what","all","were","we","when","your",
@@ -1274,9 +1407,10 @@
     let gameState = 'idle'; // idle, running, done
     let timerInterval = null;
     let startTime = 0;
-    let timeLeft = DURATION;
+    let timeLeft = duration;
     let testText = '';
     let currentScore = 0;
+    let scoreDuration = 60; // Duration when score was achieved
     let currentUser = null;
 
     // Session stats
@@ -1300,9 +1434,47 @@
     const statBest = document.getElementById('stat-best');
     const statAvg = document.getElementById('stat-avg');
 
+    // Duration selector buttons
+    const durationPills = document.querySelectorAll('.duration-pill');
+    const lbDurationBtns = document.querySelectorAll('.lb-duration-btn');
+
+    // Duration selection
+    durationPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            if (gameState === 'running') return; // Can't change during game
+            
+            duration = parseInt(pill.dataset.duration);
+            timeLeft = duration;
+            timerEl.textContent = duration >= 60 ? Math.floor(duration / 60) + 'm' : duration + 's';
+            
+            durationPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            
+            // Generate new text appropriate for duration
+            newText();
+        });
+    });
+
+    // Leaderboard duration filter
+    lbDurationBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            leaderboardDuration = parseInt(btn.dataset.duration);
+            lbDurationBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            fetchLeaderboard();
+        });
+    });
+
     function generateText() {
+        // Generate more text for longer durations
+        let targetLength;
+        if (duration <= 15) targetLength = 150;
+        else if (duration <= 30) targetLength = 250;
+        else if (duration <= 60) targetLength = 350;
+        else targetLength = 500;
+        
         const arr = [];
-        while (arr.join(' ').length < 320) {
+        while (arr.join(' ').length < targetLength) {
             arr.push(WORDS[Math.floor(Math.random() * WORDS.length)]);
         }
         let text = arr.join(' ');
@@ -1330,11 +1502,22 @@
     function startGame() {
         gameState = 'running';
         startTime = performance.now();
-        timeLeft = DURATION;
+        timeLeft = duration;
+        
+        // Disable duration selector during game
+        durationPills.forEach(p => p.disabled = true);
         
         timerInterval = setInterval(() => {
             timeLeft--;
-            timerEl.textContent = timeLeft + 's';
+            
+            // Format timer display
+            if (timeLeft >= 60) {
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
+            } else {
+                timerEl.textContent = timeLeft + 's';
+            }
             
             // Timer warnings
             timerEl.classList.remove('warning', 'danger');
@@ -1354,6 +1537,9 @@
         clearInterval(timerInterval);
         gameState = 'done';
         typingInput.disabled = true;
+        
+        // Re-enable duration selector
+        durationPills.forEach(p => p.disabled = false);
 
         const typed = typingInput.value;
         let correct = 0;
@@ -1362,8 +1548,9 @@
         }
 
         const accuracy = typed.length > 0 ? Math.round((correct / typed.length) * 100) : 0;
-        const wpm = Math.round((correct / 5) / (DURATION / 60));
+        const wpm = Math.round((correct / 5) / (duration / 60));
         currentScore = wpm;
+        scoreDuration = duration; // Remember which duration this score was for
 
         // Update session stats
         attempts++;
@@ -1401,18 +1588,36 @@
         resultRating.className = 'result-rating ' + ratingClass;
 
         resultPanel.classList.add('show');
+        
+        // Switch leaderboard to show this duration
+        leaderboardDuration = duration;
+        lbDurationBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.duration) === leaderboardDuration));
+        
         checkAuthForSave();
+        fetchLeaderboard();
     }
 
     function resetGame() {
         clearInterval(timerInterval);
         gameState = 'idle';
-        timeLeft = DURATION;
+        timeLeft = duration;
         typingInput.value = '';
         typingInput.disabled = false;
-        timerEl.textContent = DURATION + 's';
+        
+        // Format timer display
+        if (duration >= 60) {
+            const mins = Math.floor(duration / 60);
+            timerEl.textContent = mins + 'm';
+        } else {
+            timerEl.textContent = duration + 's';
+        }
+        
         timerEl.classList.remove('warning', 'danger');
         resultPanel.classList.remove('show');
+        
+        // Re-enable duration selector
+        durationPills.forEach(p => p.disabled = false);
+        
         renderText();
         updateDisplay('');
         typingInput.focus();
@@ -1470,11 +1675,14 @@
         saveBtn.textContent = 'Saving...';
         saveBtn.disabled = true;
 
+        // Use the duration that was active when the score was achieved
+        const gameId = `typing-test-${scoreDuration}`;
+
         const { error } = await supabaseClient
             .from('solo_scores')
             .insert({
                 user_id: currentUser.id,
-                game_id: GAME_ID,
+                game_id: gameId,
                 score: currentScore
             });
 
@@ -1544,6 +1752,8 @@
         const lbList = document.getElementById('lb-list');
         lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
 
+        const gameId = `typing-test-${leaderboardDuration}`;
+
         // Personal Best
         if (currentLeaderboardType === 'personal') {
             const { data: sessionData } = await supabaseClient.auth.getSession();
@@ -1557,7 +1767,7 @@
             const { data, error } = await supabaseClient
                 .from('solo_scores')
                 .select('score, created_at, user_id')
-                .eq('game_id', GAME_ID)
+                .eq('game_id', gameId)
                 .eq('user_id', user.id)
                 .order('score', { ascending: false })
                 .limit(10);
@@ -1569,7 +1779,7 @@
             }
 
             if (!data || data.length === 0) {
-                lbList.innerHTML = '<div class="lb-empty">No scores yet. Play to set your record!</div>';
+                lbList.innerHTML = '<div class="lb-empty">No scores yet for this duration. Play to set your record!</div>';
                 return;
             }
 
@@ -1598,7 +1808,7 @@
         let query = supabaseClient
             .from('solo_scores')
             .select('score, created_at, user_id')
-            .eq('game_id', GAME_ID)
+            .eq('game_id', gameId)
             .order('score', { ascending: false })
             .limit(10);
 
