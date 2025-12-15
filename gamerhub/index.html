@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
     <title>Free Party Games, Trivia & Tests – TheGaming.co</title>
     <meta name="description" content="Play free party games, date-night questions, squad games, and massive live trivia for 1–100+ players. No downloads, no sign-ups — just instant fun in your browser.">
     <meta name="robots" content="index,follow">
@@ -67,6 +70,12 @@
             background: var(--dark);
             color: white;
             overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Prevent iOS zoom on input focus */
+        input, textarea, select, button {
+            font-size: 16px;
         }
 
         h1, h2, h3, h4 {
@@ -88,7 +97,7 @@
             height: 60px;
             display: flex;
             align-items: center;
-            padding: 0 18px;
+            padding: 0 max(18px, env(safe-area-inset-left)) 0 max(18px, env(safe-area-inset-right));
             background: rgba(10, 10, 15, 0.88);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
@@ -461,7 +470,8 @@
         /* ========== FULL SCREEN CATEGORIES (4-PILLAR) ========== */
         .categories-section {
             display: flex;
-            min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport for iPhone */
+            min-height: 100vh; /* Fallback for older browsers */
         }
 
         .category-panel {
@@ -769,66 +779,116 @@
 
         /* ========== LEADERBOARDS TEASER ========== */
         .leaderboards-teaser {
-            padding: 80px 20px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 107, 157, 0.05) 50%, rgba(168, 85, 247, 0.05) 100%);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            text-align: center;
+            position: relative;
+            padding: 120px 20px;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0f1f 50%, #0f1a1a 100%);
+            border-top: 3px solid rgba(255, 215, 0, 0.3);
+            border-bottom: 3px solid rgba(255, 215, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .leaderboards-teaser::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 107, 157, 0.15) 0%, transparent 50%);
+            animation: pulseGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
         }
 
         .leaderboards-teaser-content {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            text-align: center;
         }
 
         .leaderboards-teaser h2 {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            background: linear-gradient(135deg, var(--gold), var(--pink), var(--purple));
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4a 50%, #ffd700 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-shadow: 0 0 60px rgba(255, 215, 0, 0.5);
+            letter-spacing: 4px;
+            line-height: 1.1;
         }
 
         .leaderboards-teaser p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 35px;
-            line-height: 1.6;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 45px;
+            line-height: 1.7;
+            font-weight: 500;
         }
 
         .leaderboards-btn {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 16px 40px;
+            gap: 12px;
+            padding: 20px 50px;
             border-radius: 50px;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 1px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            background: linear-gradient(135deg, var(--gold), #ffed4a);
-            color: #1a1a1a;
+            background: linear-gradient(135deg, #ffd700, #ffed4a, #ffd700);
+            background-size: 200% 100%;
+            color: #0a0a0f;
             text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 50px rgba(255, 215, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .leaderboards-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
         }
 
         .leaderboards-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 50px rgba(255, 215, 0, 0.5);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.6);
+            background-position: 100% 0;
+        }
+
+        .leaderboards-btn:hover::before {
+            left: 100%;
+        }
+
+        .leaderboards-btn:active {
+            transform: translateY(-2px) scale(1);
         }
 
         @media (max-width: 700px) {
             .leaderboards-teaser {
-                padding: 60px 20px;
+                padding: 80px 20px;
             }
 
             .leaderboards-teaser h2 {
-                font-size: 2.2rem;
+                letter-spacing: 2px;
             }
 
-            .leaderboards-teaser p {
+            .leaderboards-btn {
+                padding: 18px 40px;
                 font-size: 1rem;
             }
         }
@@ -1131,6 +1191,52 @@
             font-weight: 600;
         }
 
+        /* Supporters loading state */
+        .supporters-loading {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .loading-shimmer {
+            height: 48px;
+            border-radius: 10px;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.03) 0%,
+                rgba(255, 255, 255, 0.08) 50%,
+                rgba(255, 255, 255, 0.03) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmerMove 1.5s infinite;
+        }
+
+        @keyframes shimmerMove {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .supporters-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .supporters-empty p {
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .supporters-empty a {
+            color: var(--pink);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .supporters-empty a:hover {
+            text-decoration: underline;
+        }
+
         /* ========== FOOTER - SIMPLIFIED ========== */
         footer {
             background: #000;
@@ -1205,44 +1311,16 @@
         .footer-main {
             max-width: 1100px;
             margin: 0 auto;
-            padding: 60px 20px 40px;
+            padding: 50px 20px 30px;
             position: relative;
             z-index: 1;
-        }
-
-        .footer-hero {
-            text-align: center;
-            margin-bottom: 50px;
-            padding-bottom: 50px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .footer-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.8rem;
-            letter-spacing: 6px;
-            margin-bottom: 16px;
-            display: inline-block;
-            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .footer-tagline {
-            font-size: 1.05rem;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.6;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
         }
 
         .footer-links {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 40px;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
@@ -1354,21 +1432,7 @@
 
         @media (max-width: 700px) {
             .footer-main {
-                padding: 50px 20px 30px;
-            }
-
-            .footer-hero {
-                margin-bottom: 40px;
-                padding-bottom: 40px;
-            }
-
-            .footer-logo {
-                font-size: 2.2rem;
-                letter-spacing: 4px;
-            }
-
-            .footer-tagline {
-                font-size: 0.95rem;
+                padding: 40px 20px 25px;
             }
 
             .footer-links {
@@ -1606,35 +1670,16 @@
                     <div class="support-right">
                         <div class="leaderboard-preview">
                             <div class="leaderboard-header">
-                                <h4>TOP SUPPORTERS</h4>
+                                <h4>HALL OF CHAMPIONS</h4>
                                 <a href="supporters.html">See all →</a>
                             </div>
 
-                            <div class="leaderboard-list">
-                                <div class="leaderboard-item gold">
-                                    <span class="lb-rank">👑</span>
-                                    <span class="lb-name">xXDarkSlayer99Xx</span>
-                                    <span class="lb-amount">$120</span>
-                                </div>
-                                <div class="leaderboard-item">
-                                    <span class="lb-rank">2</span>
-                                    <span class="lb-name">Joe's Pizza NYC</span>
-                                    <span class="lb-amount">$75</span>
-                                </div>
-                                <div class="leaderboard-item">
-                                    <span class="lb-rank">3</span>
-                                    <span class="lb-name">@SarahPlaysGames</span>
-                                    <span class="lb-amount">$50</span>
-                                </div>
-                                <div class="leaderboard-item">
-                                    <span class="lb-rank">4</span>
-                                    <span class="lb-name">Mike from Accounting</span>
-                                    <span class="lb-amount">$45</span>
-                                </div>
-                                <div class="leaderboard-item">
-                                    <span class="lb-rank">5</span>
-                                    <span class="lb-name">GameNight Gang</span>
-                                    <span class="lb-amount">$25</span>
+                            <div class="leaderboard-list" id="supporters-list">
+                                <!-- Loading state -->
+                                <div class="supporters-loading">
+                                    <div class="loading-shimmer"></div>
+                                    <div class="loading-shimmer"></div>
+                                    <div class="loading-shimmer"></div>
                                 </div>
                             </div>
 
@@ -1658,13 +1703,6 @@
         </div>
         
         <div class="footer-main">
-            <div class="footer-hero">
-                <h2 class="footer-logo">THEGAMING.CO</h2>
-                <p class="footer-tagline">
-                    Free social games for couples, squads, and massive parties. No downloads, no sign-ups — just instant fun.
-                </p>
-            </div>
-
             <div class="footer-links">
                 <div class="footer-column">
                     <h5>GAMES</h5>
@@ -1679,8 +1717,8 @@
                 <div class="footer-column">
                     <h5>COMMUNITY</h5>
                     <ul>
-                        <li><a href="leaderboards.html">🏆 Leaderboards</a></li>
-                        <li><a href="supporters.html">🏆 Hall of Champions</a></li>
+                        <li><a href="leaderboards.html">Leaderboards</a></li>
+                        <li><a href="supporters.html">Hall of Champions</a></li>
                         <li><a href="#">Suggest a Game</a></li>
                     </ul>
                 </div>
@@ -1883,6 +1921,91 @@
             signOut();
         });
     }
+
+    // ========== HALL OF CHAMPIONS - LIVE LOADING ==========
+    async function loadTopSupporters() {
+        const supportersList = document.getElementById('supporters-list');
+        if (!supportersList) return;
+
+        try {
+            // First try to fetch from the view (aggregated by display_name)
+            let { data: supporters, error } = await supabaseClient
+                .from('supporters_leaderboard')
+                .select('display_name, lifetime_total, donation_count')
+                .limit(5);
+
+            // If view doesn't exist, fall back to direct table query
+            if (error) {
+                const result = await supabaseClient
+                    .from('supporters')
+                    .select('display_name, amount')
+                    .eq('is_public', true)
+                    .order('amount', { ascending: false })
+                    .limit(5);
+                
+                supporters = result.data;
+                error = result.error;
+            }
+
+            if (error) throw error;
+
+            // If no supporters yet, show empty state
+            if (!supporters || supporters.length === 0) {
+                supportersList.innerHTML = `
+                    <div class="supporters-empty">
+                        <p>Be the first champion!</p>
+                        <a href="https://ko-fi.com/thegamingco" target="_blank">Support Now →</a>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render supporters
+            const leaderboardHTML = supporters.map((supporter, index) => {
+                const rank = index + 1;
+                const isGold = rank === 1;
+                const rankDisplay = isGold ? '👑' : rank;
+
+                // Get amount (handle both view and table formats)
+                const amount = supporter.lifetime_total 
+                    ? parseFloat(supporter.lifetime_total).toFixed(0)
+                    : parseFloat(supporter.amount).toFixed(0);
+
+                // Escape display name to prevent XSS
+                const safeName = supporter.display_name
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+
+                return `
+                    <div class="leaderboard-item ${isGold ? 'gold' : ''}">
+                        <span class="lb-rank">${rankDisplay}</span>
+                        <span class="lb-name">${safeName}</span>
+                        <span class="lb-amount">$${amount}</span>
+                    </div>
+                `;
+            }).join('');
+
+            supportersList.innerHTML = leaderboardHTML;
+
+        } catch (error) {
+            console.error('Error loading supporters:', error);
+            // Show empty state on error
+            supportersList.innerHTML = `
+                <div class="supporters-empty">
+                    <p>Be the first champion!</p>
+                    <a href="https://ko-fi.com/thegamingco" target="_blank">Support Now →</a>
+                </div>
+            `;
+        }
+    }
+
+    // Load supporters on page load
+    loadTopSupporters();
+
+    // Refresh every 5 minutes to show new donations
+    setInterval(loadTopSupporters, 5 * 60 * 1000);
 </script>
 </body>
 </html>
