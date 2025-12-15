@@ -43,6 +43,7 @@
       --purple: #a855f7;
       --red: #ff4757;
       --red-dark: #e84155;
+      --gold: #ffd700;
 
       --dark: #0a0a0f;
       --text-dark: #1a1a2e;
@@ -66,7 +67,7 @@
     h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
     a { color: inherit; text-decoration: none; }
 
-    /* ========== HEADER - SAME AS YOUR TEMPLATE ========== */
+    /* ========== HEADER ========== */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -439,6 +440,36 @@
     }
     .pill:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    /* Sound toggle */
+    .sound-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(0,217,165,0.08);
+      border: 1px solid rgba(0,217,165,0.15);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .sound-toggle:hover {
+      background: rgba(0,217,165,0.12);
+      color: var(--teal);
+    }
+    .sound-toggle.active {
+      background: rgba(0,217,165,0.15);
+      color: var(--teal);
+      border-color: rgba(0,217,165,0.30);
+    }
+    .sound-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+
     .live-metrics {
       display: flex;
       gap: 10px;
@@ -452,7 +483,7 @@
       border-radius: 12px;
       border: 1px solid rgba(0,217,165,0.16);
       background: rgba(0,217,165,0.05);
-      min-width: 120px;
+      min-width: 100px;
     }
     .metric .k {
       font-size: 0.72rem;
@@ -470,6 +501,10 @@
     }
     .metric .v strong { color: var(--teal); font-weight: 900; }
 
+    /* Time warning states */
+    .metric.warning .v strong { color: #f59e0b; }
+    .metric.danger .v strong { color: var(--red); }
+
     /* Typing board */
     .typing-board {
       background: var(--card);
@@ -477,6 +512,12 @@
       border: 3px solid rgba(0,217,165,0.20);
       box-shadow: 0 8px 30px var(--shadow);
       overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .typing-board.focused {
+      border-color: rgba(0,217,165,0.40);
+      box-shadow: 0 8px 40px rgba(0,217,165,0.20);
     }
 
     .typing-top {
@@ -513,6 +554,7 @@
       background: rgba(0,217,165,0.08);
       color: var(--teal-dark);
       white-space: nowrap;
+      transition: all 0.3s ease;
     }
 
     .status-chip.idle {
@@ -524,11 +566,16 @@
       border-color: rgba(0,217,165,0.25);
       background: rgba(0,217,165,0.10);
       color: var(--teal-dark);
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
     }
     .status-chip.done {
-      border-color: rgba(255,71,87,0.22);
-      background: rgba(255,71,87,0.08);
-      color: var(--red-dark);
+      border-color: rgba(255,215,0,0.35);
+      background: rgba(255,215,0,0.12);
+      color: #b8860b;
     }
 
     .typing-body { padding: 18px; }
@@ -537,14 +584,16 @@
       border-radius: 18px;
       border: 2px solid rgba(0,0,0,0.06);
       background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-      padding: 16px 16px;
-      line-height: 1.9;
-      font-size: 1.06rem;
+      padding: 20px 18px;
+      line-height: 2.1;
+      font-size: 1.15rem;
       color: var(--text-dark);
-      min-height: 160px;
+      min-height: 180px;
       user-select: none;
       position: relative;
       overflow: hidden;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+      letter-spacing: 0.5px;
     }
 
     .text-box::before {
@@ -559,15 +608,43 @@
     .text-content { position: relative; z-index: 1; }
 
     .char {
-      padding: 0 0.3px;
-      border-radius: 4px;
-      transition: background 0.1s ease;
+      padding: 2px 1px;
+      border-radius: 3px;
+      transition: all 0.08s ease;
+      position: relative;
     }
-    .char.correct { color: #0f172a; background: rgba(16,185,129,0.14); }
-    .char.incorrect { color: #0f172a; background: rgba(255,71,87,0.18); }
-    .char.current {
-      background: rgba(0,217,165,0.18);
-      outline: 2px solid rgba(0,217,165,0.35);
+    .char.correct { 
+      color: var(--teal-dark); 
+      background: rgba(16,185,129,0.18); 
+    }
+    .char.incorrect { 
+      color: #fff; 
+      background: rgba(255,71,87,0.85);
+      border-radius: 3px;
+    }
+    
+    /* Blinking cursor */
+    .char.current::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 2px;
+      bottom: 2px;
+      width: 2px;
+      background: var(--teal);
+      border-radius: 2px;
+      animation: cursorBlink 1s ease-in-out infinite;
+    }
+    
+    @keyframes cursorBlink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    /* When typing is active, cursor stays solid */
+    .typing-active .char.current::after {
+      animation: none;
+      opacity: 1;
     }
 
     .input-wrap {
@@ -580,11 +657,12 @@
       width: 100%;
       border-radius: 16px;
       border: 2px solid rgba(0,0,0,0.08);
-      padding: 14px 14px;
-      font-size: 1rem;
+      padding: 16px 18px;
+      font-size: 1.05rem;
       font-weight: 600;
       outline: none;
       transition: border 0.2s ease, box-shadow 0.2s ease;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     }
     .typing-input:focus {
       border-color: rgba(0,217,165,0.55);
@@ -641,70 +719,113 @@
       background: #fff;
       border: 2px solid rgba(0,217,165,0.20);
       border-radius: 20px;
-      padding: 26px;
+      padding: 30px;
       text-align: center;
       display: none;
-      animation: slideUp 0.35s ease;
+      animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       box-shadow: 0 8px 30px rgba(0,217,165,0.12);
     }
     .result-panel.show { display: block; }
 
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
+
+    .result-header {
+      margin-bottom: 20px;
+    }
+
+    .result-big {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 5rem;
+      letter-spacing: 3px;
+      color: var(--teal);
+      line-height: 1;
+      text-shadow: 0 4px 20px rgba(0,217,165,0.28);
+      margin-bottom: 5px;
+      animation: resultPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    }
+    
+    @keyframes resultPop {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    .result-label {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .result-rating {
+      font-size: 1.3rem;
+      font-weight: 900;
+      margin-top: 16px;
+      padding: 12px 24px;
+      border-radius: 999px;
+      display: inline-block;
+      animation: ratingSlide 0.4s ease 0.3s both;
+    }
+    
+    @keyframes ratingSlide {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .rating-legendary { 
+      background: linear-gradient(135deg, #ffd700, #ffed4a); 
+      color: #1a1a2e; 
+      box-shadow: 0 6px 25px rgba(255,215,0,0.35);
+      animation: ratingSlide 0.4s ease 0.3s both, legendaryGlow 2s ease-in-out infinite;
+    }
+    @keyframes legendaryGlow {
+      0%, 100% { box-shadow: 0 6px 25px rgba(255,215,0,0.35); }
+      50% { box-shadow: 0 6px 35px rgba(255,215,0,0.55); }
+    }
+    .rating-excellent { background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; box-shadow: 0 6px 20px rgba(0,217,165,0.25); }
+    .rating-good { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; box-shadow: 0 6px 20px rgba(79,172,254,0.25); }
+    .rating-average { background: rgba(107,114,128,0.15); color: var(--text-dark); border: 2px solid rgba(107,114,128,0.25); }
+    .rating-slow { background: rgba(255,71,87,0.12); color: var(--red-dark); border: 2px solid rgba(255,71,87,0.30); }
 
     .result-main {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
-      margin-top: 16px;
+      margin-top: 20px;
     }
 
     .result-box {
       border-radius: 16px;
       border: 1px solid rgba(0,0,0,0.06);
       background: rgba(0,217,165,0.05);
-      padding: 14px 12px;
+      padding: 16px 12px;
+      animation: resultBoxFade 0.3s ease both;
+    }
+    .result-box:nth-child(1) { animation-delay: 0.4s; }
+    .result-box:nth-child(2) { animation-delay: 0.5s; }
+    .result-box:nth-child(3) { animation-delay: 0.6s; }
+    
+    @keyframes resultBoxFade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .result-big {
+    .result-box-value {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 4.2rem;
-      letter-spacing: 2px;
-      color: var(--teal);
-      line-height: 1;
-      text-shadow: 0 4px 20px rgba(0,217,165,0.28);
-      margin-bottom: 8px;
-    }
-    .result-label {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      font-weight: 800;
-      text-transform: uppercase;
+      font-size: 2.4rem;
       letter-spacing: 1px;
+      color: var(--text-dark);
     }
-
-    .result-rating {
-      font-size: 1.2rem;
-      font-weight: 900;
-      margin-top: 14px;
-      padding: 10px 18px;
-      border-radius: 999px;
-      display: inline-block;
-    }
-    .rating-legendary { background: linear-gradient(135deg, #ffd700, #ffed4a); color: #1a1a2e; box-shadow: 0 6px 20px rgba(255,215,0,0.25); }
-    .rating-excellent { background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; box-shadow: 0 6px 20px rgba(0,217,165,0.25); }
-    .rating-good { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; box-shadow: 0 6px 20px rgba(79,172,254,0.25); }
-    .rating-average { background: rgba(107,114,128,0.15); color: var(--text-dark); border: 2px solid rgba(107,114,128,0.25); }
-    .rating-slow { background: rgba(255,71,87,0.12); color: var(--red-dark); border: 2px solid rgba(255,71,87,0.30); }
 
     .result-actions {
       display: flex;
       gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-top: 18px;
+      margin-top: 24px;
     }
 
     .login-prompt {
@@ -845,7 +966,7 @@
       font-weight: 700;
     }
 
-    /* ========== FOOTER - SAME AS YOUR TEMPLATE ========== */
+    /* ========== FOOTER ========== */
     footer {
       background: #000;
       position: relative;
@@ -905,43 +1026,16 @@
     .footer-main {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 60px 20px 40px;
+      padding: 50px 20px 30px;
       position: relative;
       z-index: 1;
-    }
-
-    .footer-hero {
-      text-align: center;
-      margin-bottom: 50px;
-      padding-bottom: 50px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .footer-logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.8rem;
-      letter-spacing: 6px;
-      margin-bottom: 16px;
-      display: inline-block;
-      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .footer-tagline {
-      font-size: 1.05rem;
-      color: rgba(255,255,255,0.6);
-      line-height: 1.6;
-      max-width: 560px;
-      margin: 0 auto;
     }
 
     .footer-links {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 40px;
-      margin-bottom: 50px;
+      margin-bottom: 40px;
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
@@ -1011,25 +1105,27 @@
       .stat-card { padding: 12px; }
       .stat-value { font-size: 1.55rem; }
 
-      .controls { padding: 14px; }
-      .metric { min-width: 46%; flex: 1; }
+      .controls { padding: 14px; flex-direction: column; align-items: stretch; }
+      .control-left { justify-content: center; }
+      .control-right { justify-content: center; }
+      .live-metrics { justify-content: center; }
+      .metric { min-width: 80px; flex: 1; }
 
-      .text-box { min-height: 150px; font-size: 1.0rem; line-height: 1.85; }
+      .text-box { min-height: 150px; font-size: 1.0rem; line-height: 2; padding: 16px 14px; }
       .result-main { grid-template-columns: 1fr; }
-      .result-big { font-size: 3.6rem; }
+      .result-big { font-size: 4rem; }
 
       .leaderboard-section { padding: 20px; }
       .lb-title { font-size: 1.3rem; }
       .lb-tab { font-size: 0.75rem; padding: 8px 12px; }
 
-      .footer-main { padding: 50px 20px 30px; }
-      .footer-logo { font-size: 2.2rem; }
+      .footer-main { padding: 40px 20px 25px; }
       .footer-links { grid-template-columns: 1fr; gap: 30px; }
     }
 
     @media (max-width: 400px) {
       .game-hero-title { font-size: 2.1rem; }
-      .result-big { font-size: 3.1rem; }
+      .result-big { font-size: 3.5rem; }
     }
   </style>
 </head>
@@ -1066,6 +1162,9 @@
                 <a href="/profile.html" class="user-menu-item" role="menuitem">
                   <span>Profile</span>
                 </a>
+                <a href="/leaderboards.html" class="user-menu-item" role="menuitem">
+                  <span>Leaderboards</span>
+                </a>
                 <button type="button" class="user-menu-item" id="user-menu-signout" role="menuitem">
                   <span>Sign Out</span>
                 </button>
@@ -1091,7 +1190,6 @@
 
       <div class="game-hero-content">
         <div class="game-icon">
-          <!-- Keyboard icon -->
           <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="18" width="48" height="28" rx="6" fill="none" stroke="#00d9a5" stroke-width="4" />
             <rect x="14" y="24" width="6" height="6" rx="2" fill="#b3fff0" />
@@ -1134,17 +1232,30 @@
         <div class="controls">
           <div class="control-left">
             <div class="pill-group" aria-label="Select duration">
-              <button class="pill active" data-seconds="30" id="dur-30">30s</button>
-              <button class="pill" data-seconds="60" id="dur-60">60s</button>
-              <button class="pill" data-seconds="120" id="dur-120">120s</button>
+              <button class="pill" data-seconds="15" id="dur-15">15s</button>
+              <button class="pill" data-seconds="30" id="dur-30">30s</button>
+              <button class="pill active" data-seconds="60" id="dur-60">60s</button>
+              <button class="pill" data-seconds="120" id="dur-120">2m</button>
             </div>
 
             <button class="btn btn-secondary" id="new-text-btn" type="button">New Text</button>
+            
+            <button class="sound-toggle" id="sound-toggle" type="button" title="Toggle sound effects">
+              <svg id="sound-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+              <svg id="sound-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </button>
           </div>
 
           <div class="control-right">
             <div class="live-metrics">
-              <div class="metric">
+              <div class="metric" id="time-metric">
                 <div class="k">Time Left</div>
                 <div class="v"><strong id="time-left">60</strong>s</div>
               </div>
@@ -1164,10 +1275,10 @@
           </div>
         </div>
 
-        <div class="typing-board">
+        <div class="typing-board" id="typing-board">
           <div class="typing-top">
             <div class="typing-title">⌨️ Type This</div>
-            <div class="status-chip idle" id="status-chip">Ready • Start typing</div>
+            <div class="status-chip idle" id="status-chip">Ready • Click below to start</div>
           </div>
 
           <div class="typing-body">
@@ -1187,31 +1298,32 @@
                 placeholder="Click here and start typing..."
               />
               <div class="helper-row">
-                <span>Tip: <strong>Don’t paste</strong> — just type naturally.</span>
-                <span><strong id="progress-count">0</strong>/<strong id="total-count">0</strong> chars</span>
+                <span>Tip: Focus and type naturally — <strong>no pasting allowed</strong></span>
+                <span><strong id="progress-count">0</strong> / <strong id="total-count">0</strong> chars</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="result-panel" id="result-panel">
-          <div class="result-big" id="result-wpm">0</div>
-          <div class="result-label">Words Per Minute</div>
-
-          <div class="result-rating" id="result-rating">Good</div>
+          <div class="result-header">
+            <div class="result-big" id="result-wpm">0</div>
+            <div class="result-label">Words Per Minute</div>
+            <div class="result-rating" id="result-rating">Good</div>
+          </div>
 
           <div class="result-main">
             <div class="result-box">
               <div class="result-label">Accuracy</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text-dark);" id="result-acc">100%</div>
+              <div class="result-box-value" id="result-acc">100%</div>
             </div>
             <div class="result-box">
               <div class="result-label">Errors</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text-dark);" id="result-err">0</div>
+              <div class="result-box-value" id="result-err">0</div>
             </div>
             <div class="result-box">
-              <div class="result-label">Correct Chars</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;color:var(--text-dark);" id="result-correct">0</div>
+              <div class="result-label">Correct</div>
+              <div class="result-box-value" id="result-correct">0</div>
             </div>
           </div>
 
@@ -1221,7 +1333,7 @@
           </div>
 
           <div class="login-prompt" id="login-prompt" style="display:none;">
-            <a href="/login.html">Sign in</a> to save your score
+            <a href="/login.html">Sign in</a> to save your score to the leaderboard
           </div>
         </div>
 
@@ -1253,11 +1365,6 @@
     </div>
 
     <div class="footer-main">
-      <div class="footer-hero">
-        <h2 class="footer-logo">THEGAMING.CO</h2>
-        <p class="footer-tagline">Free social games for couples, squads, and massive parties. No downloads, no sign-ups — just instant fun.</p>
-      </div>
-
       <div class="footer-links">
         <div class="footer-column">
           <h5>GAMES</h5>
@@ -1271,7 +1378,8 @@
         <div class="footer-column">
           <h5>COMMUNITY</h5>
           <ul>
-            <li><a href="/supporters.html">Supporters</a></li>
+            <li><a href="/leaderboards.html">Leaderboards</a></li>
+            <li><a href="/supporters.html">Hall of Champions</a></li>
             <li><a href="#">Suggest a Game</a></li>
           </ul>
         </div>
@@ -1299,10 +1407,144 @@
   <script>
     const GAME_ID = 'typing-test';
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFhc2UiLCJyZWYiOiJ0dnZpdnRtenpvZnN5ZWhhdHpsdmwiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2NDg5MTE4NiwiZXhwIjoyMDgwNDY3MTg2fQ.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = supabaseClient;
+
+    // ========== SOUND EFFECTS ==========
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playKeySound() {
+      if (!soundEnabled || !audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.frequency.value = 800 + Math.random() * 200;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      gainNode.gain.exponentialDecayTo = gainNode.gain.exponentialRampToValueAtTime;
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playErrorSound() {
+      if (!soundEnabled || !audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.frequency.value = 200;
+      oscillator.type = 'square';
+      
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playFinishSound() {
+      if (!soundEnabled || !audioCtx) return;
+      
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      
+      notes.forEach((freq, i) => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.frequency.value = freq;
+        oscillator.type = 'sine';
+        
+        const startTime = audioCtx.currentTime + i * 0.1;
+        gainNode.gain.setValueAtTime(0.12, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.3);
+      });
+    }
+
+    function playCountdownSound() {
+      if (!soundEnabled || !audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.frequency.value = 440;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.15);
+    }
+
+    // Sound toggle
+    const soundToggle = document.getElementById('sound-toggle');
+    const soundIconOn = document.getElementById('sound-icon-on');
+    const soundIconOff = document.getElementById('sound-icon-off');
+
+    // Load saved preference
+    try {
+      const saved = localStorage.getItem('tgco_typing_sound');
+      if (saved === 'off') {
+        soundEnabled = false;
+        soundToggle.classList.remove('active');
+        soundIconOn.style.display = 'none';
+        soundIconOff.style.display = 'block';
+      } else {
+        soundToggle.classList.add('active');
+      }
+    } catch (e) {}
+
+    soundToggle.addEventListener('click', () => {
+      initAudio();
+      soundEnabled = !soundEnabled;
+      
+      if (soundEnabled) {
+        soundToggle.classList.add('active');
+        soundIconOn.style.display = 'block';
+        soundIconOff.style.display = 'none';
+        playKeySound();
+      } else {
+        soundToggle.classList.remove('active');
+        soundIconOn.style.display = 'none';
+        soundIconOff.style.display = 'block';
+      }
+      
+      try {
+        localStorage.setItem('tgco_typing_sound', soundEnabled ? 'on' : 'off');
+      } catch (e) {}
+    });
 
     // ========== AUTH HEADER ==========
     const authSkeleton = document.getElementById('auth-skeleton');
@@ -1434,6 +1676,8 @@
     const statusChip = document.getElementById('status-chip');
     const textContentEl = document.getElementById('text-content');
     const typingInput = document.getElementById('typing-input');
+    const typingBoard = document.getElementById('typing-board');
+    const timeMetric = document.getElementById('time-metric');
 
     const timeLeftEl = document.getElementById('time-left');
     const liveWpmEl = document.getElementById('live-wpm');
@@ -1465,6 +1709,8 @@
     let interval = null;
     let startedAt = null;
     let ended = false;
+    let lastTypedLength = 0;
+    let lastCountdownBeep = null;
 
     let testText = '';
     let currentUser = null;
@@ -1487,31 +1733,32 @@
       "went","men","read","need","land","different","home","us","move","try","kind","hand","picture","again","change",
       "off","play","spell","air","away","animal","house","point","page","letter","mother","answer","found","study","still",
       "learn","should","America","world","high","every","near","add","food","between","own","below","country","plant",
-      "last","school","father","keep","tree","never","start","city","earth","eyes","light","thought","head","under"
+      "last","school","father","keep","tree","never","start","city","earth","eyes","light","thought","head","under",
+      "story","saw","left","don't","few","while","along","might","close","something","seem","next","hard","open","example",
+      "begin","life","always","those","both","paper","together","got","group","often","run","important","until","children",
+      "side","feet","car","mile","night","walk","white","sea","began","grow","took","river","four","carry","state","once",
+      "book","hear","stop","without","second","later","miss","idea","enough","eat","face","watch","far","Indian","real",
+      "almost","let","above","girl","sometimes","mountains","cut","young","talk","soon","list","song","being","leave",
+      "family","it's","body","music","color","stand","sun","questions","fish","area","mark","dog","horse","birds","problem",
+      "complete","room","knew","since","ever","piece","told","usually","didn't","friends","easy","heard","order","red",
+      "door","sure","become","top","ship","across","today","during","short","better","best","however","low","hours",
+      "black","products","happened","whole","measure","remember","early","waves","reached","listen","wind","rock","space",
+      "covered","fast","several","hold","himself","toward","five","step","morning","passed","vowel","true","hundred"
     ];
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function buildText(targetLen = 260) {
+    function buildText(targetLen = 280) {
       const arr = [];
       while (arr.join(' ').length < targetLen) {
         arr.push(WORDS[randInt(0, WORDS.length - 1)]);
       }
-      // add punctuation occasionally
       let text = arr.join(' ');
-      text = text.replace(/\b(i)\b/g, 'I');
-      const punct = [",", ".", ";"];
-      // sprinkle punctuation
-      let out = '';
-      for (let i = 0; i < text.length; i++) {
-        out += text[i];
-        if (i > 0 && i % 60 === 0 && text[i] === ' ') {
-          out = out.trimEnd() + punct[randInt(0, punct.length - 1)] + ' ';
-        }
-      }
-      return out.trim();
+      // Capitalize first letter
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+      return text.trim();
     }
 
     function renderText(text) {
@@ -1542,18 +1789,18 @@
       statusChip.classList.remove('idle','running','done');
       if (mode === 'idle') {
         statusChip.classList.add('idle');
-        statusChip.textContent = 'Ready • Start typing';
+        statusChip.textContent = 'Ready • Click below to start';
       } else if (mode === 'running') {
         statusChip.classList.add('running');
-        statusChip.textContent = 'Live • Keep going';
+        statusChip.textContent = '🔴 Live • Keep going!';
       } else {
         statusChip.classList.add('done');
-        statusChip.textContent = 'Finished • Results below';
+        statusChip.textContent = '✓ Finished • See results';
       }
     }
 
     function setDuration(seconds) {
-      if (startedAt || ended) return; // lock duration mid-run
+      if (startedAt || ended) return;
       durationSeconds = seconds;
       timeLeftEl.textContent = String(durationSeconds);
       durButtons.forEach(b => b.classList.toggle('active', Number(b.dataset.seconds) === seconds));
@@ -1568,6 +1815,8 @@
       interval = null;
       startedAt = null;
       ended = false;
+      lastTypedLength = 0;
+      lastCountdownBeep = null;
 
       typingInput.value = '';
       typingInput.disabled = false;
@@ -1577,10 +1826,12 @@
       liveAccEl.textContent = '100';
       liveErrEl.textContent = '0';
 
+      timeMetric.classList.remove('warning', 'danger');
+
       resultPanel.classList.remove('show');
       setStatus('idle');
+      textContentEl.classList.remove('typing-active');
 
-      // regenerate chars state
       const chars = textContentEl.querySelectorAll('.char');
       chars.forEach(c => c.classList.remove('correct','incorrect','current'));
       progressCountEl.textContent = '0';
@@ -1589,25 +1840,35 @@
     }
 
     function newText() {
-      testText = buildText(durationSeconds === 120 ? 380 : (durationSeconds === 30 ? 210 : 280));
+      const targetLen = durationSeconds <= 15 ? 150 : (durationSeconds <= 30 ? 220 : (durationSeconds <= 60 ? 320 : 450));
+      testText = buildText(targetLen);
       renderText(testText);
       resetLive();
     }
 
     newTextBtn.addEventListener('click', () => {
-      if (startedAt && !ended) return; // don't allow mid-run
+      if (startedAt && !ended) return;
       newText();
     });
 
     retryBtn.addEventListener('click', () => {
-      // same text, just restart
       resetLive();
       typingInput.focus();
     });
 
-    // prevent paste (optional)
+    // prevent paste
     typingInput.addEventListener('paste', (e) => {
       e.preventDefault();
+    });
+
+    // Focus state for typing board
+    typingInput.addEventListener('focus', () => {
+      typingBoard.classList.add('focused');
+      initAudio();
+    });
+    typingInput.addEventListener('blur', () => {
+      typingBoard.classList.remove('focused');
+      textContentEl.classList.remove('typing-active');
     });
 
     function calcStats(typed) {
@@ -1623,7 +1884,6 @@
 
     function updateTextClasses(typed) {
       const max = Math.min(typed.length, testText.length);
-      // mark typed part
       for (let i = 0; i < testText.length; i++) {
         const el = textContentEl.querySelector(`.char[data-i="${i}"]`);
         if (!el) continue;
@@ -1649,7 +1909,6 @@
     function computeWPM(correctChars, seconds) {
       const minutes = seconds / 60;
       if (minutes <= 0) return 0;
-      // standard: 5 chars = 1 word
       return Math.max(0, Math.round((correctChars / 5) / minutes));
     }
 
@@ -1657,7 +1916,23 @@
       const now = performance.now();
       const elapsed = (now - startedAt) / 1000;
       const remaining = Math.max(0, durationSeconds - elapsed);
-      timeLeftEl.textContent = String(Math.ceil(remaining));
+      const remainingInt = Math.ceil(remaining);
+      
+      timeLeftEl.textContent = String(remainingInt);
+
+      // Time warning colors
+      timeMetric.classList.remove('warning', 'danger');
+      if (remainingInt <= 5) {
+        timeMetric.classList.add('danger');
+      } else if (remainingInt <= 10) {
+        timeMetric.classList.add('warning');
+      }
+
+      // Countdown beeps for last 3 seconds
+      if (remainingInt <= 3 && remainingInt > 0 && lastCountdownBeep !== remainingInt) {
+        lastCountdownBeep = remainingInt;
+        playCountdownSound();
+      }
 
       const typed = typingInput.value;
       const { correct, errors, acc } = calcStats(typed);
@@ -1676,8 +1951,8 @@
       if (startedAt || ended) return;
       startedAt = performance.now();
       setStatus('running');
-      // lock duration buttons mid-run
-      interval = setInterval(tick, 120);
+      textContentEl.classList.add('typing-active');
+      interval = setInterval(tick, 50);
     }
 
     function finishTest() {
@@ -1688,13 +1963,15 @@
 
       typingInput.disabled = true;
       setStatus('done');
+      textContentEl.classList.remove('typing-active');
+
+      playFinishSound();
 
       const typed = typingInput.value;
-      const elapsed = durationSeconds; // fixed duration result (clean)
+      const elapsed = durationSeconds;
       const { correct, errors, acc } = calcStats(typed);
       const finalWpm = computeWPM(correct, elapsed);
 
-      // update session stats
       attempts++;
       wpmScores.push(finalWpm);
       statAttempts.textContent = String(attempts);
@@ -1702,25 +1979,22 @@
       const avg = Math.round(wpmScores.reduce((a,b)=>a+b,0) / wpmScores.length);
       statAvg.textContent = avg + ' WPM';
 
-      // results
       resultWpm.textContent = String(finalWpm);
       resultAcc.textContent = acc + '%';
       resultErr.textContent = String(errors);
       resultCorrect.textContent = String(correct);
 
-      // rating
       let r = '', cls = '';
       if (finalWpm >= 100) { r = '🔥 LEGENDARY'; cls = 'rating-legendary'; }
       else if (finalWpm >= 80) { r = '⚡ EXCELLENT'; cls = 'rating-excellent'; }
       else if (finalWpm >= 55) { r = '✓ GOOD'; cls = 'rating-good'; }
       else if (finalWpm >= 35) { r = '~ AVERAGE'; cls = 'rating-average'; }
-      else { r = '🐢 SLOW'; cls = 'rating-slow'; }
+      else { r = '🐢 KEEP PRACTICING'; cls = 'rating-slow'; }
       resultRating.textContent = r;
       resultRating.className = 'result-rating ' + cls;
 
       resultPanel.classList.add('show');
 
-      // enable save
       currentScore = finalWpm;
       updateSaveVisibility();
 
@@ -1730,14 +2004,33 @@
     typingInput.addEventListener('input', () => {
       if (ended) return;
       startTestIfNeeded();
+      
       const typed = typingInput.value;
+      
+      // Play sounds based on what happened
+      if (typed.length > lastTypedLength) {
+        // Character added
+        const lastCharIndex = typed.length - 1;
+        if (lastCharIndex < testText.length && typed[lastCharIndex] === testText[lastCharIndex]) {
+          playKeySound();
+        } else {
+          playErrorSound();
+        }
+      }
+      lastTypedLength = typed.length;
+      
       updateTextClasses(typed);
+
+      // Check if finished early (typed entire text)
+      if (typed.length >= testText.length) {
+        finishTest();
+      }
     });
 
-    // init first text
+    // Init first text
     newText();
 
-    // ========== SAVE + LEADERBOARD (WPM higher is better) ==========
+    // ========== SAVE + LEADERBOARD ==========
     let currentScore = 0;
     let currentLeaderboardType = 'global';
 
@@ -1791,7 +2084,6 @@
       }
     }
 
-    // Keep UI in sync with auth changes
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
       const user = session?.user ?? null;
       updateAuthUI(user);
@@ -1837,7 +2129,6 @@
       const lbList = document.getElementById('lb-list');
       lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
 
-      // Personal Best (highest WPM first)
       if (currentLeaderboardType === 'personal') {
         const { data: sessionData } = await supabaseClient.auth.getSession();
         const user = sessionData?.session?.user;
@@ -1886,7 +2177,6 @@
         return;
       }
 
-      // Global/Today (highest WPM first)
       let query = supabaseClient
         .from('solo_scores')
         .select('score, created_at, user_id')
@@ -1942,7 +2232,6 @@
       });
     }
 
-    // init auth-dependent UI + leaderboard
     updateSaveVisibility();
     fetchLeaderboard();
   </script>
