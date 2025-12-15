@@ -902,6 +902,54 @@
       box-shadow: 0 2px 8px rgba(0,217,165,0.15);
     }
 
+    .lb-duration-filter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(0,217,165,0.10);
+      flex-wrap: wrap;
+    }
+
+    .lb-duration-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .lb-duration-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .lb-duration-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+      background: rgba(0,217,165,0.06);
+      border: 1px solid rgba(0,217,165,0.12);
+      white-space: nowrap;
+    }
+
+    .lb-duration-btn:hover {
+      color: var(--teal);
+      border-color: rgba(0,217,165,0.25);
+      background: rgba(0,217,165,0.10);
+    }
+
+    .lb-duration-btn.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: var(--teal);
+    }
+
     .lb-list {
       display: flex;
       flex-direction: column;
@@ -1346,6 +1394,16 @@
               <button class="lb-tab" id="tab-personal" data-type="personal" disabled>My Best</button>
             </div>
           </div>
+          
+          <div class="lb-duration-filter">
+            <span class="lb-duration-label">Duration:</span>
+            <div class="lb-duration-btns">
+              <button class="lb-duration-btn" data-duration="15">15s</button>
+              <button class="lb-duration-btn" data-duration="30">30s</button>
+              <button class="lb-duration-btn active" data-duration="60">60s</button>
+              <button class="lb-duration-btn" data-duration="120">2m</button>
+            </div>
+          </div>
 
           <div class="lb-list" id="lb-list">
             <div class="lb-empty">Loading leaderboard...</div>
@@ -1405,7 +1463,6 @@
   </footer>
 
   <script>
-    const GAME_ID = 'typing-test';
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
 
@@ -1817,6 +1874,7 @@
       ended = false;
       lastTypedLength = 0;
       lastCountdownBeep = null;
+      currentScore = null;
 
       typingInput.value = '';
       typingInput.disabled = false;
@@ -1996,6 +2054,12 @@
       resultPanel.classList.add('show');
 
       currentScore = finalWpm;
+      scoreDuration = durationSeconds; // Remember which duration was used
+      
+      // Update leaderboard to show the same duration
+      leaderboardDuration = durationSeconds;
+      lbDurationBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.duration) === leaderboardDuration));
+      
       updateSaveVisibility();
 
       fetchLeaderboard();
@@ -2031,8 +2095,11 @@
     newText();
 
     // ========== SAVE + LEADERBOARD ==========
-    let currentScore = 0;
+    // Each duration has its own leaderboard (game_id includes duration)
+    let currentScore = null;
+    let scoreDuration = 60; // Duration when score was set
     let currentLeaderboardType = 'global';
+    let leaderboardDuration = 60; // Which duration's leaderboard to show
 
     const tabGlobal = document.getElementById('tab-global');
     const tabToday = document.getElementById('tab-today');
@@ -2060,6 +2127,16 @@
       tabGlobal.classList.remove('active');
       tabToday.classList.remove('active');
       fetchLeaderboard();
+    });
+
+    // Duration filter for leaderboard
+    const lbDurationBtns = document.querySelectorAll('.lb-duration-btn');
+    lbDurationBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        leaderboardDuration = Number(btn.dataset.duration);
+        lbDurationBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.duration) === leaderboardDuration));
+        fetchLeaderboard();
+      });
     });
 
     async function updateSaveVisibility() {
@@ -2099,16 +2176,19 @@
     saveBtn.addEventListener('click', saveScore);
 
     async function saveScore() {
-      if (!currentUser || !ended || !currentScore) return;
+      if (!currentUser || !ended || currentScore === null) return;
 
       saveBtn.textContent = 'Saving...';
       saveBtn.disabled = true;
+
+      // Use the duration that was active when the score was set
+      const gameIdToSave = `typing-test-${scoreDuration}`;
 
       const { error } = await supabaseClient
         .from('solo_scores')
         .insert({
           user_id: currentUser.id,
-          game_id: GAME_ID,
+          game_id: gameIdToSave,
           score: currentScore
         });
 
@@ -2121,6 +2201,9 @@
         }, 2000);
       } else {
         saveBtn.textContent = 'Saved! ✓';
+        // Switch leaderboard view to match the saved score's duration
+        leaderboardDuration = scoreDuration;
+        lbDurationBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.duration) === leaderboardDuration));
         fetchLeaderboard();
       }
     }
@@ -2128,6 +2211,8 @@
     async function fetchLeaderboard() {
       const lbList = document.getElementById('lb-list');
       lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
+
+      const gameIdForLeaderboard = `typing-test-${leaderboardDuration}`;
 
       if (currentLeaderboardType === 'personal') {
         const { data: sessionData } = await supabaseClient.auth.getSession();
@@ -2141,7 +2226,7 @@
         const { data, error } = await supabaseClient
           .from('solo_scores')
           .select('score, created_at, user_id')
-          .eq('game_id', GAME_ID)
+          .eq('game_id', gameIdForLeaderboard)
           .eq('user_id', user.id)
           .order('score', { ascending: false })
           .limit(10);
@@ -2153,7 +2238,7 @@
         }
 
         if (!data || data.length === 0) {
-          lbList.innerHTML = '<div class="lb-empty">No scores yet. Play to set your record!</div>';
+          lbList.innerHTML = '<div class="lb-empty">No scores yet for this duration. Play to set your record!</div>';
           return;
         }
 
@@ -2180,7 +2265,7 @@
       let query = supabaseClient
         .from('solo_scores')
         .select('score, created_at, user_id')
-        .eq('game_id', GAME_ID)
+        .eq('game_id', gameIdForLeaderboard)
         .order('score', { ascending: false })
         .limit(10);
 
