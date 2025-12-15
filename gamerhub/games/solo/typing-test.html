@@ -802,6 +802,7 @@
             background: rgba(0, 217, 165, 0.08);
             padding: 4px;
             border-radius: 12px;
+            flex-wrap: wrap;
         }
 
         .lb-tab {
@@ -894,6 +895,48 @@
             padding: 30px;
             color: var(--text-muted);
             font-size: 0.9rem;
+        }
+
+        .lb-login-gate {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .lb-login-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .lb-login-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .lb-login-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 320px;
+            margin: 0 auto 20px;
+        }
+
+        .lb-login-btn {
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .lb-login-subtext {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .lb-login-subtext a {
+            color: var(--teal);
+            font-weight: 600;
+            text-decoration: underline;
         }
 
         /* Footer */
@@ -1236,20 +1279,20 @@
                         <h3 class="lb-title">
                             🏆 Leaderboard
                         </h3>
-                        <div class="lb-tabs">
+                        <div class="lb-tabs" id="lb-tabs">
                             <button class="lb-tab active" id="tab-global" data-type="global">
                                 Global
                             </button>
                             <button class="lb-tab" id="tab-today" data-type="today">
                                 Today
                             </button>
-                            <button class="lb-tab" id="tab-personal" data-type="personal" disabled>
+                            <button class="lb-tab" id="tab-personal" data-type="personal">
                                 My Best
                             </button>
                         </div>
                     </div>
                     
-                    <div class="lb-duration-filter">
+                    <div class="lb-duration-filter" id="lb-duration-filter">
                         <span class="lb-duration-label">Duration:</span>
                         <div class="lb-duration-btns">
                             <button class="lb-duration-btn" data-duration="15">15s</button>
@@ -1257,6 +1300,15 @@
                             <button class="lb-duration-btn active" data-duration="60">60s</button>
                             <button class="lb-duration-btn" data-duration="120">2m</button>
                         </div>
+                    </div>
+                    
+                    <!-- Login gate for non-authenticated users -->
+                    <div class="lb-login-gate" id="lb-login-gate" style="display: none;">
+                        <div class="lb-login-icon">🔒</div>
+                        <h4 class="lb-login-title">See How You Stack Up</h4>
+                        <p class="lb-login-desc">Log in to view leaderboards, save your scores, and compete with players worldwide.</p>
+                        <a href="/login.html" class="btn btn-primary lb-login-btn">Log In — It's Free</a>
+                        <p class="lb-login-subtext">Don't have an account? <a href="/login.html">Sign up</a> in seconds.</p>
                     </div>
                     
                     <div class="lb-list" id="lb-list">
@@ -1658,16 +1710,18 @@
 
         if (currentUser) {
             saveBtn.style.display = 'inline-block';
-            loginPrompt.style.display = 'none';
             saveBtn.textContent = 'Save to Leaderboard';
             saveBtn.disabled = false;
+            saveBtn.onclick = saveScore;
+            loginPrompt.style.display = 'none';
         } else {
-            saveBtn.style.display = 'none';
-            loginPrompt.style.display = 'block';
+            saveBtn.style.display = 'inline-block';
+            saveBtn.textContent = 'Log In to Save Score';
+            saveBtn.disabled = false;
+            saveBtn.onclick = () => window.location.href = '/login.html';
+            loginPrompt.style.display = 'none';
         }
     }
-
-    saveBtn.addEventListener('click', saveScore);
 
     async function saveScore() {
         if (!currentUser) return;
@@ -1705,6 +1759,26 @@
     const tabGlobal = document.getElementById('tab-global');
     const tabToday = document.getElementById('tab-today');
     const tabPersonal = document.getElementById('tab-personal');
+    const lbTabs = document.getElementById('lb-tabs');
+    const lbDurationFilter = document.getElementById('lb-duration-filter');
+    const lbLoginGate = document.getElementById('lb-login-gate');
+    const lbList = document.getElementById('lb-list');
+
+    // Show/hide leaderboard based on auth state
+    function updateLeaderboardVisibility(isLoggedIn) {
+        if (isLoggedIn) {
+            lbTabs.style.display = 'flex';
+            lbDurationFilter.style.display = 'flex';
+            lbList.style.display = 'flex';
+            lbLoginGate.style.display = 'none';
+            fetchLeaderboard();
+        } else {
+            lbTabs.style.display = 'none';
+            lbDurationFilter.style.display = 'none';
+            lbList.style.display = 'none';
+            lbLoginGate.style.display = 'block';
+        }
+    }
 
     tabGlobal.addEventListener('click', () => {
         currentLeaderboardType = 'global';
@@ -1736,20 +1810,18 @@
         updateAuthUI(user);
         if (user) {
             loadSessionAndProfile();
-            tabPersonal.disabled = false;
+            updateLeaderboardVisibility(true);
         } else {
-            tabPersonal.disabled = true;
+            updateLeaderboardVisibility(false);
             if (currentLeaderboardType === 'personal') {
                 currentLeaderboardType = 'global';
                 tabGlobal.classList.add('active');
                 tabPersonal.classList.remove('active');
-                fetchLeaderboard();
             }
         }
     });
 
     async function fetchLeaderboard() {
-        const lbList = document.getElementById('lb-list');
         lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
 
         const gameId = `typing-test-${leaderboardDuration}`;
@@ -1868,7 +1940,13 @@
 
     // Init
     newText();
-    fetchLeaderboard();
+    
+    // Check auth state and show/hide leaderboard on load
+    (async function initLeaderboard() {
+        const { data } = await supabaseClient.auth.getSession();
+        const isLoggedIn = !!data.session?.user;
+        updateLeaderboardVisibility(isLoggedIn);
+    })();
 </script>
 
 </body>
