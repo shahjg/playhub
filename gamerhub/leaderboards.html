@@ -1023,7 +1023,6 @@
                     <div class="panel-tabs" id="panel-tabs">
                         <button class="panel-tab active" data-type="global">Global</button>
                         <button class="panel-tab" data-type="today">Today</button>
-                        <button class="panel-tab" data-type="personal">My Best</button>
                     </div>
                 </div>
 
@@ -1254,18 +1253,6 @@
         const gameId = getGameId();
         const game = GAMES[currentGame];
 
-        if (currentTab === 'personal') {
-            podium.style.display = 'none';
-            const { data: sessionData } = await supabaseClient.auth.getSession();
-            const user = sessionData?.session?.user;
-            if (!user) { lbList.innerHTML = `<div class="lb-empty"><div class="lb-empty-text">Sign in to see your scores</div></div>`; return; }
-
-            const { data, error } = await supabaseClient.from('solo_scores').select('score, created_at').eq('game_id', gameId).eq('user_id', user.id).order('score', { ascending: game.ascending }).limit(10);
-            if (error || !data?.length) { lbList.innerHTML = `<div class="lb-empty"><div class="lb-empty-text">No scores yet. Play to set your record!</div></div>`; return; }
-            renderPersonalList(data, game);
-            return;
-        }
-
         podium.style.display = 'grid';
 
         let query = supabaseClient.from('solo_scores').select('score, created_at, user_id').eq('game_id', gameId).order('score', { ascending: game.ascending }).limit(100);
@@ -1315,26 +1302,6 @@
                 <div class="lb-player">
                     <div class="lb-name">${escapeHtml(name)}</div>
                     <div class="lb-date">${date}</div>
-                </div>
-                <div class="lb-score">${entry.score} ${game.unit}</div>
-            `;
-            lbList.appendChild(row);
-        });
-    }
-
-    function renderPersonalList(data, game) {
-        lbList.innerHTML = '';
-        data.forEach((entry, i) => {
-            const date = new Date(entry.created_at);
-            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-            const row = document.createElement('div');
-            row.className = 'lb-row';
-            row.innerHTML = `
-                <div class="lb-rank">${i + 1}</div>
-                <div class="lb-player">
-                    <div class="lb-name">${dateStr}</div>
-                    <div class="lb-date">${timeStr}</div>
                 </div>
                 <div class="lb-score">${entry.score} ${game.unit}</div>
             `;
