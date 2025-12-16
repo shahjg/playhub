@@ -114,20 +114,25 @@
             height: 60px;
             display: flex;
             align-items: center;
-            padding: 0 20px;
-            background: rgba(10, 10, 15, 0.85);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            padding: 0 18px;
+            background: rgba(10, 10, 15, 0.88);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .nav-inner {
             width: 100%;
             max-width: 1100px;
             margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
+            gap: 24px;
         }
+
+        .nav-left { justify-self: flex-start; }
+        .nav-right-wrapper { justify-self: flex-end; display: flex; justify-content: flex-end; }
 
         .back-btn {
             display: inline-flex;
@@ -156,13 +161,13 @@
 
         .header-logo {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 3px;
+            font-size: 1.6rem;
+            letter-spacing: 4px;
             color: white;
             text-decoration: none;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
+            white-space: nowrap;
+            justify-self: center;
         }
 
         .header-logo::after {
@@ -173,31 +178,101 @@
             background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7);
         }
 
-        .header-players {
-            display: flex;
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
+
+        .auth-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            white-space: nowrap;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+            height: 36px;
+            display: inline-flex;
             align-items: center;
         }
 
-        .profile-btn {
+        .auth-link:hover { color: #ffffff; }
+
+        .user-menu-wrapper { position: relative; }
+
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            height: 36px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease;
+            color: inherit;
+            font-family: inherit;
+        }
+
+        .user-pill:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-1px); }
+
+        .user-pill-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .user-pill-skeleton {
+            width: 100px;
+            height: 36px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        .user-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 170px;
+            padding: 6px;
+            border-radius: 14px;
+            background: rgba(10, 10, 15, 0.97);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 18px 55px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transform: translateY(-4px);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            backdrop-filter: blur(10px);
+            z-index: 120;
+        }
+
+        .user-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+        .user-menu-item {
+            width: 100%;
             display: flex;
             align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            transition: all 0.2s ease;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
         }
 
-        .profile-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: var(--accent-soft);
-        }
-
-        .profile-btn svg { width: 20px; height: 20px; }
+        .user-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
 
         /* ========== MAIN CONTENT ========== */
         main {
@@ -877,8 +952,9 @@
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 600px) {
-            header { height: 56px; padding: 0 16px; }
-            .header-logo { font-size: 1.3rem; letter-spacing: 2px; }
+            header { height: 56px; padding: 0 14px; }
+            .nav-inner { gap: 12px; }
+            .header-logo { font-size: 1.4rem; letter-spacing: 3px; }
             .back-btn { padding: 6px 10px; font-size: 0.75rem; }
             .back-btn span { display: none; }
             
@@ -927,15 +1003,31 @@
 <!-- Header -->
 <header>
     <nav class="nav-inner">
-        <a href="/squad-games.html" class="back-btn" id="leave-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Leave</span>
-        </a>
-        <a href="/" class="header-logo">THEGAMING.CO</a>
-        <div class="header-players">
-            <a href="/profile.html" class="profile-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="nav-left">
+            <a href="/squad-games.html" class="back-btn" id="leave-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Leave</span>
             </a>
+        </div>
+        <a href="/" class="header-logo">THEGAMING.CO</a>
+        <div class="nav-right-wrapper">
+            <div class="header-actions">
+                <div class="user-pill-skeleton" id="auth-skeleton"></div>
+                <div class="nav-right-logged-out">
+                    <a href="login.html" class="auth-link">Sign In</a>
+                </div>
+                <div class="nav-right-logged-in">
+                    <div class="user-menu-wrapper">
+                        <button class="user-pill" type="button" id="user-menu-button" aria-haspopup="true" aria-expanded="false">
+                            <span class="user-pill-label" id="header-username-label">Player</span>
+                        </button>
+                        <div class="user-menu" id="user-menu" role="menu">
+                            <a href="profile.html" class="user-menu-item" role="menuitem"><span>Profile</span></a>
+                            <button type="button" class="user-menu-item" id="user-menu-signout" role="menuitem"><span>Sign Out</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 </header>
@@ -1096,6 +1188,97 @@
 <script>
     const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
     const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+
+    // ========== SUPABASE AUTH ==========
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    (function primeHeaderFromCache() {
+        try {
+            const cachedLabel = localStorage.getItem('tgco_header_label');
+            const cachedFull = localStorage.getItem('tgco_header_full');
+            if (cachedLabel && cachedFull) {
+                headerUsernameLabel.textContent = cachedLabel;
+                headerUsernameLabel.title = cachedFull;
+                if (authSkeleton) authSkeleton.style.display = 'none';
+                if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+            } else {
+                if (authSkeleton) authSkeleton.style.display = 'none';
+                if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+            }
+        } catch (e) {
+            if (authSkeleton) authSkeleton.style.display = 'none';
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        }
+    })();
+
+    function updateAuthUI(user) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (user) {
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+            if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+        } else {
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+            if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
+            try { localStorage.removeItem('tgco_header_label'); localStorage.removeItem('tgco_header_full'); } catch (e) {}
+        }
+    }
+
+    function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+        const base = (display_name && display_name.trim()) || (gamer_tag && gamer_tag.trim()) || (user && user.email && user.email.split('@')[0]) || '';
+        const trimmed = base.trim();
+        if (!trimmed) { headerUsernameLabel.textContent = 'Player'; headerUsernameLabel.title = ''; return; }
+        const maxLen = 16;
+        let label = trimmed;
+        if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+        headerUsernameLabel.textContent = label;
+        headerUsernameLabel.title = trimmed;
+        try { localStorage.setItem('tgco_header_full', trimmed); localStorage.setItem('tgco_header_label', label); } catch (e) {}
+    }
+
+    async function loadSessionAndProfile() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) { updateAuthUI(null); return; }
+        const user = data?.session?.user ?? null;
+        updateAuthUI(user);
+        if (!user) return;
+        try {
+            const { data: profile, error: profErr, status } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
+            if (profErr && status !== 406) { applyHeaderNameFromProfile(null, null, user); return; }
+            if (profile) { applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user); } else { applyHeaderNameFromProfile(null, null, user); }
+        } catch (err) { applyHeaderNameFromProfile(null, null, user); }
+    }
+
+    loadSessionAndProfile();
+    supabaseClient.auth.onAuthStateChange((_event, session) => { const user = session?.user ?? null; updateAuthUI(user); if (user) loadSessionAndProfile(); });
+
+    let userMenuOpen = false;
+    function setUserMenuOpen(open) {
+        userMenuOpen = open;
+        if (!userMenuButton || !userMenu) return;
+        if (open) { userMenu.classList.add('open'); userMenuButton.setAttribute('aria-expanded', 'true'); }
+        else { userMenu.classList.remove('open'); userMenuButton.setAttribute('aria-expanded', 'false'); }
+    }
+    if (userMenuButton && userMenu) {
+        userMenuButton.addEventListener('click', (event) => { event.stopPropagation(); setUserMenuOpen(!userMenuOpen); });
+        document.addEventListener('click', () => { if (userMenuOpen) setUserMenuOpen(false); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setUserMenuOpen(false); });
+    }
+    async function signOutUser() {
+        try { localStorage.removeItem('tgco_header_label'); localStorage.removeItem('tgco_header_full'); } catch (e) {}
+        await supabaseClient.auth.signOut();
+        window.location.href = '/';
+    }
+    if (userMenuSignOut) { userMenuSignOut.addEventListener('click', (event) => { event.preventDefault(); setUserMenuOpen(false); signOutUser(); }); }
 
     const GAMES = {
         'spyfall': {
