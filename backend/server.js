@@ -1293,78 +1293,149 @@ function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
       { name: 'Ted Lasso Locker Room', roles: ['Ted Lasso', 'Coach Beard', 'Roy Kent', 'Jamie Tartt', 'Keeley', 'Rebecca', 'Nathan', 'Sam', 'Dani Rojas', 'Isaac', 'Colin', 'Will', 'Trent Crimm', 'Rupert', 'Dr. Sharon'] },
       { name: 'Last of Us', roles: ['Joel', 'Ellie', 'Clicker', 'Bloater', 'Survivor', 'Firefly', 'FEDRA Soldier', 'Infected', 'Smuggler', 'Scavenger', 'Doctor', 'Hunter', 'Tommy', 'Tess', 'Resistance Fighter'] },
       { name: 'Yellowstone Ranch', roles: ['John Dutton', 'Beth', 'Kayce', 'Rip', 'Jamie', 'Cowboy', 'Ranch Hand', 'Horse Trainer', 'Livestock Agent', 'Native American', 'Land Developer', 'Governor', 'Lawyer', 'Branded Worker', 'Journalist'] }
+    ],
+    
+    anime: [
+      { name: 'U.A. High School (My Hero Academia)', roles: ['All Might', 'Deku', 'Bakugo', 'Todoroki', 'Ochaco', 'Aizawa', 'Present Mic', 'Recovery Girl', 'Class 1-A Student', 'Class 1-B Student', 'Support Course Student', 'Villain Spy', 'Principal Nezu', 'Lunch Rush', 'Janitor'] },
+      { name: 'Survey Corps HQ (Attack on Titan)', roles: ['Eren Jaeger', 'Mikasa', 'Armin', 'Levi', 'Erwin', 'Hange', 'Jean', 'Connie', 'Sasha', 'New Recruit', 'Veteran Scout', 'Titan Shifter', 'Military Police Spy', 'Stable Hand', 'Cook'] },
+      { name: 'Hidden Leaf Village (Naruto)', roles: ['Naruto', 'Sasuke', 'Sakura', 'Kakashi', 'Hokage', 'Anbu Black Ops', 'Genin', 'Chunin', 'Jonin', 'Academy Student', 'Ichiraku Ramen Chef', 'Medical Ninja', 'Root Spy', 'Village Elder', 'Gate Guard'] },
+      { name: 'Thousand Sunny (One Piece)', roles: ['Luffy', 'Zoro', 'Nami', 'Sanji', 'Chopper', 'Robin', 'Franky', 'Brook', 'Usopp', 'Jinbe', 'Stowaway', 'Marine Spy', 'Captured Pirate', 'Mysterious Passenger', 'News Coo'] },
+      { name: 'Death Note Investigation HQ', roles: ['Light Yagami', 'L', 'Misa Amane', 'Ryuk', 'Near', 'Mello', 'Matsuda', 'Soichiro Yagami', 'Watari', 'Task Force Member', 'FBI Agent', 'Kira Supporter', 'News Reporter', 'Shinigami', 'Innocent Suspect'] },
+      { name: 'Spirit World Bathhouse (Spirited Away)', roles: ['Chihiro', 'Haku', 'Yubaba', 'No-Face', 'Lin', 'Kamaji', 'Zeniba', 'Radish Spirit', 'Frog Worker', 'Slug Woman', 'Bathhouse Customer', 'Soot Sprite', 'River Spirit', 'Gold Spirit', 'Lost Human'] },
+      { name: 'Demon Slayer Corps Headquarters', roles: ['Tanjiro', 'Nezuko', 'Zenitsu', 'Inosuke', 'Hashira', 'Kagaya Ubuyashiki', 'Kakushi', 'Demon Slayer Trainee', 'Swordsmith', 'Crow Messenger', 'Medical Staff', 'Retired Slayer', 'Hidden Demon', 'Butterfly Mansion Nurse', 'Final Selection Survivor'] },
+      { name: 'Capsule Corp (Dragon Ball)', roles: ['Goku', 'Vegeta', 'Bulma', 'Trunks', 'Dr. Brief', 'Android 18', 'Piccolo', 'Krillin', 'Scientist', 'Security Guard', 'Capsule Corp Employee', 'Time Traveler', 'Red Ribbon Spy', 'Namekian Visitor', 'World Tournament Fighter'] },
+      { name: 'Tokyo Jujutsu High', roles: ['Yuji Itadori', 'Megumi', 'Nobara', 'Gojo Satoru', 'Principal Yaga', 'Cursed Corpse', 'First Year Student', 'Second Year Student', 'Third Year Student', 'Curse User Spy', 'Window Cleaner', 'Exchange Student', 'Jujutsu Sorcerer', 'Panda', 'Maki'] },
+      { name: 'Hunter Exam Site (Hunter x Hunter)', roles: ['Gon', 'Killua', 'Kurapika', 'Leorio', 'Hisoka', 'Examiner', 'Rookie Crusher', 'Veteran Applicant', 'First Time Applicant', 'Undercover Hunter', 'Medical Staff', 'Phantom Troupe Spy', 'Failed Applicant', 'Blimp Pilot', 'Judge'] },
+      { name: 'Sword Art Online - Floor 1 Town', roles: ['Kirito', 'Asuna', 'Klein', 'Agil', 'Heathcliff', 'Beta Tester', 'New Player', 'Guild Leader', 'Solo Player', 'Blacksmith', 'Merchant', 'Info Broker', 'Clearer', 'Orange Player', 'NPC Glitch'] },
+      { name: 'Ouran High School Host Club', roles: ['Tamaki', 'Haruhi', 'Kyoya', 'Hikaru', 'Kaoru', 'Honey', 'Mori', 'Club Guest', 'Newspaper Club Spy', 'Jealous Rival', 'Rich Student', 'Scholarship Student', 'Teacher', 'School Chairman', 'Renge'] },
+      { name: 'Nerv Headquarters (Evangelion)', roles: ['Shinji', 'Rei', 'Asuka', 'Misato', 'Gendo', 'Ritsuko', 'Maya', 'Eva Pilot', 'Bridge Operator', 'Scientist', 'Section 2 Agent', 'Seele Spy', 'Maintenance Worker', 'Cafeteria Staff', 'Penguin (Pen Pen)'] },
+      { name: 'Fairy Tail Guild Hall', roles: ['Natsu', 'Lucy', 'Gray', 'Erza', 'Happy', 'Makarov', 'Mirajane', 'Guild Member', 'S-Class Wizard', 'New Recruit', 'Bartender', 'Job Board Manager', 'Rival Guild Spy', 'Celestial Spirit', 'Exceed'] },
+      { name: 'Tokyo Ghoul Coffee Shop (Anteiku)', roles: ['Kaneki', 'Touka', 'Yoshimura', 'Hide', 'Hinami', 'Nishiki', 'Ghoul Customer', 'Human Customer', 'CCG Investigator', 'Waiter', 'Barista', 'Aogiri Spy', 'One-Eyed Ghoul', 'Kagune User', 'Mask Maker'] }
+    ],
+
+    horror: [
+      { name: 'Haunted Victorian Mansion', roles: ['Ghost Hunter', 'Skeptic', 'Medium', 'Homeowner', 'Real Estate Agent', 'Paranormal Investigator', 'Camera Operator', 'Terrified Guest', 'Caretaker', 'Vengeful Spirit', 'Possessed Person', 'Priest', 'Historian', 'Urban Explorer', 'Previous Owner\'s Ghost'] },
+      { name: 'Summer Camp Crystal Lake', roles: ['Camp Counselor', 'Head Counselor', 'Camper', 'Camp Cook', 'Lifeguard', 'Groundskeeper', 'Final Girl', 'Jock', 'Stoner', 'Virgin', 'Sheriff', 'Masked Killer', 'Lone Survivor', 'Camp Nurse', 'Kayak Instructor'] },
+      { name: 'Overlook Hotel', roles: ['Caretaker', 'Hotel Manager', 'Chef', 'Bartender', 'Maid', 'Guest', 'Writer', 'Psychic Child', 'Ghost of Former Guest', 'Concerned Wife', 'Previous Caretaker', 'Snowcat Driver', 'Room 237 Spirit', 'Twin Ghosts', 'Hotel Inspector'] },
+      { name: 'Elm Street Neighborhood', roles: ['Teenager', 'Sleep-Deprived Teen', 'Psychiatrist', 'Parent in Denial', 'Dream Warrior', 'Nightmare Victim', 'Police Officer', 'Nurse', 'Hypnotherapist', 'Burned Killer', 'Coffee Shop Worker', 'Sleep Researcher', 'Babysitter', 'Pool Party Host', 'Freddy Fan'] },
+      { name: 'Cabin in the Woods', roles: ['The Athlete', 'The Scholar', 'The Virgin', 'The Fool', 'The Whore', 'Control Room Technician', 'Facility Director', 'Zombie Redneck', 'Ancient God', 'Security Guard', 'Maintenance Worker', 'Betting Pool Participant', 'Monster Handler', 'Elevator Operator', 'Survivor'] },
+      { name: 'Raccoon City Police Station', roles: ['Rookie Cop', 'Veteran Officer', 'S.T.A.R.S. Member', 'Umbrella Scientist', 'Survivor', 'Infected Citizen', 'Reporter', 'Weapons Dealer', 'Helicopter Pilot', 'Lab Escapee', 'Tyrant', 'Zombie', 'Chief of Police', 'Prisoner', 'Mysterious Woman in Red'] },
+      { name: 'The Conjuring House', roles: ['Ed Warren', 'Lorraine Warren', 'Haunted Family Father', 'Haunted Family Mother', 'Possessed Child', 'Skeptical Teenager', 'Police Officer', 'Priest', 'Demonologist Assistant', 'News Reporter', 'Neighbor', 'Previous Owner Ghost', 'Witch Spirit', 'Dog', 'Camera Operator'] },
+      { name: 'Haddonfield (Halloween Night)', roles: ['Babysitter', 'The Shape', 'Psychiatrist', 'Sheriff', 'Trick-or-Treater', 'Concerned Parent', 'Final Girl', 'Boyfriend', 'Party Teen', 'News Anchor', 'Asylum Nurse', 'Neighbor Watching TV', 'Gas Station Attendant', 'Cemetery Keeper', 'Prank Caller'] },
+      { name: 'Saw Trap Room', roles: ['Jigsaw', 'Jigsaw Apprentice', 'Victim', 'Detective', 'SWAT Team Member', 'Doctor', 'Dirty Cop', 'Drug Addict', 'Cheating Spouse', 'Insurance Fraudster', 'FBI Agent', 'Forensic Analyst', 'Game Survivor', 'Morgue Worker', 'Billy the Puppet'] },
+      { name: 'Amityville House', roles: ['New Homeowner', 'Skeptical Spouse', 'Possessed Father', 'Terrified Child', 'Priest', 'Real Estate Agent', 'Previous Murder Investigator', 'Paranormal Researcher', 'Nosy Neighbor', 'Babysitter', 'Exterminator', 'Historical Society Member', 'News Reporter', 'DeFeo Ghost', 'Demon'] },
+      { name: 'The Upside Down', roles: ['Eleven', 'Lost Kid', 'Demogorgon', 'Mind Flayer Spy', 'Government Scientist', 'Search Party Member', 'Sheriff', 'Protective Mother', 'AV Club Member', 'Demodogs', 'Russian Spy', 'Teenager with Bat', 'Psychic Escapee', 'Hawkins Lab Guard', 'Vine Creature'] },
+      { name: 'Purge Night Streets', roles: ['Purger', 'Hiding Family', 'Rich Elite', 'Homeless Target', 'Anti-Purge Rebel', 'NFFA Official', 'Emergency Services (Off-duty)', 'Masked Gang Leader', 'Revenge Seeker', 'Lost Tourist', 'Survivalist', 'Murder Tourist', 'Underground Doctor', 'Security Guard', 'News Drone Operator'] },
+      { name: 'Silent Hill', roles: ['Lost Parent', 'Cult Member', 'Nurse Monster', 'Pyramid Head', 'Police Officer', 'Survivor', 'Demon Child', 'Institutionalized Patient', 'Truck Driver', 'Cult Leader', 'Radio Static Hearer', 'Fog Walker', 'Monster Victim', 'Church Refugee', 'Mannequin Creature'] },
+      { name: 'Texas Chainsaw Farmhouse', roles: ['Hitchhiker', 'Road Tripper', 'Gas Station Owner', 'Leatherface', 'Cannibal Grandpa', 'Final Girl', 'Wheelchair Friend', 'Van Driver', 'Sheriff', 'Local Drunk', 'BBQ Restaurant Owner', 'Meat Hook Victim', 'Chainsaw Survivor', 'Escaped Prisoner', 'Documentary Filmmaker'] },
+      { name: 'The Shining Hedge Maze', roles: ['Psychic Child', 'Axe-Wielding Father', 'Terrified Mother', 'Hotel Ghost', 'Maze Groundskeeper', 'Frozen Victim', 'Snow Cat Rescuer', 'Bartender Ghost', 'Woman in Bathtub', 'Twin Girls', 'Hedge Trimmer', 'Lost Tourist', 'Winter Caretaker', 'Previous Victim', 'Typewriter Ghost'] }
+    ],
+
+    realitytv: [
+      { name: 'Love Island Villa', roles: ['Bombshell', 'Day One Islander', 'Coupled Up Islander', 'Single Islander', 'Casa Amor Intruder', 'Narrator', 'Producer', 'Camera Operator', 'Dumped Islander', 'Public Vote Favorite', 'Villain Edit', 'Cringe Couple', 'Friendship Couple', 'Islander\'s Ex', 'Host'] },
+      { name: 'Survivor Tribal Council', roles: ['Challenge Beast', 'Strategic Mastermind', 'Goat', 'Blindside Victim', 'Hidden Immunity Idol Holder', 'Jury Member', 'Host', 'Camera Crew', 'Medical Team', 'Torch Snuffer', 'First Boot', 'Merge Survivor', 'Final Tribal Contestant', 'Bitter Jury Member', 'Fan Favorite'] },
+      { name: 'Big Brother House', roles: ['Head of Household', 'Nominee', 'Power of Veto Holder', 'Backdoor Target', 'Floater', 'Showmance Partner', 'Alliance Leader', 'House Pariah', 'Diary Room Confessionalist', 'Evicted Houseguest', 'Comeback Player', 'Twist Victim', 'Comp Beast', 'Social Player', 'Chaos Agent'] },
+      { name: 'The Bachelor Mansion', roles: ['Bachelor/Bachelorette', 'First Impression Rose', 'Villain', 'Night One Elimination', 'Fantasy Suite Date', 'Limo Arrival', 'Crying in ITM', 'Group Date Participant', 'One-on-One Date', 'Rose Ceremony Reject', 'Hometown Date Family', 'Producer', 'Host Chris Harrison', 'Jealous Contestant', 'There for Wrong Reasons'] },
+      { name: 'RuPaul\'s Drag Race Werkroom', roles: ['RuPaul', 'Frontrunner', 'Underdog', 'Lip Sync Assassin', 'First Eliminated', 'Pit Crew', 'Guest Judge', 'Seamstress', 'Makeup Artist', 'Snatch Game Winner', 'Untucked Drama Starter', 'Miss Congeniality', 'Villain Queen', 'Fan Favorite', 'Returning Queen'] },
+      { name: 'MasterChef Kitchen', roles: ['Gordon Ramsay', 'Home Cook', 'Professional Ringer', 'Crying Contestant', 'Immunity Pin Holder', 'Pressure Test Victim', 'Balcony Spectator', 'Eliminated Chef', 'Sous Chef', 'Food Critic Guest', 'Family Visit', 'Mystery Box Winner', 'Team Challenge Captain', 'Raw Chicken Server', 'Dessert Specialist'] },
+      { name: 'The Circle Apartment', roles: ['Catfish', 'Real Player', 'Influencer', 'Blocked Player', 'Super Fan', 'Flirt', 'Alliance Builder', 'Rankings Manipulator', 'Newcomer', 'Host', 'Producer Voice', 'Popular Player', 'Strategic Catfish', 'Clueless Player', 'Finale Winner'] },
+      { name: 'Jersey Shore House', roles: ['The Situation', 'GTL Enthusiast', 'Grenade Whistle Holder', 'Smoosh Room User', 'Duck Phone Caller', 'Sunday Dinner Cook', 'Club Promoter', 'Cab Driver', 'T-Shirt Shop Employee', 'Landlord', 'Camera Crew', 'Drunk Roommate', 'Morning After Regret', 'Boardwalk Walker', 'Fist Pumper'] },
+      { name: 'The Amazing Race Pit Stop', roles: ['Phil Keoghan', 'First Place Team', 'Last Place Team', 'Eliminated Team', 'U-Turned Team', 'Yield Victim', 'Express Pass Holder', 'Racer', 'Greeter', 'Taxi Driver', 'Roadblock Participant', 'Detour Chooser', 'Speed Bump Team', 'Bickering Couple', 'Fan Favorite Team'] },
+      { name: 'Hell\'s Kitchen', roles: ['Gordon Ramsay', 'Sous Chef', 'Contestant', 'First Elimination', 'Black Jacket', 'Signature Dish Failure', 'Raw Protein Server', 'Dining Room Customer', 'Maitre D\'', 'Line Cook', 'Dessert Station', 'Meat Station', 'Fish Station', 'Walk-Out', 'Finale Winner'] },
+      { name: 'Keeping Up Mansion', roles: ['Kim', 'Kris Jenner', 'Camera Crew', 'Bodyguard', 'Personal Assistant', 'Glam Team', 'Chef', 'Nanny', 'Business Manager', 'PR Crisis Handler', 'Paparazzi', 'Friend of Family', 'Boyfriend of the Season', 'Brand Deal Rep', 'Social Media Manager'] },
+      { name: 'Shark Tank Set', roles: ['Mark Cuban', 'Entrepreneur', 'Nervous Pitcher', 'Successful Deal Maker', 'Walked Away', 'Valuation Disaster', 'Camera Operator', 'Stage Manager', 'Infomercial Product', 'Tech Startup', 'Food Business', 'Crying Founder', 'Family Business', 'Update Segment Success', 'Guest Shark'] },
+      { name: 'The Real World House', roles: ['Confessional Regular', 'Hookup Partner', 'House Mom/Dad', 'Party Animal', 'Political Debater', 'Job Skipper', 'Phone Booth Crier', 'Camera Crew', 'Producers', 'First to Leave', 'Replacement Roommate', 'Drama Starter', 'Peacemaker', 'Drunk Mess', 'Genuine Person'] },
+      { name: 'Too Hot to Handle Beach', roles: ['Rule Breaker', 'Lana the Cone', 'Serial Kisser', 'Workshop Leader', 'New Arrival', 'Loyal Player', 'Prize Money Loser', 'Retreat Host', 'Coupled Up Player', 'Temptation', 'Confession Booth User', 'Rule Follower', 'Heartbreaker', 'Genuine Connection', 'Thirst Trap'] },
+      { name: 'Queer Eye Makeover House', roles: ['Antoni (Food)', 'Tan (Fashion)', 'Karamo (Culture)', 'Bobby (Design)', 'Jonathan (Grooming)', 'Hero (Makeover Subject)', 'Nominator', 'Family Member', 'Best Friend', 'Co-worker', 'Camera Crew', 'Crying During Reveal', 'Supportive Neighbor', 'Before and After', 'Emotional Breakdown'] }
+    ],
+
+    videogames: [
+      { name: 'Los Santos (GTA V)', roles: ['Franklin', 'Michael', 'Trevor', 'Lester', 'Strip Club DJ', 'Car Dealer', 'Bank Teller', 'LSPD Officer', 'FIB Agent', 'Gang Member', 'Prostitute', 'Street Racer', 'Ammunation Clerk', 'Taxi Driver', 'Heist Crew Member'] },
+      { name: 'Hyrule Castle (Zelda)', roles: ['Link', 'Zelda', 'Ganondorf', 'Royal Guard', 'Castle Servant', 'Sheikah Spy', 'Goron Ambassador', 'Zora Diplomat', 'Gerudo Visitor', 'Rito Messenger', 'Malice Infected', 'Cook', 'Stable Hand', 'Court Musician', 'Ancient Researcher'] },
+      { name: 'Pokemon Gym', roles: ['Gym Leader', 'Challenger', 'Gym Trainer', 'Pokemon', 'Referee', 'Spectator', 'Pokemon Center Nurse', 'Pokedex Researcher', 'Team Rocket Grunt', 'Elite Four Scout', 'Badge Collector', 'Breeding Expert', 'Evolution Specialist', 'Shiny Hunter', 'Gym Guide'] },
+      { name: 'Verdansk Warzone', roles: ['Operator', 'Camper', 'Loadout Dropper', 'Gulag Fighter', 'Bounty Target', 'Most Wanted', 'Helicopter Pilot', 'Vehicle Driver', 'Sniper', 'Buy Station User', 'Gas Mask Wearer', 'Self-Reviver', 'Hacker', 'Streamer', 'Squad Wiper'] },
+      { name: 'The Lands Between (Elden Ring)', roles: ['Tarnished', 'Maiden', 'Demigod', 'Merchant', 'Spirit Ash', 'Invader', 'Cooperator', 'Site of Grace Rester', 'Rune Farmer', 'Message Writer', 'Scarlet Rot Victim', 'Dragon', 'Erdtree Worshipper', 'Volcano Manor Assassin', 'Jar Warrior'] },
+      { name: 'Rapture (Bioshock)', roles: ['Jack', 'Andrew Ryan', 'Atlas', 'Big Daddy', 'Little Sister', 'Splicer', 'Fontaine', 'Scientist', 'Doctor', 'Security Guard', 'Artist', 'Smuggler', 'Gatherer', 'Plasmid Addict', 'Survivor'] },
+      { name: 'USG Ishimura (Dead Space)', roles: ['Isaac Clarke', 'Engineer', 'Necromorph', 'Unitologist', 'Ship Captain', 'Medical Officer', 'Security Team', 'Survivor', 'Marker Worshipper', 'Hallucinating Crew', 'Escape Pod User', 'Maintenance Worker', 'Science Officer', 'Weapons Specialist', 'Communications Officer'] },
+      { name: 'Aperture Science (Portal)', roles: ['Chell', 'GLaDOS', 'Wheatley', 'Cave Johnson Recording', 'Test Subject', 'Turret', 'Companion Cube', 'Scientist', 'Maintenance Bot', 'Defective Turret', 'Core', 'Rat Man', 'Mannequin', 'Cake Believer', 'Escaped Test Subject'] },
+      { name: 'Hogwarts Legacy Castle', roles: ['New Student', 'Professor', 'House Ghost', 'Prefect', 'Quidditch Player', 'Forbidden Forest Explorer', 'Room of Requirement User', 'Dark Wizard', 'Goblin Rebel', 'Poacher', 'Ministry Official', 'Hogsmeade Shopkeeper', 'House Elf', 'Portrait', 'Astronomy Tower Stargazer'] },
+      { name: 'Night City (Cyberpunk)', roles: ['V', 'Johnny Silverhand', 'Fixer', 'Corpo', 'Street Kid', 'Nomad', 'Netrunner', 'Solo', 'Ripperdoc', 'Joytoy', 'NCPD Officer', 'Arasaka Agent', 'Militech Soldier', 'Braindance Editor', 'Cyberpsycho'] },
+      { name: 'Silent Cartographer (Halo)', roles: ['Master Chief', 'Cortana', 'UNSC Marine', 'ODST', 'Elite', 'Grunt', 'Hunter', 'Flood Infected', 'Pelican Pilot', 'Warthog Driver', 'Sniper', 'Medic', 'Covenant Spy', 'Monitor', 'Weapons Specialist'] },
+      { name: 'Firelink Shrine (Dark Souls)', roles: ['Ashen One', 'Fire Keeper', 'Andre the Blacksmith', 'Crestfallen Knight', 'Onion Knight', 'Invader', 'Sunbro', 'Hollow', 'Merchant', 'Pyromancer', 'Cleric', 'Sorcerer', 'Undead', 'Lord of Cinder', 'Mysterious Pilgrim'] },
+      { name: 'Sanctuary (Borderlands)', roles: ['Vault Hunter', 'Claptrap', 'Marcus', 'Moxxi', 'Lilith', 'Tannis', 'Ellie', 'Scooter', 'Psycho', 'Bandit', 'Gun Manufacturer Rep', 'Eridium Dealer', 'Bounty Board', 'New-U Station', 'Crimson Raider'] },
+      { name: 'The Island (Fortnite)', roles: ['Default Skin', 'Sweat', 'Bot', 'Fishstick', 'Peely', 'Midas', 'IO Agent', 'The Seven Member', 'NPC', 'Bus Driver', 'Loot Llama', 'Storm Chaser', 'Zero Build Player', 'Creative Mode Builder', 'Battle Pass Grinder'] },
+      { name: 'City 17 (Half-Life)', roles: ['Gordon Freeman', 'Alyx Vance', 'G-Man', 'Combine Soldier', 'Civil Protection', 'Citizen', 'Resistance Fighter', 'Dr. Kleiner', 'Barney', 'Headcrab Zombie', 'Vortigaunt', 'Strider', 'Dog (Robot)', 'Black Mesa Scientist', 'Breen'] }
+    ],
+
+    bollywood: [
+      { name: 'DDLJ Train Platform', roles: ['Raj', 'Simran', 'Bauji', 'Simran\'s Mother', 'Train Conductor', 'Chai Wallah', 'Coolie', 'Traveling Family', 'Mustard Field Dancer', 'NRI Tourist', 'Ticket Checker', 'Station Master', 'Beggar', 'Platform Vendor', 'Last Minute Runner'] },
+      { name: 'Bollywood Film Set', roles: ['Superstar Hero', 'Lead Heroine', 'Director', 'Choreographer', 'Item Song Dancer', 'Spot Boy', 'Makeup Artist', 'Stunt Double', 'Playback Singer', 'Music Director', 'Producer', 'Angry Father Actor', 'Comedian Sidekick', 'Villain', 'Junior Artist'] },
+      { name: 'Big Fat Indian Wedding', roles: ['Bride', 'Groom', 'Pandit Ji', 'Wedding Planner', 'Drunk Uncle', 'Gossiping Aunty', 'Photographer', 'Dhol Player', 'Caterer', 'Baraat Dancer', 'Jealous Ex', 'Mehndi Artist', 'Crying Mother', 'NRI Cousin', 'Wedding Crasher'] },
+      { name: '3 Idiots Engineering College', roles: ['Rancho', 'Farhan', 'Raju', 'Virus (Principal)', 'Pia', 'Chatur', 'Millimeter', 'Librarian', 'Hostel Warden', 'Ragging Senior', 'Stressed Student', 'Placement Cell Officer', 'Canteen Owner', 'Night Watchman', 'Joy Lobo'] },
+      { name: 'Mumbai Local Train', roles: ['Office Worker', 'College Student', 'Chai Seller', 'Dabbawaala', 'Pickpocket', 'Vendor', 'First Class Passenger', 'Ladies Compartment Aunty', 'Hanging Off Door Guy', 'Newspaper Reader', 'Ear Cleaner', 'Sleeping Commuter', 'Ticket Checker', 'Platform Jumper', 'Love Confessor'] },
+      { name: 'Karan Johar House Party', roles: ['KJo', 'Nepo Kid', 'A-List Star', 'Fashion Designer', 'Gossip Columnist', 'Wannabe Actor', 'Instagram Influencer', 'Bodyguard', 'Star Wife', 'PR Manager', 'Paparazzi', 'DJ', 'Bartender', 'Film Critic', 'Has-Been Actor'] },
+      { name: 'IPL Cricket Stadium', roles: ['Batsman', 'Bowler', 'Team Owner', 'Cheerleader', 'Commentator', 'Umpire', 'Coach', 'Physio', 'Superfan', 'Drunk Spectator', 'Betting Bookie', 'Cameraman', 'Ground Staff', 'Team Mascot', 'Celebrity Guest'] },
+      { name: 'Gangs of Wasseypur', roles: ['Sardar Khan', 'Faizal Khan', 'Ramadhir Singh', 'Definite', 'Mohsina', 'Perpendicular', 'Sultan', 'Corrupt Politician', 'Coal Mafia', 'Betel Nut Seller', 'Hired Assassin', 'Police Inspector', 'Arms Dealer', 'Informer', 'Rival Gang Member'] },
+      { name: 'Goa Beach Party', roles: ['Gap Year Tourist', 'DJ', 'Shack Owner', 'Drug Dealer', 'Honeymoon Couple', 'Russian Tourist', 'Local Fisherman', 'Tattoo Artist', 'Yoga Instructor', 'Trance Dancer', 'Beach Photographer', 'Drunk Bachelor Party', 'Undercover Cop', 'Sunset Chaser', 'Scooter Renter'] },
+      { name: 'Bigg Boss House', roles: ['Salman Khan', 'Controversial Contestant', 'Crybaby', 'Love Angle Partner', 'Kitchen Fighter', 'Task Winner', 'Nominated Contestant', 'Bigg Boss Voice', 'Camera Operator', 'Wildcard Entry', 'Evicted Contestant', 'Mastermind', 'Peacemaker', 'Confession Room Regular', 'Weekend Ka Vaar Victim'] },
+      { name: 'Dilwale Dulhania Style Europe Trip', roles: ['Rich NRI Son', 'Strict Father\'s Daughter', 'Drunk Best Friend', 'Tour Group Aunty', 'Bus Driver', 'Swiss Hotel Manager', 'Guitar Playing Romantic', 'Disapproving Father', 'Cool Mother', 'Souvenir Shop Owner', 'Train Station Musician', 'Passport Loser', 'Love Letter Writer', 'Church Singer', 'Tulip Field Dancer'] },
+      { name: 'Filmfare Awards', roles: ['Award Winner', 'Snubbed Actor', 'Awkward Presenter', 'Lifetime Achievement Veteran', 'Best Dressed', 'Worst Dressed', 'Crying Speech Giver', 'Teleprompter Reader', 'Red Carpet Host', 'Trophy Engraver', 'Seat Filler', 'Standing Ovation Starter', 'Backstage Manager', 'Paparazzi', 'Thank You Speech Forgetter'] },
+      { name: 'Sacred Games Mumbai Underworld', roles: ['Gaitonde', 'Sartaj Singh', 'Bunty', 'Kukoo', 'Guruji', 'RAW Agent', 'Corrupt Cop', 'Gang Member', 'Bar Dancer', 'Informant', 'Hit Man', 'Slum Dweller', 'Political Fixer', 'Arms Smuggler', 'Journalist'] },
+      { name: 'Hum Aapke Hain Koun Wedding House', roles: ['Prem', 'Nisha', 'Tuffy (Dog)', 'Rajesh', 'Pooja', 'Professor Father', 'Kachra Seth', 'Wedding Guest', 'Antakshari Singer', 'Cricket Match Player', 'Baby Shower Dancer', 'Puja Ceremony Pandit', 'Kitchen Aunty', 'Photo Album Looker', 'Staircase Accident Witness'] },
+      { name: 'Zindagi Na Milegi Dobara Road Trip', roles: ['Arjun', 'Kabir', 'Imran', 'Laila', 'Natasha', 'Skydiving Instructor', 'Tomatina Fighter', 'Flamenco Dancer', 'Scuba Diving Guide', 'Bull Runner', 'Poetry Reader', 'Car Rental Guy', 'Spanish Local', 'Underwater Cameraman', 'Bachelor Party Planner'] }
     ]
   };
-
-  // Get locations from selected pack
+  // Get locations from selected pack or all packs for random
   let locations;
   if (locationPack === 'random' || !locationPacks[locationPack]) {
-    // Combine all location packs
     locations = Object.values(locationPacks).flat();
   } else {
     locations = locationPacks[locationPack];
   }
-
-  // Pick random location
-  const location = locations[Math.floor(Math.random() * locations.length)];
+  // Select random location
+  const selectedLocation = locations[Math.floor(Math.random() * locations.length)];
   
-  // Randomly select spy(ies)
-  let spyIndices = [];
-  if (twoSpies && room.players.length >= 5) {
-    // Pick 2 different random indices for spies
-    const firstSpyIndex = Math.floor(Math.random() * room.players.length);
-    let secondSpyIndex;
-    do {
-      secondSpyIndex = Math.floor(Math.random() * room.players.length);
-    } while (secondSpyIndex === firstSpyIndex);
-    spyIndices = [firstSpyIndex, secondSpyIndex];
-  } else {
-    // Single spy mode
-    spyIndices = [Math.floor(Math.random() * room.players.length)];
-  }
+  // Determine number of spies
+  const spyCount = twoSpies ? 2 : 1;
   
-  const spyIds = spyIndices.map(idx => room.players[idx].id);
-  const spyNames = spyIndices.map(idx => room.players[idx].name);
+  // Randomly select spies
+  const shuffledPlayers = [...room.players].sort(() => Math.random() - 0.5);
+  const spies = shuffledPlayers.slice(0, spyCount).map(p => p.id);
+  const spyNames = shuffledPlayers.slice(0, spyCount).map(p => p.name);
   
-  // Shuffle roles
-  const shuffledRoles = [...location.roles].sort(() => Math.random() - 0.5);
+  // Assign roles to non-spy players
+  const availableRoles = [...selectedLocation.roles].sort(() => Math.random() - 0.5);
   
-  // Get ALL location names for spy reference
-  let allLocationNames;
-  if (locationPack === 'random' || !locationPacks[locationPack]) {
-    allLocationNames = Object.values(locationPacks).flat().map(loc => loc.name);
-  } else {
-    allLocationNames = locationPacks[locationPack].map(loc => loc.name);
-  }
-  allLocationNames = [...new Set(allLocationNames)].sort();
-  // Store game data with role assignments
   room.gameData = {
-    location: location.name,
+    location: selectedLocation.name,
     locationPack: locationPack,
-    allLocations: allLocationNames,
-    spies: spyIds, // Array of spy IDs
-    spyId: spyIds[0], // For backwards compatibility
-    spyName: spyNames[0], // For backwards compatibility
+    spies: spies,
     spyNames: spyNames,
     twoSpies: twoSpies,
+    phase: 'role-reveal',
+    timeRemaining: 480,
     votes: {},
     currentTurnIndex: 0,
-    phase: 'role-reveal', // phases: role-reveal, question, voting, results
-    roleAssignments: {} // Store roles by player name
+    roleAssignments: {}
   };
   
-  // Store role assignments by player name
-  room.players.forEach((player, index) => {
-    const isSpy = spyIndices.includes(index);
+  // Assign roles
+  let roleIndex = 0;
+  room.players.forEach(player => {
+    const isSpy = spies.includes(player.id);
+  
     room.gameData.roleAssignments[player.name] = {
-      isSpy: isSpy,
-      location: isSpy ? null : location.name,
-      role: isSpy ? 'Spy' : (shuffledRoles[index % shuffledRoles.length] || 'Tourist'),
-      allLocations: allLocationNames
+      role: isSpy ? 'Spy' : (availableRoles[roleIndex % availableRoles.length] || 'Visitor'),
+      location: isSpy ? null : selectedLocation.name,
+      isSpy: isSpy
     };
+  
+    if (!isSpy) {
+      roleIndex++;
+    }
   });
   
-  console.log(`Spyfall game initialized in room ${room.code}. Location: ${location.name}, Spies: ${spyNames.join(', ')}, Two Spies Mode: ${twoSpies}`);
+  console.log(`Spyfall game initialized in room ${room.code}. Location: ${selectedLocation.name}, Spies: ${spyNames.join(', ')}`);
 }
 
 // Calculate voting results for Imposter game
