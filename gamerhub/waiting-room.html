@@ -1381,25 +1381,58 @@
     let currentRoom = null;
     let myPlayerId = null;
     let confirmCallback = null;
+    let joinAttempts = 0;
+    const maxJoinAttempts = 3;
+
+    // Validate we have required data
+    console.log('Room code from URL:', urlParams.get('room'));
+    console.log('Room code from localStorage:', localStorage.getItem('tempRoomCode'));
+    console.log('Final room code:', roomCode);
+    console.log('Player name:', playerName);
+    console.log('Is host:', isHost);
+    
+    if (!roomCode || !playerName) {
+        console.error('Missing room code or player name, redirecting to lobby');
+        window.location.href = `/lobby.html?game=${gameType}`;
+    }
 
     document.body.className = gameConfig.theme;
     document.getElementById('room-code').textContent = roomCode || '------';
     document.getElementById('max-players').textContent = gameConfig.maxPlayers;
     updateGameUI();
 
+    function attemptJoinRoom() {
+        if (!roomCode || !playerName) return;
+        
+        joinAttempts++;
+        console.log(`Attempting to join room ${roomCode} (attempt ${joinAttempts}/${maxJoinAttempts})`);
+        
+        socket.emit('rejoin-room', { 
+            roomCode, 
+            playerName,
+            isPremium,
+            cosmetics: myCosmetics,
+            userId: myUserId
+        });
+    }
+
     socket.on('connect', () => {
-        if (roomCode && playerName) {
-            socket.emit('rejoin-room', { 
-                roomCode, 
-                playerName,
-                isPremium,
-                cosmetics: myCosmetics,
-                userId: myUserId
-            });
-        }
+        console.log('Socket connected, joining room...');
+        joinAttempts = 0;
+        attemptJoinRoom();
     });
 
-    socket.on('room-joined', (data) => handleRoomUpdate(data.room));
+    socket.on('reconnect', () => {
+        console.log('Socket reconnected, rejoining room...');
+        joinAttempts = 0;
+        attemptJoinRoom();
+    });
+
+    socket.on('room-joined', (data) => {
+        console.log('Successfully joined room:', data.roomCode);
+        joinAttempts = 0;
+        handleRoomUpdate(data.room);
+    });
     socket.on('room-state', (data) => { if (data.success) handleRoomUpdate(data.room); });
     socket.on('player-joined', (data) => handleRoomUpdate(data.room));
     socket.on('player-disconnected', (data) => handleRoomUpdate(data.room));
@@ -1408,8 +1441,22 @@
     socket.on('kicked', (data) => showConfirm('Kicked', data.message, () => window.location.href = '/squad-games.html', false));
     socket.on('host-left', (data) => showConfirm('Host Left', data.message, () => window.location.href = '/squad-games.html', false));
     socket.on('game-started', () => { window.location.href = `${gameConfig.gameFile}?room=${roomCode}`; });
-    socket.on('error', (data) => showConfirm('Error', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false));
-    socket.on('join-error', (data) => showConfirm('Cannot Join', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false));
+    
+    socket.on('error', (data) => {
+        console.error('Socket error:', data.message);
+        // Retry if room not found and we haven't exceeded attempts
+        if (data.message === 'Room not found' && joinAttempts < maxJoinAttempts) {
+            console.log(`Room not found, retrying in 500ms...`);
+            setTimeout(attemptJoinRoom, 500);
+        } else {
+            showConfirm('Error', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false);
+        }
+    });
+    
+    socket.on('join-error', (data) => {
+        console.error('Join error:', data.message);
+        showConfirm('Cannot Join', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false);
+    });
 
     function handleRoomUpdate(room) {
         currentRoom = room;
