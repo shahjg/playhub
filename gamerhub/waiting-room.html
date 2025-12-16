@@ -1448,6 +1448,13 @@
         if (data.message === 'Room not found' && joinAttempts < maxJoinAttempts) {
             console.log(`Room not found, retrying in 500ms...`);
             setTimeout(attemptJoinRoom, 500);
+        } else if (data.message === 'Room not found') {
+            // Room genuinely doesn't exist
+            showConfirm('Room Expired', 'This room no longer exists. It may have been closed or the server restarted.', () => {
+                // Clear old room data
+                localStorage.removeItem('tempRoomCode');
+                window.location.href = `/lobby.html?game=${gameType}`;
+            }, false);
         } else {
             showConfirm('Error', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false);
         }
