@@ -520,12 +520,12 @@
 
     .preview-nameplate[data-border="glow"] {
       border-style: solid;
-      box-shadow: 0 0 20px var(--current-color), 0 0 40px var(--current-color);
+      box-shadow: 0 0 15px var(--current-color), 0 0 30px var(--current-color);
     }
 
     .preview-nameplate[data-border="pulse"] {
       border-style: solid;
-      animation: borderPulse 2s ease-in-out infinite;
+      animation: borderPulse 1.5s ease-in-out infinite !important;
     }
 
     .preview-nameplate[data-border="double"] {
@@ -539,29 +539,50 @@
     }
 
     @keyframes borderPulse {
-      0%, 100% { box-shadow: 0 0 10px var(--current-color), 0 0 20px transparent; }
-      50% { box-shadow: 0 0 25px var(--current-color), 0 0 50px var(--current-color); }
+      0%, 100% { 
+        box-shadow: 0 0 5px var(--current-color);
+        filter: brightness(1);
+      }
+      50% { 
+        box-shadow: 0 0 20px var(--current-color), 0 0 40px var(--current-color), 0 0 60px var(--current-color);
+        filter: brightness(1.2);
+      }
+    }
+
+    /* Rainbow border special case */
+    .preview-nameplate[data-color="rainbow"] {
+      border-color: transparent !important;
+      background: 
+        linear-gradient(rgba(15, 15, 25, 0.95), rgba(15, 15, 25, 0.95)) padding-box,
+        linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;
+      background-size: 100% 100%, 300% 100%;
+      animation: rainbowBorder 3s linear infinite;
+    }
+
+    @keyframes rainbowBorder {
+      0% { background-position: 0 0, 0% 0; }
+      100% { background-position: 0 0, 300% 0; }
     }
 
     /* ========== NAME EFFECTS ========== */
     .preview-name[data-effect="none"] {
-      text-shadow: none;
+      text-shadow: none !important;
     }
 
     .preview-name[data-effect="glow"] {
-      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor !important;
     }
 
     .preview-name[data-effect="shadow"] {
-      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+      text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.9), 6px 6px 10px rgba(0, 0, 0, 0.5) !important;
     }
 
     .preview-name[data-effect="shimmer"] {
-      background: linear-gradient(90deg, currentColor 0%, white 50%, currentColor 100%);
-      background-size: 200% 100%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shimmerText 2s linear infinite;
+      background: linear-gradient(90deg, currentColor 0%, white 50%, currentColor 100%) !important;
+      background-size: 200% 100% !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      animation: shimmerText 2s linear infinite !important;
     }
 
     .preview-name[data-effect="neon"] {
@@ -570,7 +591,7 @@
         0 0 10px currentColor,
         0 0 20px currentColor,
         0 0 40px currentColor,
-        0 0 80px currentColor;
+        0 0 80px currentColor !important;
     }
 
     @keyframes shimmerText {
@@ -729,6 +750,99 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Subscription Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: rgba(20, 20, 30, 0.98);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 1.6rem;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .modal-text {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-btn {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .modal-btn-primary {
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: white;
+    }
+
+    .modal-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255, 107, 157, 0.4);
+    }
+
+    .modal-btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .modal-btn-danger:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    .modal-btn-ghost {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .modal-btn-ghost:hover {
+      color: white;
+    }
+
     /* Footer */
     footer {
       background: #000;
@@ -869,7 +983,7 @@
                 <p>Thanks for supporting TheGaming.co!</p>
               </div>
             </div>
-            <a href="https://billing.stripe.com/p/login/test_your_portal_link" target="_blank" class="manage-sub-btn">Manage Subscription</a>
+            <button class="manage-sub-btn" id="manage-sub-btn">Manage Subscription</button>
           </div>
 
           <!-- Premium CTA (free users) -->
@@ -1009,7 +1123,7 @@
               <p class="info-text">Shows below your name</p>
               <div class="title-grid" id="title-options">
                 <div class="title-option" data-value="">None</div>
-                <div class="title-option" data-value="Not a Brokie 💸">Not a Brokie 💸</div>
+                <div class="title-option" data-value="Not a Brokie">Not a Brokie</div>
                 <div class="title-option" data-value="Main Character">Main Character</div>
                 <div class="title-option" data-value="NPC Energy">NPC Energy</div>
                 <div class="title-option" data-value="Delulu">Delulu</div>
@@ -1044,6 +1158,37 @@
       </div>
     </section>
   </main>
+
+  <!-- SUBSCRIPTION MODAL -->
+  <div class="modal-overlay" id="sub-modal">
+    <div class="modal-box">
+      <h2 class="modal-title">MANAGE SUBSCRIPTION</h2>
+      <div class="modal-text">
+        You're currently on <strong>Premium</strong>. Your subscription renews monthly at $1.50 CAD.
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="closeModal()">Keep Premium 👑</button>
+        <button class="modal-btn modal-btn-danger" onclick="confirmCancel()">Cancel Subscription</button>
+        <button class="modal-btn modal-btn-ghost" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANCEL CONFIRM MODAL -->
+  <div class="modal-overlay" id="cancel-modal">
+    <div class="modal-box">
+      <h2 class="modal-title">😢 ARE YOU SURE?</h2>
+      <div class="modal-text">
+        You'll lose access to all cosmetics and go back to seeing ads. Your current look will be saved if you resubscribe later.
+        <br><br>
+        To cancel, reply to your Stripe payment receipt email with "cancel" or message us on <a href="https://ko-fi.com/thegamingco" target="_blank" style="color: var(--pink);">Ko-fi</a>.
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="closeCancelModal()">Nevermind, Keep Premium</button>
+        <button class="modal-btn modal-btn-ghost" onclick="closeCancelModal()">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer>© 2025 TheGaming.co — Free games, forever.</footer>
@@ -1262,10 +1407,21 @@
       badge.style.display = cosmetics.badge_icon ? 'inline' : 'none';
 
       // Color
-      const color = colorMap[cosmetics.border_color] || colorMap.gold;
-      nameplate.style.borderColor = color;
+      const colorKey = cosmetics.border_color || 'gold';
+      const color = colorMap[colorKey] || colorMap.gold;
+      
+      // Set data-color for rainbow special CSS
+      nameplate.setAttribute('data-color', colorKey);
+      
+      if (colorKey === 'rainbow') {
+        // Rainbow uses CSS gradient, name gets purple
+        name.style.color = '#c084fc';
+        nameplate.style.borderColor = 'transparent';
+      } else {
+        nameplate.style.borderColor = color;
+        name.style.color = color;
+      }
       nameplate.style.setProperty('--current-color', color);
-      name.style.color = color;
 
       // Border style via data attribute
       nameplate.setAttribute('data-border', cosmetics.border_style || 'solid');
@@ -1364,6 +1520,42 @@
       showStatus('Payment canceled. Upgrade anytime!', 'error');
       window.history.replaceState({}, document.title, '/profile.html');
     }
+
+    // Manage Subscription Modal
+    function openModal() {
+      document.getElementById('sub-modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('sub-modal').classList.remove('open');
+    }
+
+    function confirmCancel() {
+      document.getElementById('sub-modal').classList.remove('open');
+      document.getElementById('cancel-modal').classList.add('open');
+    }
+
+    function closeCancelModal() {
+      document.getElementById('cancel-modal').classList.remove('open');
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('open');
+        }
+      });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+      }
+    });
+
+    document.getElementById('manage-sub-btn').addEventListener('click', openModal);
 
     loadProfile();
   </script>
