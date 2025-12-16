@@ -3,419 +3,1306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Lobby - PlayHub</title>
+    <title>Join Game - TheGaming.co</title>
+    
+    <meta name="description" content="Create or join a game room. Play free multiplayer party games with friends.">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --accent: #14b8a6;
+            --accent-glow: rgba(20, 184, 166, 0.4);
+            --accent-soft: rgba(20, 184, 166, 0.12);
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(20, 184, 166, 0.3);
+            --text: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --gold: #fbbf24;
+            --green: #22c55e;
+            --red: #ef4444;
         }
+
+        /* Game Themes */
+        .theme-spyfall { --accent: #14b8a6; --accent-glow: rgba(20, 184, 166, 0.4); --accent-soft: rgba(20, 184, 166, 0.12); --border-accent: rgba(20, 184, 166, 0.3); }
+        .theme-word-bomb { --accent: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.4); --accent-soft: rgba(244, 63, 94, 0.12); --border-accent: rgba(244, 63, 94, 0.3); }
+        .theme-codenames { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.4); --accent-soft: rgba(34, 197, 94, 0.12); --border-accent: rgba(34, 197, 94, 0.3); }
+        .theme-werewolf { --accent: #a855f7; --accent-glow: rgba(168, 85, 247, 0.4); --accent-soft: rgba(168, 85, 247, 0.12); --border-accent: rgba(168, 85, 247, 0.3); }
+        .theme-fake-artist { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
+        .theme-herd-mentality { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.4); --accent-soft: rgba(59, 130, 246, 0.12); --border-accent: rgba(59, 130, 246, 0.3); }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #fafbff;
-            color: #1a1a1a;
+            background: var(--bg-primary);
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
-        h1, h2 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
+        /* ========== ANIMATED BACKGROUND ========== */
+        .bg-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
         }
 
-        nav {
-            padding: 30px 0;
+        .bg-gradient {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 0%, var(--accent-soft) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 90% 100%, var(--accent-soft) 0%, transparent 50%),
+                var(--bg-primary);
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: orbFloat 25s ease-in-out infinite;
+        }
+
+        .glow-orb:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            animation-delay: -12s;
+            animation-duration: 30s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(60vw, 20vh); }
+            66% { transform: translate(30vw, 60vh); }
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.3;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            height: 60px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            border-bottom: 3px solid #1a1a1a;
-            margin-bottom: 60px;
+            padding: 0 20px;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
         }
 
-        .logo-nav {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.1rem;
-            letter-spacing: 2px;
-            color: #1a1a1a;
-        }
-
-        .container {
-            max-width: 600px;
+        .nav-inner {
+            width: 100%;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 0 40px;
-            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .lobby-card {
-            background: white;
-            padding: 50px;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 40px;
-        }
-
-        .game-type {
-            text-align: center;
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
             border-radius: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .back-btn:hover { 
+            background: rgba(255, 255, 255, 0.05); 
+            color: var(--text);
+            border-color: var(--accent);
+        }
+
+        .back-btn svg { width: 16px; height: 16px; }
+
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .header-logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7);
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
+
+        .auth-link {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+            text-decoration: none;
+        }
+
+        .auth-link:hover { color: var(--accent); }
+
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .user-pill:hover { background: rgba(255, 255, 255, 0.06); border-color: var(--accent); }
+
+        .user-pill-label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+
+        .user-pill-skeleton {
+            width: 90px;
+            height: 34px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        .user-menu-wrapper { position: relative; }
+
+        .user-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 160px;
+            padding: 6px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: all 0.2s ease;
+            z-index: 120;
+        }
+
+        .user-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+        .user-menu-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .user-menu-item:hover { background: rgba(255, 255, 255, 0.06); }
+
+        /* ========== MAIN CONTENT ========== */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lobby-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* Game Header */
+        .game-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .game-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem;
+            letter-spacing: 8px;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            text-shadow: 0 0 80px var(--accent-glow);
+        }
+
+        .game-tagline {
+            color: var(--accent);
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 3px;
             text-transform: uppercase;
         }
 
-        .game-type.spyfall {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        .game-players {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
         }
 
-        .input-group {
-            margin-bottom: 30px;
+        /* How to Play Preview */
+        .htp-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
         }
 
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #333;
+        .htp-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
         }
 
-        input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            transition: border-color 0.2s;
+        .htp-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
         }
 
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        button {
-            width: 100%;
-            padding: 18px;
-            background: #667eea;
-            color: white;
+        .htp-expand {
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            transition: color 0.2s;
         }
 
-        button:hover {
-            background: #5568d3;
+        .htp-expand:hover { color: var(--accent); }
+        .htp-expand svg { width: 14px; height: 14px; }
+
+        .htp-summary {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
         }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        button.spyfall {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        button.spyfall:hover {
-            background: linear-gradient(135deg, #e082ea 0%, #e4465b 100%);
-        }
-
-        .divider {
-            text-align: center;
-            margin: 40px 0;
+        /* Main Card */
+        .lobby-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
             position: relative;
         }
 
-        .divider::before {
+        .lobby-card::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
+            top: 0; left: 30px; right: 30px;
             height: 1px;
-            background: #ddd;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
         }
 
-        .divider span {
-            background: white;
-            padding: 0 20px;
-            position: relative;
-            color: #999;
+        /* Input Group */
+        .input-group { margin-bottom: 1.5rem; }
+
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .input-field::placeholder { color: var(--text-muted); }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .input-field:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .input-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .input-hint a {
+            color: var(--accent);
             font-weight: 600;
+            text-decoration: none;
         }
 
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 15px;
+        .input-hint a:hover { text-decoration: underline; }
+
+        /* Premium Preview */
+        .name-preview {
+            margin-top: 0.75rem;
+            padding: 0.6rem 0.9rem;
+            background: rgba(251, 191, 36, 0.08);
             border-radius: 8px;
-            margin-top: 20px;
-            display: none;
+            border: 1px solid rgba(251, 191, 36, 0.25);
         }
 
-        .success {
-            background: #e7f5e7;
-            color: #2d7a2d;
-            padding: 15px;
+        .name-preview-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .name-preview-value { font-weight: 700; font-size: 1rem; }
+
+        .name-preview-value.premium {
+            background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShimmer 3s linear infinite;
+        }
+
+        @keyframes goldShimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.25rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+        .btn-loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-left: 8px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider-text {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        /* Room Code Input */
+        .room-code-input {
+            text-transform: uppercase;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.75rem;
+            letter-spacing: 10px;
+            text-align: center;
+        }
+
+        /* Messages */
+        .message {
+            padding: 0.9rem;
             border-radius: 8px;
-            margin-top: 20px;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
             display: none;
             text-align: center;
-            font-weight: 600;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 20px;
-            }
+        .message.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .message.success { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #86efac; }
+        .message.visible { display: block; }
 
-            .lobby-card {
-                padding: 30px 20px;
-            }
+        /* ========== MODAL ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.visible { display: flex; }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            max-height: calc(100vh - 2rem);
+            display: flex;
+            flex-direction: column;
+            animation: modalIn 0.25s ease;
+            box-shadow: 0 0 60px var(--accent-glow);
+            margin: auto;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .modal-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover { color: var(--text); }
+
+        .modal-body {
+            padding: 1.5rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-body h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-top: 1.25rem;
+            margin-bottom: 0.4rem;
+            letter-spacing: 1px;
+        }
+
+        .modal-body h3:first-child { margin-top: 0; }
+        .modal-body p { margin-bottom: 0.75rem; }
+        .modal-body ul { margin-left: 1.25rem; margin-bottom: 0.75rem; }
+        .modal-body li { margin-bottom: 0.35rem; color: var(--text); }
+        .modal-body strong { color: var(--accent); }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn:hover { filter: brightness(1.1); }
+
+        /* ========== FOOTER ========== */
+        footer { 
+            background: #000; 
+            position: relative; 
+            z-index: 10;
+            margin-top: auto; 
+        }
+        
+        .footer-border { 
+            height: 3px; 
+            background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7, #ff6b9d); 
+            background-size: 300% 100%; 
+            animation: gradientSlide 6s linear infinite; 
+        }
+        
+        @keyframes gradientSlide { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+        
+        .footer-main { max-width: 1100px; margin: 0 auto; padding: 40px 20px 25px; }
+        
+        .footer-links { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 30px; 
+            margin-bottom: 30px; 
+            max-width: 500px; 
+            margin-left: auto; 
+            margin-right: auto; 
+        }
+        
+        .footer-column { text-align: center; }
+        .footer-column h5 { 
+            font-family: 'Bebas Neue', sans-serif; 
+            font-size: 0.9rem; 
+            letter-spacing: 2px; 
+            margin-bottom: 12px; 
+            color: rgba(255, 255, 255, 0.8); 
+        }
+        .footer-column ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .footer-column a { color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; transition: color 0.2s ease; text-decoration: none; }
+        .footer-column a:hover { color: var(--accent); }
+        
+        .footer-bottom { padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; }
+        .footer-copyright { font-size: 0.8rem; color: rgba(255, 255, 255, 0.35); margin-bottom: 10px; }
+        .footer-legal { display: flex; justify-content: center; gap: 20px; }
+        .footer-legal a { color: rgba(255, 255, 255, 0.35); font-size: 0.75rem; text-decoration: none; transition: color 0.2s; }
+        .footer-legal a:hover { color: white; }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 600px) {
+            header { height: 56px; padding: 0 16px; }
+            .header-logo { font-size: 1.3rem; letter-spacing: 2px; }
+            .back-btn { padding: 6px 10px; font-size: 0.75rem; gap: 6px; }
+            .back-btn span { display: none; }
+            
+            main { padding: 70px 16px 30px; }
+
+            .game-title { font-size: 3.2rem; letter-spacing: 5px; }
+            .game-tagline { font-size: 0.85rem; letter-spacing: 2px; }
+
+            .lobby-card { padding: 1.5rem; border-radius: 16px; }
+
+            .btn { padding: 0.9rem; font-size: 1.15rem; }
+
+            .modal { max-height: calc(100vh - 1rem); border-radius: 16px; }
+            .modal-header { padding: 1rem 1.25rem; }
+            .modal-body { padding: 1.25rem; }
+            .modal-footer { padding: 0.85rem 1.25rem; }
+            
+            .footer-links { grid-template-columns: 1fr; gap: 20px; }
+            .footer-main { padding: 30px 20px 20px; }
+        }
+
+        @media (max-height: 700px) {
+            .modal { max-height: calc(100vh - 1rem); }
+            .modal-body { max-height: 50vh; }
         }
     </style>
 </head>
-<body>
-    <nav>
-        <div class="logo-nav">PLAYHUB</div>
+<body class="theme-spyfall">
+
+<!-- Animated Background -->
+<div class="bg-container">
+    <div class="bg-gradient"></div>
+    <div class="glow-orb"></div>
+    <div class="glow-orb"></div>
+    <div class="grid-overlay"></div>
+</div>
+
+<!-- Header -->
+<header>
+    <nav class="nav-inner">
+        <a href="/squad-games.html" class="back-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span>Back</span>
+        </a>
+        <a href="/" class="header-logo">THEGAMING.CO</a>
+        <div class="header-actions">
+            <div class="user-pill-skeleton" id="auth-skeleton"></div>
+            <div class="nav-right-logged-out">
+                <a href="/login.html" class="auth-link">Sign In</a>
+            </div>
+            <div class="nav-right-logged-in">
+                <div class="user-menu-wrapper">
+                    <button class="user-pill" type="button" id="user-menu-button">
+                        <span class="user-pill-label" id="header-username-label">Player</span>
+                    </button>
+                    <div class="user-menu" id="user-menu" role="menu">
+                        <a href="/profile.html" class="user-menu-item">Profile</a>
+                        <a href="/leaderboards.html" class="user-menu-item">Leaderboards</a>
+                        <button type="button" class="user-menu-item" id="user-menu-signout">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </nav>
+</header>
 
-    <div class="container">
+<!-- Main Content -->
+<main>
+    <div class="lobby-container">
+        <!-- Game Header -->
+        <div class="game-header">
+            <h1 class="game-title" id="game-title">SPY HUNT</h1>
+            <p class="game-tagline" id="game-tagline">Trust No One</p>
+            <p class="game-players" id="game-players">4-20 Players</p>
+        </div>
+
+        <!-- How to Play -->
+        <div class="htp-card">
+            <div class="htp-header">
+                <span class="htp-title">How to Play</span>
+                <button class="htp-expand" onclick="showFullRules()">
+                    Full Rules
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
+            <p class="htp-summary" id="htp-summary">
+                One player is secretly the Spy. Everyone else knows the location. Ask questions to find the Spy — but don't reveal the location!
+            </p>
+        </div>
+
+        <!-- Lobby Card -->
         <div class="lobby-card">
-            <div class="game-type" id="gameType">LOADING...</div>
-            
-            <h1>Game Lobby</h1>
-
-            <!-- Create Room -->
+            <!-- Name Input -->
             <div class="input-group">
-                <label for="createName">Your Name:</label>
-                <input type="text" id="createName" placeholder="Enter your name" maxlength="20">
-                <button onclick="createRoom()" id="createBtn">Create Room</button>
+                <label class="input-label" for="player-name">Your Name</label>
+                <input type="text" id="player-name" class="input-field" placeholder="Loading..." maxlength="20" autocomplete="off">
+                <p class="input-hint" id="name-hint">Loading...</p>
+                <div class="name-preview" id="name-preview" style="display: none;">
+                    <div class="name-preview-label">Display Name</div>
+                    <div class="name-preview-value" id="name-preview-value">Name</div>
+                </div>
             </div>
 
-            <div class="divider"><span>OR</span></div>
+            <!-- Create Button -->
+            <button class="btn btn-primary" id="btn-create" onclick="createRoom()">Create Room</button>
+
+            <!-- Divider -->
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">Or Join</span>
+                <div class="divider-line"></div>
+            </div>
 
             <!-- Join Room -->
             <div class="input-group">
-                <label for="joinName">Your Name:</label>
-                <input type="text" id="joinName" placeholder="Enter your name" maxlength="20">
-                
-                <label for="roomCode" style="margin-top: 20px;">Room Code:</label>
-                <input type="text" id="roomCode" placeholder="6-digit code" maxlength="6">
-                <button onclick="joinRoom()" id="joinBtn">Join Room</button>
+                <label class="input-label" for="room-code">Room Code</label>
+                <input type="text" id="room-code" class="input-field room-code-input" placeholder="ABC123" maxlength="6" autocomplete="off">
             </div>
 
-            <div class="success" id="success"></div>
-            <div class="error" id="error"></div>
+            <button class="btn btn-secondary" id="btn-join" onclick="joinRoom()">Join Room</button>
+
+            <!-- Messages -->
+            <div class="message error" id="error-message"></div>
+            <div class="message success" id="success-message"></div>
         </div>
     </div>
+</main>
 
-   <script>
-        const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-        const socket = io(BACKEND_URL, {
-            transports: ['websocket', 'polling']
-        });
+<!-- Full Rules Modal -->
+<div class="modal-overlay" id="rules-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-title">How to Play</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-footer">
+            <button class="modal-btn" onclick="closeModal()">Got It</button>
+        </div>
+    </div>
+</div>
 
-        // Get game type from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const gameId = urlParams.get('game') || 'imposter'; // default to imposter
+<!-- Footer -->
+<footer>
+    <div class="footer-border"></div>
+    <div class="footer-main">
+        <div class="footer-links">
+            <div class="footer-column">
+                <h5>GAMES</h5>
+                <ul>
+                    <li><a href="/solo.html">Solo</a></li>
+                    <li><a href="/squad-games.html">Squad</a></li>
+                    <li><a href="/party-games.html">Party</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h5>COMMUNITY</h5>
+                <ul>
+                    <li><a href="/leaderboards.html">Leaderboards</a></li>
+                    <li><a href="/supporters.html">Supporters</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h5>COMPANY</h5>
+                <ul>
+                    <li><a href="/about.html">About</a></li>
+                    <li><a href="/contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
+            <div class="footer-legal">
+                <a href="/privacy.html">Privacy</a>
+                <a href="/terms.html">Terms</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // ========== CONFIG ==========
+    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Game configs
+    const GAMES = {
+        'spyfall': {
+            displayName: 'SPY HUNT',
+            backendType: 'spyfall',
+            theme: 'theme-spyfall',
+            tagline: 'Trust No One',
+            players: '4-20 Players',
+            minPlayers: 4,
+            maxPlayers: 20,
+            summary: 'One player is secretly the Spy. Everyone else knows the location. Ask questions to find the Spy — but don\'t reveal the location!',
+            howToPlay: `
+                <h3>The Setup</h3>
+                <p>One player is randomly chosen as the <strong>Spy</strong>. Everyone else sees a secret location and their role at that location. The Spy sees nothing.</p>
+                
+                <h3>How to Play</h3>
+                <p>Players take turns asking each other questions. The goal is to identify the Spy without revealing the location.</p>
+                <ul>
+                    <li>Ask questions that someone at the location would know</li>
+                    <li>Answer vaguely enough to not give away the location</li>
+                    <li>Watch for suspicious or confused answers</li>
+                </ul>
+                
+                <h3>Winning</h3>
+                <ul>
+                    <li><strong>Players win</strong> by correctly voting out the Spy</li>
+                    <li><strong>Spy wins</strong> by guessing the location OR surviving the vote</li>
+                </ul>
+                
+                <h3>Tips</h3>
+                <p>Be specific enough to prove you're not the Spy, but vague enough to not help them guess the location!</p>
+            `
+        },
+        'word-bomb': {
+            displayName: 'WORD BOMB',
+            backendType: 'word-bomb',
+            theme: 'theme-word-bomb',
+            tagline: 'Think Fast',
+            players: '2-16 Players',
+            minPlayers: 2,
+            maxPlayers: 16,
+            summary: 'Type a word containing the given letters before the bomb explodes! Fast-paced vocabulary showdown.',
+            howToPlay: `
+                <h3>The Game</h3>
+                <p>A bomb is passed around. When it's your turn, you must type a valid word containing the given letter combination before time runs out.</p>
+                
+                <h3>Rules</h3>
+                <ul>
+                    <li>Each word can only be used once per game</li>
+                    <li>Words must be real English words</li>
+                    <li>The letter combo must appear in your word</li>
+                    <li>If time runs out, you lose a life</li>
+                </ul>
+                
+                <h3>Winning</h3>
+                <p>Last player standing wins! Everyone starts with 3 lives.</p>
+            `
+        },
+        'codenames': {
+            displayName: 'CODE WORDS',
+            backendType: 'codenames',
+            theme: 'theme-codenames',
+            tagline: 'Give Clues. Find Agents.',
+            players: '4-20 Players',
+            minPlayers: 4,
+            maxPlayers: 20,
+            summary: 'Two teams compete to find their agents first. Spymasters give one-word clues to guide their team.',
+            howToPlay: `
+                <h3>Teams</h3>
+                <p>Split into two teams: <strong>Red</strong> and <strong>Blue</strong>. Each team has one Spymaster and the rest are Operatives.</p>
+                
+                <h3>The Board</h3>
+                <p>25 words are displayed. Only Spymasters know which words belong to which team, which are neutral, and which is the Assassin.</p>
+                
+                <h3>Giving Clues</h3>
+                <p>Spymasters give a one-word clue and a number (e.g., "ANIMALS 3"). The number indicates how many words relate to that clue.</p>
+                
+                <h3>Winning</h3>
+                <ul>
+                    <li>Find all your team's words first to win</li>
+                    <li>Hit the Assassin word and you lose instantly</li>
+                </ul>
+            `
+        },
+        'werewolf': {
+            displayName: 'NIGHT WOLF',
+            backendType: 'werewolf',
+            theme: 'theme-werewolf',
+            tagline: 'Survive The Night',
+            players: '5-20 Players',
+            minPlayers: 5,
+            maxPlayers: 20,
+            summary: 'Werewolves hunt at night. Villagers vote by day. Find the wolves before they eliminate everyone!',
+            howToPlay: `
+                <h3>Roles</h3>
+                <ul>
+                    <li><strong>Werewolf</strong> — Eliminate one villager each night</li>
+                    <li><strong>Seer</strong> — Check one player's identity each night</li>
+                    <li><strong>Doctor</strong> — Protect one player each night</li>
+                    <li><strong>Villager</strong> — Find and eliminate the werewolves</li>
+                </ul>
+                
+                <h3>Game Flow</h3>
+                <p><strong>Night:</strong> Werewolves choose a victim. Seer investigates. Doctor protects.</p>
+                <p><strong>Day:</strong> Discuss who might be a werewolf and vote to eliminate someone.</p>
+                
+                <h3>Winning</h3>
+                <ul>
+                    <li><strong>Villagers win</strong> when all werewolves are eliminated</li>
+                    <li><strong>Werewolves win</strong> when they equal or outnumber villagers</li>
+                </ul>
+            `
+        },
+        'fake-artist': {
+            displayName: 'SECRET SKETCH',
+            backendType: 'fake-artist',
+            theme: 'theme-fake-artist',
+            tagline: 'Draw Together. Trust No Brush.',
+            players: '4-10 Players',
+            minPlayers: 4,
+            maxPlayers: 10,
+            summary: 'Everyone draws the same thing — except the Fake Artist who doesn\'t know what it is!',
+            howToPlay: `
+                <h3>The Setup</h3>
+                <p>Everyone except one player (the Fake Artist) sees a drawing topic. The Fake Artist must pretend they know it.</p>
+                
+                <h3>Drawing</h3>
+                <ul>
+                    <li>Players take turns adding ONE stroke to the drawing</li>
+                    <li>The Fake Artist must blend in without knowing the subject</li>
+                    <li>Real artists must be helpful but not too obvious</li>
+                </ul>
+                
+                <h3>Voting</h3>
+                <p>After 2 rounds, everyone votes on who they think is the Fake Artist.</p>
+                
+                <h3>Winning</h3>
+                <ul>
+                    <li><strong>Players win</strong> if they identify the Fake Artist</li>
+                    <li><strong>Fake Artist wins</strong> if they avoid detection OR guess the topic</li>
+                </ul>
+            `
+        },
+        'herd-mentality': {
+            displayName: 'HERD MIND',
+            backendType: 'herd-mentality',
+            theme: 'theme-herd-mentality',
+            tagline: 'Think Like Everyone Else',
+            players: '3-20 Players',
+            minPlayers: 3,
+            maxPlayers: 20,
+            summary: 'Answer questions to match the majority. Be unique and you\'re stuck with the Pink Cow!',
+            howToPlay: `
+                <h3>The Game</h3>
+                <p>Each round, everyone answers the same question secretly. The goal is to match the most popular answer.</p>
+                
+                <h3>Scoring</h3>
+                <ul>
+                    <li>Match the majority answer = 1 point</li>
+                    <li>Give a unique answer = You get the Pink Cow</li>
+                </ul>
+                
+                <h3>The Pink Cow</h3>
+                <p>You <strong>cannot win</strong> while holding the Pink Cow! You must match the majority in a future round to pass it to someone else.</p>
+                
+                <h3>Winning</h3>
+                <p>First player to reach the target score (without holding the Pink Cow) wins!</p>
+            `
+        }
+    };
+
+    // Random names
+    const ADJECTIVES = ['Swift', 'Clever', 'Bold', 'Silent', 'Quick', 'Sly', 'Sharp', 'Cool', 'Wild', 'Rapid', 'Sneaky', 'Mighty', 'Lucky', 'Epic', 'Shadow'];
+    const NOUNS = ['Fox', 'Wolf', 'Eagle', 'Tiger', 'Hawk', 'Bear', 'Lion', 'Shark', 'Falcon', 'Panther', 'Dragon', 'Phoenix', 'Viper', 'Raven', 'Ghost'];
+    
+    function generateRandomName() {
+        const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+        const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+        const num = Math.floor(Math.random() * 99) + 1;
+        return `${adj}${noun}${num}`;
+    }
+
+    // Get game from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('game') || 'spyfall';
+    const joinCode = urlParams.get('join');
+    const currentGame = GAMES[gameId] || GAMES['spyfall'];
+
+    // Apply theme
+    document.body.className = currentGame.theme;
+
+    // Update page
+    document.getElementById('game-title').textContent = currentGame.displayName;
+    document.getElementById('game-tagline').textContent = currentGame.tagline;
+    document.getElementById('game-players').textContent = currentGame.players;
+    document.getElementById('htp-summary').textContent = currentGame.summary;
+    document.getElementById('modal-title').textContent = `How to Play ${currentGame.displayName}`;
+    document.getElementById('modal-body').innerHTML = currentGame.howToPlay;
+    document.title = `${currentGame.displayName} - TheGaming.co`;
+
+    if (joinCode) document.getElementById('room-code').value = joinCode.toUpperCase();
+
+    // Socket
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+
+    // State
+    let currentUser = null;
+    let userProfile = null;
+    let isPremium = false;
+
+    // Elements
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+    const nameInput = document.getElementById('player-name');
+    const nameHint = document.getElementById('name-hint');
+
+    function updateAuthUI(user) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (user) {
+            loggedOutNav?.style.setProperty('display', 'none', 'important');
+            loggedInNav?.style.setProperty('display', 'flex', 'important');
+        } else {
+            loggedOutNav?.style.setProperty('display', 'flex', 'important');
+            loggedInNav?.style.setProperty('display', 'none', 'important');
+        }
+    }
+
+    async function initAuth() {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data?.session?.user) {
+            currentUser = data.session.user;
+            await loadProfile();
+            updateAuthUI(currentUser);
+            showLoggedInName();
+        } else {
+            updateAuthUI(null);
+            showGuestName();
+        }
+    }
+
+    async function loadProfile() {
+        if (!currentUser) return;
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('display_name, gamer_tag, account_type, cosmetics')
+            .eq('id', currentUser.id)
+            .single();
         
-        // Map game IDs to display names and types
-        const gameInfo = {
-            'imposter': { display: 'IMPOSTER', type: 'imposter', class: '' },
-            'spyfall': { display: 'SPYFALL', type: 'spyfall', class: 'spyfall' },
-            'werewolf': { display: 'WEREWOLF', type: 'werewolf', class: '' },
-            'avalon': { display: 'AVALON', type: 'avalon', class: '' },
-            'herd-mentality': { display: 'HERD MENTALITY', type: 'herd-mentality', class: '' },
-            'codenames': { display: 'CODENAMES', type: 'codenames', class: '' }
-        };
+        if (profile) {
+            userProfile = profile;
+            isPremium = profile.account_type === 'premium';
+            const displayName = profile.display_name || profile.gamer_tag || currentUser.email.split('@')[0];
+            headerUsernameLabel.textContent = displayName.length > 12 ? displayName.slice(0, 11) + '…' : displayName;
+        }
+    }
 
-        const currentGame = gameInfo[gameId] || gameInfo['imposter'];
+    function showLoggedInName() {
+        const displayName = userProfile?.display_name || userProfile?.gamer_tag || currentUser.email.split('@')[0];
+        nameInput.value = displayName;
+        nameInput.disabled = false;
+        nameInput.placeholder = 'Enter your name';
         
-        // IMPORTANT: Store game type immediately in localStorage
-        localStorage.setItem('tempGameType', currentGame.type);
+        if (isPremium) {
+            nameHint.innerHTML = 'Premium styling active';
+            showNamePreview(displayName);
+        } else {
+            nameHint.innerHTML = 'Change in <a href="/profile.html">Profile</a>';
+        }
+    }
+
+    function showGuestName() {
+        const randomName = generateRandomName();
+        nameInput.value = randomName;
+        nameInput.disabled = true;
+        nameHint.innerHTML = '<a href="/login.html">Sign in</a> to choose your name';
+    }
+
+    function showNamePreview(name) {
+        const preview = document.getElementById('name-preview');
+        const value = document.getElementById('name-preview-value');
+        preview.style.display = 'block';
+        value.textContent = formatPremiumName(name);
+        value.className = 'name-preview-value' + (isPremium ? ' premium' : '');
+    }
+
+    function formatPremiumName(name) {
+        // Premium users just use their name - cosmetics handle styling
+        return name;
+    }
+
+    // User menu
+    let userMenuOpen = false;
+    userMenuButton?.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        userMenuOpen = !userMenuOpen; 
+        userMenu.classList.toggle('open', userMenuOpen); 
+    });
+    document.addEventListener('click', () => { userMenuOpen = false; userMenu?.classList.remove('open'); });
+    userMenuSignOut?.addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.reload(); });
+
+    nameInput.addEventListener('input', () => {
+        if (isPremium && nameInput.value.trim()) showNamePreview(nameInput.value.trim());
+    });
+
+    const roomCodeInput = document.getElementById('room-code');
+    roomCodeInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+
+    // Modals
+    function showFullRules() { document.getElementById('rules-modal').classList.add('visible'); }
+    function closeModal() { document.getElementById('rules-modal').classList.remove('visible'); }
+    document.getElementById('rules-modal').addEventListener('click', (e) => { if (e.target.id === 'rules-modal') closeModal(); });
+
+    // Create/Join
+    function createRoom() {
+        const name = nameInput.value.trim();
+        if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
         
-        // Update UI based on game
-        document.getElementById('gameType').textContent = currentGame.display;
-        document.getElementById('gameType').className = `game-type ${currentGame.class}`;
-        document.getElementById('createBtn').className = currentGame.class;
-        document.getElementById('joinBtn').className = currentGame.class;
-
-        socket.on('connect', () => {
-            console.log('Connected:', socket.id);
+        hideMessages();
+        setLoading('btn-create', true);
+        
+        const formattedName = formatPremiumName(name);
+        const cosmetics = userProfile?.cosmetics || null;
+        const userId = currentUser?.id || null;
+        
+        localStorage.setItem('tempPlayerName', formattedName);
+        localStorage.setItem('tempGameType', currentGame.backendType);
+        localStorage.setItem('tempGameId', gameId);
+        localStorage.setItem('tempIsPremium', isPremium.toString());
+        localStorage.setItem('tempCosmetics', JSON.stringify(cosmetics));
+        localStorage.setItem('tempUserId', userId || '');
+        
+        socket.emit('create-room', { 
+            playerName: formattedName, 
+            gameType: currentGame.backendType,
+            isPremium: isPremium,
+            cosmetics: cosmetics,
+            userId: userId
         });
+    }
 
-        // CREATE ROOM - FIXED with delay
-        socket.on('room-created', (data) => {
-            console.log('✅ Room created successfully:', data);
-            
-            const playerName = document.getElementById('createName').value.trim();
-            
-            // Store data for waiting room
-            localStorage.setItem('tempRoomCode', data.roomCode);
-            localStorage.setItem('tempPlayerName', playerName);
-            localStorage.setItem('tempIsHost', 'true');
-            localStorage.setItem('tempGameType', currentGame.type);
-            
-            // Show success message
-            showSuccess(`Room ${data.roomCode} created! Redirecting...`);
-            
-            console.log('📦 Stored in localStorage:', {
-                roomCode: data.roomCode,
-                playerName: playerName,
-                gameType: currentGame.type
-            });
-            
-            // Don't disconnect socket - let it stay connected
-            console.log('🔄 Redirecting in 100ms...');
-            
-            // CRITICAL FIX: Minimal delay before redirect
-            setTimeout(() => {
-                console.log('🚀 Redirecting now to:', `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`);
-                window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=true`;
-            }, 100); // Reduced to 100ms for faster redirect
+    function joinRoom() {
+        const name = nameInput.value.trim();
+        const code = roomCodeInput.value.trim();
+        
+        if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
+        if (!code || code.length !== 6) { showError('Enter a valid 6-character room code'); return; }
+        
+        hideMessages();
+        setLoading('btn-join', true);
+        
+        const formattedName = formatPremiumName(name);
+        const cosmetics = userProfile?.cosmetics || null;
+        const userId = currentUser?.id || null;
+        
+        localStorage.setItem('tempPlayerName', formattedName);
+        localStorage.setItem('tempRoomCode', code);
+        localStorage.setItem('tempIsPremium', isPremium.toString());
+        localStorage.setItem('tempCosmetics', JSON.stringify(cosmetics));
+        localStorage.setItem('tempUserId', userId || '');
+        
+        socket.emit('join-room', { 
+            roomCode: code, 
+            playerName: formattedName,
+            isPremium: isPremium,
+            cosmetics: cosmetics,
+            userId: userId
         });
+    }
 
-        // JOIN ROOM
-        socket.on('room-joined', (data) => {
-            console.log('Joined room:', data);
-            const playerName = document.getElementById('joinName').value.trim();
-            
-            // Store game type if available
-            if (data.gameType) {
-                localStorage.setItem('tempGameType', data.gameType);
-            }
-            
-            // Show success and redirect with delay
-            showSuccess(`Joined room ${data.roomCode}! Redirecting...`);
-            
-            setTimeout(() => {
-                window.location.href = `waiting-room.html?room=${data.roomCode}&name=${playerName}&host=false`;
-            }, 200);
-        });
+    // Socket events
+    socket.on('connect', () => console.log('Connected'));
 
-        socket.on('error', (data) => {
-            console.error('Error:', data);
-            showError(data.message);
-            enableButtons();
-        });
+    socket.on('room-created', (data) => {
+        showSuccess(`Room created!`);
+        localStorage.setItem('tempRoomCode', data.roomCode);
+        localStorage.setItem('tempIsHost', 'true');
+        setTimeout(() => { window.location.href = `waiting-room.html?room=${data.roomCode}`; }, 300);
+    });
 
-        socket.on('join-error', (data) => {
-            console.error('Join error:', data);
-            showError(data.message);
-            enableButtons();
-        });
-
-        function createRoom() {
-            const name = document.getElementById('createName').value.trim();
-            
-            if (!name || name.length < 2) {
-                showError('Please enter a name (at least 2 characters)');
-                return;
-            }
-
-            hideError();
-            hideSuccess();
-            disableButtons();
-
-            console.log('Emitting create-room event:', { playerName: name, gameType: currentGame.type });
-
-            socket.emit('create-room', {
-                playerName: name,
-                gameType: currentGame.type
-            });
+    socket.on('room-joined', (data) => {
+        showSuccess('Joined!');
+        if (data.room?.gameType) {
+            localStorage.setItem('tempGameType', data.room.gameType);
+            const gameEntry = Object.entries(GAMES).find(([k, v]) => v.backendType === data.room.gameType);
+            if (gameEntry) localStorage.setItem('tempGameId', gameEntry[0]);
         }
+        setTimeout(() => { window.location.href = `waiting-room.html?room=${data.roomCode}`; }, 300);
+    });
 
-        function joinRoom() {
-            const name = document.getElementById('joinName').value.trim();
-            const code = document.getElementById('roomCode').value.trim().toUpperCase();
-            
-            if (!name || name.length < 2) {
-                showError('Please enter a name (at least 2 characters)');
-                return;
-            }
+    socket.on('error', (data) => { showError(data.message || 'Something went wrong'); setLoading('btn-create', false); setLoading('btn-join', false); });
+    socket.on('join-error', (data) => { showError(data.message || 'Could not join room'); setLoading('btn-join', false); });
 
-            if (!code || code.length !== 6) {
-                showError('Please enter a valid 6-digit room code');
-                return;
-            }
+    // Helpers
+    function showError(msg) { const el = document.getElementById('error-message'); el.textContent = msg; el.classList.add('visible'); }
+    function showSuccess(msg) { const el = document.getElementById('success-message'); el.textContent = msg; el.classList.add('visible'); }
+    function hideMessages() { document.getElementById('error-message').classList.remove('visible'); document.getElementById('success-message').classList.remove('visible'); }
+    function setLoading(btnId, loading) { const btn = document.getElementById(btnId); btn.classList.toggle('btn-loading', loading); btn.disabled = loading; }
 
-            hideError();
-            hideSuccess();
-            disableButtons();
+    nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { roomCodeInput.value.trim() ? joinRoom() : createRoom(); } });
+    roomCodeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') joinRoom(); });
 
-            socket.emit('join-room', {
-                roomCode: code,
-                playerName: name
-            });
-        }
+    initAuth();
+</script>
 
-        function showError(msg) {
-            const err = document.getElementById('error');
-            err.textContent = msg;
-            err.style.display = 'block';
-        }
-
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
-        }
-
-        function showSuccess(msg) {
-            const success = document.getElementById('success');
-            success.textContent = msg;
-            success.style.display = 'block';
-        }
-
-        function hideSuccess() {
-            document.getElementById('success').style.display = 'none';
-        }
-
-        function disableButtons() {
-            document.getElementById('createBtn').disabled = true;
-            document.getElementById('joinBtn').disabled = true;
-        }
-
-        function enableButtons() {
-            document.getElementById('createBtn').disabled = false;
-            document.getElementById('joinBtn').disabled = false;
-        }
-
-        // Auto-uppercase room code
-        document.getElementById('roomCode').addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
-        });
-
-        // Enter key support
-        document.getElementById('createName').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') createRoom();
-        });
-
-        document.getElementById('joinName').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('roomCode').focus();
-        });
-
-        document.getElementById('roomCode').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') joinRoom();
-        });
-    </script>
 </body>
 </html>
