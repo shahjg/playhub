@@ -4,6 +4,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
+const partyGames = require('./party-games');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -1538,7 +1539,8 @@ function calculateSpyfallResults(room) {
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
-
+  partyGames.setupPartyGameHandlers(io, socket, rooms, players);  // <-- ADD THIS
+  
   // CREATE ROOM (initial creation only)
   socket.on('create-room', (data) => {
     const { playerName, gameType, isPremium, cosmetics, userId } = data;
@@ -1899,8 +1901,17 @@ io.on('connection', (socket) => {
       initCategoriesGame(room);
     } else if (room.gameType === 'word-association') {
       initWordAssociationGame(room);
+    } else if (room.gameType === 'trivia-royale') {
+      partyGames.initTriviaRoyaleGame(room);
+    } else if (room.gameType === 'this-or-that-party') {
+      partyGames.initThisOrThatPartyGame(room);
+    } else if (room.gameType === 'hot-takes-party') {
+      partyGames.initHotTakesPartyGame(room);
+    } else if (room.gameType === 'never-ever-party') {
+      partyGames.initNeverEverPartyGame(room);
+    } else if (room.gameType === 'bet-or-bluff') {
+      partyGames.initBetOrBluffGame(room);
     }
-    
     room.gameState = 'playing';
     
     // Send role assignments to each player
