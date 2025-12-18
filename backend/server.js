@@ -1885,38 +1885,35 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Initialize game based on game type
-    if (room.gameType === 'imposter') {
-      initImposterGame(room, category || 'random');
-    } else if (room.gameType === 'spyfall') {
-      initSpyfallGame(room, category || 'random', twoSpies || false);
-    } else if (room.gameType === 'werewolf') {
-      initWerewolfGame(room);
-    } else if (room.gameType === 'herd-mentality') {
-      initHerdMentalityGame(room, category || 'standard');
-    } else if (room.gameType === 'codenames') {
-      // Codenames starts with team selection
-      console.log(`Codenames starting in room ${roomCode}`);
-    }} else if (room.gameType === 'categories') {
-      initCategoriesGame(room);
-    } else if (room.gameType === 'word-association') {
-      initWordAssociationGame(room);
-    } else if (room.gameType === 'trivia-royale') {
-      partyGames.initTriviaRoyaleGame(room);
-    } else if (room.gameType === 'this-or-that-party') {
-      partyGames.initThisOrThatPartyGame(room);
-      partyGames.initThisOrThatPartyGame(room);
-    } else if (room.gameType === 'hot-takes-party') {
-      partyGames.initHotTakesPartyGame(room);
-    } else if (room.gameType === 'never-ever-party') {
-      partyGames.initNeverEverPartyGame(room);
-    } else if (room.gameType === 'bet-or-bluff') {
-      partyGames.initBetOrBluffGame(room);
-    }
-    room.gameState = 'playing';
-    
-    // Send role assignments to each player
-    if (room.gameType === 'spyfall') {
+// Initialize game based on game type
+if (room.gameType === 'imposter') {
+  initImposterGame(room, category || 'random');
+} else if (room.gameType === 'spyfall') {
+  initSpyfallGame(room, category || 'random', twoSpies || false);
+} else if (room.gameType === 'werewolf') {
+  initWerewolfGame(room);
+} else if (room.gameType === 'herd-mentality') {
+  initHerdMentalityGame(room, category || 'standard');
+} else if (room.gameType === 'codenames') {
+  console.log(`Codenames starting in room ${roomCode}`);
+} else if (room.gameType === 'categories') {
+  initCategoriesGame(room);
+} else if (room.gameType === 'word-association') {
+  initWordAssociationGame(room);
+} else if (room.gameType === 'trivia-royale') {
+  partyGames.initTriviaRoyaleGame(room, category);
+} else if (room.gameType === 'this-or-that-party') {
+  partyGames.initThisOrThatPartyGame(room, category);
+} else if (room.gameType === 'hot-takes-party') {
+  partyGames.initHotTakesPartyGame(room, category);
+} else if (room.gameType === 'never-ever-party') {
+  partyGames.initNeverEverPartyGame(room, category);
+} else if (room.gameType === 'bet-or-bluff') {
+  partyGames.initBetOrBluffGame(room, category);
+}
+room.gameState = 'playing';
+// Send role assignments to each player
+if (room.gameType === 'spyfall') {
       room.players.forEach(p => {
         const roleData = room.gameData.roleAssignments[p.name];
         if (roleData) {
