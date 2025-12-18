@@ -1703,18 +1703,19 @@
     socket.on('host-left', (data) => showConfirm('Host Left', data.message, () => window.location.href = '/squad-games.html', false));
 
     // MODIFIED: Incorporating new game redirections
-    socket.on('game-started', (data) => { 
-        console.log('Game started:', data);
-        const gameTypeFromData = data.gameType || gameType;
-        const targetGameConfig = GAMES[gameTypeFromData];
+ socket.on('game-started', (data) => { 
+    console.log('Game started:', data);
+    
+    // Priority: server data > currentRoom > local variable
+    const gameTypeFromData = data.gameType || currentRoom?.gameType || gameType;
+    const targetGameConfig = GAMES[gameTypeFromData];
 
-        if (targetGameConfig) {
-            window.location.href = `${targetGameConfig.gameFile}?room=${roomCode}`;
-        } else {
-            // Fallback for unknown game type
-            window.location.href = `/game-room-error.html?reason=UnknownGame&game=${gameTypeFromData}`;
-        }
-    });
+    if (targetGameConfig && targetGameConfig.gameFile) {
+        window.location.href = `${targetGameConfig.gameFile}?room=${roomCode}`;
+    } else {
+        window.location.href = `/game-room-error.html?reason=UnknownGame&game=${gameTypeFromData}`;
+    }
+});
 
     socket.on('error', (data) => {
         console.error('Socket error:', data.message);
