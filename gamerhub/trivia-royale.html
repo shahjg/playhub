@@ -1308,7 +1308,7 @@
             <div class="leaderboard-list" id="leaderboard-list"></div>
         </div>
         
-        <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT QUESTION</button>
+        <button class="next-btn hidden" id="next-btn">NEXT QUESTION</button>
     </div>
     
     <!-- Game Over Phase -->
@@ -1329,7 +1329,7 @@
             <div class="leaderboard-list" id="final-leaderboard"></div>
         </div>
         
-        <button class="play-again-btn" onclick="window.location.href='/squad-games.html'">PLAY AGAIN</button>
+        <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
     </div>
 </main>
 
@@ -1354,6 +1354,8 @@
     let timeLeft = 15;
     let maxTime = 15;
     let totalPlayers = 1;
+    let pendingNextRound = false; // Prevent double-processing of results
+    let hasEmittedNextRound = false; // Prevent double-emit of trivia-next-round
     
     if (!roomCode) window.location.href = '/party-games.html';
     
@@ -1372,6 +1374,9 @@
     
     // Receive question from server
     socket.on('trivia-question', (data) => {
+        // Reset ALL flags for new round
+        pendingNextRound = false;
+        hasEmittedNextRound = false;
         hasAnswered = false;
         selectedAnswer = -1;
         maxTime = data.timeLimit || 15;
@@ -1412,6 +1417,10 @@
     
     // Results - show inline on question screen, auto-advance
     socket.on('trivia-results', (data) => {
+        // Prevent double-processing
+        if (pendingNextRound) return;
+        pendingNextRound = true;
+        
         clearInterval(timerInterval);
         
         // Show correct/incorrect on buttons
@@ -1448,13 +1457,15 @@
         const totalQ = parseInt(document.getElementById('total-rounds').textContent);
         const isLastQuestion = currentQ >= totalQ;
         
-        // Auto-advance after 3 seconds (host triggers next round)
+        // Auto-advance after 4.5 seconds (host triggers next round)
         setTimeout(() => {
             hideResultOverlay();
-            if (isHost) {
+            // CRITICAL: Only emit once per round
+            if (isHost && !hasEmittedNextRound) {
+                hasEmittedNextRound = true;
                 socket.emit('trivia-next-round', { roomCode });
             }
-        }, 3000);
+        }, 4500);
     });
     
     // Game over
@@ -1473,13 +1484,20 @@
     });
     
     // Round transition - CRITICAL: triggers next question
+    let hasStartedNextRound = false;
     socket.on('trivia-round-transition', (data) => {
         console.log('Round transition:', data);
+        // Prevent double-processing
+        if (hasStartedNextRound) return;
+        hasStartedNextRound = true;
+        
         // Short delay then host starts next round
         setTimeout(() => {
             if (isHost) {
                 socket.emit('trivia-start-round', { roomCode });
             }
+            // Reset flag after emitting
+            setTimeout(() => { hasStartedNextRound = false; }, 1000);
         }, 500);
     });
     
@@ -1560,11 +1578,7 @@
         socket.emit('trivia-answer', { roomCode, answerIndex: answerIndex });
     }
     
-    function nextQuestion() {
-        if (isHost) {
-            socket.emit('trivia-next-round', { roomCode });
-        }
-    }
+    // REMOVED: nextQuestion() - now using auto-advance in trivia-results handler
     
     function renderLeaderboard(leaderboard, elementId) {
         const list = document.getElementById(elementId);
@@ -1661,6 +1675,11 @@
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // Play Again button - returns to waiting room
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        window.location.href = `/waiting-room.html?room=${roomCode}`;
+    });
     
     // ==================== AUTH/PROFILE ====================
     const authSkeleton = document.getElementById('auth-skeleton');
