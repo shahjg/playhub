@@ -1385,6 +1385,7 @@
     const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
     const playerName = localStorage.getItem('tempPlayerName');
     const isHost = localStorage.getItem('tempIsHost') === 'true';
+    const gameCategory = urlParams.get('category') || localStorage.getItem('tempCategory') || 'general';
     
     // Game state
     let hasAnswered = false;
@@ -1522,15 +1523,15 @@
         const totalQ = parseInt(document.getElementById('total-rounds').textContent);
         const isLastQuestion = currentQ >= totalQ;
         
-        // Auto-advance after 4.5 seconds (host triggers next round)
+        // Auto-advance after 2 seconds (host triggers next round)
         setTimeout(() => {
             hideResultOverlay();
-            // CRITICAL: Only emit once per round
+            // CRITICAL: Only host emits, only once
             if (isHost && !hasEmittedNextRound) {
                 hasEmittedNextRound = true;
                 socket.emit('trivia-next-round', { roomCode });
             }
-        }, 4500);
+        }, 2000);
     });
     
     // Game over
@@ -1552,22 +1553,11 @@
         showPhase('gameover');
     });
     
-    // Round transition - CRITICAL: triggers next question
-    let hasStartedNextRound = false;
+    // Round transition - no longer used, trivia-next-round directly sends next question
+    // Keeping as fallback for backwards compatibility
     socket.on('trivia-round-transition', (data) => {
-        console.log('Round transition:', data);
-        // Prevent double-processing
-        if (hasStartedNextRound) return;
-        hasStartedNextRound = true;
-        
-        // Short delay then host starts next round
-        setTimeout(() => {
-            if (isHost) {
-                socket.emit('trivia-start-round', { roomCode });
-            }
-            // Reset flag after emitting
-            setTimeout(() => { hasStartedNextRound = false; }, 1000);
-        }, 500);
+        console.log('Round transition (legacy):', data);
+        // Do nothing - next question comes directly from trivia-next-round now
     });
     
     // ==================== FUNCTIONS ====================
@@ -1594,7 +1584,7 @@
                 // Show mini leaderboard
                 document.getElementById('mini-leaderboard').classList.remove('hidden');
                 if (isHost) {
-                    socket.emit('trivia-start-round', { roomCode });
+                    socket.emit('trivia-start-round', { roomCode, category: gameCategory });
                 }
             }
         }, 600); // FASTER: 600ms instead of 1000ms
