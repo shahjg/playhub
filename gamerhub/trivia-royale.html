@@ -947,6 +947,184 @@
         /* ==================== UTILITIES ==================== */
         .hidden { display: none !important; }
         
+        /* ==================== QUICK RESULT OVERLAY ==================== */
+        .result-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: rgba(15, 15, 26, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: overlayIn 0.2s ease;
+        }
+        
+        @keyframes overlayIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .result-popup {
+            text-align: center;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .result-emoji {
+            font-size: 5rem;
+            margin-bottom: 12px;
+        }
+        
+        .result-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3.5rem;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .result-overlay.correct .result-text { color: var(--green); }
+        .result-overlay.correct .result-emoji { animation: bounceIn 0.5s ease; }
+        .result-overlay.incorrect .result-text { color: var(--red); }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .result-points {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+        
+        .result-streak {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: var(--orange);
+            margin-bottom: 12px;
+            animation: fireGlow 0.5s ease-in-out infinite alternate;
+        }
+        
+        .result-answer-text {
+            font-size: 1rem;
+            color: var(--text-dim);
+        }
+        
+        .result-answer-text span {
+            color: var(--green);
+            font-weight: 700;
+        }
+        
+        /* ==================== MINI LEADERBOARD ==================== */
+        .mini-leaderboard {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            min-width: 160px;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+        }
+        
+        .mini-lb-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .mini-lb-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .mini-lb-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+        
+        .mini-lb-item.rank-1 {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05));
+            border: 1px solid var(--gold);
+        }
+        
+        .mini-lb-item.is-me {
+            border: 1px solid var(--purple);
+        }
+        
+        .mini-lb-rank {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            width: 20px;
+            color: var(--text-dim);
+        }
+        
+        .mini-lb-item.rank-1 .mini-lb-rank { color: var(--gold); }
+        
+        .mini-lb-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
+        }
+        
+        .mini-lb-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            color: var(--purple);
+        }
+        
+        @media (max-width: 700px) {
+            .mini-leaderboard {
+                top: auto;
+                bottom: 20px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+            
+            .mini-lb-list {
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            
+            .mini-lb-item {
+                flex-direction: column;
+                gap: 2px;
+                padding: 8px 12px;
+                text-align: center;
+            }
+            
+            .mini-lb-name {
+                font-size: 0.7rem;
+            }
+            
+            .result-text { font-size: 2.5rem; }
+            .result-emoji { font-size: 4rem; }
+            .result-points { font-size: 2rem; }
+        }
+        
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 700px) {
             header { height: 56px; padding: 0 14px; }
@@ -1023,6 +1201,23 @@
     <div class="countdown-overlay" id="countdown-overlay">
         <div class="countdown-label">Get Ready</div>
         <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+    
+    <!-- Quick Result Overlay -->
+    <div class="result-overlay hidden" id="result-overlay">
+        <div class="result-popup">
+            <div class="result-emoji" id="result-emoji">✓</div>
+            <div class="result-text" id="result-text">CORRECT!</div>
+            <div class="result-points" id="result-points">+150</div>
+            <div class="result-streak hidden" id="result-streak">🔥 3 STREAK</div>
+            <div class="result-answer-text">Answer: <span id="result-correct-answer">...</span></div>
+        </div>
+    </div>
+    
+    <!-- Mini Leaderboard (always visible during game) -->
+    <div class="mini-leaderboard" id="mini-leaderboard">
+        <div class="mini-lb-header">🏆 Top 3</div>
+        <div class="mini-lb-list" id="mini-lb-list"></div>
     </div>
     
     <!-- Game Bar -->
@@ -1134,7 +1329,7 @@
             <div class="leaderboard-list" id="final-leaderboard"></div>
         </div>
         
-        <button class="play-again-btn" onclick="window.location.href='/party-games.html'">PLAY AGAIN</button>
+        <button class="play-again-btn" onclick="window.location.href='/squad-games.html'">PLAY AGAIN</button>
     </div>
 </main>
 
@@ -1170,6 +1365,8 @@
     socket.on('room-joined', (data) => {
         totalPlayers = data.players?.length || 1;
         document.getElementById('total-players').textContent = totalPlayers;
+        // Hide mini leaderboard during countdown
+        document.getElementById('mini-leaderboard').classList.add('hidden');
         startCountdown();
     });
     
@@ -1213,7 +1410,7 @@
         document.getElementById('total-players').textContent = data.totalPlayers || totalPlayers;
     });
     
-    // Results
+    // Results - show inline on question screen, auto-advance
     socket.on('trivia-results', (data) => {
         clearInterval(timerInterval);
         
@@ -1237,42 +1434,27 @@
         const points = myResult?.points || 0;
         const streak = myResult?.streak || 0;
         
-        // Update result banner
-        const banner = document.getElementById('result-banner');
-        banner.className = 'result-banner ' + (wasCorrect ? 'correct' : 'incorrect');
-        document.getElementById('result-icon').textContent = wasCorrect ? '✓' : '✗';
-        document.getElementById('result-title').textContent = wasCorrect ? 'CORRECT!' : 'WRONG!';
-        document.getElementById('correct-answer').textContent = data.correctText || data.correctOption || data.options?.[correctIndex] || '...';
+        // Show quick result overlay
+        showResultOverlay(wasCorrect, points, streak, data.correctText || data.correctOption || data.options?.[correctIndex]);
         
-        // Points
-        document.getElementById('points-earned').textContent = points;
-        if (wasCorrect) {
-            const speedBonus = Math.max(0, points - 100 - (streak >= 3 ? 50 : 0));
-            document.getElementById('points-breakdown').textContent = 
-                `Base: 100${speedBonus > 0 ? ` + Speed: ${speedBonus}` : ''}${streak >= 3 ? ' + Streak: 50' : ''}`;
-        } else {
-            document.getElementById('points-breakdown').textContent = 'No points this round';
-        }
-        
-        // Streak
-        document.getElementById('streak-value').textContent = streak;
-        const streakCard = document.getElementById('streak-card');
-        streakCard.classList.toggle('active', streak >= 3);
-        
-        // Leaderboard
+        // Update leaderboard
         const leaderboard = data.leaderboard || 
             Object.entries(data.scores || {}).map(([name, score]) => ({ name, score }))
                 .sort((a, b) => b.score - a.score);
-        renderLeaderboard(leaderboard, 'leaderboard-list');
+        updateMiniLeaderboard(leaderboard);
         
-        // Next button (host only)
-        const nextBtn = document.getElementById('next-btn');
-        nextBtn.style.display = isHost ? 'block' : 'none';
-        const isLast = data.isLastQuestion || 
-            (parseInt(document.getElementById('current-round').textContent) >= parseInt(document.getElementById('total-rounds').textContent));
-        nextBtn.textContent = isLast ? 'SEE FINAL RESULTS' : 'NEXT QUESTION';
+        // Check if last question
+        const currentQ = parseInt(document.getElementById('current-round').textContent);
+        const totalQ = parseInt(document.getElementById('total-rounds').textContent);
+        const isLastQuestion = currentQ >= totalQ;
         
-        showPhase('results');
+        // Auto-advance after 3 seconds (host triggers next round)
+        setTimeout(() => {
+            hideResultOverlay();
+            if (isHost) {
+                socket.emit('trivia-next-round', { roomCode });
+            }
+        }, 3000);
     });
     
     // Game over
@@ -1288,6 +1470,17 @@
         document.getElementById('winner-score').textContent = winnerScore;
         renderLeaderboard(finalScores, 'final-leaderboard');
         showPhase('gameover');
+    });
+    
+    // Round transition - CRITICAL: triggers next question
+    socket.on('trivia-round-transition', (data) => {
+        console.log('Round transition:', data);
+        // Short delay then host starts next round
+        setTimeout(() => {
+            if (isHost) {
+                socket.emit('trivia-start-round', { roomCode });
+            }
+        }, 500);
     });
     
     // ==================== FUNCTIONS ====================
@@ -1311,6 +1504,8 @@
             } else {
                 clearInterval(interval);
                 overlay.classList.add('hidden');
+                // Show mini leaderboard
+                document.getElementById('mini-leaderboard').classList.remove('hidden');
                 if (isHost) {
                     socket.emit('trivia-start-round', { roomCode });
                 }
@@ -1404,11 +1599,60 @@
         
         // Hide game bar during countdown and gameover
         const gameBar = document.getElementById('game-bar');
+        const miniLb = document.getElementById('mini-leaderboard');
         if (phase === 'gameover') {
             gameBar.classList.add('hidden');
+            miniLb.classList.add('hidden');
         } else {
             gameBar.classList.remove('hidden');
+            miniLb.classList.remove('hidden');
         }
+    }
+    
+    function showResultOverlay(wasCorrect, points, streak, correctAnswer) {
+        const overlay = document.getElementById('result-overlay');
+        overlay.classList.remove('hidden', 'correct', 'incorrect');
+        overlay.classList.add(wasCorrect ? 'correct' : 'incorrect');
+        
+        document.getElementById('result-emoji').textContent = wasCorrect ? '✓' : '✗';
+        document.getElementById('result-text').textContent = wasCorrect ? 'CORRECT!' : 'WRONG!';
+        document.getElementById('result-points').textContent = wasCorrect ? `+${points}` : '+0';
+        document.getElementById('result-correct-answer').textContent = correctAnswer || '...';
+        
+        const streakEl = document.getElementById('result-streak');
+        if (streak >= 2) {
+            streakEl.textContent = `🔥 ${streak} STREAK`;
+            streakEl.classList.remove('hidden');
+        } else {
+            streakEl.classList.add('hidden');
+        }
+    }
+    
+    function hideResultOverlay() {
+        document.getElementById('result-overlay').classList.add('hidden');
+    }
+    
+    function updateMiniLeaderboard(leaderboard) {
+        const list = document.getElementById('mini-lb-list');
+        if (!list || !leaderboard) return;
+        
+        // Normalize data format
+        const normalized = leaderboard.map(item => ({
+            name: item.name || item.playerName,
+            score: item.score || item.points || 0
+        })).sort((a, b) => b.score - a.score);
+        
+        list.innerHTML = normalized.slice(0, 3).map((player, i) => {
+            const isMe = player.name === playerName;
+            const rankClass = i === 0 ? 'rank-1' : '';
+            return `
+                <div class="mini-lb-item ${rankClass} ${isMe ? 'is-me' : ''}">
+                    <span class="mini-lb-rank">${i + 1}</span>
+                    <span class="mini-lb-name">${escapeHtml(player.name)}</span>
+                    <span class="mini-lb-score">${player.score}</span>
+                </div>
+            `;
+        }).join('');
     }
     
     function escapeHtml(text) {
