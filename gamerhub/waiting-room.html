@@ -116,16 +116,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-        /* ADD THIS */
-.party-mode .player-name.premium {
-    background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold));
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: goldShimmer 3s linear infinite;
-}
-        
+  
 .party-mode .player-badges {
     display: none;
 }
@@ -1808,89 +1799,88 @@
     }
 
 function updatePlayersList(players) {
-        const list = document.getElementById('players-list');
-        const isPartyGame = gameConfig.isPartyGame || false;
-        
-        // Add/remove party-mode class on body
-        if (isPartyGame) {
-            document.body.classList.add('party-mode');
-        } else {
-            document.body.classList.remove('party-mode');
-        }
-        
-        if (!players.length) { 
-            list.innerHTML = '<div class="players-empty">No players yet</div>'; 
-            return; 
-        }
-
-        // Party game layout with count banner
-        let html = '';
-        if (isPartyGame) {
-            const minPlayers = gameConfig.minPlayers || 10;
-            const hasEnough = players.length >= minPlayers;
-            html += `
-                <div class="party-player-count">
-                    <div>
-                        <div class="count-number">${players.length}</div>
-                        <div class="count-label">Players</div>
-                    </div>
-                    <div class="count-status ${hasEnough ? 'ready' : ''}">
-                        ${hasEnough ? '✓ Ready to start!' : `Need ${minPlayers - players.length} more`}
-                    </div>
-                </div>
-            `;
-        }
-
-        html += players.map((player, idx) => {
-            const isMe = player.name === playerName;
-            const playerIsPremium = player.isPremium || false;
-            const playerCosmetics = player.cosmetics || {};
-            
-            // Use cosmetics.js to render the player card if available
-            if (window.TGCOCosmetics && !isPartyGame) {
-                return window.TGCOCosmetics.renderPlayerCard({
-                    name: player.name,
-                    cosmetics: playerCosmetics,
-                    isPremium: playerIsPremium,
-                    isHost: player.isHost,
-                    isMe: isMe,
-                    showEntrance: player.justJoined || false
-                }) + (isHost && !player.isHost ? `<button class="kick-btn-floating" onclick="kickPlayer('${player.id}', '${escapeHtml(player.name)}')">✕</button>` : '');
-            }
-            
-            // Standard/Party layout
-            const initial = player.name.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() || '?';
-            const premiumClass = playerIsPremium ? 'premium' : '';
-            
-            if (isPartyGame) {
-                // Compact party grid card
-                return `
-                    <div class="player-item ${player.isHost ? 'is-host' : ''} ${isMe ? 'is-me' : ''}" style="animation-delay: ${idx * 0.02}s">
-                        <div class="player-avatar">${player.isHost ? '★' : initial}</div>
-                        <span class="player-name ${premiumClass}">${escapeHtml(player.name)}</span>
-                        ${player.isHost ? '<span class="badge-host-icon">👑</span>' : ''}
-                    </div>
-                `;
-            } else {
-                // Standard squad layout
-                return `
-                    <div class="player-item ${player.isHost ? 'is-host' : ''} ${isMe ? 'is-me' : ''}" style="animation-delay: ${idx * 0.05}s">
-                        <div class="player-info">
-                            <div class="player-avatar">${player.isHost ? '★' : initial}</div>
-                            <span class="player-name ${premiumClass}">${escapeHtml(player.name)}</span>
-                        </div>
-                        <div class="player-badges">
-                            ${player.isHost ? '<span class="badge badge-host">Host</span>' : ''}
-                            ${isMe ? '<span class="badge badge-you">You</span>' : ''}
-                            ${isHost && !player.isHost ? `<button class="kick-btn" onclick="kickPlayer('${player.id}', '${escapeHtml(player.name)}')">Kick</button>` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-        }).join('');
-
-        list.innerHTML = html;
+    const list = document.getElementById('players-list');
+    const isPartyGame = gameConfig.isPartyGame || false;
+    
+    // Remove party-mode class - we're using full layout for all games
+    document.body.classList.remove('party-mode');
+    
+    if (!players.length) { 
+        list.innerHTML = '<div class="players-empty">No players yet</div>'; 
+        return; 
     }
+
+    let html = '';
+    
+    // Party game count banner (keep this - it's useful)
+    if (isPartyGame) {
+        const minPlayers = gameConfig.minPlayers || 10;
+        const hasEnough = players.length >= minPlayers;
+        html += `
+            <div class="party-player-count">
+                <div>
+                    <div class="count-number">${players.length}</div>
+                    <div class="count-label">Players</div>
+                </div>
+                <div class="count-status ${hasEnough ? 'ready' : ''}">
+                    ${hasEnough ? '✓ Ready to start!' : `Need ${minPlayers - players.length} more`}
+                </div>
+            </div>
+        `;
+        
+        // Increase max-height for party games
+        list.style.maxHeight = '500px';
+    } else {
+        list.style.maxHeight = '280px';
+    }
+
+    html += players.map((player, idx) => {
+        const isMe = player.name === playerName;
+        const playerIsPremium = player.isPremium || false;
+        const playerCosmetics = player.cosmetics || {};
+        
+        // Use cosmetics.js for ALL games (party and squad)
+        if (window.TGCOCosmetics) {
+            const card = window.TGCOCosmetics.renderPlayerCard({
+                name: player.name,
+                cosmetics: playerCosmetics,
+                isPremium: playerIsPremium,
+                isHost: player.isHost,
+                isMe: isMe,
+                showEntrance: player.justJoined || false
+            });
+            
+            // Add kick button for host
+            if (isHost && !player.isHost) {
+                return `<div class="player-card-wrapper" style="position: relative;">
+                    ${card}
+                    <button class="kick-btn-floating" onclick="kickPlayer('${player.id}', '${escapeHtml(player.name)}')">✕</button>
+                </div>`;
+            }
+            return card;
+        }
+        
+        // Fallback if cosmetics.js not loaded
+        const initial = player.name.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() || '?';
+        const premiumClass = playerIsPremium ? 'premium' : '';
+        
+        return `
+            <div class="player-item ${player.isHost ? 'is-host' : ''} ${isMe ? 'is-me' : ''}" style="animation-delay: ${idx * 0.05}s">
+                <div class="player-info">
+                    <div class="player-avatar">${player.isHost ? '★' : initial}</div>
+                    <span class="player-name ${premiumClass}">${escapeHtml(player.name)}</span>
+                </div>
+                <div class="player-badges">
+                    ${player.isHost ? '<span class="badge badge-host">Host</span>' : ''}
+                    ${isMe ? '<span class="badge badge-you">You</span>' : ''}
+                    ${isHost && !player.isHost ? `<button class="kick-btn" onclick="kickPlayer('${player.id}', '${escapeHtml(player.name)}')">Kick</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    list.innerHTML = html;
+}
 
     function updateGameUI() {
         document.getElementById('game-title').textContent = gameConfig.displayName;
