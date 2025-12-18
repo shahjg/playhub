@@ -443,8 +443,8 @@ const betOrBluffQuestions = [
 ];
 
 // ==================== INIT FUNCTIONS ====================
-function initTriviaRoyaleGame(room, category = 'mixed') {
-    const questions = triviaQuestions[category] || triviaQuestions.mixed;
+function initTriviaRoyaleGame(room, category = 'general') {
+    const questions = triviaQuestions[category] || triviaQuestions.general;
     room.gameData = {
         questions: [...questions].sort(() => Math.random() - 0.5).slice(0, 10),
         currentQuestionIndex: 0, 
