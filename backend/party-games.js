@@ -580,9 +580,16 @@ function calculateTriviaResults(room, io) {
         });
     });
     
-    // Build leaderboard
+    // Build leaderboard with premium status
     const leaderboard = Object.entries(room.gameData.scores)
-        .map(([name, score]) => ({ name, score }))
+        .map(([name, score]) => {
+            const player = room.players.find(p => p.name === name);
+            return { 
+                name, 
+                score, 
+                isPremium: player?.isPremium || false 
+            };
+        })
         .sort((a, b) => b.score - a.score);
     
     io.to(room.code).emit('trivia-results', { 
@@ -731,9 +738,17 @@ function calculateBetOrBluffResults(room, io) {
 function setupPartyGameHandlers(io, socket, rooms, players) {
   
     // TRIVIA ROYALE
-    socket.on('trivia-start-round', ({roomCode}) => {
+    socket.on('trivia-start-round', ({roomCode, category}) => {
         const room = rooms.get(roomCode); 
         if (!room?.gameData) return;
+        
+        // If questions aren't loaded yet, initialize with the category
+        if (!room.gameData.questions || room.gameData.questions.length === 0) {
+            const cat = category || room.gameData.category || 'general';
+            const questions = triviaQuestions[cat] || triviaQuestions.general;
+            room.gameData.questions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
+            room.gameData.category = cat;
+        }
         
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
         if (!q) return; // No more questions
@@ -781,18 +796,45 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         const room = rooms.get(roomCode); 
         if (!room?.gameData) return;
         
+        // Prevent double-increment with a lock
+        if (room.gameData.advancingRound) return;
+        room.gameData.advancingRound = true;
+        
         room.gameData.currentQuestionIndex++; 
         room.gameData.roundNumber++;
         
         if (room.gameData.roundNumber > room.gameData.maxRounds) {
             io.to(roomCode).emit('trivia-game-over', { 
-                finalScores: room.gameData.scores, 
+                finalScores: room.gameData.scores,
+                finalLeaderboard: Object.entries(room.gameData.scores)
+                    .map(([name, score]) => ({ name, score, isPremium: room.players.find(p => p.name === name)?.isPremium }))
+                    .sort((a, b) => b.score - a.score),
                 winner: getTopPlayer(room.gameData.scores) 
             });
         } else {
-            io.to(roomCode).emit('trivia-round-transition', { 
-                nextRound: room.gameData.roundNumber, 
-                scores: room.gameData.scores 
+            // Directly send next question instead of round-transition
+            const q = room.gameData.questions[room.gameData.currentQuestionIndex];
+            if (!q) {
+                io.to(roomCode).emit('trivia-game-over', { 
+                    finalScores: room.gameData.scores,
+                    winner: getTopPlayer(room.gameData.scores) 
+                });
+                return;
+            }
+            
+            room.gameData.phase = 'question'; 
+            room.gameData.answers = {}; 
+            room.gameData.roundStartTime = Date.now();
+            room.gameData.advancingRound = false; // Reset lock
+            
+            io.to(roomCode).emit('trivia-question', { 
+                question: q.question, 
+                options: q.options, 
+                questionIndex: room.gameData.currentQuestionIndex,
+                roundNumber: room.gameData.roundNumber, 
+                totalQuestions: room.gameData.maxRounds,
+                totalRounds: room.gameData.maxRounds, 
+                timeLimit: room.gameData.timePerQuestion 
             });
         }
     });
