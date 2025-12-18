@@ -789,13 +789,20 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         const room = rooms.get(roomCode); 
         if (!room?.gameData) return;
         
-        // Initialize questions with the provided category (or stored category, or default)
-        if (room.gameData.questions.length === 0) {
-            const cat = category || room.gameData.category || 'general';
-            const questions = triviaQuestions[cat] || triviaQuestions.general;
-            room.gameData.questions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
+        console.log('trivia-start-round received - category:', category, 'stored:', room.gameData.category);
+        
+        // ALWAYS load questions if provided category OR if questions empty
+        const cat = category || room.gameData.category || 'general';
+        if (room.gameData.questions.length === 0 || (category && category !== room.gameData.category)) {
+            const questions = triviaQuestions[cat];
+            if (!questions) {
+                console.log('WARNING: Category not found:', cat, '- using general');
+            }
+            room.gameData.questions = [...(questions || triviaQuestions.general)].sort(() => Math.random() - 0.5).slice(0, 10);
             room.gameData.category = cat;
-            console.log('Trivia initialized with category:', cat, '- Questions:', room.gameData.questions.length);
+            room.gameData.currentQuestionIndex = 0;
+            room.gameData.roundNumber = 1;
+            console.log('Trivia loaded category:', cat, '- First question:', room.gameData.questions[0]?.question);
         }
         
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
@@ -812,7 +819,8 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
             roundNumber: room.gameData.roundNumber, 
             totalQuestions: room.gameData.maxRounds,
             totalRounds: room.gameData.maxRounds, 
-            timeLimit: room.gameData.timePerQuestion 
+            timeLimit: room.gameData.timePerQuestion,
+            category: cat // Send category back to clients for debugging
         });
     });
     
