@@ -1394,8 +1394,6 @@
     let timeLeft = 15;
     let maxTime = 15;
     let totalPlayers = 1;
-    let pendingNextRound = false; // Prevent double-processing of results
-    let hasEmittedNextRound = false; // Prevent double-emit of trivia-next-round
     let playersData = {}; // Store player info including isPremium and cosmetics
     
     if (!roomCode) window.location.href = '/party-games.html';
@@ -1440,9 +1438,7 @@
     
     // Receive question from server
     socket.on('trivia-question', (data) => {
-        // Reset ALL flags for new round
-        pendingNextRound = false;
-        hasEmittedNextRound = false;
+        // Reset state for new round
         hasAnswered = false;
         selectedAnswer = -1;
         maxTime = data.timeLimit || 15;
@@ -1481,12 +1477,8 @@
         document.getElementById('total-players').textContent = data.totalPlayers || totalPlayers;
     });
     
-    // Results - show inline on question screen, auto-advance
+    // Results - show inline on question screen, server auto-advances
     socket.on('trivia-results', (data) => {
-        // Prevent double-processing
-        if (pendingNextRound) return;
-        pendingNextRound = true;
-        
         clearInterval(timerInterval);
         
         // Show correct/incorrect on buttons
@@ -1512,25 +1504,16 @@
         // Show quick result overlay
         showResultOverlay(wasCorrect, points, streak, data.correctText || data.correctOption || data.options?.[correctIndex]);
         
-        // Update leaderboard
+        // Update leaderboard with premium data
         const leaderboard = data.leaderboard || 
             Object.entries(data.scores || {}).map(([name, score]) => ({ name, score }))
                 .sort((a, b) => b.score - a.score);
         updateMiniLeaderboard(leaderboard);
         
-        // Check if last question
-        const currentQ = parseInt(document.getElementById('current-round').textContent);
-        const totalQ = parseInt(document.getElementById('total-rounds').textContent);
-        const isLastQuestion = currentQ >= totalQ;
-        
-        // Auto-advance after 2 seconds (host triggers next round)
+        // Server will auto-send next question after 2.5 seconds
+        // Just hide overlay after 2 seconds (before next question arrives)
         setTimeout(() => {
             hideResultOverlay();
-            // CRITICAL: Only host emits, only once
-            if (isHost && !hasEmittedNextRound) {
-                hasEmittedNextRound = true;
-                socket.emit('trivia-next-round', { roomCode });
-            }
         }, 2000);
     });
     
@@ -1551,13 +1534,6 @@
         document.getElementById('winner-score').textContent = winnerScore;
         renderLeaderboard(finalScores, 'final-leaderboard');
         showPhase('gameover');
-    });
-    
-    // Round transition - no longer used, trivia-next-round directly sends next question
-    // Keeping as fallback for backwards compatibility
-    socket.on('trivia-round-transition', (data) => {
-        console.log('Round transition (legacy):', data);
-        // Do nothing - next question comes directly from trivia-next-round now
     });
     
     // ==================== FUNCTIONS ====================
