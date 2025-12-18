@@ -1897,13 +1897,14 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'codenames') {
       // Codenames starts with team selection
       console.log(`Codenames starting in room ${roomCode}`);
-    } else if (room.gameType === 'categories') {
+    }} else if (room.gameType === 'categories') {
       initCategoriesGame(room);
     } else if (room.gameType === 'word-association') {
       initWordAssociationGame(room);
     } else if (room.gameType === 'trivia-royale') {
       partyGames.initTriviaRoyaleGame(room);
     } else if (room.gameType === 'this-or-that-party') {
+      partyGames.initThisOrThatPartyGame(room);
       partyGames.initThisOrThatPartyGame(room);
     } else if (room.gameType === 'hot-takes-party') {
       partyGames.initHotTakesPartyGame(room);
