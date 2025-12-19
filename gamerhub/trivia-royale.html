@@ -1399,9 +1399,25 @@
     if (!roomCode) window.location.href = '/party-games.html';
     
     // Socket connection
-    socket.on('connect', () => {
-        socket.emit('rejoin-room', { roomCode, playerName });
-    });
+   socket.on('connect', async () => {
+    // Get premium status before rejoining
+    let isPremium = false;
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user) {
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('account_type')
+                .eq('id', session.user.id)
+                .single();
+            isPremium = profile?.account_type === 'premium';
+        }
+    } catch (e) {
+        console.log('Could not fetch premium status');
+    }
+    
+    socket.emit('rejoin-room', { roomCode, playerName, isPremium });
+});
     
     socket.on('room-joined', (data) => {
         totalPlayers = data.players?.length || 1;
@@ -1715,10 +1731,19 @@
         return div.innerHTML;
     }
     
-    // Play Again button - returns to waiting room
-    document.getElementById('play-again-btn').addEventListener('click', () => {
+ // Play Again button - host returns everyone, others just go back
+document.getElementById('play-again-btn').addEventListener('click', () => {
+    if (isHost) {
+        socket.emit('host-return-lobby', { roomCode });
+    } else {
         window.location.href = `/waiting-room.html?room=${roomCode}`;
-    });
+    }
+});
+
+// Listen for host forcing everyone back to lobby
+socket.on('force-return-lobby', (data) => {
+    window.location.href = `/waiting-room.html?room=${roomCode}`;
+});
     
     // ==================== AUTH/PROFILE ====================
     const authSkeleton = document.getElementById('auth-skeleton');
