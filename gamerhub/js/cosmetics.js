@@ -311,6 +311,31 @@ const COSMETICS_STYLES = `
     white-space: nowrap;
   }
 
+  .lb-name-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .lb-name-wrapper .tgco-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lb-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.45);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .lb-score {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.1rem;
@@ -404,6 +429,32 @@ const COSMETICS_STYLES = `
     flex: 1;
     font-weight: 600;
     font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mini-lb-name-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .mini-lb-name-wrapper .tgco-name {
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mini-lb-title {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.4);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -514,6 +565,13 @@ const COSMETICS_STYLES = `
   .global-lb-stats {
     font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.5);
+  }
+
+  .global-lb-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.45);
   }
 
   .global-lb-score {
@@ -716,6 +774,7 @@ function renderLeaderboardItem(options) {
 
   const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
   const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['lb-item'];
   if (isMe) classes.push('is-me');
@@ -728,12 +787,22 @@ function renderLeaderboardItem(options) {
     else if (rank === 3) classes.push('rank-3');
   }
 
-  const nameHtml = renderInlineName({ name, cosmetics, isPremium });
+  // Build name with effects
+  const nameClasses = ['tgco-name'];
+  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+    nameClasses.push(`tgco-effect-${c.name_effect}`);
+  }
+  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = isPremium ? `color: ${color};` : '';
+  const title = (isPremium && c.title) ? `<span class="lb-title">${escapeHtml(c.title)}</span>` : '';
 
   return `
     <div class="${classes.join(' ')}">
       <span class="lb-rank">${rank}</span>
-      <div class="lb-name" style="flex:1; overflow:hidden;">${nameHtml}</div>
+      <div class="lb-name-wrapper">
+        <span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>
+        ${title}
+      </div>
       <span class="lb-score">${score.toLocaleString()}</span>
     </div>
   `.trim();
@@ -756,18 +825,29 @@ function renderMiniLeaderboardItem(options) {
 
   const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
   const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['mini-lb-item'];
   if (isMe) classes.push('is-me');
   if (rank === 1 && !hasCosmetics) classes.push('rank-1');
   if (hasCosmetics && c.border_color) classes.push(`${c.border_color}-border`);
 
-  const nameHtml = renderInlineName({ name, cosmetics, isPremium });
+  // Build name with effects
+  const nameClasses = ['tgco-name'];
+  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+    nameClasses.push(`tgco-effect-${c.name_effect}`);
+  }
+  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = isPremium ? `color: ${color};` : '';
+  const title = (isPremium && c.title) ? `<span class="mini-lb-title">${escapeHtml(c.title)}</span>` : '';
 
   return `
     <div class="${classes.join(' ')}">
       <span class="mini-lb-rank">${rank}</span>
-      <div class="mini-lb-name" style="flex:1; overflow:hidden;">${nameHtml}</div>
+      <div class="mini-lb-name-wrapper">
+        <span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>
+        ${title}
+      </div>
       <span class="mini-lb-score">${score.toLocaleString()}</span>
     </div>
   `.trim();
@@ -833,18 +913,28 @@ function renderGlobalLeaderboardItem(options) {
 
   const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
   const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['global-lb-item'];
   if (hasCosmetics && c.border_color) classes.push(`${c.border_color}-border`);
 
   const rankClass = rank <= 3 ? `top-${rank}` : '';
-  const nameHtml = renderInlineName({ name, cosmetics, isPremium });
+  
+  // Build name with effects
+  const nameClasses = ['tgco-name'];
+  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+    nameClasses.push(`tgco-effect-${c.name_effect}`);
+  }
+  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = isPremium ? `color: ${color};` : '';
+  const title = (isPremium && c.title) ? `<div class="global-lb-title">${escapeHtml(c.title)}</div>` : '';
 
   return `
     <div class="${classes.join(' ')}">
       <span class="global-lb-rank ${rankClass}">#${rank}</span>
       <div class="global-lb-info">
-        <div class="global-lb-name">${nameHtml}</div>
+        <div class="global-lb-name"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span></div>
+        ${title}
         ${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}
       </div>
       <span class="global-lb-score">${score.toLocaleString()}</span>
