@@ -277,6 +277,250 @@ const COSMETICS_STYLES = `
     color: #fbbf24;
     border: 1px solid rgba(251, 191, 36, 0.3);
   }
+
+  /* ========== LEADERBOARD ITEMS ========== */
+  .lb-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    gap: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .lb-item.is-me {
+    background: rgba(79, 172, 254, 0.1);
+    border-color: rgba(79, 172, 254, 0.3);
+  }
+
+  .lb-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    min-width: 28px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .lb-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lb-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: var(--accent, #14b8a6);
+  }
+
+  /* Rank styling for non-premium players */
+  .lb-item.rank-1 { border-color: #fbbf24; background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), transparent); }
+  .lb-item.rank-2 { border-color: #94a3b8; background: linear-gradient(135deg, rgba(148, 163, 184, 0.15), transparent); }
+  .lb-item.rank-3 { border-color: #cd7c32; background: linear-gradient(135deg, rgba(205, 124, 50, 0.15), transparent); }
+
+  .lb-item.rank-1 .lb-rank { color: #fbbf24; }
+  .lb-item.rank-2 .lb-rank { color: #94a3b8; }
+  .lb-item.rank-3 .lb-rank { color: #cd7c32; }
+
+  /* Premium border colors for leaderboard */
+  .lb-item.rainbow-border,
+  .mini-lb-item.rainbow-border,
+  .winner-card.rainbow-border {
+    border-color: transparent !important;
+    background: 
+      linear-gradient(rgba(15, 15, 25, 0.95), rgba(15, 15, 25, 0.95)) padding-box,
+      linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: tgcoRainbow 3s linear infinite;
+  }
+
+  .lb-item.gold-border, .mini-lb-item.gold-border, .winner-card.gold-border { 
+    border-color: #fbbf24 !important; 
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), transparent); 
+  }
+  .lb-item.diamond-border, .mini-lb-item.diamond-border, .winner-card.diamond-border { 
+    border-color: #67e8f9 !important; 
+    background: linear-gradient(135deg, rgba(103, 232, 249, 0.12), transparent); 
+  }
+  .lb-item.ruby-border, .mini-lb-item.ruby-border, .winner-card.ruby-border { 
+    border-color: #f87171 !important; 
+    background: linear-gradient(135deg, rgba(248, 113, 113, 0.12), transparent); 
+  }
+  .lb-item.emerald-border, .mini-lb-item.emerald-border, .winner-card.emerald-border { 
+    border-color: #34d399 !important; 
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), transparent); 
+  }
+  .lb-item.amethyst-border, .mini-lb-item.amethyst-border, .winner-card.amethyst-border { 
+    border-color: #c084fc !important; 
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.12), transparent); 
+  }
+  .lb-item.platinum-border, .mini-lb-item.platinum-border, .winner-card.platinum-border { 
+    border-color: #e2e8f0 !important; 
+    background: linear-gradient(135deg, rgba(226, 232, 240, 0.12), transparent); 
+  }
+  .lb-item.obsidian-border, .mini-lb-item.obsidian-border, .winner-card.obsidian-border { 
+    border-color: #1e1b4b !important; 
+    background: linear-gradient(135deg, rgba(30, 27, 75, 0.25), transparent); 
+  }
+  .lb-item.rose-border, .mini-lb-item.rose-border, .winner-card.rose-border { 
+    border-color: #fb7185 !important; 
+    background: linear-gradient(135deg, rgba(251, 113, 133, 0.12), transparent); 
+  }
+  .lb-item.gray-border, .mini-lb-item.gray-border, .winner-card.gray-border { 
+    border-color: #6b7280 !important; 
+  }
+
+  /* ========== MINI LEADERBOARD (during gameplay) ========== */
+  .mini-lb-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    gap: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .mini-lb-item.is-me {
+    background: rgba(79, 172, 254, 0.1);
+    border-color: rgba(79, 172, 254, 0.3);
+  }
+
+  .mini-lb-item.rank-1 { border-color: #fbbf24; }
+
+  .mini-lb-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    min-width: 20px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .mini-lb-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mini-lb-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--accent, #14b8a6);
+  }
+
+  /* ========== WINNER CARD (game over) ========== */
+  .winner-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 32px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 3px solid #fbbf24;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .winner-crown {
+    font-size: 2.5rem;
+    margin-bottom: 4px;
+  }
+
+  .winner-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: #fbbf24;
+  }
+
+  .winner-score {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .winner-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: -4px;
+  }
+
+  /* ========== GLOBAL LEADERBOARD PAGE ========== */
+  .global-lb-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    gap: 16px;
+    transition: all 0.3s ease;
+  }
+
+  .global-lb-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(4px);
+  }
+
+  .global-lb-item.rainbow-border { 
+    border-color: transparent !important;
+    background: 
+      linear-gradient(rgba(15, 15, 25, 0.95), rgba(15, 15, 25, 0.95)) padding-box,
+      linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: tgcoRainbow 3s linear infinite;
+  }
+
+  .global-lb-item.gold-border { border-color: #fbbf24 !important; background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), transparent); }
+  .global-lb-item.diamond-border { border-color: #67e8f9 !important; background: linear-gradient(135deg, rgba(103, 232, 249, 0.12), transparent); }
+  .global-lb-item.ruby-border { border-color: #f87171 !important; background: linear-gradient(135deg, rgba(248, 113, 113, 0.12), transparent); }
+  .global-lb-item.emerald-border { border-color: #34d399 !important; background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), transparent); }
+  .global-lb-item.amethyst-border { border-color: #c084fc !important; background: linear-gradient(135deg, rgba(192, 132, 252, 0.12), transparent); }
+  .global-lb-item.platinum-border { border-color: #e2e8f0 !important; background: linear-gradient(135deg, rgba(226, 232, 240, 0.12), transparent); }
+  .global-lb-item.obsidian-border { border-color: #1e1b4b !important; background: linear-gradient(135deg, rgba(30, 27, 75, 0.25), transparent); }
+  .global-lb-item.rose-border { border-color: #fb7185 !important; background: linear-gradient(135deg, rgba(251, 113, 133, 0.12), transparent); }
+
+  .global-lb-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    min-width: 40px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .global-lb-rank.top-1 { color: #fbbf24; }
+  .global-lb-rank.top-2 { color: #94a3b8; }
+  .global-lb-rank.top-3 { color: #cd7c32; }
+
+  .global-lb-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .global-lb-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .global-lb-stats {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .global-lb-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    color: var(--accent, #14b8a6);
+  }
 </style>
 `;
 
@@ -455,6 +699,160 @@ function renderPlayerCard(options) {
 }
 
 /**
+ * Render a leaderboard item (for in-game leaderboards)
+ */
+function renderLeaderboardItem(options) {
+  injectCosmeticsStyles();
+
+  const {
+    name = 'Player',
+    score = 0,
+    rank = 1,
+    cosmetics = {},
+    isPremium = false,
+    isMe = false,
+    showRankStyling = true
+  } = options;
+
+  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  
+  const classes = ['lb-item'];
+  if (isMe) classes.push('is-me');
+  
+  if (hasCosmetics && c.border_color) {
+    classes.push(`${c.border_color}-border`);
+  } else if (showRankStyling) {
+    if (rank === 1) classes.push('rank-1');
+    else if (rank === 2) classes.push('rank-2');
+    else if (rank === 3) classes.push('rank-3');
+  }
+
+  const nameHtml = renderInlineName({ name, cosmetics, isPremium });
+
+  return `
+    <div class="${classes.join(' ')}">
+      <span class="lb-rank">${rank}</span>
+      <div class="lb-name" style="flex:1; overflow:hidden;">${nameHtml}</div>
+      <span class="lb-score">${score.toLocaleString()}</span>
+    </div>
+  `.trim();
+}
+
+/**
+ * Render a mini leaderboard item (compact, for during gameplay)
+ */
+function renderMiniLeaderboardItem(options) {
+  injectCosmeticsStyles();
+
+  const {
+    name = 'Player',
+    score = 0,
+    rank = 1,
+    cosmetics = {},
+    isPremium = false,
+    isMe = false
+  } = options;
+
+  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  
+  const classes = ['mini-lb-item'];
+  if (isMe) classes.push('is-me');
+  if (rank === 1 && !hasCosmetics) classes.push('rank-1');
+  if (hasCosmetics && c.border_color) classes.push(`${c.border_color}-border`);
+
+  const nameHtml = renderInlineName({ name, cosmetics, isPremium });
+
+  return `
+    <div class="${classes.join(' ')}">
+      <span class="mini-lb-rank">${rank}</span>
+      <div class="mini-lb-name" style="flex:1; overflow:hidden;">${nameHtml}</div>
+      <span class="mini-lb-score">${score.toLocaleString()}</span>
+    </div>
+  `.trim();
+}
+
+/**
+ * Render a winner card (for game over screens)
+ */
+function renderWinnerCard(options) {
+  injectCosmeticsStyles();
+
+  const {
+    name = 'Player',
+    score = 0,
+    cosmetics = {},
+    isPremium = false,
+    showCrown = true
+  } = options;
+
+  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const color = COSMETIC_COLORS[c.border_color] || '#fbbf24';
+  
+  const classes = ['winner-card'];
+  if (hasCosmetics && c.border_color) {
+    classes.push(`${c.border_color}-border`);
+  }
+
+  const nameClasses = ['winner-name'];
+  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+    nameClasses.push(`tgco-effect-${c.name_effect}`);
+  }
+
+  const badge = (isPremium && c.badge_icon) ? c.badge_icon + ' ' : '';
+  const title = (isPremium && c.title) ? `<div class="winner-title">${escapeHtml(c.title)}</div>` : '';
+  const crown = showCrown ? '<div class="winner-crown">👑</div>' : '';
+  const nameStyle = isPremium ? `color: ${color};` : '';
+
+  return `
+    <div class="${classes.join(' ')}">
+      ${crown}
+      <div class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</div>
+      ${title}
+      <div class="winner-score">${score.toLocaleString()} points</div>
+    </div>
+  `.trim();
+}
+
+/**
+ * Render a global leaderboard item (for leaderboard pages)
+ */
+function renderGlobalLeaderboardItem(options) {
+  injectCosmeticsStyles();
+
+  const {
+    name = 'Player',
+    score = 0,
+    rank = 1,
+    stats = '',
+    cosmetics = {},
+    isPremium = false
+  } = options;
+
+  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  
+  const classes = ['global-lb-item'];
+  if (hasCosmetics && c.border_color) classes.push(`${c.border_color}-border`);
+
+  const rankClass = rank <= 3 ? `top-${rank}` : '';
+  const nameHtml = renderInlineName({ name, cosmetics, isPremium });
+
+  return `
+    <div class="${classes.join(' ')}">
+      <span class="global-lb-rank ${rankClass}">#${rank}</span>
+      <div class="global-lb-info">
+        <div class="global-lb-name">${nameHtml}</div>
+        ${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}
+      </div>
+      <span class="global-lb-score">${score.toLocaleString()}</span>
+    </div>
+  `.trim();
+}
+
+/**
  * Escape HTML to prevent XSS
  */
 function escapeHtml(text) {
@@ -522,6 +920,10 @@ if (typeof window !== 'undefined') {
     renderNameplate,
     renderInlineName,
     renderPlayerCard,
+    renderLeaderboardItem,
+    renderMiniLeaderboardItem,
+    renderWinnerCard,
+    renderGlobalLeaderboardItem,
     fetchPlayerCosmetics,
     clearCosmeticsCache,
     COSMETIC_COLORS,
