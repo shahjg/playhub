@@ -442,11 +442,46 @@ const betOrBluffQuestions = [
     { question: "How many hours do you exercise per week?", unit: "hours" }
 ];
 
+// ==================== SKETCH & GUESS WORD BANK ====================
+const sketchWords = {
+    easy: [
+        "cat", "dog", "house", "tree", "sun", "moon", "car", "fish", "bird", "flower",
+        "ball", "book", "chair", "table", "phone", "clock", "shoe", "hat", "cup", "key",
+        "apple", "banana", "pizza", "cake", "ice cream", "cookie", "bread", "egg", "cheese", "milk",
+        "star", "heart", "cloud", "rain", "snow", "fire", "water", "mountain", "beach", "island",
+        "baby", "king", "queen", "robot", "ghost", "angel", "witch", "pirate", "ninja", "cowboy",
+        "bed", "door", "window", "lamp", "couch", "tv", "guitar", "drum", "piano", "bottle",
+        "pencil", "paper", "scissors", "hammer", "knife", "fork", "spoon", "plate", "bowl", "pot"
+    ],
+    medium: [
+        "airplane", "helicopter", "submarine", "rocket", "bicycle", "motorcycle", "ambulance", "firetruck",
+        "elephant", "giraffe", "penguin", "dolphin", "butterfly", "dinosaur", "dragon", "unicorn",
+        "hamburger", "spaghetti", "popcorn", "pancakes", "sandwich", "hotdog", "donut", "watermelon",
+        "rainbow", "volcano", "tornado", "earthquake", "lightning", "sunset", "campfire", "fireworks",
+        "skateboard", "surfboard", "snowboard", "trampoline", "rollercoaster", "ferris wheel",
+        "hospital", "airport", "lighthouse", "pyramid", "castle", "igloo", "tent", "treehouse",
+        "magician", "astronaut", "firefighter", "dentist", "chef", "teacher", "police", "scientist",
+        "birthday", "wedding", "christmas", "halloween", "thanksgiving", "vacation", "concert", "parade",
+        "mermaid", "werewolf", "vampire", "zombie", "superhero", "villain", "princess", "knight",
+        "basketball", "football", "baseball", "soccer", "tennis", "golf", "bowling", "boxing"
+    ],
+    hard: [
+        "imagination", "confusion", "jealousy", "nostalgia", "awkward", "sarcasm", "procrastination",
+        "photosynthesis", "democracy", "evolution", "gravity", "electricity", "internet", "cryptocurrency",
+        "social media", "video call", "screenshot", "password", "download", "bluetooth", "wifi",
+        "plot twist", "cliffhanger", "flashback", "character development", "spoiler alert",
+        "monday morning", "traffic jam", "alarm clock", "deadline", "overtime", "promotion",
+        "first date", "friendzone", "ghosting", "catfish", "swipe right", "sliding into DMs",
+        "brain freeze", "food coma", "hangover", "jet lag", "FOMO", "YOLO", "no cap", "sus",
+        "netflix and chill", "binge watching", "spoiler", "trending", "viral", "influencer",
+        "black friday", "spring cleaning", "new years resolution", "bucket list", "life hack"
+    ]
+};
+
 // ==================== INIT FUNCTIONS ====================
 function initTriviaRoyaleGame(room, category = 'general') {
-    // Don't load questions here - trivia-start-round will load them with the correct category
     room.gameData = {
-        questions: [], // Will be populated by trivia-start-round
+        questions: [],
         currentQuestionIndex: 0, 
         roundNumber: 1, 
         maxRounds: 10,
@@ -456,7 +491,7 @@ function initTriviaRoyaleGame(room, category = 'general') {
         streaks: {},
         timePerQuestion: 15, 
         roleAssignments: {},
-        category: category // Store the requested category
+        category: category
     };
     room.players.forEach(p => { 
         room.gameData.scores[p.name] = 0; 
@@ -533,6 +568,48 @@ function initBetOrBluffGame(room, startingPoints = 500) {
     room.players.forEach(p => { room.gameData.chips[p.name] = parseInt(startingPoints) || 500; });
 }
 
+function initSketchGuessGame(room, difficulty = 'medium') {
+    // Get words based on difficulty, mix in some easy/hard for variety
+    let wordPool = [...sketchWords[difficulty] || sketchWords.medium];
+    if (difficulty === 'medium') {
+        wordPool = [...wordPool, ...sketchWords.easy.slice(0, 20), ...sketchWords.hard.slice(0, 15)];
+    } else if (difficulty === 'easy') {
+        wordPool = [...wordPool, ...sketchWords.medium.slice(0, 15)];
+    } else if (difficulty === 'hard') {
+        wordPool = [...wordPool, ...sketchWords.medium.slice(0, 20)];
+    }
+    
+    // Shuffle word pool
+    wordPool = wordPool.sort(() => Math.random() - 0.5);
+    
+    // Calculate rounds: each player draws once per round, 3 rounds total
+    const roundsPerPlayer = 3;
+    const totalTurns = room.players.length * roundsPerPlayer;
+    
+    room.gameData = {
+        wordPool: wordPool,
+        wordIndex: 0,
+        currentTurn: 0,
+        totalTurns: totalTurns,
+        currentRound: 1,
+        totalRounds: roundsPerPlayer,
+        phase: 'countdown',
+        currentDrawer: null,
+        currentDrawerIndex: 0,
+        currentWord: null,
+        scores: {},
+        guessedPlayers: [],
+        timePerTurn: 60,
+        hintLevel: 0,
+        hintInterval: null,
+        turnTimeout: null,
+        wordChoiceTimeout: null,
+        difficulty: difficulty
+    };
+    
+    room.players.forEach(p => { room.gameData.scores[p.name] = 0; });
+}
+
 // ==================== HELPER ====================
 function getTopPlayer(obj) {
     let max = -Infinity, winner = null;
@@ -542,9 +619,68 @@ function getTopPlayer(obj) {
     return winner;
 }
 
+// Generate hint with underscores and revealed letters
+function generateHint(word, revealCount) {
+    const chars = word.split('');
+    const letterIndices = chars.map((c, i) => c !== ' ' ? i : -1).filter(i => i !== -1);
+    
+    // Randomly select which letters to reveal
+    const shuffledIndices = [...letterIndices].sort(() => Math.random() - 0.5);
+    const toReveal = shuffledIndices.slice(0, revealCount);
+    
+    return chars.map((c, i) => {
+        if (c === ' ') return '  ';
+        if (toReveal.includes(i)) return c.toUpperCase();
+        return '_';
+    }).join(' ');
+}
+
+// Check if guess is close (similar to the word)
+function isCloseGuess(guess, word) {
+    const g = guess.toLowerCase().trim();
+    const w = word.toLowerCase().trim();
+    if (g === w) return false; // Exact match handled elsewhere
+    
+    // Check if guess contains the word or vice versa
+    if (w.length > 3 && (g.includes(w) || w.includes(g))) return true;
+    
+    // Check for similar length and matching characters
+    if (Math.abs(g.length - w.length) <= 2 && g.length >= 3) {
+        let matchCount = 0;
+        for (let i = 0; i < Math.min(g.length, w.length); i++) {
+            if (g[i] === w[i]) matchCount++;
+        }
+        if (matchCount >= Math.floor(w.length * 0.6)) return true;
+    }
+    
+    return false;
+}
+
+// Get next set of word choices
+function getWordChoices(room, count = 3) {
+    const gd = room.gameData;
+    const choices = [];
+    
+    for (let i = 0; i < count && gd.wordIndex < gd.wordPool.length; i++) {
+        choices.push(gd.wordPool[gd.wordIndex]);
+        gd.wordIndex++;
+    }
+    
+    // If we ran out of words, recycle
+    if (choices.length < count) {
+        gd.wordPool = gd.wordPool.sort(() => Math.random() - 0.5);
+        gd.wordIndex = 0;
+        while (choices.length < count && gd.wordIndex < gd.wordPool.length) {
+            choices.push(gd.wordPool[gd.wordIndex]);
+            gd.wordIndex++;
+        }
+    }
+    
+    return choices;
+}
+
 // ==================== RESULT CALCULATORS ====================
 function calculateTriviaResults(room, io) {
-    // Prevent double-calculation
     if (room.gameData.phase === 'results') return;
     room.gameData.phase = 'results';
     
@@ -558,15 +694,13 @@ function calculateTriviaResults(room, io) {
         let points = 0;
         
         if (correct) {
-            // Base points + speed bonus (faster = more points)
             const timeTaken = ans.timestamp - room.gameData.roundStartTime;
-            const speedBonus = Math.max(0, Math.floor((15000 - timeTaken) / 150)); // Up to 100 bonus points
+            const speedBonus = Math.max(0, Math.floor((15000 - timeTaken) / 150));
             points = 100 + speedBonus;
             
-            // Streak bonus
             room.gameData.streaks[p.name]++;
             if (room.gameData.streaks[p.name] >= 3) {
-                points += 50; // Streak bonus
+                points += 50;
             }
             
             room.gameData.scores[p.name] += points;
@@ -584,22 +718,18 @@ function calculateTriviaResults(room, io) {
         });
     });
     
-   // Build leaderboard with premium status
-const leaderboard = Object.entries(room.gameData.scores)
-    .map(([name, score]) => {
-        const player = room.players.find(p => p.name === name);
-        console.log(`[TRIVIA LEADERBOARD] Player: ${name}, Found: ${!!player}, isPremium: ${player?.isPremium}`);
-        
-    return { 
-    name, 
-    score, 
-    isPremium: player?.isPremium || false,
-    cosmetics: player?.cosmetics || {}
-};
-    })
-    .sort((a, b) => b.score - a.score);
+    const leaderboard = Object.entries(room.gameData.scores)
+        .map(([name, score]) => {
+            const player = room.players.find(p => p.name === name);
+            return { 
+                name, 
+                score, 
+                isPremium: player?.isPremium || false,
+                cosmetics: player?.cosmetics || {}
+            };
+        })
+        .sort((a, b) => b.score - a.score);
 
-console.log('[TRIVIA LEADERBOARD] Final:', JSON.stringify(leaderboard));
     const isLastQuestion = room.gameData.roundNumber >= room.gameData.maxRounds;
     
     io.to(room.code).emit('trivia-results', { 
@@ -613,32 +743,13 @@ console.log('[TRIVIA LEADERBOARD] Final:', JSON.stringify(leaderboard));
         isLastQuestion: isLastQuestion
     });
     
-   // SERVER-CONTROLLED AUTO-ADVANCE after 2.5 seconds
-setTimeout(() => {
-    if (!room.gameData) return;
-    
-    room.gameData.currentQuestionIndex++;
-    room.gameData.roundNumber++;
-    
-    if (room.gameData.roundNumber > room.gameData.maxRounds) {
-        io.to(room.code).emit('trivia-game-over', { 
-            finalScores: room.gameData.scores,
-            finalLeaderboard: Object.entries(room.gameData.scores)
-                .map(([name, score]) => {
-                    const p = room.players.find(x => x.name === name);
-                    return { 
-                        name, 
-                        score, 
-                        isPremium: p?.isPremium || false,
-                        cosmetics: p?.cosmetics || {}
-                    };
-                })
-                .sort((a, b) => b.score - a.score),
-            winner: getTopPlayer(room.gameData.scores) 
-        });
-    } else {
-        const nextQ = room.gameData.questions[room.gameData.currentQuestionIndex];
-        if (!nextQ) {
+    setTimeout(() => {
+        if (!room.gameData) return;
+        
+        room.gameData.currentQuestionIndex++;
+        room.gameData.roundNumber++;
+        
+        if (room.gameData.roundNumber > room.gameData.maxRounds) {
             io.to(room.code).emit('trivia-game-over', { 
                 finalScores: room.gameData.scores,
                 finalLeaderboard: Object.entries(room.gameData.scores)
@@ -654,24 +765,42 @@ setTimeout(() => {
                     .sort((a, b) => b.score - a.score),
                 winner: getTopPlayer(room.gameData.scores) 
             });
-            return;
+        } else {
+            const nextQ = room.gameData.questions[room.gameData.currentQuestionIndex];
+            if (!nextQ) {
+                io.to(room.code).emit('trivia-game-over', { 
+                    finalScores: room.gameData.scores,
+                    finalLeaderboard: Object.entries(room.gameData.scores)
+                        .map(([name, score]) => {
+                            const p = room.players.find(x => x.name === name);
+                            return { 
+                                name, 
+                                score, 
+                                isPremium: p?.isPremium || false,
+                                cosmetics: p?.cosmetics || {}
+                            };
+                        })
+                        .sort((a, b) => b.score - a.score),
+                    winner: getTopPlayer(room.gameData.scores) 
+                });
+                return;
+            }
+            
+            room.gameData.phase = 'question'; 
+            room.gameData.answers = {}; 
+            room.gameData.roundStartTime = Date.now();
+            
+            io.to(room.code).emit('trivia-question', { 
+                question: nextQ.question, 
+                options: nextQ.options, 
+                questionIndex: room.gameData.currentQuestionIndex,
+                roundNumber: room.gameData.roundNumber, 
+                totalQuestions: room.gameData.maxRounds,
+                totalRounds: room.gameData.maxRounds, 
+                timeLimit: room.gameData.timePerQuestion 
+            });
         }
-        
-        room.gameData.phase = 'question'; 
-        room.gameData.answers = {}; 
-        room.gameData.roundStartTime = Date.now();
-        
-        io.to(room.code).emit('trivia-question', { 
-            question: nextQ.question, 
-            options: nextQ.options, 
-            questionIndex: room.gameData.currentQuestionIndex,
-            roundNumber: room.gameData.roundNumber, 
-            totalQuestions: room.gameData.maxRounds,
-            totalRounds: room.gameData.maxRounds, 
-            timeLimit: room.gameData.timePerQuestion 
-        });
-    }
-}, 2500);
+    }, 2500);
 }
 
 function calculateThisOrThatPartyResults(room, io) {
@@ -758,10 +887,10 @@ function calculateNeverEverPartyResults(room, io) {
     });
 }
 
-function startBettingPhase(room, io) {
+function startBettingPhase(room, io, roomCode) {
     room.gameData.phase = 'betting';
     const guesses = Object.values(room.gameData.guesses).sort((a,b) => a.guess - b.guess);
-    io.to(room.code).emit('betorbluff-betting-phase', { 
+    io.to(roomCode).emit('betorbluff-betting-phase', { 
         guesses, 
         timeLimit: room.gameData.timePerBet, 
         chips: room.gameData.chips 
@@ -804,6 +933,179 @@ function calculateBetOrBluffResults(room, io) {
     });
 }
 
+// ==================== SKETCH & GUESS FUNCTIONS ====================
+function startSketchTurn(room, io) {
+    const gd = room.gameData;
+    
+    // Clear any existing timers
+    if (gd.hintInterval) clearInterval(gd.hintInterval);
+    if (gd.turnTimeout) clearTimeout(gd.turnTimeout);
+    if (gd.wordChoiceTimeout) clearTimeout(gd.wordChoiceTimeout);
+    
+    // Get current drawer
+    const drawer = room.players[gd.currentDrawerIndex];
+    if (!drawer) return endSketchGame(room, io);
+    
+    gd.currentDrawer = drawer;
+    gd.guessedPlayers = [];
+    gd.hintLevel = 0;
+    gd.phase = 'choosing';
+    
+    // Pick 3 random words for drawer to choose from
+    const wordChoices = getWordChoices(room, 3);
+    if (wordChoices.length === 0) return endSketchGame(room, io);
+    
+    // Send word choices only to drawer
+    io.to(drawer.id).emit('sketch-choose-word', { words: wordChoices });
+    
+    // Notify others that drawer is choosing
+    room.players.forEach(p => {
+        if (p.id !== drawer.id) {
+            io.to(p.id).emit('sketch-waiting-for-word', { drawerName: drawer.name });
+        }
+    });
+    
+    // Auto-select first word after 10 seconds if drawer doesn't choose
+    gd.wordChoiceTimeout = setTimeout(() => {
+        if (gd.phase === 'choosing' && wordChoices.length > 0) {
+            handleWordSelected(room, io, wordChoices[0]);
+        }
+    }, 10000);
+}
+
+function handleWordSelected(room, io, word) {
+    const gd = room.gameData;
+    if (gd.phase !== 'choosing') return;
+    
+    clearTimeout(gd.wordChoiceTimeout);
+    
+    gd.currentWord = word;
+    gd.phase = 'drawing';
+    gd.turnStartTime = Date.now();
+    
+    const hint = generateHint(word, 0);
+    const currentRound = Math.floor(gd.currentTurn / room.players.length) + 1;
+    
+    // Send round start to everyone
+    room.players.forEach(p => {
+        const isDrawer = p.id === gd.currentDrawer.id;
+        io.to(p.id).emit('sketch-round-start', {
+            round: currentRound,
+            totalRounds: gd.totalRounds,
+            turn: (gd.currentTurn % room.players.length) + 1,
+            totalTurns: room.players.length,
+            drawerName: gd.currentDrawer.name,
+            word: isDrawer ? word : null,
+            hint: isDrawer ? null : hint,
+            timeLimit: gd.timePerTurn
+        });
+    });
+    
+    // Reveal hints progressively (at 20s and 40s into the round)
+    const wordLength = word.replace(/ /g, '').length;
+    let hintsGiven = 0;
+    
+    gd.hintInterval = setInterval(() => {
+        const elapsed = (Date.now() - gd.turnStartTime) / 1000;
+        
+        // Give hints at 20s and 40s
+        if (elapsed >= 20 && hintsGiven === 0) {
+            hintsGiven = 1;
+            const lettersToReveal = Math.max(1, Math.ceil(wordLength * 0.25));
+            const newHint = generateHint(word, lettersToReveal);
+            
+            room.players.forEach(p => {
+                if (p.id !== gd.currentDrawer.id) {
+                    io.to(p.id).emit('sketch-hint-update', { hint: newHint });
+                }
+            });
+        } else if (elapsed >= 40 && hintsGiven === 1) {
+            hintsGiven = 2;
+            const lettersToReveal = Math.max(2, Math.ceil(wordLength * 0.5));
+            const newHint = generateHint(word, lettersToReveal);
+            
+            room.players.forEach(p => {
+                if (p.id !== gd.currentDrawer.id) {
+                    io.to(p.id).emit('sketch-hint-update', { hint: newHint });
+                }
+            });
+        }
+    }, 1000);
+    
+    // End turn after time limit
+    gd.turnTimeout = setTimeout(() => {
+        endSketchTurn(room, io);
+    }, gd.timePerTurn * 1000);
+}
+
+function endSketchTurn(room, io) {
+    const gd = room.gameData;
+    
+    // Clear timers
+    if (gd.hintInterval) clearInterval(gd.hintInterval);
+    if (gd.turnTimeout) clearTimeout(gd.turnTimeout);
+    if (gd.wordChoiceTimeout) clearTimeout(gd.wordChoiceTimeout);
+    
+    gd.phase = 'turnEnd';
+    
+    // Build player list with scores
+    const players = room.players.map(p => ({
+        name: p.name,
+        score: gd.scores[p.name] || 0,
+        isPremium: p.isPremium || false,
+        cosmetics: p.cosmetics || {},
+        guessed: gd.guessedPlayers.includes(p.name)
+    }));
+    
+    io.to(room.code).emit('sketch-round-end', {
+        word: gd.currentWord,
+        scores: gd.scores,
+        players: players
+    });
+    
+    // Move to next turn after delay
+    setTimeout(() => {
+        if (!room.gameData) return;
+        
+        gd.currentTurn++;
+        gd.currentDrawerIndex = (gd.currentDrawerIndex + 1) % room.players.length;
+        
+        if (gd.currentTurn >= gd.totalTurns) {
+            endSketchGame(room, io);
+        } else {
+            startSketchTurn(room, io);
+        }
+    }, 4000);
+}
+
+function endSketchGame(room, io) {
+    const gd = room.gameData;
+    
+    // Clear any remaining timers
+    if (gd.hintInterval) clearInterval(gd.hintInterval);
+    if (gd.turnTimeout) clearTimeout(gd.turnTimeout);
+    if (gd.wordChoiceTimeout) clearTimeout(gd.wordChoiceTimeout);
+    
+    gd.phase = 'gameOver';
+    
+    const finalLeaderboard = Object.entries(gd.scores)
+        .map(([name, score]) => {
+            const p = room.players.find(x => x.name === name);
+            return {
+                name,
+                score,
+                isPremium: p?.isPremium || false,
+                cosmetics: p?.cosmetics || {}
+            };
+        })
+        .sort((a, b) => b.score - a.score);
+    
+    io.to(room.code).emit('sketch-game-over', {
+        finalLeaderboard,
+        winner: finalLeaderboard[0]?.name || 'No one'
+    });
+}
+
 // ==================== SOCKET HANDLER SETUP ====================
 function setupPartyGameHandlers(io, socket, rooms, players) {
   
@@ -814,7 +1116,6 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         
         console.log('trivia-start-round received - category:', category, 'stored:', room.gameData.category);
         
-        // ALWAYS load questions if provided category OR if questions empty
         const cat = category || room.gameData.category || 'general';
         if (room.gameData.questions.length === 0 || (category && category !== room.gameData.category)) {
             const questions = triviaQuestions[cat];
@@ -829,7 +1130,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         }
         
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
-        if (!q) return; // No more questions
+        if (!q) return;
         
         room.gameData.phase = 'question'; 
         room.gameData.answers = {}; 
@@ -843,7 +1144,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
             totalQuestions: room.gameData.maxRounds,
             totalRounds: room.gameData.maxRounds, 
             timeLimit: room.gameData.timePerQuestion,
-            category: cat // Send category back to clients for debugging
+            category: cat
         });
     });
     
@@ -870,8 +1171,6 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
             calculateTriviaResults(room, io); 
         }
     });
-    
-    // trivia-next-round is no longer used - server auto-advances after results
 
     // THIS OR THAT
     socket.on('thisorthat-party-start-round', ({roomCode}) => {
@@ -1094,7 +1393,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         });
         
         if (Object.keys(room.gameData.guesses).length === room.players.length) {
-            startBettingPhase(room, io);
+            startBettingPhase(room, io, roomCode);
         }
     });
     
@@ -1111,7 +1410,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
                 }; 
             }
         });
-        startBettingPhase(room, io);
+        startBettingPhase(room, io, roomCode);
     });
     
     socket.on('betorbluff-bet', ({roomCode, targetPlayerId, betAmount}) => {
@@ -1171,6 +1470,130 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
             });
         }
     });
+
+    // ==================== SKETCH & GUESS ====================
+    socket.on('sketch-start-game', ({roomCode}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData) return;
+        
+        console.log('[SKETCH] Starting game for room:', roomCode);
+        
+        // Shuffle player order for drawing
+        room.players.sort(() => Math.random() - 0.5);
+        room.gameData.currentDrawerIndex = 0;
+        
+        startSketchTurn(room, io);
+    });
+    
+    socket.on('sketch-word-selected', ({roomCode, word}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'choosing') return;
+        
+        // Verify sender is the drawer
+        if (socket.id !== room.gameData.currentDrawer?.id) return;
+        
+        console.log('[SKETCH] Word selected:', word);
+        handleWordSelected(room, io, word);
+    });
+    
+    socket.on('sketch-draw', ({roomCode, drawData}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'drawing') return;
+        
+        // Verify sender is the drawer
+        if (socket.id !== room.gameData.currentDrawer?.id) return;
+        
+        // Broadcast to all except drawer
+        socket.to(roomCode).emit('sketch-draw', { drawData });
+    });
+    
+    socket.on('sketch-clear', ({roomCode}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'drawing') return;
+        if (socket.id !== room.gameData.currentDrawer?.id) return;
+        
+        socket.to(roomCode).emit('sketch-clear');
+    });
+    
+    socket.on('sketch-canvas', ({roomCode, canvasData}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'drawing') return;
+        if (socket.id !== room.gameData.currentDrawer?.id) return;
+        
+        socket.to(roomCode).emit('sketch-canvas', { canvasData });
+    });
+    
+    socket.on('sketch-guess', ({roomCode, guess}) => {
+        const room = rooms.get(roomCode), player = players.get(socket.id);
+        if (!room?.gameData || !player || room.gameData.phase !== 'drawing') return;
+        
+        const gd = room.gameData;
+        const playerName = player.playerName;
+        
+        // Can't guess if you're the drawer or already guessed
+        if (socket.id === gd.currentDrawer?.id) return;
+        if (gd.guessedPlayers.includes(playerName)) return;
+        
+        const guessLower = guess.toLowerCase().trim();
+        const wordLower = gd.currentWord.toLowerCase().trim();
+        
+        if (guessLower === wordLower) {
+            // Correct guess!
+            gd.guessedPlayers.push(playerName);
+            
+            // Calculate points based on time remaining and guess order
+            const elapsed = (Date.now() - gd.turnStartTime) / 1000;
+            const timeBonus = Math.max(0, Math.floor((gd.timePerTurn - elapsed) * 2));
+            const orderBonus = Math.max(0, (room.players.length - gd.guessedPlayers.length) * 20);
+            const points = 50 + timeBonus + orderBonus;
+            
+            gd.scores[playerName] = (gd.scores[playerName] || 0) + points;
+            
+            // Drawer gets points for each correct guess
+            const drawerName = gd.currentDrawer.name;
+            gd.scores[drawerName] = (gd.scores[drawerName] || 0) + 25;
+            
+            io.to(roomCode).emit('sketch-guess-result', {
+                playerName,
+                correct: true,
+                points,
+                guess: null // Don't reveal the word in chat
+            });
+            
+            console.log('[SKETCH] Correct guess by', playerName, '- Points:', points);
+            
+            // Check if everyone has guessed
+            const nonDrawerCount = room.players.length - 1;
+            if (gd.guessedPlayers.length >= nonDrawerCount) {
+                // Everyone guessed! End turn early
+                console.log('[SKETCH] Everyone guessed - ending turn early');
+                setTimeout(() => endSketchTurn(room, io), 1000);
+            }
+        } else if (isCloseGuess(guessLower, wordLower)) {
+            // Close guess
+            io.to(roomCode).emit('sketch-guess-result', {
+                playerName,
+                correct: false,
+                close: true,
+                guess
+            });
+        } else {
+            // Wrong guess - show in chat
+            io.to(roomCode).emit('sketch-guess-result', {
+                playerName,
+                correct: false,
+                close: false,
+                guess
+            });
+        }
+    });
+    
+    socket.on('sketch-time-up', ({roomCode}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'drawing') return;
+        
+        endSketchTurn(room, io);
+    });
 }
 
 module.exports = {
@@ -1179,5 +1602,6 @@ module.exports = {
     initHotTakesPartyGame,
     initNeverEverPartyGame,
     initBetOrBluffGame,
+    initSketchGuessGame,
     setupPartyGameHandlers
 };
