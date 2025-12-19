@@ -1628,57 +1628,21 @@ socket.on('player-joined', (data) => {
     }
     
     // REMOVED: nextQuestion() - now using auto-advance in trivia-results handler
-function renderLeaderboard(leaderboard, elementId) {
-    const list = document.getElementById(elementId);
+function updateMiniLeaderboard(leaderboard) {
+    const list = document.getElementById('mini-lb-list');
     if (!list || !leaderboard) return;
-    
-    const normalized = leaderboard.map(item => ({
-        name: item.name || item.playerName,
-        score: item.score || item.points || 0,
-        isPremium: item.isPremium || playersData[item.name || item.playerName]?.isPremium || false,
-        cosmetics: item.cosmetics || playersData[item.name || item.playerName]?.cosmetics || {}
-    }));
-    
-    list.innerHTML = normalized.slice(0, 10).map((player, i) => {
-        const isMe = player.name === playerName;
-        const hasCosmetics = player.isPremium && player.cosmetics && Object.keys(player.cosmetics).length > 0;
-        
-        // DEBUG
-        console.log(`Player: ${player.name}, isPremium: ${player.isPremium}, hasCosmetics: ${hasCosmetics}, cosmetics:`, player.cosmetics);
-        console.log('TGCOCosmetics available:', !!window.TGCOCosmetics);
-        console.log('COSMETIC_COLORS:', window.TGCOCosmetics?.COSMETIC_COLORS);
-        
-        // Apply rank styling only for NON-premium players
-        const rankClass = hasCosmetics ? '' : (i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '');
-        
-        // Get cosmetic border color for premium players
-        let rowStyle = '';
-        if (hasCosmetics && player.cosmetics.border_color && window.TGCOCosmetics) {
-            const borderColor = window.TGCOCosmetics.COSMETIC_COLORS?.[player.cosmetics.border_color] || player.cosmetics.border_color;
-            console.log(`Border color for ${player.name}: ${player.cosmetics.border_color} -> ${borderColor}`);
-            rowStyle = `style="border: 2px solid ${borderColor}; background: linear-gradient(135deg, ${borderColor}22, transparent);"`;
-        }
-        
-        // Render name with cosmetics for premium, regular for others
-        let nameHtml;
-        if (window.TGCOCosmetics && hasCosmetics) {
-            nameHtml = window.TGCOCosmetics.renderInlineName({
-                name: player.name,
-                cosmetics: player.cosmetics,
-                isPremium: player.isPremium
-            });
-        } else {
-            const premiumClass = player.isPremium ? 'premium' : '';
-            nameHtml = `<span class="lb-name ${premiumClass}">${escapeHtml(player.name)}</span>`;
-        }
-        
-        return `
-            <div class="lb-item ${rankClass} ${isMe ? 'is-me' : ''}" ${rowStyle}>
-                <span class="lb-rank">${i + 1}</span>
-                <div style="flex:1; overflow:hidden;">${nameHtml}</div>
-                <span class="lb-score">${player.score}</span>
-            </div>
-        `;
+
+    const sorted = [...leaderboard].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    list.innerHTML = sorted.slice(0, 3).map((player, i) => {
+        return window.TGCOCosmetics.renderMiniLeaderboardItem({
+            name: player.name || player.playerName,
+            score: player.score || player.points || 0,
+            rank: i + 1,
+            cosmetics: player.cosmetics || playersData[player.name]?.cosmetics || {},
+            isPremium: player.isPremium || playersData[player.name]?.isPremium || false,
+            isMe: (player.name || player.playerName) === playerName
+        });
     }).join('');
 }
     
