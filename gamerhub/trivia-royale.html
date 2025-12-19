@@ -1641,11 +1641,21 @@ function renderLeaderboard(leaderboard, elementId) {
     
     list.innerHTML = normalized.slice(0, 10).map((player, i) => {
         const isMe = player.name === playerName;
-        const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+        const hasCosmetics = player.isPremium && player.cosmetics && Object.keys(player.cosmetics).length > 0;
         
-        // Use TGCOCosmetics if available
+        // Apply rank styling only for NON-premium players
+        const rankClass = hasCosmetics ? '' : (i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '');
+        
+        // Get cosmetic border color for premium players
+        let rowStyle = '';
+        if (hasCosmetics && player.cosmetics.border_color && window.TGCOCosmetics) {
+            const borderColor = window.TGCOCosmetics.COSMETIC_COLORS?.[player.cosmetics.border_color] || player.cosmetics.border_color;
+            rowStyle = `style="border: 2px solid ${borderColor}; background: linear-gradient(135deg, ${borderColor}22, transparent);"`;
+        }
+        
+        // Render name with cosmetics for premium, regular for others
         let nameHtml;
-        if (window.TGCOCosmetics && player.cosmetics && Object.keys(player.cosmetics).length > 0) {
+        if (window.TGCOCosmetics && hasCosmetics) {
             nameHtml = window.TGCOCosmetics.renderInlineName({
                 name: player.name,
                 cosmetics: player.cosmetics,
@@ -1657,7 +1667,7 @@ function renderLeaderboard(leaderboard, elementId) {
         }
         
         return `
-            <div class="lb-item ${rankClass} ${isMe ? 'is-me' : ''}">
+            <div class="lb-item ${rankClass} ${isMe ? 'is-me' : ''}" ${rowStyle}>
                 <span class="lb-rank">${i + 1}</span>
                 <div style="flex:1; overflow:hidden;">${nameHtml}</div>
                 <span class="lb-score">${player.score}</span>
