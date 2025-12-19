@@ -1628,32 +1628,43 @@ socket.on('player-joined', (data) => {
     }
     
     // REMOVED: nextQuestion() - now using auto-advance in trivia-results handler
- function renderLeaderboard(leaderboard, elementId) {
-    console.log('RENDER:', elementId, JSON.stringify(leaderboard));
-    
+function renderLeaderboard(leaderboard, elementId) {
     const list = document.getElementById(elementId);
     if (!list || !leaderboard) return;
+    
+    const normalized = leaderboard.map(item => ({
+        name: item.name || item.playerName,
+        score: item.score || item.points || 0,
+        isPremium: item.isPremium || playersData[item.name || item.playerName]?.isPremium || false,
+        cosmetics: item.cosmetics || playersData[item.name || item.playerName]?.cosmetics || {}
+    }));
+    
+    list.innerHTML = normalized.slice(0, 10).map((player, i) => {
+        const isMe = player.name === playerName;
+        const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
         
-        // Normalize data format
-        const normalized = leaderboard.map(item => ({
-            name: item.name || item.playerName,
-            score: item.score || item.points || 0,
-            isPremium: item.isPremium || playersData[item.name || item.playerName]?.isPremium || false
-        }));
-        
-        list.innerHTML = normalized.slice(0, 10).map((player, i) => {
-            const isMe = player.name === playerName;
-            const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+        // Use TGCOCosmetics if available
+        let nameHtml;
+        if (window.TGCOCosmetics && player.cosmetics && Object.keys(player.cosmetics).length > 0) {
+            nameHtml = window.TGCOCosmetics.renderInlineName({
+                name: player.name,
+                cosmetics: player.cosmetics,
+                isPremium: player.isPremium
+            });
+        } else {
             const premiumClass = player.isPremium ? 'premium' : '';
-            return `
-                <div class="lb-item ${rankClass} ${isMe ? 'is-me' : ''}">
-                    <span class="lb-rank">${i + 1}</span>
-                    <span class="lb-name ${premiumClass}">${escapeHtml(player.name)}</span>
-                    <span class="lb-score">${player.score}</span>
-                </div>
-            `;
-        }).join('');
-    }
+            nameHtml = `<span class="lb-name ${premiumClass}">${escapeHtml(player.name)}</span>`;
+        }
+        
+        return `
+            <div class="lb-item ${rankClass} ${isMe ? 'is-me' : ''}">
+                <span class="lb-rank">${i + 1}</span>
+                <div style="flex:1; overflow:hidden;">${nameHtml}</div>
+                <span class="lb-score">${player.score}</span>
+            </div>
+        `;
+    }).join('');
+}
     
     function showPhase(phase) {
         document.getElementById('question-phase').classList.add('hidden');
