@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sketch & Guess - TheGaming.co</title>
+    
+    <meta name="description" content="Sketch & Guess - Draw and guess in real-time! A Skribbl-style drawing game where one player sketches while others race to guess.">
+    <meta name="theme-color" content="#f97316">
+    
+    <link rel="canonical" href="https://thegaming.co/sketch-guess.html">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/cosmetics.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #14141f;
+            --bg-elevated: #1a1a28;
+            --accent: #f97316;
+            --accent-glow: rgba(249, 115, 22, 0.4);
+            --green: #22c55e;
+            --red: #ef4444;
+            --yellow: #eab308;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --pink: #ec4899;
+            --cyan: #06b6d4;
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.6);
+            --border: rgba(255,255,255,0.08);
+        }
+        
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Background */
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .bg-effects::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
+        }
+        
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .nav-inner {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+            position: relative;
+        }
+        
+        .header-logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+        }
+        
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
+        
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: inherit;
+            font-family: inherit;
+        }
+        
+        .user-pill:hover { background: rgba(255, 255, 255, 0.1); }
+        
+        .user-pill-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .user-pill-skeleton {
+            width: 90px;
+            height: 34px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        
+        .user-menu-wrapper { position: relative; }
+        
+        .user-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 160px;
+            padding: 6px;
+            border-radius: 12px;
+            background: rgba(10, 10, 15, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transform: translateY(-4px);
+            pointer-events: none;
+            transition: all 0.15s ease;
+            z-index: 120;
+        }
+        
+        .user-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        
+        .user-menu-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+        }
+        
+        .user-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
+        
+        .auth-link {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .auth-link:hover { color: white; }
+        
+        /* Main Layout */
+        main {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding: 68px 12px 20px;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Game Container */
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        /* Left Column - Canvas Area */
+        .canvas-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+        
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            gap: 16px;
+        }
+        
+        .round-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .round-badge {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+        
+        .drawer-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+        
+        .drawer-info .name {
+            color: var(--text);
+            font-weight: 600;
+        }
+        
+        .word-display {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .word-hint {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 6px;
+            color: var(--text);
+        }
+        
+        .word-reveal {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            color: var(--green);
+        }
+        
+        .timer-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+        }
+        
+        .timer-icon { font-size: 1.1rem; }
+        
+        .timer-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            color: var(--text);
+            min-width: 32px;
+        }
+        
+        .timer-value.urgent { color: var(--red); animation: pulse 0.5s ease-in-out infinite; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Canvas Container */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            min-height: 400px;
+        }
+        
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            cursor: crosshair;
+        }
+        
+        #draw-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        
+        .canvas-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10;
+        }
+        
+        .overlay-content {
+            text-align: center;
+            padding: 32px;
+        }
+        
+        .overlay-icon { font-size: 3rem; margin-bottom: 12px; }
+        
+        .overlay-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .overlay-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+        
+        /* Drawing Tools */
+        .tools-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border-top: 1px solid var(--border);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tool-btn:hover { background: rgba(255, 255, 255, 0.1); }
+        .tool-btn.active { border-color: var(--accent); background: rgba(249, 115, 22, 0.15); }
+        
+        .color-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .color-btn:hover { transform: scale(1.15); }
+        .color-btn.active { border-color: white; box-shadow: 0 0 0 2px var(--bg-dark); }
+        
+        .size-slider {
+            width: 80px;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-card);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .size-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .size-preview {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .size-dot {
+            background: var(--text);
+            border-radius: 50%;
+        }
+        
+        /* Right Column - Chat & Players */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+        
+        /* Players List */
+        .players-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        
+        .players-header {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .players-list {
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .player-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+            transition: background 0.15s ease;
+        }
+        
+        .player-item:last-child { margin-bottom: 0; }
+        .player-item.drawing { background: rgba(249, 115, 22, 0.15); }
+        .player-item.guessed { background: rgba(34, 197, 94, 0.15); }
+        
+        .player-rank {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            width: 20px;
+            color: var(--text-dim);
+        }
+        
+        .player-item:nth-child(1) .player-rank { color: #fbbf24; }
+        .player-item:nth-child(2) .player-rank { color: #94a3b8; }
+        .player-item:nth-child(3) .player-rank { color: #cd7c32; }
+        
+        .player-status {
+            font-size: 0.9rem;
+            margin-right: 4px;
+        }
+        
+        .player-name {
+            flex: 1;
+            font-size: 0.85rem;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .player-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+        
+        /* Chat */
+        .chat-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            min-height: 280px;
+        }
+        
+        .chat-header {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .chat-msg {
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            word-break: break-word;
+        }
+        
+        .chat-msg .sender {
+            font-weight: 700;
+            margin-right: 6px;
+        }
+        
+        .chat-msg.system {
+            background: transparent;
+            color: var(--text-dim);
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .chat-msg.correct {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--green);
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .chat-msg.close {
+            background: rgba(234, 179, 8, 0.2);
+            color: var(--yellow);
+            text-align: center;
+        }
+        
+        .chat-input-wrapper {
+            padding: 10px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .chat-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+        
+        .chat-input:focus { border-color: var(--accent); }
+        .chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .chat-input::placeholder { color: var(--text-dim); }
+        
+        /* Word Selection Modal */
+        .word-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .word-modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .word-modal-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .word-modal-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+        }
+        
+        .word-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .word-option {
+            padding: 16px 24px;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .word-option:hover {
+            border-color: var(--accent);
+            background: rgba(249, 115, 22, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Game Over */
+        .gameover-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .gameover-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .gameover-trophy { font-size: 4rem; margin-bottom: 16px; }
+        
+        .gameover-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .gameover-winner {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 24px;
+        }
+        
+        .gameover-leaderboard {
+            margin-bottom: 24px;
+        }
+        
+        .gameover-lb-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+        
+        .gameover-lb-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .play-again-btn {
+            padding: 14px 36px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border: none;
+            border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+        
+        /* Countdown Overlay */
+        .countdown-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            background: rgba(10, 10, 15, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .countdown-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 6px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+        
+        .countdown-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(10rem, 30vw, 16rem);
+            line-height: 1;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: countPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes countPop {
+            0% { transform: scale(0.3); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 800px) {
+            main { padding: 64px 10px 16px; }
+            
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            
+            .canvas-column { order: 1; }
+            .sidebar { order: 2; flex-direction: row; gap: 10px; }
+            
+            .players-card { flex: 1; }
+            .chat-card { flex: 1.5; min-height: 200px; }
+            
+            .players-list { max-height: 120px; }
+            
+            .top-bar { flex-wrap: wrap; padding: 10px 12px; gap: 10px; }
+            .word-display { order: -1; width: 100%; }
+            .word-hint { font-size: 1.4rem; letter-spacing: 4px; }
+            
+            .tools-bar { padding: 8px 10px; gap: 8px; }
+            .tool-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+            .color-btn { width: 24px; height: 24px; }
+            .size-slider { width: 60px; }
+            
+            .canvas-container { min-height: 300px; }
+        }
+        
+        @media (max-width: 500px) {
+            header { height: 52px; padding: 0 12px; }
+            .header-logo { font-size: 1.2rem; letter-spacing: 2px; }
+            main { padding: 60px 8px 12px; }
+            
+            .sidebar { flex-direction: column; }
+            .players-card, .chat-card { flex: none; }
+            .chat-card { min-height: 180px; }
+            
+            .word-hint { font-size: 1.2rem; letter-spacing: 3px; }
+            .timer-value { font-size: 1.2rem; }
+            
+            .gameover-content { padding: 28px 20px; }
+            .gameover-title { font-size: 1.8rem; }
+            .gameover-winner { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects"></div>
+
+<header>
+    <nav class="nav-inner">
+        <a href="/" class="header-logo">THEGAMING.CO</a>
+        <div class="header-actions">
+            <div class="user-pill-skeleton" id="auth-skeleton"></div>
+            <div class="nav-right-logged-out">
+                <a href="login.html" class="auth-link">Sign In</a>
+            </div>
+            <div class="nav-right-logged-in">
+                <div class="user-menu-wrapper">
+                    <button class="user-pill" type="button" id="user-menu-button">
+                        <span class="user-pill-label" id="header-username-label">Player</span>
+                    </button>
+                    <div class="user-menu" id="user-menu">
+                        <a href="profile.html" class="user-menu-item">Profile</a>
+                        <a href="leaderboards.html" class="user-menu-item">Leaderboards</a>
+                        <button type="button" class="user-menu-item" id="user-menu-signout">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main>
+    <!-- Countdown Overlay -->
+    <div class="countdown-overlay" id="countdown-overlay">
+        <div class="countdown-label">GET READY</div>
+        <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+    
+    <!-- Word Selection Modal -->
+    <div class="word-modal hidden" id="word-modal">
+        <div class="word-modal-content">
+            <div class="word-modal-title">CHOOSE A WORD</div>
+            <div class="word-modal-subtitle">You have 10 seconds to pick</div>
+            <div class="word-options" id="word-options"></div>
+        </div>
+    </div>
+    
+    <!-- Game Over Overlay -->
+    <div class="gameover-overlay hidden" id="gameover-overlay">
+        <div class="gameover-content">
+            <div class="gameover-trophy">🏆</div>
+            <div class="gameover-title">GAME OVER</div>
+            <div class="gameover-winner" id="gameover-winner">Winner Name</div>
+            <div class="gameover-leaderboard">
+                <div class="gameover-lb-title">FINAL STANDINGS</div>
+                <div class="gameover-lb-list" id="final-leaderboard"></div>
+            </div>
+            <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <!-- Left Column - Canvas -->
+        <div class="canvas-column">
+            <div class="top-bar">
+                <div class="round-info">
+                    <span class="round-badge">ROUND <span id="current-round">1</span>/<span id="total-rounds">3</span></span>
+                    <div class="drawer-info">
+                        <span>✏️</span>
+                        <span class="name" id="drawer-name">Waiting...</span>
+                    </div>
+                </div>
+                <div class="word-display">
+                    <div class="word-hint" id="word-hint">_ _ _ _ _</div>
+                </div>
+                <div class="timer-box">
+                    <span class="timer-icon">⏱️</span>
+                    <span class="timer-value" id="timer">60</span>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <div class="canvas-wrapper" id="canvas-wrapper">
+                    <canvas id="draw-canvas"></canvas>
+                    <div class="canvas-overlay hidden" id="canvas-overlay">
+                        <div class="overlay-content">
+                            <div class="overlay-icon" id="overlay-icon">👀</div>
+                            <div class="overlay-title" id="overlay-title">Waiting for drawer...</div>
+                            <div class="overlay-subtitle" id="overlay-subtitle">Get ready to guess!</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tools-bar" id="tools-bar">
+                    <div class="tool-group">
+                        <button class="color-btn active" data-color="#000000" style="background: #000000;"></button>
+                        <button class="color-btn" data-color="#ffffff" style="background: #ffffff; border: 1px solid #ccc;"></button>
+                        <button class="color-btn" data-color="#ef4444" style="background: #ef4444;"></button>
+                        <button class="color-btn" data-color="#f97316" style="background: #f97316;"></button>
+                        <button class="color-btn" data-color="#eab308" style="background: #eab308;"></button>
+                        <button class="color-btn" data-color="#22c55e" style="background: #22c55e;"></button>
+                        <button class="color-btn" data-color="#3b82f6" style="background: #3b82f6;"></button>
+                        <button class="color-btn" data-color="#8b5cf6" style="background: #8b5cf6;"></button>
+                        <button class="color-btn" data-color="#ec4899" style="background: #ec4899;"></button>
+                        <button class="color-btn" data-color="#78716c" style="background: #78716c;"></button>
+                    </div>
+                    <div class="tool-group">
+                        <input type="range" class="size-slider" id="size-slider" min="2" max="32" value="8">
+                        <div class="size-preview"><div class="size-dot" id="size-dot" style="width: 8px; height: 8px;"></div></div>
+                    </div>
+                    <div class="tool-group">
+                        <button class="tool-btn" id="eraser-btn" title="Eraser">🧹</button>
+                        <button class="tool-btn" id="clear-btn" title="Clear Canvas">🗑️</button>
+                        <button class="tool-btn" id="undo-btn" title="Undo">↩️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column - Sidebar -->
+        <div class="sidebar">
+            <div class="players-card">
+                <div class="players-header">👥 PLAYERS</div>
+                <div class="players-list" id="players-list"></div>
+            </div>
+            
+            <div class="chat-card">
+                <div class="chat-header">💬 CHAT / GUESS</div>
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Type your guess..." maxlength="100" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // ==================== CONFIG ====================
+    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // ==================== GAME STATE ====================
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
+    const playerName = localStorage.getItem('tempPlayerName');
+    const isHost = localStorage.getItem('tempIsHost') === 'true';
+    
+    let playersData = {};
+    let isDrawer = false;
+    let currentWord = '';
+    let hasGuessed = false;
+    let timerInterval = null;
+    let drawHistory = [];
+    
+    if (!roomCode) window.location.href = '/party-games.html';
+    
+    // ==================== CANVAS ====================
+    const canvas = document.getElementById('draw-canvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let currentColor = '#000000';
+    let currentSize = 8;
+    let isEraser = false;
+    
+    function resizeCanvas() {
+        const wrapper = document.getElementById('canvas-wrapper');
+        const rect = wrapper.getBoundingClientRect();
+        
+        // Store current drawing
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        
+        // Restore drawing
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Reset context settings
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+    
+    function initCanvas() {
+        resizeCanvas();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    
+    function getCanvasCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: (clientX - rect.left) / rect.width,
+            y: (clientY - rect.top) / rect.height
+        };
+    }
+    
+    function startDrawing(e) {
+        if (!isDrawer) return;
+        e.preventDefault();
+        isDrawing = true;
+        const coords = getCanvasCoords(e);
+        lastX = coords.x;
+        lastY = coords.y;
+        
+        // Save state for undo
+        drawHistory.push(canvas.toDataURL());
+        if (drawHistory.length > 20) drawHistory.shift();
+    }
+    
+    function draw(e) {
+        if (!isDrawing || !isDrawer) return;
+        e.preventDefault();
+        
+        const coords = getCanvasCoords(e);
+        const drawData = {
+            x1: lastX,
+            y1: lastY,
+            x2: coords.x,
+            y2: coords.y,
+            color: isEraser ? '#ffffff' : currentColor,
+            size: currentSize
+        };
+        
+        drawLine(drawData);
+        socket.emit('sketch-draw', { roomCode, drawData });
+        
+        lastX = coords.x;
+        lastY = coords.y;
+    }
+    
+    function stopDrawing() {
+        isDrawing = false;
+    }
+    
+    function drawLine(data) {
+        ctx.strokeStyle = data.color;
+        ctx.lineWidth = data.size;
+        ctx.beginPath();
+        ctx.moveTo(data.x1 * canvas.width, data.y1 * canvas.height);
+        ctx.lineTo(data.x2 * canvas.width, data.y2 * canvas.height);
+        ctx.stroke();
+    }
+    
+    function clearCanvas() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    // Canvas event listeners
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    // ==================== TOOLS ====================
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentColor = btn.dataset.color;
+            isEraser = false;
+            document.getElementById('eraser-btn').classList.remove('active');
+        });
+    });
+    
+    document.getElementById('size-slider').addEventListener('input', (e) => {
+        currentSize = parseInt(e.target.value);
+        const dot = document.getElementById('size-dot');
+        dot.style.width = Math.min(currentSize, 24) + 'px';
+        dot.style.height = Math.min(currentSize, 24) + 'px';
+    });
+    
+    document.getElementById('eraser-btn').addEventListener('click', () => {
+        isEraser = !isEraser;
+        document.getElementById('eraser-btn').classList.toggle('active', isEraser);
+        if (isEraser) {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        }
+    });
+    
+    document.getElementById('clear-btn').addEventListener('click', () => {
+        if (!isDrawer) return;
+        drawHistory.push(canvas.toDataURL());
+        clearCanvas();
+        socket.emit('sketch-clear', { roomCode });
+    });
+    
+    document.getElementById('undo-btn').addEventListener('click', () => {
+        if (!isDrawer || drawHistory.length === 0) return;
+        const img = new Image();
+        img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            socket.emit('sketch-canvas', { roomCode, canvasData: drawHistory[drawHistory.length - 1] });
+        };
+        img.src = drawHistory.pop();
+    });
+    
+    // ==================== CHAT / GUESSING ====================
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && chatInput.value.trim()) {
+            const guess = chatInput.value.trim();
+            socket.emit('sketch-guess', { roomCode, guess });
+            chatInput.value = '';
+        }
+    });
+    
+    function addChatMessage(text, type = 'normal', sender = null) {
+        const msg = document.createElement('div');
+        msg.className = `chat-msg ${type}`;
+        if (sender) {
+            msg.innerHTML = `<span class="sender">${escapeHtml(sender)}:</span>${escapeHtml(text)}`;
+        } else {
+            msg.textContent = text;
+        }
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // ==================== SOCKET EVENTS ====================
+    socket.on('connect', async () => {
+        let isPremium = false;
+        let cosmetics = {};
+        
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user) {
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('account_type, cosmetics')
+                    .eq('id', session.user.id)
+                    .single();
+                isPremium = profile?.account_type === 'premium';
+                cosmetics = profile?.cosmetics || {};
+            }
+        } catch (e) {}
+        
+        socket.emit('rejoin-room', { roomCode, playerName, isPremium, cosmetics });
+    });
+    
+    socket.on('room-joined', (data) => {
+        const players = data.room?.players || data.players || [];
+        players.forEach(p => {
+            playersData[p.name] = {
+                isPremium: p.isPremium || false,
+                cosmetics: p.cosmetics || {},
+                score: p.score || 0
+            };
+        });
+        updatePlayersList(players);
+        document.getElementById('countdown-overlay').classList.remove('hidden');
+        startCountdown();
+    });
+    
+    socket.on('player-joined', (data) => {
+        const players = data.room?.players || [];
+        players.forEach(p => {
+            playersData[p.name] = {
+                isPremium: p.isPremium || false,
+                cosmetics: p.cosmetics || {},
+                score: p.score || 0
+            };
+        });
+        updatePlayersList(players);
+        addChatMessage(`${data.playerName} joined!`, 'system');
+    });
+    
+    socket.on('player-left', (data) => {
+        addChatMessage(`${data.playerName} left`, 'system');
+    });
+    
+    // Drawing events
+    socket.on('sketch-draw', (data) => {
+        if (!isDrawer) drawLine(data.drawData);
+    });
+    
+    socket.on('sketch-clear', () => {
+        if (!isDrawer) clearCanvas();
+    });
+    
+    socket.on('sketch-canvas', (data) => {
+        if (!isDrawer && data.canvasData) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = data.canvasData;
+        }
+    });
+    
+    // Round events
+    socket.on('sketch-choose-word', (data) => {
+        isDrawer = true;
+        hasGuessed = true; // Drawer can't guess
+        showWordSelection(data.words);
+        setDrawerMode(true);
+    });
+    
+    socket.on('sketch-round-start', (data) => {
+        document.getElementById('word-modal').classList.add('hidden');
+        document.getElementById('current-round').textContent = data.round;
+        document.getElementById('total-rounds').textContent = data.totalRounds;
+        document.getElementById('drawer-name').textContent = data.drawerName;
+        
+        clearCanvas();
+        drawHistory = [];
+        
+        if (data.drawerName === playerName) {
+            isDrawer = true;
+            hasGuessed = true;
+            currentWord = data.word;
+            document.getElementById('word-hint').textContent = data.word.toUpperCase();
+            setDrawerMode(true);
+            hideOverlay();
+        } else {
+            isDrawer = false;
+            hasGuessed = false;
+            currentWord = '';
+            document.getElementById('word-hint').textContent = data.hint;
+            setDrawerMode(false);
+            hideOverlay();
+        }
+        
+        chatInput.disabled = isDrawer;
+        chatInput.placeholder = isDrawer ? "You're drawing!" : "Type your guess...";
+        
+        startTimer(data.timeLimit || 60);
+        addChatMessage(`${data.drawerName} is drawing!`, 'system');
+    });
+    
+    socket.on('sketch-hint-update', (data) => {
+        if (!isDrawer) {
+            document.getElementById('word-hint').textContent = data.hint;
+        }
+    });
+    
+    socket.on('sketch-guess-result', (data) => {
+        if (data.correct) {
+            if (data.playerName === playerName) {
+                hasGuessed = true;
+                chatInput.disabled = true;
+                chatInput.placeholder = "You guessed it! 🎉";
+            }
+            addChatMessage(`${data.playerName} guessed it! +${data.points}`, 'correct');
+            updatePlayerGuessed(data.playerName);
+        } else if (data.close) {
+            addChatMessage(`${data.playerName} is close!`, 'close');
+        } else {
+            addChatMessage(data.guess, 'normal', data.playerName);
+        }
+    });
+    
+    socket.on('sketch-round-end', (data) => {
+        clearInterval(timerInterval);
+        
+        const wordReveal = document.getElementById('word-hint');
+        wordReveal.innerHTML = `<span class="word-reveal">The word was: ${data.word.toUpperCase()}</span>`;
+        
+        // Update scores
+        if (data.scores) {
+            Object.entries(data.scores).forEach(([name, score]) => {
+                if (playersData[name]) playersData[name].score = score;
+            });
+        }
+        
+        updatePlayersList(data.players || Object.keys(playersData).map(name => ({
+            name,
+            score: playersData[name]?.score || 0,
+            isPremium: playersData[name]?.isPremium,
+            cosmetics: playersData[name]?.cosmetics
+        })));
+        
+        addChatMessage(`Round over! The word was: ${data.word}`, 'system');
+        
+        showOverlay('⏰', 'Time\'s Up!', `The word was: ${data.word}`);
+    });
+    
+    socket.on('sketch-game-over', (data) => {
+        clearInterval(timerInterval);
+        
+        const finalScores = data.finalLeaderboard || [];
+        const winner = finalScores[0]?.name || 'No one';
+        
+        document.getElementById('gameover-winner').textContent = winner.toUpperCase();
+        renderLeaderboard(finalScores, 'final-leaderboard');
+        document.getElementById('gameover-overlay').classList.remove('hidden');
+    });
+    
+    // ==================== UI FUNCTIONS ====================
+    function startCountdown() {
+        let count = 3;
+        const overlay = document.getElementById('countdown-overlay');
+        const number = document.getElementById('countdown-number');
+        
+        number.textContent = count;
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                number.textContent = count;
+                number.style.animation = 'none';
+                void number.offsetWidth;
+                number.style.animation = 'countPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            } else {
+                clearInterval(interval);
+                overlay.classList.add('hidden');
+                initCanvas();
+                if (isHost) {
+                    socket.emit('sketch-start-game', { roomCode });
+                }
+            }
+        }, 800);
+    }
+    
+    function showWordSelection(words) {
+        const modal = document.getElementById('word-modal');
+        const options = document.getElementById('word-options');
+        
+        options.innerHTML = words.map(word => 
+            `<button class="word-option" onclick="selectWord('${word}')">${word.toUpperCase()}</button>`
+        ).join('');
+        
+        modal.classList.remove('hidden');
+    }
+    
+    function selectWord(word) {
+        document.getElementById('word-modal').classList.add('hidden');
+        socket.emit('sketch-word-selected', { roomCode, word });
+    }
+    
+    function setDrawerMode(enabled) {
+        const toolsBar = document.getElementById('tools-bar');
+        toolsBar.style.opacity = enabled ? '1' : '0.4';
+        toolsBar.style.pointerEvents = enabled ? 'auto' : 'none';
+        canvas.style.cursor = enabled ? 'crosshair' : 'default';
+    }
+    
+    function showOverlay(icon, title, subtitle) {
+        const overlay = document.getElementById('canvas-overlay');
+        document.getElementById('overlay-icon').textContent = icon;
+        document.getElementById('overlay-title').textContent = title;
+        document.getElementById('overlay-subtitle').textContent = subtitle;
+        overlay.classList.remove('hidden');
+    }
+    
+    function hideOverlay() {
+        document.getElementById('canvas-overlay').classList.add('hidden');
+    }
+    
+    function startTimer(seconds) {
+        clearInterval(timerInterval);
+        let timeLeft = seconds;
+        const timerEl = document.getElementById('timer');
+        
+        timerEl.textContent = timeLeft;
+        timerEl.classList.remove('urgent');
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerEl.textContent = timeLeft;
+            
+            if (timeLeft <= 10) timerEl.classList.add('urgent');
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+            }
+        }, 1000);
+    }
+    
+    function updatePlayersList(players) {
+        const list = document.getElementById('players-list');
+        const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
+        
+        list.innerHTML = sorted.map((p, i) => {
+            const data = playersData[p.name] || {};
+            const isDrawing = document.getElementById('drawer-name').textContent === p.name;
+            const guessed = p.guessed || false;
+            
+            const nameHtml = window.TGCOCosmetics ? 
+                window.TGCOCosmetics.renderInlineName({
+                    name: p.name,
+                    cosmetics: data.cosmetics || p.cosmetics || {},
+                    isPremium: data.isPremium || p.isPremium || false
+                }) : escapeHtml(p.name);
+            
+            return `
+                <div class="player-item ${isDrawing ? 'drawing' : ''} ${guessed ? 'guessed' : ''}">
+                    <span class="player-rank">${i + 1}</span>
+                    <span class="player-status">${isDrawing ? '✏️' : guessed ? '✅' : ''}</span>
+                    <span class="player-name">${nameHtml}</span>
+                    <span class="player-score">${p.score || 0}</span>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function updatePlayerGuessed(name) {
+        const items = document.querySelectorAll('.player-item');
+        items.forEach(item => {
+            if (item.querySelector('.player-name')?.textContent?.includes(name)) {
+                item.classList.add('guessed');
+                const status = item.querySelector('.player-status');
+                if (status && !status.textContent.includes('✏️')) status.textContent = '✅';
+            }
+        });
+    }
+    
+    function renderLeaderboard(leaderboard, elementId) {
+        const list = document.getElementById(elementId);
+        if (!list || !leaderboard) return;
+        
+        list.innerHTML = leaderboard.slice(0, 10).map((player, i) => {
+            return window.TGCOCosmetics.renderLeaderboardItem({
+                name: player.name || player.playerName,
+                score: player.score || player.points || 0,
+                rank: i + 1,
+                cosmetics: player.cosmetics || playersData[player.name]?.cosmetics || {},
+                isPremium: player.isPremium || playersData[player.name]?.isPremium || false,
+                isMe: (player.name || player.playerName) === playerName
+            });
+        }).join('');
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Play Again
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        if (isHost) {
+            socket.emit('host-return-lobby', { roomCode });
+        } else {
+            window.location.href = `/waiting-room.html?room=${roomCode}`;
+        }
+    });
+    
+    socket.on('force-return-lobby', () => {
+        window.location.href = `/waiting-room.html?room=${roomCode}`;
+    });
+    
+    // ==================== AUTH ====================
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    (function primeHeaderFromCache() {
+        try {
+            const cachedLabel = localStorage.getItem('tgco_header_label');
+            if (cachedLabel) {
+                headerUsernameLabel.textContent = cachedLabel;
+                if (authSkeleton) authSkeleton.style.display = 'none';
+                if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+            } else {
+                if (authSkeleton) authSkeleton.style.display = 'none';
+                if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+            }
+        } catch (e) {
+            if (authSkeleton) authSkeleton.style.display = 'none';
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        }
+    })();
+
+    function updateAuthUI(user) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (user) {
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+            if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+        } else {
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+            if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
+        }
+    }
+
+    async function loadSessionAndProfile() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) { updateAuthUI(null); return; }
+        const user = data?.session?.user ?? null;
+        updateAuthUI(user);
+        if (!user) return;
+        
+        try {
+            const { data: profile } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
+            if (profile) {
+                const name = profile.display_name || profile.gamer_tag || user.email?.split('@')[0] || 'Player';
+                headerUsernameLabel.textContent = name.length > 16 ? name.slice(0, 15) + '…' : name;
+                localStorage.setItem('tgco_header_label', headerUsernameLabel.textContent);
+            }
+        } catch (e) {}
+    }
+
+    loadSessionAndProfile();
+    supabaseClient.auth.onAuthStateChange((_, session) => { 
+        updateAuthUI(session?.user ?? null); 
+        if (session?.user) loadSessionAndProfile(); 
+    });
+
+    let userMenuOpen = false;
+    function setUserMenuOpen(open) {
+        userMenuOpen = open;
+        userMenu?.classList.toggle('open', open);
+        userMenuButton?.setAttribute('aria-expanded', open);
+    }
+    
+    userMenuButton?.addEventListener('click', (e) => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); });
+    document.addEventListener('click', () => { if (userMenuOpen) setUserMenuOpen(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setUserMenuOpen(false); });
+    
+    userMenuSignOut?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        localStorage.removeItem('tgco_header_label');
+        await supabaseClient.auth.signOut();
+        window.location.href = '/';
+    });
+</script>
+</body>
+</html>
