@@ -1419,19 +1419,18 @@
     socket.emit('rejoin-room', { roomCode, playerName, isPremium });
 });
     
-    socket.on('room-joined', (data) => {
-        totalPlayers = data.players?.length || 1;
-        document.getElementById('total-players').textContent = totalPlayers;
-        
-        // Store player data for premium display
-        if (data.players) {
-            data.players.forEach(p => {
-                playersData[p.name] = {
-                    isPremium: p.isPremium || false,
-                    cosmetics: p.cosmetics || {}
-                };
-            });
-        }
+socket.on('room-joined', (data) => {
+    const players = data.room?.players || data.players || [];
+    totalPlayers = players.length || 1;
+    document.getElementById('total-players').textContent = totalPlayers;
+    
+    // Store player data for premium display
+    players.forEach(p => {
+        playersData[p.name] = {
+            isPremium: p.isPremium || false,
+            cosmetics: p.cosmetics || {}
+        };
+    });
         
         // Hide mini leaderboard during countdown
         document.getElementById('mini-leaderboard').classList.add('hidden');
@@ -1439,18 +1438,17 @@
     });
     
     // Update player data when someone joins
-    socket.on('player-joined', (data) => {
-        if (data.room?.players) {
-            data.room.players.forEach(p => {
-                playersData[p.name] = {
-                    isPremium: p.isPremium || false,
-                    cosmetics: p.cosmetics || {}
-                };
-            });
-            totalPlayers = data.room.players.length;
-            document.getElementById('total-players').textContent = totalPlayers;
-        }
+socket.on('player-joined', (data) => {
+    const players = data.room?.players || [];
+    players.forEach(p => {
+        playersData[p.name] = {
+            isPremium: p.isPremium || false,
+            cosmetics: p.cosmetics || {}
+        };
     });
+    totalPlayers = players.length;
+    document.getElementById('total-players').textContent = totalPlayers;
+});
     
     // Receive question from server
     socket.on('trivia-question', (data) => {
