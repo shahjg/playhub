@@ -584,18 +584,20 @@ function calculateTriviaResults(room, io) {
         });
     });
     
-    // Build leaderboard with premium status
-    const leaderboard = Object.entries(room.gameData.scores)
-        .map(([name, score]) => {
-            const player = room.players.find(p => p.name === name);
-            return { 
-                name, 
-                score, 
-                isPremium: player?.isPremium || false 
-            };
-        })
-        .sort((a, b) => b.score - a.score);
-    
+   // Build leaderboard with premium status
+const leaderboard = Object.entries(room.gameData.scores)
+    .map(([name, score]) => {
+        const player = room.players.find(p => p.name === name);
+        console.log(`[TRIVIA LEADERBOARD] Player: ${name}, Found: ${!!player}, isPremium: ${player?.isPremium}`);
+        return { 
+            name, 
+            score, 
+            isPremium: player?.isPremium || false 
+        };
+    })
+    .sort((a, b) => b.score - a.score);
+
+console.log('[TRIVIA LEADERBOARD] Final:', JSON.stringify(leaderboard));
     const isLastQuestion = room.gameData.roundNumber >= room.gameData.maxRounds;
     
     io.to(room.code).emit('trivia-results', { 
@@ -619,9 +621,17 @@ function calculateTriviaResults(room, io) {
         if (room.gameData.roundNumber > room.gameData.maxRounds) {
             io.to(room.code).emit('trivia-game-over', { 
                 finalScores: room.gameData.scores,
-                finalLeaderboard: Object.entries(room.gameData.scores)
-                    .map(([name, score]) => ({ name, score, isPremium: room.players.find(p => p.name === name)?.isPremium }))
-                    .sort((a, b) => b.score - a.score),
+finalLeaderboard: Object.entries(room.gameData.scores)
+    .map(([name, score]) => {
+        const p = room.players.find(x => x.name === name);
+        console.log(`[GAME OVER] Player: ${name}, isPremium: ${p?.isPremium}`);
+        return { 
+            name, 
+            score, 
+            isPremium: p?.isPremium || false
+        };
+    })
+    .sort((a, b) => b.score - a.score),
                 winner: getTopPlayer(room.gameData.scores) 
             });
         } else {
