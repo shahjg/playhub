@@ -1533,11 +1533,50 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
     });
 
     // ==================== SKETCH & GUESS ====================
-    socket.on('sketch-start-game', ({roomCode}) => {
+    socket.on('sketch-start-game', ({roomCode, category}) => {
         const room = rooms.get(roomCode);
         if (!room?.gameData) return;
         
-        console.log('[SKETCH] Starting game for room:', roomCode);
+        console.log('[SKETCH] Starting game for room:', roomCode, 'with category:', category);
+        
+        // If category provided and different from current, reinitialize word pool
+        if (category && category !== room.gameData.category) {
+            let wordPool = [];
+            
+            // Check if custom words were provided (format: "custom:word1,word2,word3")
+            if (category.startsWith('custom:')) {
+                const customWordsStr = category.substring(7);
+                wordPool = customWordsStr.split(',')
+                    .map(w => w.trim())
+                    .filter(w => w.length > 0 && w.length <= 30);
+                
+                if (wordPool.length < 10) {
+                    const randomWords = [...sketchWords.random].sort(() => Math.random() - 0.5);
+                    while (wordPool.length < 15 && randomWords.length > 0) {
+                        wordPool.push(randomWords.pop());
+                    }
+                }
+                console.log('[SKETCH] Using custom words:', wordPool.length, 'words');
+            } else {
+                if (category === 'random' || category === 'mixed' || !sketchWords[category]) {
+                    Object.values(sketchWords).forEach(words => {
+                        wordPool = [...wordPool, ...words];
+                    });
+                } else {
+                    wordPool = [...sketchWords[category]];
+                    const otherCategories = Object.keys(sketchWords).filter(k => k !== category);
+                    otherCategories.forEach(cat => {
+                        const shuffled = [...sketchWords[cat]].sort(() => Math.random() - 0.5);
+                        wordPool.push(...shuffled.slice(0, 5));
+                    });
+                }
+                console.log('[SKETCH] Using category:', category, 'with', wordPool.length, 'words');
+            }
+            
+            room.gameData.wordPool = wordPool.sort(() => Math.random() - 0.5);
+            room.gameData.category = category;
+            room.gameData.wordIndex = 0;
+        }
         
         // Shuffle player order for drawing
         room.players.sort(() => Math.random() - 0.5);
