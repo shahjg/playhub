@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sketch & Guess - TheGaming.co</title>
     
-    <meta name="description" content="Sketch & Guess - Draw and guess in real-time! A Skribbl-style drawing game where one player sketches while others race to guess.">
+    <meta name="description" content="Sketch & Guess - Draw and guess in real-time!">
     <meta name="theme-color" content="#f97316">
-    
-    <link rel="canonical" href="https://thegaming.co/sketch-guess.html">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +29,7 @@
             --green: #22c55e;
             --red: #ef4444;
             --yellow: #eab308;
+            --gold: #fbbf24;
             --blue: #3b82f6;
             --purple: #a855f7;
             --pink: #ec4899;
@@ -88,6 +87,8 @@
             border-bottom: 1px solid var(--border);
         }
         
+        .fullscreen-mode header { display: none; }
+        
         .nav-inner {
             width: 100%;
             max-width: 1200px;
@@ -98,8 +99,8 @@
         }
         
         .header-left { display: flex; align-items: center; min-width: 100px; }
-        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .header-right { display: flex; align-items: center; justify-content: flex-end; min-width: 100px; }
+        .header-center { flex: 1; display: flex; justify-content: center; }
+        .header-right { display: flex; align-items: center; gap: 12px; min-width: 100px; justify-content: flex-end; }
         
         .back-btn {
             display: inline-flex;
@@ -108,19 +109,16 @@
             padding: 8px 12px;
             border-radius: 8px;
             background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.8rem;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
-            font-family: inherit;
         }
         
-        .back-btn:hover { background: rgba(255, 255, 255, 0.08); color: white; border-color: var(--accent); }
+        .back-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--red); border-color: var(--red); }
         .back-btn svg { width: 16px; height: 16px; }
         
         .header-logo {
@@ -129,47 +127,14 @@
             letter-spacing: 3px;
             color: white;
             text-decoration: none;
-            position: relative;
         }
         
-        .header-logo::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent), var(--purple));
-        }
-        
-        .header-actions { display: flex; align-items: center; gap: 12px; }
+        /* Auth styles */
         .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
         
-        .user-pill {
-            display: inline-flex;
-            align-items: center;
-            height: 34px;
-            padding: 0 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.05);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: inherit;
-            font-family: inherit;
-        }
-        
-        .user-pill:hover { background: rgba(255, 255, 255, 0.1); }
-        
-        .user-pill-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
         .user-pill-skeleton {
-            width: 90px;
-            height: 34px;
+            width: 80px;
+            height: 32px;
             border-radius: 999px;
             background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
             background-size: 200% 100%;
@@ -178,22 +143,37 @@
         
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            height: 32px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            color: inherit;
+            font-family: inherit;
+        }
+        
+        .user-pill-label { font-size: 0.8rem; font-weight: 600; color: rgba(255, 255, 255, 0.9); }
+        
         .user-menu-wrapper { position: relative; }
         
         .user-menu {
             position: absolute;
             top: calc(100% + 8px);
             right: 0;
-            min-width: 160px;
+            min-width: 150px;
             padding: 6px;
             border-radius: 12px;
-            background: rgba(10, 10, 15, 0.98);
+            background: rgba(10, 10, 15, 0.97);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
             opacity: 0;
             transform: translateY(-4px);
             pointer-events: none;
-            transition: all 0.15s ease;
+            transition: opacity 0.15s ease, transform 0.15s ease;
             z-index: 120;
         }
         
@@ -232,11 +212,17 @@
             position: relative;
             z-index: 1;
             min-height: 100vh;
+            min-height: 100dvh;
             padding: 68px 12px 20px;
             display: flex;
             flex-direction: column;
             max-width: 1200px;
             margin: 0 auto;
+        }
+        
+        .fullscreen-mode main {
+            padding: 8px;
+            max-width: 100%;
         }
         
         /* Game Container */
@@ -246,6 +232,14 @@
             gap: 16px;
             flex: 1;
             min-height: 0;
+        }
+        
+        .fullscreen-mode .game-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .fullscreen-mode .sidebar {
+            display: none;
         }
         
         /* Left Column - Canvas Area */
@@ -290,9 +284,19 @@
         }
         
         .drawer-info .name {
-            color: var(--text);
             font-weight: 600;
         }
+        
+        .drawer-info .name.premium {
+            background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShimmer 3s linear infinite;
+        }
+        
+        @keyframes goldShimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
         
         .word-display {
             flex: 1;
@@ -345,6 +349,11 @@
             border-radius: 16px;
             overflow: hidden;
             min-height: 400px;
+        }
+        
+        .fullscreen-mode .canvas-container {
+            min-height: 0;
+            flex: 1;
         }
         
         .canvas-wrapper {
@@ -472,6 +481,97 @@
             border-radius: 50%;
         }
         
+        /* Fullscreen Toggle Button */
+        .fullscreen-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fullscreen-toggle:hover { background: var(--accent); border-color: var(--accent); }
+        
+        /* Mobile Floating Controls */
+        .mobile-floating-bar {
+            display: none;
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 16px;
+            background: rgba(26, 26, 38, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            gap: 12px;
+            z-index: 90;
+            align-items: center;
+        }
+        
+        .fullscreen-mode .mobile-floating-bar {
+            display: flex;
+        }
+        
+        .floating-player-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .floating-chat-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .chat-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: var(--red);
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chat-badge:empty { display: none; }
+        
+        .floating-exit-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
         /* Right Column - Chat & Players */
         .sidebar {
             display: flex;
@@ -501,7 +601,7 @@
         }
         
         .players-list {
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
             padding: 8px;
         }
@@ -517,7 +617,7 @@
         }
         
         .player-item:last-child { margin-bottom: 0; }
-        .player-item.drawing { background: rgba(249, 115, 22, 0.15); }
+        .player-item.drawing { background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.3); }
         .player-item.guessed { background: rgba(34, 197, 94, 0.15); }
         
         .player-rank {
@@ -536,6 +636,21 @@
             margin-right: 4px;
         }
         
+        .player-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.8rem;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        
         .player-name {
             flex: 1;
             font-size: 0.85rem;
@@ -545,10 +660,21 @@
             white-space: nowrap;
         }
         
+        .player-name.premium {
+            background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShimmer 3s linear infinite;
+        }
+        
         .player-score {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1rem;
             color: var(--accent);
+            min-width: 40px;
+            text-align: right;
         }
         
         /* Chat */
@@ -560,7 +686,7 @@
             border: 1px solid var(--border);
             border-radius: 14px;
             overflow: hidden;
-            min-height: 280px;
+            min-height: 250px;
         }
         
         .chat-header {
@@ -575,14 +701,14 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
         
         .chat-msg {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             padding: 6px 10px;
             border-radius: 8px;
             background: var(--bg-elevated);
@@ -592,6 +718,15 @@
         .chat-msg .sender {
             font-weight: 700;
             margin-right: 6px;
+        }
+        
+        .chat-msg .sender.premium {
+            background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShimmer 3s linear infinite;
         }
         
         .chat-msg.system {
@@ -614,34 +749,52 @@
             text-align: center;
         }
         
-        .chat-input-wrapper {
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
             padding: 10px;
             border-top: 1px solid var(--border);
         }
         
         .chat-input {
-            width: 100%;
+            flex: 1;
             padding: 10px 14px;
             background: var(--bg-elevated);
             border: 1px solid var(--border);
             border-radius: 10px;
             color: var(--text);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s ease;
         }
         
-        .chat-input:focus { border-color: var(--accent); }
-        .chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
         .chat-input::placeholder { color: var(--text-dim); }
+        .chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .chat-send {
+            padding: 10px 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .chat-send:hover { filter: brightness(1.1); }
+        .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
         
         /* Word Selection Modal */
         .word-modal {
             position: fixed;
             inset: 0;
             z-index: 200;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -663,6 +816,7 @@
             font-size: 1.6rem;
             letter-spacing: 2px;
             margin-bottom: 8px;
+            color: var(--accent);
         }
         
         .word-modal-subtitle {
@@ -683,7 +837,7 @@
             border: 2px solid var(--border);
             border-radius: 12px;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             letter-spacing: 2px;
             color: var(--text);
             cursor: pointer;
@@ -693,10 +847,10 @@
         .word-option:hover {
             border-color: var(--accent);
             background: rgba(249, 115, 22, 0.1);
-            transform: translateY(-2px);
+            transform: scale(1.02);
         }
         
-        /* Game Over */
+        /* Game Over Overlay */
         .gameover-overlay {
             position: fixed;
             inset: 0;
@@ -735,9 +889,7 @@
             margin-bottom: 24px;
         }
         
-        .gameover-leaderboard {
-            margin-bottom: 24px;
-        }
+        .gameover-leaderboard { margin-bottom: 24px; }
         
         .gameover-lb-title {
             font-family: 'Bebas Neue', sans-serif;
@@ -751,6 +903,46 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+        }
+        
+        .lb-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+        }
+        
+        .lb-rank {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            width: 28px;
+        }
+        
+        .lb-row:nth-child(1) .lb-rank { color: #fbbf24; }
+        .lb-row:nth-child(2) .lb-rank { color: #94a3b8; }
+        .lb-row:nth-child(3) .lb-rank { color: #cd7c32; }
+        
+        .lb-name {
+            flex: 1;
+            font-weight: 600;
+            text-align: left;
+        }
+        
+        .lb-name.premium {
+            background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShimmer 3s linear infinite;
+        }
+        
+        .lb-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: var(--accent);
         }
         
         .play-again-btn {
@@ -805,6 +997,101 @@
             0% { transform: scale(0.3); opacity: 0; }
             60% { transform: scale(1.1); }
             100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Mobile Chat Modal */
+        .mobile-chat-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+        
+        .mobile-chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        
+        .mobile-chat-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+        
+        .mobile-chat-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .mobile-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .mobile-chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Mobile Players Modal */
+        .mobile-players-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+        
+        .mobile-players-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        
+        .mobile-players-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+        
+        .mobile-players-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .mobile-players-list {
+            flex: 1;
+            overflow-y: auto;
         }
         
         /* Utility */
@@ -884,7 +1171,6 @@
                     </button>
                     <div class="user-menu" id="user-menu">
                         <a href="profile.html" class="user-menu-item">Profile</a>
-                        <a href="leaderboards.html" class="user-menu-item">Leaderboards</a>
                         <button type="button" class="user-menu-item" id="user-menu-signout">Sign Out</button>
                     </div>
                 </div>
@@ -904,7 +1190,7 @@
     <div class="word-modal hidden" id="word-modal">
         <div class="word-modal-content">
             <div class="word-modal-title">CHOOSE A WORD</div>
-            <div class="word-modal-subtitle">You have 10 seconds to pick</div>
+            <div class="word-modal-subtitle">Pick one to draw</div>
             <div class="word-options" id="word-options"></div>
         </div>
     </div>
@@ -914,24 +1200,49 @@
         <div class="gameover-content">
             <div class="gameover-trophy">🏆</div>
             <div class="gameover-title">GAME OVER</div>
-            <div class="gameover-winner" id="gameover-winner">Winner Name</div>
+            <div class="gameover-winner" id="gameover-winner">PLAYER</div>
             <div class="gameover-leaderboard">
                 <div class="gameover-lb-title">FINAL STANDINGS</div>
                 <div class="gameover-lb-list" id="final-leaderboard"></div>
             </div>
-            <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
+            <button class="play-again-btn" onclick="playAgain()">PLAY AGAIN</button>
         </div>
     </div>
     
+    <!-- Mobile Chat Modal -->
+    <div class="mobile-chat-modal hidden" id="mobile-chat-modal">
+        <div class="mobile-chat-header">
+            <div class="mobile-chat-title">💬 CHAT & GUESS</div>
+            <button class="mobile-chat-close" onclick="closeMobileChat()">✕</button>
+        </div>
+        <div class="mobile-chat-messages" id="mobile-chat-messages"></div>
+        <div class="mobile-chat-input-row">
+            <input type="text" class="chat-input" id="mobile-chat-input" placeholder="Type your guess..." maxlength="100" autocomplete="off">
+            <button class="chat-send" onclick="sendMobileChat()">SEND</button>
+        </div>
+    </div>
+    
+    <!-- Mobile Players Modal -->
+    <div class="mobile-players-modal hidden" id="mobile-players-modal">
+        <div class="mobile-players-header">
+            <div class="mobile-players-title">👥 PLAYERS</div>
+            <button class="mobile-players-close" onclick="closeMobilePlayers()">✕</button>
+        </div>
+        <div class="mobile-players-list" id="mobile-players-list"></div>
+    </div>
+
+    <!-- Game Container -->
     <div class="game-container">
-        <!-- Left Column - Canvas -->
+        <!-- Left Column -->
         <div class="canvas-column">
+            <!-- Top Bar -->
             <div class="top-bar">
                 <div class="round-info">
                     <span class="round-badge">ROUND <span id="current-round">1</span>/<span id="total-rounds">3</span></span>
                     <div class="drawer-info">
-                        <span>✏️</span>
-                        <span class="name" id="drawer-name">Waiting...</span>
+                        <span>🎨</span>
+                        <span class="name" id="drawer-name">---</span>
+                        <span>is drawing</span>
                     </div>
                 </div>
                 <div class="word-display">
@@ -939,98 +1250,114 @@
                 </div>
                 <div class="timer-box">
                     <span class="timer-icon">⏱️</span>
-                    <span class="timer-value" id="timer">60</span>
+                    <span class="timer-value" id="timer-value">60</span>
                 </div>
             </div>
             
+            <!-- Canvas -->
             <div class="canvas-container">
                 <div class="canvas-wrapper" id="canvas-wrapper">
                     <canvas id="draw-canvas"></canvas>
                     <div class="canvas-overlay hidden" id="canvas-overlay">
                         <div class="overlay-content">
-                            <div class="overlay-icon" id="overlay-icon">👀</div>
-                            <div class="overlay-title" id="overlay-title">Waiting for drawer...</div>
-                            <div class="overlay-subtitle" id="overlay-subtitle">Get ready to guess!</div>
+                            <div class="overlay-icon" id="overlay-icon">🎨</div>
+                            <div class="overlay-title" id="overlay-title">Waiting...</div>
+                            <div class="overlay-subtitle" id="overlay-subtitle">Get ready to draw or guess!</div>
                         </div>
                     </div>
                 </div>
-                
                 <div class="tools-bar" id="tools-bar">
                     <div class="tool-group">
-                        <button class="color-btn active" data-color="#000000" style="background: #000000;"></button>
-                        <button class="color-btn" data-color="#ffffff" style="background: #ffffff; border: 1px solid #ccc;"></button>
-                        <button class="color-btn" data-color="#ef4444" style="background: #ef4444;"></button>
-                        <button class="color-btn" data-color="#f97316" style="background: #f97316;"></button>
-                        <button class="color-btn" data-color="#eab308" style="background: #eab308;"></button>
-                        <button class="color-btn" data-color="#22c55e" style="background: #22c55e;"></button>
-                        <button class="color-btn" data-color="#3b82f6" style="background: #3b82f6;"></button>
-                        <button class="color-btn" data-color="#8b5cf6" style="background: #8b5cf6;"></button>
-                        <button class="color-btn" data-color="#ec4899" style="background: #ec4899;"></button>
-                        <button class="color-btn" data-color="#78716c" style="background: #78716c;"></button>
+                        <button class="tool-btn active" id="pen-btn" onclick="selectTool('pen')" title="Pen">✏️</button>
+                        <button class="tool-btn" id="eraser-btn" onclick="selectTool('eraser')" title="Eraser">🧽</button>
+                        <button class="tool-btn" id="fill-btn" onclick="selectTool('fill')" title="Fill">🪣</button>
+                    </div>
+                    <div class="tool-group" id="color-palette">
+                        <button class="color-btn active" style="background: #000000" data-color="#000000"></button>
+                        <button class="color-btn" style="background: #ffffff; border: 1px solid #ccc;" data-color="#ffffff"></button>
+                        <button class="color-btn" style="background: #ef4444" data-color="#ef4444"></button>
+                        <button class="color-btn" style="background: #f97316" data-color="#f97316"></button>
+                        <button class="color-btn" style="background: #eab308" data-color="#eab308"></button>
+                        <button class="color-btn" style="background: #22c55e" data-color="#22c55e"></button>
+                        <button class="color-btn" style="background: #3b82f6" data-color="#3b82f6"></button>
+                        <button class="color-btn" style="background: #a855f7" data-color="#a855f7"></button>
+                        <button class="color-btn" style="background: #ec4899" data-color="#ec4899"></button>
+                        <button class="color-btn" style="background: #78716c" data-color="#78716c"></button>
                     </div>
                     <div class="tool-group">
                         <input type="range" class="size-slider" id="size-slider" min="2" max="32" value="8">
-                        <div class="size-preview"><div class="size-dot" id="size-dot" style="width: 8px; height: 8px;"></div></div>
+                        <div class="size-preview"><div class="size-dot" id="size-dot"></div></div>
                     </div>
                     <div class="tool-group">
-                        <button class="tool-btn" id="eraser-btn" title="Eraser">🧹</button>
-                        <button class="tool-btn" id="clear-btn" title="Clear Canvas">🗑️</button>
-                        <button class="tool-btn" id="undo-btn" title="Undo">↩️</button>
+                        <button class="tool-btn" onclick="clearCanvas(true)" title="Clear">🗑️</button>
+                        <button class="tool-btn" onclick="undoLast()" title="Undo">↩️</button>
+                        <button class="fullscreen-toggle" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Right Column - Sidebar -->
+        <!-- Right Column -->
         <div class="sidebar">
+            <!-- Players -->
             <div class="players-card">
-                <div class="players-header">👥 PLAYERS</div>
+                <div class="players-header">
+                    <span>👥</span>
+                    <span>PLAYERS</span>
+                </div>
                 <div class="players-list" id="players-list"></div>
             </div>
             
+            <!-- Chat -->
             <div class="chat-card">
-                <div class="chat-header">💬 CHAT / GUESS</div>
+                <div class="chat-header">💬 CHAT & GUESS</div>
                 <div class="chat-messages" id="chat-messages"></div>
-                <div class="chat-input-wrapper">
+                <div class="chat-input-row">
                     <input type="text" class="chat-input" id="chat-input" placeholder="Type your guess..." maxlength="100" autocomplete="off">
+                    <button class="chat-send" id="chat-send" onclick="sendGuess()">SEND</button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Mobile Floating Bar -->
+    <div class="mobile-floating-bar" id="mobile-floating-bar">
+        <div class="floating-player-count" onclick="openMobilePlayers()">
+            <span>👥</span>
+            <span id="floating-player-count">0</span>
+        </div>
+        <button class="floating-chat-btn" onclick="openMobileChat()">
+            💬
+            <span class="chat-badge" id="chat-badge"></span>
+        </button>
+        <button class="floating-exit-btn" onclick="toggleFullscreen()">⛶</button>
+    </div>
 </main>
 
 <script>
-    // ==================== CONFIG ====================
+    // ==================== SETUP ====================
     const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
-    
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // ==================== GAME STATE ====================
     const urlParams = new URLSearchParams(window.location.search);
     const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
-    const playerName = localStorage.getItem('tempPlayerName');
+    const playerName = localStorage.getItem('tempPlayerName') || 'Guest' + Math.floor(Math.random() * 1000);
     const isHost = localStorage.getItem('tempIsHost') === 'true';
     
     let playersData = {};
+    let currentDrawer = '';
     let isDrawer = false;
-    let currentWord = '';
     let hasGuessed = false;
+    let currentWord = '';
     let timerInterval = null;
-    let drawHistory = [];
+    let isFullscreen = false;
+    let unreadMessages = 0;
     
-    if (!roomCode) window.location.href = '/squad-games.html';
-    
-    function leaveGame() {
-        if (confirm('Leave the game?')) {
-            socket.disconnect();
-            window.location.href = '/squad-games.html';
-        }
-    }
-    
-    // ==================== CANVAS ====================
+    // Drawing state
     const canvas = document.getElementById('draw-canvas');
     const ctx = canvas.getContext('2d');
     let isDrawing = false;
@@ -1038,43 +1365,112 @@
     let lastY = 0;
     let currentColor = '#000000';
     let currentSize = 8;
-    let isEraser = false;
+    let currentTool = 'pen';
+    let drawHistory = [];
+    let canvasInited = false;
     
-    function resizeCanvas() {
-        const wrapper = document.getElementById('canvas-wrapper');
-        const rect = wrapper.getBoundingClientRect();
+    // DOM elements
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const toolsBar = document.getElementById('tools-bar');
+    
+    // ==================== AUTH ====================
+    (async function initAuth() {
+        const skeleton = document.getElementById('auth-skeleton');
+        const loggedOut = document.querySelector('.nav-right-logged-out');
+        const loggedIn = document.querySelector('.nav-right-logged-in');
         
-        // Store current drawing
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        
-        // Restore drawing
-        ctx.putImageData(imageData, 0, 0);
-        
-        // Reset context settings
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            skeleton.style.display = 'none';
+            
+            if (session?.user) {
+                loggedIn.style.setProperty('display', 'flex', 'important');
+                const { data: profile } = await supabaseClient.from('profiles').select('display_name, gamer_tag').eq('id', session.user.id).single();
+                const name = profile?.display_name || profile?.gamer_tag || session.user.email?.split('@')[0] || 'Player';
+                document.getElementById('header-username-label').textContent = name.length > 12 ? name.slice(0, 11) + '…' : name;
+            } else {
+                loggedOut.style.setProperty('display', 'flex', 'important');
+            }
+        } catch (e) {
+            skeleton.style.display = 'none';
+            loggedOut.style.setProperty('display', 'flex', 'important');
+        }
+    })();
+    
+    // User menu
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    if (userMenuButton) {
+        userMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenu.classList.toggle('open');
+        });
+        document.addEventListener('click', () => userMenu.classList.remove('open'));
     }
     
+    document.getElementById('user-menu-signout')?.addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = '/';
+    });
+    
+    // ==================== CANVAS ====================
     function initCanvas() {
-        resizeCanvas();
+        if (canvasInited) return;
+        const wrapper = document.getElementById('canvas-wrapper');
+        const rect = wrapper.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        canvasInited = true;
+        updateSizePreview();
     }
     
-    window.addEventListener('resize', resizeCanvas);
+    function resizeCanvas() {
+        if (!canvasInited) return;
+        const wrapper = document.getElementById('canvas-wrapper');
+        const imageData = canvas.toDataURL();
+        const rect = wrapper.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        
+        const img = new Image();
+        img.onload = () => {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = imageData;
+    }
     
-    function getCanvasCoords(e) {
+    window.addEventListener('resize', debounce(resizeCanvas, 200));
+    
+    function debounce(fn, ms) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn(...args), ms);
+        };
+    }
+    
+    // Drawing handlers
+    function getPos(e) {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        if (e.touches) {
+            return {
+                x: (e.touches[0].clientX - rect.left) * scaleX,
+                y: (e.touches[0].clientY - rect.top) * scaleY
+            };
+        }
         return {
-            x: (clientX - rect.left) / rect.width,
-            y: (clientY - rect.top) / rect.height
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
         };
     }
     
@@ -1082,9 +1478,9 @@
         if (!isDrawer) return;
         e.preventDefault();
         isDrawing = true;
-        const coords = getCanvasCoords(e);
-        lastX = coords.x;
-        lastY = coords.y;
+        const pos = getPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
         
         // Save state for undo
         drawHistory.push(canvas.toDataURL());
@@ -1094,117 +1490,315 @@
     function draw(e) {
         if (!isDrawing || !isDrawer) return;
         e.preventDefault();
+        const pos = getPos(e);
         
-        const coords = getCanvasCoords(e);
         const drawData = {
-            x1: lastX,
-            y1: lastY,
-            x2: coords.x,
-            y2: coords.y,
-            color: isEraser ? '#ffffff' : currentColor,
+            x1: lastX / canvas.width,
+            y1: lastY / canvas.height,
+            x2: pos.x / canvas.width,
+            y2: pos.y / canvas.height,
+            color: currentTool === 'eraser' ? '#ffffff' : currentColor,
             size: currentSize
         };
         
         drawLine(drawData);
         socket.emit('sketch-draw', { roomCode, drawData });
         
-        lastX = coords.x;
-        lastY = coords.y;
+        lastX = pos.x;
+        lastY = pos.y;
     }
     
     function stopDrawing() {
+        if (isDrawing && isDrawer) {
+            // Send full canvas state periodically for sync
+            socket.emit('sketch-canvas', { roomCode, canvasData: canvas.toDataURL() });
+        }
         isDrawing = false;
     }
     
     function drawLine(data) {
         ctx.strokeStyle = data.color;
         ctx.lineWidth = data.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
         ctx.moveTo(data.x1 * canvas.width, data.y1 * canvas.height);
         ctx.lineTo(data.x2 * canvas.width, data.y2 * canvas.height);
         ctx.stroke();
     }
     
-    function clearCanvas() {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    
-    // Canvas event listeners
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
     canvas.addEventListener('touchstart', startDrawing, { passive: false });
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', stopDrawing);
     
-    // ==================== TOOLS ====================
-    document.querySelectorAll('.color-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentColor = btn.dataset.color;
-            isEraser = false;
-            document.getElementById('eraser-btn').classList.remove('active');
-        });
-    });
-    
-    document.getElementById('size-slider').addEventListener('input', (e) => {
-        currentSize = parseInt(e.target.value);
-        const dot = document.getElementById('size-dot');
-        dot.style.width = Math.min(currentSize, 24) + 'px';
-        dot.style.height = Math.min(currentSize, 24) + 'px';
-    });
-    
-    document.getElementById('eraser-btn').addEventListener('click', () => {
-        isEraser = !isEraser;
-        document.getElementById('eraser-btn').classList.toggle('active', isEraser);
-        if (isEraser) {
-            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+    function clearCanvas(emit = false) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (emit && isDrawer) {
+            socket.emit('sketch-clear', { roomCode });
         }
-    });
+    }
     
-    document.getElementById('clear-btn').addEventListener('click', () => {
-        if (!isDrawer) return;
-        drawHistory.push(canvas.toDataURL());
-        clearCanvas();
-        socket.emit('sketch-clear', { roomCode });
-    });
-    
-    document.getElementById('undo-btn').addEventListener('click', () => {
+    function undoLast() {
         if (!isDrawer || drawHistory.length === 0) return;
+        const lastState = drawHistory.pop();
         const img = new Image();
         img.onload = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            socket.emit('sketch-canvas', { roomCode, canvasData: drawHistory[drawHistory.length - 1] });
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            socket.emit('sketch-canvas', { roomCode, canvasData: canvas.toDataURL() });
         };
-        img.src = drawHistory.pop();
+        img.src = lastState;
+    }
+    
+    // Tools
+    function selectTool(tool) {
+        currentTool = tool;
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`${tool}-btn`)?.classList.add('active');
+    }
+    
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentColor = btn.dataset.color;
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (currentTool === 'eraser') selectTool('pen');
+        });
     });
     
-    // ==================== CHAT / GUESSING ====================
-    const chatInput = document.getElementById('chat-input');
-    const chatMessages = document.getElementById('chat-messages');
+    const sizeSlider = document.getElementById('size-slider');
+    sizeSlider.addEventListener('input', () => {
+        currentSize = parseInt(sizeSlider.value);
+        updateSizePreview();
+    });
+    
+    function updateSizePreview() {
+        const dot = document.getElementById('size-dot');
+        const size = Math.min(currentSize, 20);
+        dot.style.width = size + 'px';
+        dot.style.height = size + 'px';
+    }
+    
+    function setDrawerMode(isDrawerMode) {
+        toolsBar.style.display = isDrawerMode ? 'flex' : 'none';
+        canvas.style.cursor = isDrawerMode ? 'crosshair' : 'default';
+    }
+    
+    // ==================== FULLSCREEN MODE ====================
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        document.body.classList.toggle('fullscreen-mode', isFullscreen);
+        
+        if (isFullscreen) {
+            // Request actual fullscreen on mobile
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        } else {
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+        
+        setTimeout(resizeCanvas, 100);
+    }
+    
+    function openMobileChat() {
+        document.getElementById('mobile-chat-modal').classList.remove('hidden');
+        syncMobileChat();
+        unreadMessages = 0;
+        document.getElementById('chat-badge').textContent = '';
+        document.getElementById('mobile-chat-input').focus();
+    }
+    
+    function closeMobileChat() {
+        document.getElementById('mobile-chat-modal').classList.add('hidden');
+    }
+    
+    function openMobilePlayers() {
+        document.getElementById('mobile-players-modal').classList.remove('hidden');
+        syncMobilePlayers();
+    }
+    
+    function closeMobilePlayers() {
+        document.getElementById('mobile-players-modal').classList.add('hidden');
+    }
+    
+    function syncMobileChat() {
+        const mobileMessages = document.getElementById('mobile-chat-messages');
+        mobileMessages.innerHTML = chatMessages.innerHTML;
+        mobileMessages.scrollTop = mobileMessages.scrollHeight;
+    }
+    
+    function syncMobilePlayers() {
+        const mobilePlayers = document.getElementById('mobile-players-list');
+        mobilePlayers.innerHTML = document.getElementById('players-list').innerHTML;
+    }
+    
+    function sendMobileChat() {
+        const input = document.getElementById('mobile-chat-input');
+        const guess = input.value.trim();
+        if (!guess || hasGuessed || isDrawer) return;
+        
+        socket.emit('sketch-guess', { roomCode, playerName, guess });
+        input.value = '';
+    }
+    
+    document.getElementById('mobile-chat-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMobileChat();
+    });
+    
+    // ==================== UI FUNCTIONS ====================
+    function updatePlayersList(players) {
+        const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
+        const list = document.getElementById('players-list');
+        
+        list.innerHTML = sorted.map((p, i) => {
+            const data = playersData[p.name] || {};
+            const isPremium = data.isPremium || p.isPremium || false;
+            const isDrawing = p.name === currentDrawer;
+            const didGuess = p.hasGuessed || false;
+            const premiumClass = isPremium ? 'premium' : '';
+            const initial = p.name.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() || '?';
+            
+            return `
+                <div class="player-item ${isDrawing ? 'drawing' : ''} ${didGuess ? 'guessed' : ''}">
+                    <span class="player-rank">#${i + 1}</span>
+                    <span class="player-status">${isDrawing ? '🎨' : didGuess ? '✅' : ''}</span>
+                    <div class="player-avatar">${initial}</div>
+                    <span class="player-name ${premiumClass}">${escapeHtml(p.name)}</span>
+                    <span class="player-score">${p.score || 0}</span>
+                </div>
+            `;
+        }).join('');
+        
+        // Update floating count
+        document.getElementById('floating-player-count').textContent = players.length;
+        
+        // Sync mobile if open
+        if (!document.getElementById('mobile-players-modal').classList.contains('hidden')) {
+            syncMobilePlayers();
+        }
+    }
+    
+    function updatePlayerGuessed(name) {
+        const players = Object.keys(playersData).map(n => ({
+            name: n,
+            score: playersData[n]?.score || 0,
+            isPremium: playersData[n]?.isPremium,
+            hasGuessed: n === name ? true : playersData[n]?.hasGuessed
+        }));
+        
+        if (playersData[name]) playersData[name].hasGuessed = true;
+        updatePlayersList(players);
+    }
+    
+    function showOverlay(icon, title, subtitle) {
+        document.getElementById('overlay-icon').textContent = icon;
+        document.getElementById('overlay-title').textContent = title;
+        document.getElementById('overlay-subtitle').textContent = subtitle;
+        document.getElementById('canvas-overlay').classList.remove('hidden');
+    }
+    
+    function hideOverlay() {
+        document.getElementById('canvas-overlay').classList.add('hidden');
+    }
+    
+    function showWordSelection(words) {
+        const options = document.getElementById('word-options');
+        options.innerHTML = words.map(w => `<button class="word-option" onclick="selectWord('${w}')">${w.toUpperCase()}</button>`).join('');
+        document.getElementById('word-modal').classList.remove('hidden');
+    }
+    
+    function selectWord(word) {
+        document.getElementById('word-modal').classList.add('hidden');
+        socket.emit('sketch-word-chosen', { roomCode, word });
+    }
+    
+    function startTimer(seconds) {
+        clearInterval(timerInterval);
+        const timerEl = document.getElementById('timer-value');
+        let remaining = seconds;
+        
+        timerEl.textContent = remaining;
+        timerEl.classList.remove('urgent');
+        
+        timerInterval = setInterval(() => {
+            remaining--;
+            timerEl.textContent = remaining;
+            
+            if (remaining <= 10) timerEl.classList.add('urgent');
+            if (remaining <= 0) clearInterval(timerInterval);
+        }, 1000);
+    }
+    
+    function sendGuess() {
+        const guess = chatInput.value.trim();
+        if (!guess || hasGuessed || isDrawer) return;
+        
+        socket.emit('sketch-guess', { roomCode, playerName, guess });
+        chatInput.value = '';
+    }
     
     chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && chatInput.value.trim()) {
-            const guess = chatInput.value.trim();
-            socket.emit('sketch-guess', { roomCode, guess });
-            chatInput.value = '';
-        }
+        if (e.key === 'Enter') sendGuess();
     });
     
     function addChatMessage(text, type = 'normal', sender = null) {
         const msg = document.createElement('div');
         msg.className = `chat-msg ${type}`;
+        
         if (sender) {
-            msg.innerHTML = `<span class="sender">${escapeHtml(sender)}:</span>${escapeHtml(text)}`;
+            const senderData = playersData[sender] || {};
+            const premiumClass = senderData.isPremium ? 'premium' : '';
+            msg.innerHTML = `<span class="sender ${premiumClass}">${escapeHtml(sender)}:</span> ${escapeHtml(text)}`;
         } else {
             msg.textContent = text;
         }
+        
         chatMessages.appendChild(msg);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Update mobile chat and badge
+        if (isFullscreen) {
+            unreadMessages++;
+            document.getElementById('chat-badge').textContent = unreadMessages > 9 ? '9+' : unreadMessages;
+        }
+        syncMobileChat();
+    }
+    
+    function renderLeaderboard(players, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = players.slice(0, 5).map((p, i) => {
+            const isPremium = playersData[p.name]?.isPremium || p.isPremium || false;
+            const premiumClass = isPremium ? 'premium' : '';
+            return `
+                <div class="lb-row">
+                    <span class="lb-rank">#${i + 1}</span>
+                    <span class="lb-name ${premiumClass}">${escapeHtml(p.name)}</span>
+                    <span class="lb-score">${p.score || 0}</span>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function leaveGame() {
+        window.location.href = '/squad-games.html';
+    }
+    
+    function playAgain() {
+        window.location.href = `/lobby.html?game=sketch-guess`;
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     // ==================== SOCKET EVENTS ====================
@@ -1234,7 +1828,8 @@
             playersData[p.name] = {
                 isPremium: p.isPremium || false,
                 cosmetics: p.cosmetics || {},
-                score: p.score || 0
+                score: p.score || 0,
+                hasGuessed: false
             };
         });
         updatePlayersList(players);
@@ -1248,7 +1843,8 @@
             playersData[p.name] = {
                 isPremium: p.isPremium || false,
                 cosmetics: p.cosmetics || {},
-                score: p.score || 0
+                score: p.score || 0,
+                hasGuessed: playersData[p.name]?.hasGuessed || false
             };
         });
         updatePlayersList(players);
@@ -1257,6 +1853,7 @@
     
     socket.on('player-left', (data) => {
         addChatMessage(`${data.playerName} left`, 'system');
+        delete playersData[data.playerName];
     });
     
     // Drawing events
@@ -1282,7 +1879,7 @@
     // Round events
     socket.on('sketch-choose-word', (data) => {
         isDrawer = true;
-        hasGuessed = true; // Drawer can't guess
+        hasGuessed = true;
         showWordSelection(data.words);
         setDrawerMode(true);
     });
@@ -1291,8 +1888,21 @@
         document.getElementById('word-modal').classList.add('hidden');
         document.getElementById('current-round').textContent = data.round;
         document.getElementById('total-rounds').textContent = data.totalRounds;
-        document.getElementById('drawer-name').textContent = data.drawerName;
         
+        currentDrawer = data.drawerName;
+        const drawerEl = document.getElementById('drawer-name');
+        drawerEl.textContent = data.drawerName;
+        
+        // Apply premium style to drawer name
+        const drawerData = playersData[data.drawerName] || {};
+        drawerEl.className = 'name' + (drawerData.isPremium ? ' premium' : '');
+        
+        // Reset all hasGuessed states
+        Object.keys(playersData).forEach(name => {
+            playersData[name].hasGuessed = false;
+        });
+        
+        // Clear canvas for everyone
         clearCanvas();
         drawHistory = [];
         
@@ -1310,13 +1920,27 @@
             document.getElementById('word-hint').textContent = data.hint;
             setDrawerMode(false);
             hideOverlay();
+            
+            // Request current canvas state from server
+            socket.emit('sketch-request-canvas', { roomCode });
         }
         
         chatInput.disabled = isDrawer;
         chatInput.placeholder = isDrawer ? "You're drawing!" : "Type your guess...";
+        document.getElementById('mobile-chat-input').disabled = isDrawer;
+        document.getElementById('mobile-chat-input').placeholder = isDrawer ? "You're drawing!" : "Type your guess...";
         
         startTimer(data.timeLimit || 60);
         addChatMessage(`${data.drawerName} is drawing!`, 'system');
+        
+        // Update player list with new drawer
+        const players = Object.keys(playersData).map(name => ({
+            name,
+            score: playersData[name]?.score || 0,
+            isPremium: playersData[name]?.isPremium,
+            hasGuessed: false
+        }));
+        updatePlayersList(players);
     });
     
     socket.on('sketch-hint-update', (data) => {
@@ -1331,9 +1955,16 @@
                 hasGuessed = true;
                 chatInput.disabled = true;
                 chatInput.placeholder = "You guessed it! 🎉";
+                document.getElementById('mobile-chat-input').disabled = true;
+                document.getElementById('mobile-chat-input').placeholder = "You guessed it! 🎉";
             }
             addChatMessage(`${data.playerName} guessed it! +${data.points}`, 'correct');
             updatePlayerGuessed(data.playerName);
+            
+            // Update score
+            if (playersData[data.playerName]) {
+                playersData[data.playerName].score = (playersData[data.playerName].score || 0) + data.points;
+            }
         } else if (data.close) {
             addChatMessage(`${data.playerName} is close!`, 'close');
         } else {
@@ -1354,15 +1985,14 @@
             });
         }
         
-        updatePlayersList(data.players || Object.keys(playersData).map(name => ({
+        const players = Object.keys(playersData).map(name => ({
             name,
             score: playersData[name]?.score || 0,
-            isPremium: playersData[name]?.isPremium,
-            cosmetics: playersData[name]?.cosmetics
-        })));
+            isPremium: playersData[name]?.isPremium
+        }));
+        updatePlayersList(players);
         
         addChatMessage(`Round over! The word was: ${data.word}`, 'system');
-        
         showOverlay('⏰', 'Time\'s Up!', `The word was: ${data.word}`);
     });
     
@@ -1377,7 +2007,12 @@
         document.getElementById('gameover-overlay').classList.remove('hidden');
     });
     
-    // ==================== UI FUNCTIONS ====================
+    socket.on('error', (data) => {
+        console.error('Socket error:', data.message);
+        addChatMessage('Connection error: ' + data.message, 'system');
+    });
+    
+    // ==================== COUNTDOWN ====================
     function startCountdown() {
         let count = 3;
         const overlay = document.getElementById('countdown-overlay');
@@ -1400,215 +2035,11 @@
                     socket.emit('sketch-start-game', { roomCode });
                 }
             }
-        }, 800);
-    }
-    
-    function showWordSelection(words) {
-        const modal = document.getElementById('word-modal');
-        const options = document.getElementById('word-options');
-        
-        options.innerHTML = words.map(word => 
-            `<button class="word-option" onclick="selectWord('${word}')">${word.toUpperCase()}</button>`
-        ).join('');
-        
-        modal.classList.remove('hidden');
-    }
-    
-    function selectWord(word) {
-        document.getElementById('word-modal').classList.add('hidden');
-        socket.emit('sketch-word-selected', { roomCode, word });
-    }
-    
-    function setDrawerMode(enabled) {
-        const toolsBar = document.getElementById('tools-bar');
-        toolsBar.style.opacity = enabled ? '1' : '0.4';
-        toolsBar.style.pointerEvents = enabled ? 'auto' : 'none';
-        canvas.style.cursor = enabled ? 'crosshair' : 'default';
-    }
-    
-    function showOverlay(icon, title, subtitle) {
-        const overlay = document.getElementById('canvas-overlay');
-        document.getElementById('overlay-icon').textContent = icon;
-        document.getElementById('overlay-title').textContent = title;
-        document.getElementById('overlay-subtitle').textContent = subtitle;
-        overlay.classList.remove('hidden');
-    }
-    
-    function hideOverlay() {
-        document.getElementById('canvas-overlay').classList.add('hidden');
-    }
-    
-    function startTimer(seconds) {
-        clearInterval(timerInterval);
-        let timeLeft = seconds;
-        const timerEl = document.getElementById('timer');
-        
-        timerEl.textContent = timeLeft;
-        timerEl.classList.remove('urgent');
-        
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            timerEl.textContent = timeLeft;
-            
-            if (timeLeft <= 10) timerEl.classList.add('urgent');
-            
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-            }
         }, 1000);
     }
     
-    function updatePlayersList(players) {
-        const list = document.getElementById('players-list');
-        const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
-        
-        list.innerHTML = sorted.map((p, i) => {
-            const data = playersData[p.name] || {};
-            const isDrawing = document.getElementById('drawer-name').textContent === p.name;
-            const guessed = p.guessed || false;
-            
-            const nameHtml = window.TGCOCosmetics ? 
-                window.TGCOCosmetics.renderInlineName({
-                    name: p.name,
-                    cosmetics: data.cosmetics || p.cosmetics || {},
-                    isPremium: data.isPremium || p.isPremium || false
-                }) : escapeHtml(p.name);
-            
-            return `
-                <div class="player-item ${isDrawing ? 'drawing' : ''} ${guessed ? 'guessed' : ''}">
-                    <span class="player-rank">${i + 1}</span>
-                    <span class="player-status">${isDrawing ? '✏️' : guessed ? '✅' : ''}</span>
-                    <span class="player-name">${nameHtml}</span>
-                    <span class="player-score">${p.score || 0}</span>
-                </div>
-            `;
-        }).join('');
-    }
-    
-    function updatePlayerGuessed(name) {
-        const items = document.querySelectorAll('.player-item');
-        items.forEach(item => {
-            if (item.querySelector('.player-name')?.textContent?.includes(name)) {
-                item.classList.add('guessed');
-                const status = item.querySelector('.player-status');
-                if (status && !status.textContent.includes('✏️')) status.textContent = '✅';
-            }
-        });
-    }
-    
-    function renderLeaderboard(leaderboard, elementId) {
-        const list = document.getElementById(elementId);
-        if (!list || !leaderboard) return;
-        
-        list.innerHTML = leaderboard.slice(0, 10).map((player, i) => {
-            return window.TGCOCosmetics.renderLeaderboardItem({
-                name: player.name || player.playerName,
-                score: player.score || player.points || 0,
-                rank: i + 1,
-                cosmetics: player.cosmetics || playersData[player.name]?.cosmetics || {},
-                isPremium: player.isPremium || playersData[player.name]?.isPremium || false,
-                isMe: (player.name || player.playerName) === playerName
-            });
-        }).join('');
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    // Play Again
-    document.getElementById('play-again-btn').addEventListener('click', () => {
-        if (isHost) {
-            socket.emit('host-return-lobby', { roomCode });
-        } else {
-            window.location.href = `/waiting-room.html?room=${roomCode}`;
-        }
-    });
-    
-    socket.on('force-return-lobby', () => {
-        window.location.href = `/waiting-room.html?room=${roomCode}`;
-    });
-    
-    // ==================== AUTH ====================
-    const authSkeleton = document.getElementById('auth-skeleton');
-    const loggedOutNav = document.querySelector('.nav-right-logged-out');
-    const loggedInNav = document.querySelector('.nav-right-logged-in');
-    const headerUsernameLabel = document.getElementById('header-username-label');
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userMenu = document.getElementById('user-menu');
-    const userMenuSignOut = document.getElementById('user-menu-signout');
-
-    (function primeHeaderFromCache() {
-        try {
-            const cachedLabel = localStorage.getItem('tgco_header_label');
-            if (cachedLabel) {
-                headerUsernameLabel.textContent = cachedLabel;
-                if (authSkeleton) authSkeleton.style.display = 'none';
-                if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
-            } else {
-                if (authSkeleton) authSkeleton.style.display = 'none';
-                if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-            }
-        } catch (e) {
-            if (authSkeleton) authSkeleton.style.display = 'none';
-            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-        }
-    })();
-
-    function updateAuthUI(user) {
-        if (authSkeleton) authSkeleton.style.display = 'none';
-        if (user) {
-            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
-            if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
-        } else {
-            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-            if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
-        }
-    }
-
-    async function loadSessionAndProfile() {
-        const { data, error } = await supabaseClient.auth.getSession();
-        if (error) { updateAuthUI(null); return; }
-        const user = data?.session?.user ?? null;
-        updateAuthUI(user);
-        if (!user) return;
-        
-        try {
-            const { data: profile } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
-            if (profile) {
-                const name = profile.display_name || profile.gamer_tag || user.email?.split('@')[0] || 'Player';
-                headerUsernameLabel.textContent = name.length > 16 ? name.slice(0, 15) + '…' : name;
-                localStorage.setItem('tgco_header_label', headerUsernameLabel.textContent);
-            }
-        } catch (e) {}
-    }
-
-    loadSessionAndProfile();
-    supabaseClient.auth.onAuthStateChange((_, session) => { 
-        updateAuthUI(session?.user ?? null); 
-        if (session?.user) loadSessionAndProfile(); 
-    });
-
-    let userMenuOpen = false;
-    function setUserMenuOpen(open) {
-        userMenuOpen = open;
-        userMenu?.classList.toggle('open', open);
-        userMenuButton?.setAttribute('aria-expanded', open);
-    }
-    
-    userMenuButton?.addEventListener('click', (e) => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); });
-    document.addEventListener('click', () => { if (userMenuOpen) setUserMenuOpen(false); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setUserMenuOpen(false); });
-    
-    userMenuSignOut?.addEventListener('click', async (e) => {
-        e.preventDefault();
-        localStorage.removeItem('tgco_header_label');
-        await supabaseClient.auth.signOut();
-        window.location.href = '/';
-    });
+    // No beforeunload event - this prevents the annoying browser prompt
 </script>
+
 </body>
 </html>
