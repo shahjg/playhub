@@ -444,37 +444,69 @@ const betOrBluffQuestions = [
 
 // ==================== SKETCH & GUESS WORD BANK ====================
 const sketchWords = {
-    easy: [
-        "cat", "dog", "house", "tree", "sun", "moon", "car", "fish", "bird", "flower",
-        "ball", "book", "chair", "table", "phone", "clock", "shoe", "hat", "cup", "key",
-        "apple", "banana", "pizza", "cake", "ice cream", "cookie", "bread", "egg", "cheese", "milk",
-        "star", "heart", "cloud", "rain", "snow", "fire", "water", "mountain", "beach", "island",
-        "baby", "king", "queen", "robot", "ghost", "angel", "witch", "pirate", "ninja", "cowboy",
-        "bed", "door", "window", "lamp", "couch", "tv", "guitar", "drum", "piano", "bottle",
-        "pencil", "paper", "scissors", "hammer", "knife", "fork", "spoon", "plate", "bowl", "pot"
+    animals: [
+        "cat", "dog", "elephant", "giraffe", "lion", "tiger", "bear", "monkey", "penguin", "dolphin",
+        "shark", "whale", "octopus", "jellyfish", "crab", "lobster", "turtle", "snake", "lizard", "frog",
+        "butterfly", "bee", "spider", "ant", "snail", "bird", "eagle", "owl", "parrot", "flamingo",
+        "horse", "cow", "pig", "sheep", "goat", "chicken", "duck", "rabbit", "mouse", "squirrel",
+        "wolf", "fox", "deer", "moose", "kangaroo", "koala", "panda", "gorilla", "zebra", "hippo",
+        "crocodile", "dinosaur", "dragon", "unicorn", "phoenix", "bat", "raccoon", "skunk", "otter", "seal"
     ],
-    medium: [
-        "airplane", "helicopter", "submarine", "rocket", "bicycle", "motorcycle", "ambulance", "firetruck",
-        "elephant", "giraffe", "penguin", "dolphin", "butterfly", "dinosaur", "dragon", "unicorn",
-        "hamburger", "spaghetti", "popcorn", "pancakes", "sandwich", "hotdog", "donut", "watermelon",
-        "rainbow", "volcano", "tornado", "earthquake", "lightning", "sunset", "campfire", "fireworks",
-        "skateboard", "surfboard", "snowboard", "trampoline", "rollercoaster", "ferris wheel",
-        "hospital", "airport", "lighthouse", "pyramid", "castle", "igloo", "tent", "treehouse",
-        "magician", "astronaut", "firefighter", "dentist", "chef", "teacher", "police", "scientist",
-        "birthday", "wedding", "christmas", "halloween", "thanksgiving", "vacation", "concert", "parade",
-        "mermaid", "werewolf", "vampire", "zombie", "superhero", "villain", "princess", "knight",
-        "basketball", "football", "baseball", "soccer", "tennis", "golf", "bowling", "boxing"
+    food: [
+        "pizza", "hamburger", "hotdog", "taco", "burrito", "sushi", "ramen", "pasta", "spaghetti", "lasagna",
+        "steak", "chicken", "bacon", "egg", "cheese", "bread", "sandwich", "toast", "pancakes", "waffle",
+        "donut", "cake", "pie", "cookie", "ice cream", "chocolate", "candy", "popcorn", "chips", "fries",
+        "apple", "banana", "orange", "grape", "strawberry", "watermelon", "pineapple", "mango", "lemon", "cherry",
+        "carrot", "broccoli", "corn", "potato", "tomato", "onion", "mushroom", "pepper", "salad", "soup",
+        "coffee", "tea", "milk", "juice", "soda", "beer", "wine", "smoothie", "milkshake", "cocktail"
     ],
-    hard: [
-        "imagination", "confusion", "jealousy", "nostalgia", "awkward", "sarcasm", "procrastination",
-        "photosynthesis", "democracy", "evolution", "gravity", "electricity", "internet", "cryptocurrency",
-        "social media", "video call", "screenshot", "password", "download", "bluetooth", "wifi",
-        "plot twist", "cliffhanger", "flashback", "character development", "spoiler alert",
-        "monday morning", "traffic jam", "alarm clock", "deadline", "overtime", "promotion",
-        "first date", "friendzone", "ghosting", "catfish", "swipe right", "sliding into DMs",
-        "brain freeze", "food coma", "hangover", "jet lag", "FOMO", "YOLO", "no cap", "sus",
-        "netflix and chill", "binge watching", "spoiler", "trending", "viral", "influencer",
-        "black friday", "spring cleaning", "new years resolution", "bucket list", "life hack"
+    objects: [
+        "phone", "laptop", "computer", "keyboard", "mouse", "headphones", "camera", "television", "remote", "clock",
+        "chair", "table", "couch", "bed", "lamp", "mirror", "door", "window", "stairs", "elevator",
+        "car", "bus", "train", "airplane", "helicopter", "boat", "bicycle", "motorcycle", "skateboard", "scooter",
+        "book", "pencil", "pen", "scissors", "ruler", "backpack", "wallet", "key", "umbrella", "sunglasses",
+        "shoe", "hat", "shirt", "pants", "dress", "jacket", "gloves", "scarf", "belt", "watch",
+        "knife", "fork", "spoon", "plate", "cup", "bottle", "pan", "pot", "oven", "refrigerator"
+    ],
+    actions: [
+        "running", "jumping", "swimming", "dancing", "singing", "sleeping", "eating", "drinking", "cooking", "reading",
+        "writing", "drawing", "painting", "playing", "fighting", "crying", "laughing", "screaming", "whispering", "thinking",
+        "driving", "flying", "climbing", "falling", "sliding", "rolling", "spinning", "bouncing", "throwing", "catching",
+        "kissing", "hugging", "waving", "pointing", "clapping", "sneezing", "coughing", "yawning", "stretching", "flexing",
+        "surfing", "skiing", "skating", "bowling", "fishing", "hunting", "camping", "hiking", "yoga", "meditation",
+        "texting", "selfie", "twerking", "dabbing", "flossing", "moonwalk", "breakdancing", "karaoke", "vlogging", "gaming"
+    ],
+    movies: [
+        "Star Wars", "Harry Potter", "Spider-Man", "Batman", "Superman", "Iron Man", "Hulk", "Thor", "Avengers", "X-Men",
+        "Frozen", "Lion King", "Finding Nemo", "Toy Story", "Shrek", "Minions", "Moana", "Coco", "Up", "WALL-E",
+        "Titanic", "Jurassic Park", "Jaws", "King Kong", "Godzilla", "Transformers", "Pirates of the Caribbean", "Indiana Jones", "James Bond", "Mission Impossible",
+        "The Matrix", "Terminator", "Alien", "Predator", "Ghostbusters", "Back to the Future", "E.T.", "Avatar", "Inception", "Interstellar",
+        "Squid Game", "Stranger Things", "Game of Thrones", "Breaking Bad", "The Office", "Friends", "Spongebob", "Pokemon", "Mario", "Minecraft",
+        "Fortnite", "Among Us", "Pac-Man", "Tetris", "Angry Birds", "Candy Crush", "Flappy Bird", "Temple Run", "Subway Surfers", "Roblox"
+    ],
+    places: [
+        "beach", "mountain", "forest", "desert", "island", "volcano", "waterfall", "cave", "river", "lake",
+        "house", "apartment", "castle", "palace", "pyramid", "church", "temple", "mosque", "statue", "tower",
+        "hospital", "school", "library", "museum", "zoo", "aquarium", "park", "playground", "stadium", "arena",
+        "restaurant", "cafe", "bar", "club", "mall", "supermarket", "gym", "spa", "hotel", "airport",
+        "Paris", "London", "New York", "Tokyo", "Dubai", "Hollywood", "Las Vegas", "Hawaii", "Disneyland", "Times Square",
+        "space", "moon", "Mars", "heaven", "hell", "underwater", "jungle", "arctic", "haunted house", "amusement park"
+    ],
+    people: [
+        "baby", "kid", "teenager", "adult", "grandma", "grandpa", "mom", "dad", "brother", "sister",
+        "doctor", "nurse", "teacher", "chef", "police", "firefighter", "astronaut", "pilot", "soldier", "scientist",
+        "king", "queen", "prince", "princess", "knight", "wizard", "witch", "vampire", "zombie", "ghost",
+        "pirate", "ninja", "cowboy", "samurai", "gladiator", "superhero", "villain", "angel", "devil", "mermaid",
+        "clown", "magician", "mime", "DJ", "rapper", "rockstar", "influencer", "youtuber", "gamer", "streamer",
+        "Santa Claus", "Easter Bunny", "Tooth Fairy", "Cupid", "Grim Reaper", "Bigfoot", "alien", "robot", "caveman", "mummy"
+    ],
+    random: [
+        "rainbow", "lightning", "tornado", "earthquake", "tsunami", "eclipse", "northern lights", "shooting star", "black hole", "galaxy",
+        "heart", "brain", "skeleton", "muscle", "blood", "DNA", "cell", "virus", "bacteria", "medicine",
+        "money", "diamond", "gold", "treasure", "lottery", "casino", "poker", "dice", "magic", "luck",
+        "love", "hate", "fear", "happiness", "sadness", "anger", "surprise", "disgust", "jealousy", "pride",
+        "time", "gravity", "electricity", "wifi", "bluetooth", "battery", "charging", "loading", "buffering", "lag",
+        "Monday", "Friday", "weekend", "vacation", "birthday", "wedding", "funeral", "graduation", "retirement", "apocalypse"
     ]
 };
 
@@ -568,15 +600,43 @@ function initBetOrBluffGame(room, startingPoints = 500) {
     room.players.forEach(p => { room.gameData.chips[p.name] = parseInt(startingPoints) || 500; });
 }
 
-function initSketchGuessGame(room, difficulty = 'medium') {
-    // Get words based on difficulty, mix in some easy/hard for variety
-    let wordPool = [...sketchWords[difficulty] || sketchWords.medium];
-    if (difficulty === 'medium') {
-        wordPool = [...wordPool, ...sketchWords.easy.slice(0, 20), ...sketchWords.hard.slice(0, 15)];
-    } else if (difficulty === 'easy') {
-        wordPool = [...wordPool, ...sketchWords.medium.slice(0, 15)];
-    } else if (difficulty === 'hard') {
-        wordPool = [...wordPool, ...sketchWords.medium.slice(0, 20)];
+function initSketchGuessGame(room, category = 'random') {
+    let wordPool = [];
+    
+    // Check if custom words were provided (format: "custom:word1,word2,word3")
+    if (category && category.startsWith('custom:')) {
+        const customWordsStr = category.substring(7); // Remove "custom:" prefix
+        wordPool = customWordsStr.split(',')
+            .map(w => w.trim())
+            .filter(w => w.length > 0 && w.length <= 30); // Filter empty and too-long words
+        
+        // Need at least 10 words for a good game
+        if (wordPool.length < 10) {
+            // Pad with random words if not enough custom words
+            const randomWords = [...sketchWords.random].sort(() => Math.random() - 0.5);
+            while (wordPool.length < 15 && randomWords.length > 0) {
+                wordPool.push(randomWords.pop());
+            }
+        }
+        console.log('[SKETCH] Using custom words:', wordPool.length, 'words');
+    } else {
+        // Use themed category
+        if (category === 'random' || category === 'mixed' || !sketchWords[category]) {
+            // Mix all categories for random
+            Object.values(sketchWords).forEach(words => {
+                wordPool = [...wordPool, ...words];
+            });
+        } else {
+            // Use specific category + add some random for variety
+            wordPool = [...sketchWords[category]];
+            // Add 15 random words from other categories for variety
+            const otherCategories = Object.keys(sketchWords).filter(k => k !== category);
+            otherCategories.forEach(cat => {
+                const shuffled = [...sketchWords[cat]].sort(() => Math.random() - 0.5);
+                wordPool.push(...shuffled.slice(0, 5));
+            });
+        }
+        console.log('[SKETCH] Using category:', category, 'with', wordPool.length, 'words');
     }
     
     // Shuffle word pool
@@ -604,7 +664,7 @@ function initSketchGuessGame(room, difficulty = 'medium') {
         hintInterval: null,
         turnTimeout: null,
         wordChoiceTimeout: null,
-        difficulty: difficulty
+        category: category
     };
     
     room.players.forEach(p => { room.gameData.scores[p.name] = 0; });
@@ -950,6 +1010,7 @@ function startSketchTurn(room, io) {
     gd.guessedPlayers = [];
     gd.hintLevel = 0;
     gd.phase = 'choosing';
+    gd.canvasData = null; // Clear canvas data for new turn
     
     // Pick 3 random words for drawer to choose from
     const wordChoices = getWordChoices(room, 3);
@@ -1520,7 +1581,21 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         if (!room?.gameData || room.gameData.phase !== 'drawing') return;
         if (socket.id !== room.gameData.currentDrawer?.id) return;
         
+        // Store canvas data on server for late joiners / sync
+        room.gameData.canvasData = canvasData;
+        
         socket.to(roomCode).emit('sketch-canvas', { canvasData });
+    });
+    
+    // Handle canvas sync requests from clients
+    socket.on('sketch-request-canvas', ({roomCode}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData) return;
+        
+        // Send stored canvas data to the requesting client
+        if (room.gameData.canvasData) {
+            socket.emit('sketch-canvas', { canvasData: room.gameData.canvasData });
+        }
     });
     
     socket.on('sketch-guess', ({roomCode, guess}) => {
