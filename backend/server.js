@@ -1910,6 +1910,8 @@ if (room.gameType === 'imposter') {
   partyGames.initNeverEverPartyGame(room, category);
 } else if (room.gameType === 'bet-or-bluff') {
   partyGames.initBetOrBluffGame(room, category);
+} else if (room.gameType === 'sketch-guess') {
+partyGames.initSketchGuessGame(room, category || 'medium');
 }
 room.gameState = 'playing';
 // Send role assignments to each player
