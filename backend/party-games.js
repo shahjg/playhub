@@ -1585,7 +1585,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         startSketchTurn(room, io);
     });
     
-    socket.on('sketch-word-selected', ({roomCode, word}) => {
+    socket.on('sketch-word-chosen', ({roomCode, word}) => {
         const room = rooms.get(roomCode);
         if (!room?.gameData || room.gameData.phase !== 'choosing') return;
         
