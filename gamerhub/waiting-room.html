@@ -60,7 +60,8 @@
         .theme-hot-takes-party { --accent: #ef4444; --accent-glow: rgba(239, 68, 68, 0.4); --accent-soft: rgba(239, 68, 68, 0.12); --border-accent: rgba(239, 68, 68, 0.3); }
         .theme-never-ever-party { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
         .theme-bet-or-bluff { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.4); --accent-soft: rgba(16, 185, 129, 0.12); --border-accent: rgba(16, 185, 129, 0.3); }
-        .theme-sketch-guess { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
+       .theme-sketch-guess { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
+        .custom-words-hint { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 6px; }
         /* END OF NEW THEME CSS */
 
         /* ========== PARTY GAME PLAYER GRID ========== */
@@ -1210,11 +1211,12 @@
         
         <div class="setting-group" id="category-group">
             <label class="setting-label" id="category-label">Location Pack</label>
-            <select class="setting-select" id="category-select" onchange="updateLocationPreview()"></select>
-            <div class="location-preview" id="location-preview" style="display: none;">
-                <div class="location-preview-title">Included Locations</div>
-                <div class="location-tags" id="location-tags"></div>
-            </div>
+            <select class="setting-select" id="category-select" onchange="updateLocationPreview(); updateCustomWordsVisibility();"></select>
+            <div class="custom-words-group" id="custom-words-group" style="display: none;">
+    <label class="setting-label" style="margin-top: 12px;">Your Custom Words</label>
+    <textarea class="setting-select" id="custom-words" placeholder="word1, word2, word3, word4..." rows="3" style="resize: vertical; min-height: 70px; font-family: inherit;"></textarea>
+    <div class="custom-words-hint">Enter at least 10 words separated by commas</div>
+</div>
         </div>
 
         <div class="setting-group" id="two-spies-group" style="display: none;">
@@ -1922,7 +1924,8 @@ function updatePlayersList(players) {
         const select = document.getElementById('category-select');
         select.innerHTML = gameConfig.categories.map(c => `<option value="${c.value}">${c.text}</option>`).join('');
 
-        document.getElementById('two-spies-group').style.display = gameConfig.showTwoSpies ? 'block' : 'none';
+       document.getElementById('two-spies-group').style.display = gameConfig.showTwoSpies ? 'block' : 'none';
+        document.getElementById('custom-words-group').style.display = 'none';
         if (gameConfig.showLocationPreview) updateLocationPreview();
         else document.getElementById('location-preview').style.display = 'none';
     }
@@ -1973,12 +1976,23 @@ function updatePlayersList(players) {
         showConfirm('Kick Player', `Remove ${name}?`, () => socket.emit('kick-player', { roomCode, playerId }));
     }
 
-  function startGame() {
-    const category = document.getElementById('category-select').value;
+function startGame() {
+    let category = document.getElementById('category-select').value;
     const twoSpies = document.getElementById('two-spies')?.checked || false;
-    // Save category for the game page to read
+    if (category === 'custom') {
+        const customWords = document.getElementById('custom-words')?.value || '';
+        category = 'custom:' + customWords;
+    }
     localStorage.setItem('tempCategory', category);
     showConfirm('Start Game', 'Everyone ready?', () => socket.emit('start-game', { roomCode, category, twoSpies }));
+}
+
+function updateCustomWordsVisibility() {
+    const category = document.getElementById('category-select').value;
+    const customGroup = document.getElementById('custom-words-group');
+    if (customGroup && gameConfig.showCustomWords) {
+        customGroup.style.display = category === 'custom' ? 'block' : 'none';
+    }
 }
 
     function showHowToPlay() { document.getElementById('how-to-play-modal').classList.add('visible'); }
