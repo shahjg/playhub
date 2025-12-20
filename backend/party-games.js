@@ -1708,6 +1708,352 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         
         endSketchTurn(room, io);
     });
+    
+    // ==================== FOOLS GOLD HANDLERS ====================
+    socket.on('fools-start-game', ({roomCode, category}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData) return;
+        
+        console.log('[FOOLS GOLD] Starting game for room:', roomCode, 'category:', category);
+        
+        // Initialize with category if provided
+        if (category && category !== room.gameData.category) {
+            const questions = getFoolsGoldQuestions(category);
+            room.gameData.questions = questions.sort(() => Math.random() - 0.5);
+            room.gameData.category = category;
+        }
+        
+        startFoolsGoldRound(room, io);
+    });
+    
+    socket.on('fools-submit-answer', ({roomCode, playerName, answer}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'submit') return;
+        
+        const gd = room.gameData;
+        
+        // Don't allow duplicate submissions
+        if (gd.submissions.find(s => s.playerName === playerName)) return;
+        
+        gd.submissions.push({
+            id: 'lie-' + playerName,
+            playerName,
+            text: answer.trim().substring(0, 50),
+            isTruth: false
+        });
+        
+        console.log('[FOOLS GOLD] Answer submitted by', playerName);
+        
+        // Notify all players
+        const submitted = gd.submissions.map(s => s.playerName);
+        io.to(roomCode).emit('fools-player-submitted', { submitted });
+        
+        // Check if everyone submitted
+        if (gd.submissions.length >= room.players.length) {
+            clearTimeout(gd.submitTimeout);
+            startFoolsGoldVoting(room, io);
+        }
+    });
+    
+    socket.on('fools-submit-vote', ({roomCode, playerName, answerId}) => {
+        const room = rooms.get(roomCode);
+        if (!room?.gameData || room.gameData.phase !== 'voting') return;
+        
+        const gd = room.gameData;
+        
+        // Don't allow duplicate votes
+        if (gd.votes[playerName]) return;
+        
+        // Can't vote for own answer
+        const answer = gd.allAnswers.find(a => a.id === answerId);
+        if (answer && answer.playerName === playerName) return;
+        
+        gd.votes[playerName] = answerId;
+        
+        console.log('[FOOLS GOLD] Vote cast by', playerName, 'for', answerId);
+        
+        // Check if everyone voted
+        const voteCount = Object.keys(gd.votes).length;
+        const expectedVotes = room.players.length;
+        
+        if (voteCount >= expectedVotes) {
+            clearTimeout(gd.voteTimeout);
+            showFoolsGoldResults(room, io);
+        }
+    });
+}
+
+// ==================== FOOLS GOLD QUESTION BANKS ====================
+const foolsGoldQuestions = {
+    brainrot: [
+        { q: "The 'Skibidi Toilet' meme originated from a video made in _____.", a: "Source Filmmaker" },
+        { q: "The phrase 'It's giving _____' became popular on TikTok in 2022.", a: "what it's supposed to give" },
+        { q: "The 'Grimace Shake' trend started because of a McDonald's promotion for Grimace's _____.", a: "birthday" },
+        { q: "The 'NPC streaming' trend involves streamers acting like _____ in video games.", a: "non-player characters" },
+        { q: "'Rizz' was added to the Oxford Dictionary and means _____.", a: "romantic charm or appeal" },
+        { q: "The 'Mewing' trend claims to reshape your face by positioning your _____.", a: "tongue on the roof of your mouth" },
+        { q: "'Ohio' became a meme because people joke that _____ happens there.", a: "only weird things" },
+        { q: "The song 'A Bar Song (Tipsy)' by Shaboozey has been stuck on the charts for _____ weeks.", a: "over 20" },
+        { q: "'Fanum Tax' refers to when streamer Fanum would _____ from other streamers.", a: "steal food" },
+        { q: "The 'Hawk Tuah' girl became famous from a _____ video.", a: "street interview" },
+    ],
+    memes: [
+        { q: "The 'Distracted Boyfriend' meme stock photo was taken in _____.", a: "Spain" },
+        { q: "The Doge meme features a _____ breed of dog named Kabosu.", a: "Shiba Inu" },
+        { q: "Grumpy Cat's real name was _____.", a: "Tardar Sauce" },
+        { q: "The 'This is Fine' dog meme was created by artist _____.", a: "KC Green" },
+        { q: "Rick Rolling uses the song 'Never Gonna Give You Up' by _____.", a: "Rick Astley" },
+        { q: "The 'Woman Yelling at Cat' meme combines Real Housewives with a cat named _____.", a: "Smudge" },
+        { q: "The 'Surprised Pikachu' meme came from episode _____ of the Pokemon anime.", a: "1" },
+        { q: "The 'Is This a Pigeon?' meme is from the anime _____.", a: "The Brave Fighter of Sun Fighbird" },
+        { q: "Bernie Sanders' mittens at the inauguration were made from _____.", a: "recycled sweaters" },
+        { q: "The 'Coffin Dance' meme originated from _____.", a: "Ghana" },
+    ],
+    history: [
+        { q: "Cleopatra lived closer in time to the Moon landing than to the building of the _____.", a: "Great Pyramid of Giza" },
+        { q: "In 1932, Australia lost a war against _____.", a: "emus" },
+        { q: "Napoleon was once attacked by a horde of _____.", a: "rabbits" },
+        { q: "Ancient Romans used crushed _____ as toothpaste.", a: "mouse brains" },
+        { q: "In medieval times, animals could be put on trial and the accused included _____.", a: "pigs" },
+        { q: "The shortest war in history lasted _____ minutes.", a: "38" },
+        { q: "Ketchup was sold as _____ in the 1830s.", a: "medicine" },
+        { q: "The Great Fire of London destroyed 13,200 houses but only _____ people officially died.", a: "6" },
+        { q: "Vikings used the skulls of their enemies as _____.", a: "drinking cups" },
+        { q: "Ancient Egyptians used _____ as a form of currency before coins.", a: "bread and beer" },
+    ],
+    games: [
+        { q: "Mario's original name was _____.", a: "Jumpman" },
+        { q: "The iconic Minecraft 'oof' death sound was licensed from _____.", a: "Roblox" },
+        { q: "Pac-Man was originally going to be called _____.", a: "Puck-Man" },
+        { q: "The first video game Easter egg was hidden in _____.", a: "Adventure for Atari" },
+        { q: "Sonic the Hedgehog's original design included him being in a band with a _____ girlfriend.", a: "human" },
+        { q: "The 'Konami Code' first appeared in _____.", a: "Gradius" },
+        { q: "Lara Croft's original design had her as a _____.", a: "man" },
+        { q: "The longest game of Civilization ever played lasted _____.", a: "10 years" },
+        { q: "GTA San Andreas has a hidden _____ mini-game that caused an AO rating.", a: "Hot Coffee" },
+        { q: "The default Minecraft skin Steve has _____ pixels of height.", a: "32" },
+    ],
+    popculture: [
+        { q: "Taylor Swift's 'Eras Tour' became the first tour to gross over _____ billion dollars.", a: "1" },
+        { q: "The 'Barbenheimer' phenomenon combined Barbie with _____ releasing the same day.", a: "Oppenheimer" },
+        { q: "BTS announced their hiatus in 2022 so members could complete mandatory _____.", a: "military service" },
+        { q: "The most-liked Instagram post of all time is a picture of _____.", a: "an egg" },
+        { q: "Mr. Beast's real name is _____.", a: "Jimmy Donaldson" },
+        { q: "The 'Saltburn' bathtub scene features Jacob Elordi drinking _____.", a: "bathwater" },
+        { q: "Beyoncé's 'Renaissance' album was inspired by her late _____.", a: "Uncle Johnny" },
+        { q: "The 'Tortured Poets Department' has _____ tracks in its longest version.", a: "31" },
+        { q: "Drake's real first name is _____.", a: "Aubrey" },
+        { q: "The Kardashians originally became famous through a reality show on _____.", a: "E!" },
+    ],
+    science: [
+        { q: "Honey never spoils and has been found edible in _____ year old Egyptian tombs.", a: "3000" },
+        { q: "A day on Venus is longer than a _____ on Venus.", a: "year" },
+        { q: "Octopuses have _____ hearts.", a: "three" },
+        { q: "Bananas are naturally slightly _____.", a: "radioactive" },
+        { q: "The human body contains enough carbon to make _____ pencils.", a: "9,000" },
+        { q: "Hot water freezes faster than cold water, a phenomenon called the _____ effect.", a: "Mpemba" },
+        { q: "There are more trees on Earth than stars in the _____.", a: "Milky Way galaxy" },
+        { q: "A group of flamingos is called a _____.", a: "flamboyance" },
+        { q: "The inventor of the Pringles can is buried in _____.", a: "a Pringles can" },
+        { q: "Wombat poop is shaped like _____.", a: "cubes" },
+    ]
+};
+
+function getFoolsGoldQuestions(category) {
+    if (category === 'mixed' || !foolsGoldQuestions[category]) {
+        // Mix all categories
+        let all = [];
+        Object.values(foolsGoldQuestions).forEach(qs => {
+            all = [...all, ...qs];
+        });
+        return all;
+    }
+    return [...foolsGoldQuestions[category]];
+}
+
+function initFoolsGoldGame(room, category = 'mixed') {
+    const questions = getFoolsGoldQuestions(category);
+    
+    room.gameData = {
+        questions: questions.sort(() => Math.random() - 0.5),
+        questionIndex: 0,
+        currentQuestion: null,
+        phase: 'countdown',
+        submissions: [],
+        allAnswers: [],
+        votes: {},
+        scores: {},
+        currentRound: 0,
+        totalRounds: Math.min(8, questions.length),
+        submitTime: 30,
+        voteTime: 20,
+        category: category,
+        submitTimeout: null,
+        voteTimeout: null,
+        resultsTimeout: null
+    };
+    
+    room.players.forEach(p => { room.gameData.scores[p.name] = 0; });
+}
+
+function startFoolsGoldRound(room, io) {
+    const gd = room.gameData;
+    
+    // Clear any existing timeouts
+    if (gd.submitTimeout) clearTimeout(gd.submitTimeout);
+    if (gd.voteTimeout) clearTimeout(gd.voteTimeout);
+    if (gd.resultsTimeout) clearTimeout(gd.resultsTimeout);
+    
+    gd.currentRound++;
+    
+    if (gd.currentRound > gd.totalRounds || gd.questionIndex >= gd.questions.length) {
+        endFoolsGoldGame(room, io);
+        return;
+    }
+    
+    // Get next question
+    gd.currentQuestion = gd.questions[gd.questionIndex];
+    gd.questionIndex++;
+    gd.submissions = [];
+    gd.allAnswers = [];
+    gd.votes = {};
+    gd.phase = 'submit';
+    
+    // Create question text with blank
+    const questionText = gd.currentQuestion.q;
+    
+    io.to(room.code).emit('fools-question', {
+        round: gd.currentRound,
+        totalRounds: gd.totalRounds,
+        question: questionText,
+        category: gd.category,
+        submitTime: gd.submitTime
+    });
+    
+    console.log('[FOOLS GOLD] Round', gd.currentRound, '- Question:', questionText);
+    
+    // Auto-advance after submit time
+    gd.submitTimeout = setTimeout(() => {
+        if (gd.phase === 'submit') {
+            startFoolsGoldVoting(room, io);
+        }
+    }, gd.submitTime * 1000);
+}
+
+function startFoolsGoldVoting(room, io) {
+    const gd = room.gameData;
+    gd.phase = 'voting';
+    
+    // Add the truth
+    gd.allAnswers = [
+        {
+            id: 'truth',
+            playerName: null,
+            text: gd.currentQuestion.a,
+            isTruth: true
+        },
+        ...gd.submissions
+    ];
+    
+    // Shuffle for presentation
+    const shuffled = gd.allAnswers.sort(() => Math.random() - 0.5);
+    
+    io.to(room.code).emit('fools-voting', {
+        question: gd.currentQuestion.q,
+        answers: shuffled.map(a => ({ id: a.id, text: a.text, playerName: a.isTruth ? null : a.playerName })),
+        voteTime: gd.voteTime
+    });
+    
+    console.log('[FOOLS GOLD] Voting started with', gd.allAnswers.length, 'answers');
+    
+    // Auto-advance after vote time
+    gd.voteTimeout = setTimeout(() => {
+        if (gd.phase === 'voting') {
+            showFoolsGoldResults(room, io);
+        }
+    }, gd.voteTime * 1000);
+}
+
+function showFoolsGoldResults(room, io) {
+    const gd = room.gameData;
+    gd.phase = 'results';
+    
+    // Calculate points
+    const results = gd.allAnswers.map(answer => {
+        const voters = Object.entries(gd.votes)
+            .filter(([_, votedFor]) => votedFor === answer.id)
+            .map(([voter, _]) => voter);
+        
+        let fooledCount = 0;
+        
+        if (answer.isTruth) {
+            // Players who voted for truth get 200 points
+            voters.forEach(voter => {
+                gd.scores[voter] = (gd.scores[voter] || 0) + 200;
+            });
+        } else {
+            // Players who fooled others get 100 points per fool
+            fooledCount = voters.length;
+            if (fooledCount > 0 && answer.playerName) {
+                gd.scores[answer.playerName] = (gd.scores[answer.playerName] || 0) + (fooledCount * 100);
+            }
+        }
+        
+        return {
+            id: answer.id,
+            text: answer.text,
+            author: answer.playerName,
+            isTruth: answer.isTruth,
+            voters: voters,
+            fooledCount: fooledCount
+        };
+    });
+    
+    // Sort: truth first, then by fooled count
+    results.sort((a, b) => {
+        if (a.isTruth) return -1;
+        if (b.isTruth) return 1;
+        return b.fooledCount - a.fooledCount;
+    });
+    
+    io.to(room.code).emit('fools-results', {
+        question: gd.currentQuestion.q,
+        results: results,
+        scores: gd.scores
+    });
+    
+    console.log('[FOOLS GOLD] Results shown, scores:', gd.scores);
+    
+    // Next round after delay
+    gd.resultsTimeout = setTimeout(() => {
+        startFoolsGoldRound(room, io);
+    }, 6000);
+}
+
+function endFoolsGoldGame(room, io) {
+    const gd = room.gameData;
+    
+    // Clear timeouts
+    if (gd.submitTimeout) clearTimeout(gd.submitTimeout);
+    if (gd.voteTimeout) clearTimeout(gd.voteTimeout);
+    if (gd.resultsTimeout) clearTimeout(gd.resultsTimeout);
+    
+    gd.phase = 'gameover';
+    
+    // Build final leaderboard
+    const leaderboard = Object.entries(gd.scores)
+        .map(([name, score]) => ({
+            name,
+            score,
+            isPremium: room.players.find(p => p.name === name)?.isPremium || false
+        }))
+        .sort((a, b) => b.score - a.score);
+    
+    io.to(room.code).emit('fools-game-over', {
+        finalLeaderboard: leaderboard
+    });
+    
+    console.log('[FOOLS GOLD] Game over! Winner:', leaderboard[0]?.name);
 }
 
 module.exports = {
@@ -1717,5 +2063,6 @@ module.exports = {
     initNeverEverPartyGame,
     initBetOrBluffGame,
     initSketchGuessGame,
+    initFoolsGoldGame,
     setupPartyGameHandlers
 };
