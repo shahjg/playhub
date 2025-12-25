@@ -1414,6 +1414,7 @@ function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
   room.gameData = {
     location: selectedLocation.name,
     locationPack: locationPack,
+    allLocations: locations.map(loc => loc.name), // ✅ ADD THIS LINE
     spies: spies,
     spyNames: spyNames,
     twoSpies: twoSpies,
@@ -1919,10 +1920,12 @@ if (room.gameType === 'spyfall') {
       room.players.forEach(p => {
         const roleData = room.gameData.roleAssignments[p.name];
         if (roleData) {
-          io.to(p.id).emit('role-assigned', roleData);
+          io.to(p.id).emit('role-assigned', {
+            ...roleData,
+            allLocations: room.gameData.allLocations  // ✅ ADD THIS
+          });
         }
       });
-      
       room.gameData.phaseTransitionScheduled = true;
       setTimeout(() => {
         if (room.gameData && room.gameData.phase === 'role-reveal') {
