@@ -67,10 +67,14 @@ class SocialSystem {
         <span class="notification-dot" id="social-notification-dot"></span>
       `;
       
-      // Insert before user pill
-      const userPill = headerActions.querySelector('.user-menu-wrapper') || headerActions.querySelector('.user-pill');
-      if (userPill) {
-        headerActions.insertBefore(friendsBtn, userPill);
+      // Insert before nav-right-logged-in (which contains the user menu)
+      const navLoggedIn = headerActions.querySelector('.nav-right-logged-in');
+      const navLoggedOut = headerActions.querySelector('.nav-right-logged-out');
+      
+      if (navLoggedIn) {
+        headerActions.insertBefore(friendsBtn, navLoggedIn);
+      } else if (navLoggedOut) {
+        headerActions.insertBefore(friendsBtn, navLoggedOut);
       } else {
         headerActions.appendChild(friendsBtn);
       }
