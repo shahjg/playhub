@@ -7,6 +7,7 @@ class SocialSystem {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
     this.currentUser = null;
+    this.userProfile = null;
     this.friends = [];
     this.pendingRequests = [];
     this.sentRequests = [];
@@ -25,6 +26,9 @@ class SocialSystem {
     if (!session) return;
     
     this.currentUser = session.user;
+    
+    // Load user profile
+    await this.loadUserProfile();
     
     // Inject HTML
     this.injectHTML();
@@ -48,6 +52,28 @@ class SocialSystem {
     
     // Update notification dot
     this.updateNotificationDot();
+  }
+
+  async loadUserProfile() {
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .select('id, display_name, gamer_tag')
+        .eq('id', this.currentUser.id)
+        .single();
+      
+      if (error) throw error;
+      this.userProfile = data;
+    } catch (err) {
+      console.error('Error loading user profile:', err);
+      this.userProfile = { display_name: 'Player', id: this.currentUser.id };
+    }
+  }
+
+  generateHandle() {
+    // Create a short shareable handle from user ID
+    const shortId = this.currentUser.id.substring(0, 8).toUpperCase();
+    return shortId;
   }
 
   injectHTML() {
@@ -81,12 +107,28 @@ class SocialSystem {
     }
 
     // Add overlay and sidebar
+    const displayName = this.userProfile?.display_name || 'Player';
+    const initial = displayName[0].toUpperCase();
+    const handle = this.generateHandle();
+    
     const sidebarHTML = `
       <div class="social-overlay" id="social-overlay"></div>
       <div class="social-sidebar" id="social-sidebar">
         <div class="social-header">
           <h2>FRIENDS</h2>
           <button class="social-close" id="social-close">✕</button>
+        </div>
+        
+        <div class="social-profile-card">
+          <div class="social-profile-info">
+            <div class="social-profile-avatar">${initial}</div>
+            <div class="social-profile-name">${this.escapeHtml(displayName)}</div>
+          </div>
+          <div class="social-profile-handle">
+            <span>Add me:</span>
+            <code id="my-handle">${handle}</code>
+            <button onclick="window.socialSystem.copyHandle()" title="Copy">📋</button>
+          </div>
         </div>
         
         <div class="social-tabs">
@@ -120,10 +162,10 @@ class SocialSystem {
           <!-- Search Panel -->
           <div class="social-panel" id="panel-search">
             <div class="search-wrapper">
-              <input type="text" class="search-input" id="user-search-input" placeholder="Search by display name...">
+              <input type="text" class="search-input" id="user-search-input" placeholder="Search by name or ID...">
             </div>
             <div class="search-results" id="search-results"></div>
-            <p class="search-hint">Enter a display name to find players</p>
+            <p class="search-hint">Search by display name or paste a friend's ID</p>
           </div>
         </div>
       </div>
@@ -531,10 +573,13 @@ class SocialSystem {
     }
 
     try {
+      // Search by display name OR by ID prefix (handle)
+      const queryUpper = query.toUpperCase();
+      
       const { data, error } = await this.supabase
         .from('profiles')
         .select('id, display_name, created_at')
-        .ilike('display_name', `%${query}%`)
+        .or(`display_name.ilike.%${query}%,id.ilike.${queryUpper}%`)
         .neq('id', this.currentUser.id)
         .limit(10);
 
@@ -573,7 +618,7 @@ class SocialSystem {
             </div>
             <div class="friend-info">
               <div class="friend-name">${this.escapeHtml(user.display_name || 'Unknown')}</div>
-              <div class="friend-status">Member since ${new Date(user.created_at).toLocaleDateString()}</div>
+              <div class="friend-status">#${user.id.substring(0, 8).toUpperCase()}</div>
             </div>
             <div class="friend-actions">
               ${actionBtn}
@@ -902,6 +947,26 @@ class SocialSystem {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  copyHandle() {
+    const handle = this.generateHandle();
+    navigator.clipboard.writeText(handle).then(() => {
+      const btn = document.querySelector('.social-profile-handle button');
+      if (btn) {
+        const original = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      }
+    }).catch(() => {
+      // Fallback for older browsers
+      const input = document.createElement('input');
+      input.value = handle;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    });
   }
 }
 
