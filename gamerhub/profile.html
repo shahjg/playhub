@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Your Profile – TheGaming.co</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="Manage your TheGaming.co profile, preferences, and premium membership.">
   <meta name="robots" content="noindex,nofollow">
   
@@ -38,6 +40,11 @@
       min-height: 100vh;
     }
 
+    /* Prevent iOS zoom on input focus */
+    input, textarea, select, button {
+      font-size: 16px;
+    }
+
     h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
     a { color: inherit; text-decoration: none; }
 
@@ -49,9 +56,10 @@
       height: 60px;
       display: flex;
       align-items: center;
-      padding: 0 18px;
+      padding: 0 max(18px, env(safe-area-inset-left)) 0 max(18px, env(safe-area-inset-right));
       background: rgba(10, 10, 15, 0.88);
       backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
@@ -172,6 +180,8 @@
     .profile-page {
       min-height: 100vh;
       padding: 100px 16px 60px;
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
     }
 
     .profile-container {
@@ -221,6 +231,7 @@
       margin-bottom: 24px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .tab-button {
@@ -272,6 +283,10 @@
       gap: 6px;
     }
 
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
     .form-label {
       font-size: 0.78rem;
       font-weight: 600;
@@ -297,6 +312,12 @@
     }
 
     .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .form-hint {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 4px;
+    }
 
     .info-text {
       font-size: 0.85rem;
@@ -407,26 +428,6 @@
       font-size: 0.95rem;
     }
 
-    .locked-features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-top: 24px;
-    }
-
-    .locked-feature {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      opacity: 0.6;
-    }
-
-    .locked-icon { font-size: 2rem; margin-bottom: 8px; }
-    .locked-title { font-size: 1.1rem; letter-spacing: 1px; margin-bottom: 4px; }
-    .locked-description { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); }
-
     /* Premium Active Banner */
     .premium-active-banner {
       background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15));
@@ -458,6 +459,49 @@
     }
 
     .manage-sub-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+    /* ========== COSMETICS - LOCKED STATE ========== */
+    .cosmetics-locked-overlay {
+      position: relative;
+    }
+
+    .cosmetics-locked-overlay::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 15, 0.7);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      border-radius: 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .cosmetics-locked-overlay .lock-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 11;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 8px 30px rgba(255, 107, 157, 0.5);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cosmetics-locked-overlay .lock-badge:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+      box-shadow: 0 12px 40px rgba(255, 107, 157, 0.6);
+    }
 
     /* ========== COSMETICS - LIVE PREVIEW ========== */
     .preview-section {
@@ -738,6 +782,47 @@
       background: rgba(255, 107, 157, 0.15);
     }
 
+    /* Custom Title Input */
+    .custom-title-wrapper {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .custom-title-label {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .custom-title-input {
+      width: 100%;
+      max-width: 300px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(5, 5, 15, 0.9);
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s ease;
+    }
+
+    .custom-title-input:focus {
+      border-color: var(--pink);
+    }
+
+    .custom-title-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 6px;
+    }
+
     /* Loading */
     .loading-spinner {
       display: inline-block;
@@ -762,6 +847,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
+      padding: 20px;
     }
 
     .modal-overlay.open {
@@ -775,7 +861,7 @@
       border-radius: 20px;
       padding: 32px;
       max-width: 420px;
-      width: 90%;
+      width: 100%;
       text-align: center;
       transform: scale(0.9);
       transition: transform 0.2s ease;
@@ -843,27 +929,261 @@
       color: white;
     }
 
-    /* Footer */
+    /* ========== FOOTER - MATCHING HOMEPAGE ========== */
     footer {
       background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .footer-border {
+      height: 3px;
+      background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink));
+      background-size: 300% 100%;
+      animation: gradientSlide 6s linear infinite;
+    }
+
+    @keyframes gradientSlide {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    .footer-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 50px 20px 30px;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+      padding-bottom: max(30px, env(safe-area-inset-bottom));
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .footer-column {
       text-align: center;
-      padding: 40px 20px;
-      border-top: 2px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .footer-column h5 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .footer-column ul {
+      list-style: none;
+    }
+
+    .footer-column li {
+      margin-bottom: 10px;
+    }
+
+    .footer-column a {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-column a:hover {
+      color: white;
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 25px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .footer-copyright {
       font-size: 0.85rem;
       color: rgba(255, 255, 255, 0.4);
     }
 
-    /* Responsive */
+    /* ========== RESPONSIVE ========== */
+    
+    /* Large Desktop */
+    @media (min-width: 1440px) {
+      .profile-container {
+        max-width: 1000px;
+      }
+    }
+
+    /* Tablet and below */
+    @media (max-width: 900px) {
+      .premium-active-banner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    /* Mobile */
     @media (max-width: 700px) {
-      header { height: 56px; padding: 0 14px; }
-      .header-logo { font-size: 1.4rem; }
-      .profile-title { font-size: 2.2rem; }
-      .form-row { grid-template-columns: 1fr; }
-      .premium-cta-card { padding: 24px; }
-      .premium-price { font-size: 2.5rem; }
-      .option-grid { grid-template-columns: repeat(4, 1fr); }
-      .title-grid { grid-template-columns: repeat(2, 1fr); }
-      .premium-active-banner { flex-direction: column; text-align: center; }
+      header {
+        height: 56px;
+        padding: 0 14px;
+        padding-left: max(14px, env(safe-area-inset-left));
+        padding-right: max(14px, env(safe-area-inset-right));
+      }
+
+      .header-logo {
+        font-size: 1.4rem;
+        letter-spacing: 3px;
+      }
+
+      .profile-page {
+        padding: 80px 16px 40px;
+      }
+
+      .profile-title {
+        font-size: 2.2rem;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .premium-cta-card {
+        padding: 24px;
+      }
+
+      .premium-price {
+        font-size: 2.5rem;
+      }
+
+      .option-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .title-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer-links {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+    }
+
+    /* Small Mobile / iPhone SE */
+    @media (max-width: 600px) {
+      .profile-title {
+        font-size: 2rem;
+      }
+
+      .section-title {
+        font-size: 1.2rem;
+      }
+
+      .form-section {
+        padding: 18px;
+      }
+
+      .preview-section {
+        padding: 18px;
+      }
+
+      .preview-nameplate {
+        padding: 12px 18px;
+        gap: 10px;
+      }
+
+      .preview-name {
+        font-size: 1rem;
+      }
+
+      .option-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .option-item {
+        padding: 10px 6px;
+        min-height: 65px;
+      }
+
+      .option-icon {
+        font-size: 1.3rem;
+      }
+
+      .option-label {
+        font-size: 0.65rem;
+      }
+
+      .color-option {
+        width: 38px;
+        height: 38px;
+      }
+
+      .title-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .premium-cta-title {
+        font-size: 1.8rem;
+      }
+
+      .premium-price {
+        font-size: 2.2rem;
+      }
+
+      .modal-box {
+        padding: 24px;
+      }
+    }
+
+    /* iPhone SE / Very Small */
+    @media (max-width: 375px) {
+      .header-logo {
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+      }
+
+      .profile-page {
+        padding: 75px 12px 30px;
+      }
+
+      .profile-title {
+        font-size: 1.8rem;
+      }
+
+      .tab-button {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+      }
+
+      .form-section {
+        padding: 14px;
+      }
+
+      .btn-primary {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+      }
+    }
+
+    /* iOS Safari 100vh fix */
+    @supports (-webkit-touch-callout: none) {
+      .profile-page {
+        min-height: -webkit-fill-available;
+      }
+    }
+
+    /* Landscape phone */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .profile-page {
+        padding-top: 70px;
+      }
     }
   </style>
 </head>
@@ -920,15 +1240,10 @@
         <div class="tab-content active" id="general-tab">
           <form class="form-section" id="profile-form">
             <h2 class="section-title">Profile Information</h2>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Display Name</label>
-                <input type="text" class="form-input" id="display-name" placeholder="Your display name">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Gamer Tag</label>
-                <input type="text" class="form-input" id="gamer-tag" placeholder="@yourtag">
-              </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label class="form-label">Display Name</label>
+              <input type="text" class="form-input" id="display-name" placeholder="Your display name" maxlength="20">
+              <span class="form-hint">This is how you'll appear in games (max 20 characters)</span>
             </div>
             <button type="submit" class="btn-primary">Save Changes</button>
           </form>
@@ -998,7 +1313,7 @@
                 <div class="premium-feature-item"><span>🎨</span><span>Border colors & styles</span></div>
                 <div class="premium-feature-item"><span>✨</span><span>Name effects (glow, neon, shimmer)</span></div>
                 <div class="premium-feature-item"><span>🚀</span><span>Entrance animations</span></div>
-                <div class="premium-feature-item"><span>🏷️</span><span>Funny titles</span></div>
+                <div class="premium-feature-item"><span>🏷️</span><span>Custom titles</span></div>
               </div>
               <button type="button" class="btn-primary" id="upgrade-btn" style="font-size: 1rem; padding: 14px 32px;">
                 <span id="upgrade-btn-text">Upgrade Now</span>
@@ -1007,19 +1322,11 @@
             </div>
           </div>
 
-          <!-- Locked Features (free users) -->
-          <div class="locked-features" id="locked-features">
-            <div class="locked-feature"><div class="locked-icon">👑</div><h3 class="locked-title">Badge Icons</h3><p class="locked-description">16+ icons to flex</p></div>
-            <div class="locked-feature"><div class="locked-icon">🎨</div><h3 class="locked-title">Border Colors</h3><p class="locked-description">10 premium colors</p></div>
-            <div class="locked-feature"><div class="locked-icon">✨</div><h3 class="locked-title">Name Effects</h3><p class="locked-description">Glow, shimmer, neon</p></div>
-            <div class="locked-feature"><div class="locked-icon">🚀</div><h3 class="locked-title">Entrances</h3><p class="locked-description">8 animations</p></div>
-          </div>
-
-          <!-- Cosmetics Section (premium users) -->
-          <div id="cosmetics-section" style="display: none;">
+          <!-- Cosmetics Section (shown to everyone, locked for free users) -->
+          <div id="cosmetics-section">
             
             <!-- Live Preview -->
-            <div class="preview-section">
+            <div class="preview-section" id="preview-section-wrapper">
               <div class="preview-title">Live Preview — How You'll Appear in Games</div>
               <div class="preview-nameplate" id="preview-nameplate" data-border="solid">
                 <span class="preview-badge" id="preview-badge">👑</span>
@@ -1029,12 +1336,12 @@
                 </div>
               </div>
               <button class="btn-primary" style="margin-top: 20px;" onclick="playEntranceAnimation()">
-                ▶ Preview Entrance Animation
+                ▶ Preview Entrance
               </button>
             </div>
 
             <!-- Badge Icon -->
-            <div class="form-section">
+            <div class="form-section" id="badge-section">
               <h2 class="section-title">Badge Icon</h2>
               <p class="info-text">Shows before your name</p>
               <div class="option-grid" id="badge-options">
@@ -1055,10 +1362,11 @@
                 <div class="option-item" data-value="🐺"><span class="option-icon">🐺</span><span class="option-label">Wolf</span></div>
                 <div class="option-item" data-value="🗿"><span class="option-icon">🗿</span><span class="option-label">Moai</span></div>
               </div>
+              <span class="lock-badge" style="display: none;">🔒 Upgrade to Unlock</span>
             </div>
 
             <!-- Border Color -->
-            <div class="form-section">
+            <div class="form-section" id="color-section">
               <h2 class="section-title">Border Color</h2>
               <p class="info-text">Your nameplate border color</p>
               <div class="color-grid" id="color-options">
@@ -1073,10 +1381,11 @@
                 <div class="color-option" data-value="rose" style="background: linear-gradient(135deg, #fb7185, #f43f5e);" title="Rose"></div>
                 <div class="color-option" data-value="rainbow" style="background: linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc);" title="Rainbow"></div>
               </div>
+              <span class="lock-badge" style="display: none;">🔒 Upgrade to Unlock</span>
             </div>
 
             <!-- Border Style -->
-            <div class="form-section">
+            <div class="form-section" id="border-section">
               <h2 class="section-title">Border Style</h2>
               <p class="info-text">How your border appears</p>
               <div class="option-grid" id="border-options">
@@ -1086,10 +1395,11 @@
                 <div class="option-item" data-value="double"><span class="option-icon">▭</span><span class="option-label">Double</span></div>
                 <div class="option-item" data-value="dotted"><span class="option-icon">┅</span><span class="option-label">Dotted</span></div>
               </div>
+              <span class="lock-badge" style="display: none;">🔒 Upgrade to Unlock</span>
             </div>
 
             <!-- Name Effect -->
-            <div class="form-section">
+            <div class="form-section" id="effect-section">
               <h2 class="section-title">Name Effect</h2>
               <p class="info-text">Special effect on your name</p>
               <div class="option-grid" id="effect-options">
@@ -1099,10 +1409,11 @@
                 <div class="option-item" data-value="shimmer"><span class="option-icon">✨</span><span class="option-label">Shimmer</span></div>
                 <div class="option-item" data-value="neon"><span class="option-icon">💡</span><span class="option-label">Neon</span></div>
               </div>
+              <span class="lock-badge" style="display: none;">🔒 Upgrade to Unlock</span>
             </div>
 
             <!-- Entrance Animation -->
-            <div class="form-section">
+            <div class="form-section" id="entrance-section">
               <h2 class="section-title">Entrance Animation</h2>
               <p class="info-text">How you appear when joining a lobby</p>
               <div class="option-grid" id="entrance-options">
@@ -1115,10 +1426,11 @@
                 <div class="option-item" data-value="smoke"><span class="option-icon">💨</span><span class="option-label">Smoke</span></div>
                 <div class="option-item" data-value="glitch"><span class="option-icon">📺</span><span class="option-label">Glitch</span></div>
               </div>
+              <span class="lock-badge" style="display: none;">🔒 Upgrade to Unlock</span>
             </div>
 
             <!-- Title -->
-            <div class="form-section">
+            <div class="form-section" id="title-section">
               <h2 class="section-title">Title</h2>
               <p class="info-text">Shows below your name</p>
               <div class="title-grid" id="title-options">
@@ -1127,26 +1439,23 @@
                 <div class="title-option" data-value="Main Character">Main Character</div>
                 <div class="title-option" data-value="NPC Energy">NPC Energy</div>
                 <div class="title-option" data-value="Delulu">Delulu</div>
-                <div class="title-option" data-value="It's Giving...">It's Giving...</div>
-                <div class="title-option" data-value="Understood the Assignment">Understood the Assignment</div>
                 <div class="title-option" data-value="Built Different">Built Different</div>
                 <div class="title-option" data-value="No Cap">No Cap</div>
-                <div class="title-option" data-value="Rent Free">Rent Free</div>
                 <div class="title-option" data-value="Touch Grass">Touch Grass</div>
                 <div class="title-option" data-value="Down Bad">Down Bad</div>
-                <div class="title-option" data-value="Slay 💅">Slay 💅</div>
-                <div class="title-option" data-value="CEO of Yapping">CEO of Yapping</div>
-                <div class="title-option" data-value="Professional Glazer">Professional Glazer</div>
-                <div class="title-option" data-value="Trust Issues">Trust Issues</div>
                 <div class="title-option" data-value="Certified Menace">Certified Menace</div>
                 <div class="title-option" data-value="Lowkey Goated">Lowkey Goated</div>
-                <div class="title-option" data-value="Ate and Left No Crumbs">Ate and Left No Crumbs</div>
-                <div class="title-option" data-value="Living My Best Life">Living My Best Life</div>
                 <div class="title-option" data-value="Unhinged">Unhinged</div>
-                <div class="title-option" data-value="It's the _ for me">It's the _ for me</div>
-                <div class="title-option" data-value="No Thoughts Head Empty">No Thoughts Head Empty</div>
                 <div class="title-option" data-value="Chaotic Neutral">Chaotic Neutral</div>
               </div>
+              
+              <!-- Custom Title Input -->
+              <div class="custom-title-wrapper">
+                <label class="custom-title-label">Or write your own:</label>
+                <input type="text" class="custom-title-input" id="custom-title-input" placeholder="Your custom title..." maxlength="25">
+                <div class="char-count"><span id="custom-title-count">0</span>/25 characters</div>
+              </div>
+              <span class="lock-badge" style="display: none;">🔒 Upgrade to Unlock</span>
             </div>
 
             <!-- Save Button -->
@@ -1191,7 +1500,44 @@
   </div>
 
   <!-- FOOTER -->
-  <footer>© 2025 TheGaming.co — Free games, forever.</footer>
+  <footer>
+    <div class="footer-border"></div>
+    <div class="footer-main">
+      <div class="footer-links">
+        <div class="footer-column">
+          <h5>GAMES</h5>
+          <ul>
+            <li><a href="solo.html">Solo</a></li>
+            <li><a href="duos.html">Duos</a></li>
+            <li><a href="squad-games.html">Squad</a></li>
+            <li><a href="party-games.html">Party</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h5>COMMUNITY</h5>
+          <ul>
+            <li><a href="leaderboards.html">Leaderboards</a></li>
+            <li><a href="supporters.html">Hall of Champions</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h5>COMPANY</h5>
+          <ul>
+            <li><a href="about.html">About</a></li>
+            <li><a href="mailto:hello@thegaming.co">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copyright">
+          © 2025 TheGaming.co — Free party games, forever.
+        </p>
+      </div>
+    </div>
+  </footer>
 
   <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1204,6 +1550,7 @@
 
     let currentUser = null;
     let currentProfile = null;
+    let isPremium = false;
     let cosmetics = {
       border_style: 'solid',
       border_color: 'gold',
@@ -1212,6 +1559,14 @@
       title: null,
       entrance_animation: 'fade'
     };
+
+    // Basic profanity filter
+    const blockedWords = ['fuck', 'shit', 'ass', 'bitch', 'dick', 'pussy', 'cock', 'cunt', 'nigger', 'faggot', 'retard'];
+    
+    function containsProfanity(text) {
+      const lower = text.toLowerCase();
+      return blockedWords.some(word => lower.includes(word));
+    }
 
     // Color map
     const colorMap = {
@@ -1311,6 +1666,50 @@
       });
     });
 
+    // Lock cosmetics sections for free users
+    function lockCosmeticsForFreeUsers() {
+      const sections = ['badge-section', 'color-section', 'border-section', 'effect-section', 'entrance-section', 'title-section'];
+      
+      sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+          section.classList.add('cosmetics-locked-overlay');
+          const lockBadge = section.querySelector('.lock-badge');
+          if (lockBadge) {
+            lockBadge.style.display = 'block';
+            lockBadge.onclick = () => {
+              document.getElementById('upgrade-btn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+              document.getElementById('premium-cta').style.animation = 'pulse 0.5s ease 2';
+            };
+          }
+        }
+      });
+
+      // Disable save button
+      const saveBtn = document.getElementById('save-cosmetics');
+      saveBtn.textContent = '🔒 Upgrade to Save Cosmetics';
+      saveBtn.disabled = true;
+    }
+
+    // Unlock cosmetics for premium users
+    function unlockCosmeticsForPremium() {
+      const sections = ['badge-section', 'color-section', 'border-section', 'effect-section', 'entrance-section', 'title-section'];
+      
+      sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+          section.classList.remove('cosmetics-locked-overlay');
+          const lockBadge = section.querySelector('.lock-badge');
+          if (lockBadge) lockBadge.style.display = 'none';
+        }
+      });
+
+      // Enable save button
+      const saveBtn = document.getElementById('save-cosmetics');
+      saveBtn.textContent = 'Save Cosmetics';
+      saveBtn.disabled = false;
+    }
+
     // Load Profile
     async function loadProfile() {
       const user = await checkSession();
@@ -1322,7 +1721,6 @@
       currentProfile = profile;
 
       document.getElementById('display-name').value = profile.display_name || '';
-      document.getElementById('gamer-tag').value = profile.gamer_tag || '';
       document.getElementById('email').value = profile.email || user.email || '';
       document.getElementById('account-type').value = profile.account_type === 'premium' ? 'Premium ⭐' : 'Free';
       document.getElementById('member-since').value = new Date(profile.created_at).toLocaleDateString();
@@ -1333,19 +1731,19 @@
       if (profile.cosmetics) cosmetics = { ...cosmetics, ...profile.cosmetics };
       document.getElementById('preview-name').textContent = profile.display_name || 'YourName';
 
-      const isPremium = profile.account_type === 'premium';
+      isPremium = profile.account_type === 'premium';
+      
       if (isPremium) {
         document.getElementById('premium-cta').style.display = 'none';
-        document.getElementById('locked-features').style.display = 'none';
         document.getElementById('premium-active-banner').style.display = 'flex';
-        document.getElementById('cosmetics-section').style.display = 'block';
-        initCosmeticsUI();
+        unlockCosmeticsForPremium();
       } else {
         document.getElementById('premium-cta').style.display = 'block';
-        document.getElementById('locked-features').style.display = 'grid';
         document.getElementById('premium-active-banner').style.display = 'none';
-        document.getElementById('cosmetics-section').style.display = 'none';
+        lockCosmeticsForFreeUsers();
       }
+
+      initCosmeticsUI();
     }
 
     // Cosmetics UI
@@ -1355,26 +1753,101 @@
       selectColor(cosmetics.border_color || 'gold');
       selectOption('effect-options', cosmetics.name_effect || 'none');
       selectOption('entrance-options', cosmetics.entrance_animation || 'fade');
-      selectTitle(cosmetics.title || '');
+      
+      // Handle title - check if it's a preset or custom
+      const presetTitles = Array.from(document.querySelectorAll('#title-options .title-option')).map(t => t.dataset.value);
+      if (cosmetics.title && !presetTitles.includes(cosmetics.title)) {
+        // It's a custom title
+        document.getElementById('custom-title-input').value = cosmetics.title;
+        document.getElementById('custom-title-count').textContent = cosmetics.title.length;
+        selectTitle(''); // Deselect presets
+      } else {
+        selectTitle(cosmetics.title || '');
+      }
+      
       updatePreview();
 
+      // Badge options
       document.querySelectorAll('#badge-options .option-item').forEach(item => {
-        item.addEventListener('click', () => { cosmetics.badge_icon = item.dataset.value || null; selectOption('badge-options', item.dataset.value); updatePreview(); });
+        item.addEventListener('click', () => {
+          if (!isPremium) return;
+          cosmetics.badge_icon = item.dataset.value || null;
+          selectOption('badge-options', item.dataset.value);
+          updatePreview();
+        });
       });
+
+      // Border options
       document.querySelectorAll('#border-options .option-item').forEach(item => {
-        item.addEventListener('click', () => { cosmetics.border_style = item.dataset.value; selectOption('border-options', item.dataset.value); updatePreview(); });
+        item.addEventListener('click', () => {
+          if (!isPremium) return;
+          cosmetics.border_style = item.dataset.value;
+          selectOption('border-options', item.dataset.value);
+          updatePreview();
+        });
       });
+
+      // Color options
       document.querySelectorAll('#color-options .color-option').forEach(item => {
-        item.addEventListener('click', () => { cosmetics.border_color = item.dataset.value; selectColor(item.dataset.value); updatePreview(); });
+        item.addEventListener('click', () => {
+          if (!isPremium) return;
+          cosmetics.border_color = item.dataset.value;
+          selectColor(item.dataset.value);
+          updatePreview();
+        });
       });
+
+      // Effect options
       document.querySelectorAll('#effect-options .option-item').forEach(item => {
-        item.addEventListener('click', () => { cosmetics.name_effect = item.dataset.value; selectOption('effect-options', item.dataset.value); updatePreview(); });
+        item.addEventListener('click', () => {
+          if (!isPremium) return;
+          cosmetics.name_effect = item.dataset.value;
+          selectOption('effect-options', item.dataset.value);
+          updatePreview();
+        });
       });
+
+      // Entrance options
       document.querySelectorAll('#entrance-options .option-item').forEach(item => {
-        item.addEventListener('click', () => { cosmetics.entrance_animation = item.dataset.value; selectOption('entrance-options', item.dataset.value); });
+        item.addEventListener('click', () => {
+          if (!isPremium) return;
+          cosmetics.entrance_animation = item.dataset.value;
+          selectOption('entrance-options', item.dataset.value);
+        });
       });
+
+      // Title options
       document.querySelectorAll('#title-options .title-option').forEach(item => {
-        item.addEventListener('click', () => { cosmetics.title = item.dataset.value || null; selectTitle(item.dataset.value); updatePreview(); });
+        item.addEventListener('click', () => {
+          if (!isPremium) return;
+          cosmetics.title = item.dataset.value || null;
+          selectTitle(item.dataset.value);
+          document.getElementById('custom-title-input').value = ''; // Clear custom
+          document.getElementById('custom-title-count').textContent = '0';
+          updatePreview();
+        });
+      });
+
+      // Custom title input
+      const customTitleInput = document.getElementById('custom-title-input');
+      const customTitleCount = document.getElementById('custom-title-count');
+      
+      customTitleInput.addEventListener('input', (e) => {
+        if (!isPremium) {
+          e.target.value = '';
+          return;
+        }
+        const value = e.target.value;
+        customTitleCount.textContent = value.length;
+        
+        if (value.trim()) {
+          cosmetics.title = value.trim();
+          // Deselect preset titles
+          document.querySelectorAll('#title-options .title-option').forEach(t => t.classList.remove('selected'));
+        } else {
+          cosmetics.title = null;
+        }
+        updatePreview();
       });
     }
 
@@ -1410,11 +1883,9 @@
       const colorKey = cosmetics.border_color || 'gold';
       const color = colorMap[colorKey] || colorMap.gold;
       
-      // Set data-color for rainbow special CSS
       nameplate.setAttribute('data-color', colorKey);
       
       if (colorKey === 'rainbow') {
-        // Rainbow uses CSS gradient, name gets purple
         name.style.color = '#c084fc';
         nameplate.style.borderColor = 'transparent';
       } else {
@@ -1423,10 +1894,10 @@
       }
       nameplate.style.setProperty('--current-color', color);
 
-      // Border style via data attribute
+      // Border style
       nameplate.setAttribute('data-border', cosmetics.border_style || 'solid');
 
-      // Name effect via data attribute
+      // Name effect
       name.setAttribute('data-effect', cosmetics.name_effect || 'none');
 
       // Title
@@ -1437,7 +1908,7 @@
     function playEntranceAnimation() {
       const nameplate = document.getElementById('preview-nameplate');
       nameplate.style.animation = 'none';
-      void nameplate.offsetWidth; // Force reflow
+      void nameplate.offsetWidth;
 
       const animMap = {
         fade: 'entranceFade',
@@ -1455,6 +1926,17 @@
 
     // Save Cosmetics
     document.getElementById('save-cosmetics').addEventListener('click', async () => {
+      if (!isPremium) {
+        showStatus('Upgrade to Premium to save cosmetics!', 'error');
+        return;
+      }
+
+      // Check profanity in custom title
+      if (cosmetics.title && containsProfanity(cosmetics.title)) {
+        showStatus('Your title contains inappropriate language. Please choose something else.', 'error');
+        return;
+      }
+
       const { error } = await supabaseClient.from('profiles').update({ cosmetics }).eq('id', currentUser.id);
       if (error) { showStatus('Error saving: ' + error.message, 'error'); return; }
       showStatus('Cosmetics saved! 🎨', 'success');
@@ -1464,12 +1946,27 @@
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const displayName = document.getElementById('display-name').value.trim();
-      const gamerTag = document.getElementById('gamer-tag').value.trim();
 
-      const { error } = await supabaseClient.from('profiles').update({ display_name: displayName, gamer_tag: gamerTag }).eq('id', currentUser.id);
+      if (containsProfanity(displayName)) {
+        showStatus('Display name contains inappropriate language.', 'error');
+        return;
+      }
+
+      const { error } = await supabaseClient.from('profiles').update({ 
+        display_name: displayName,
+        gamer_tag: displayName // Keep them synced
+      }).eq('id', currentUser.id);
+      
       if (error) { showStatus('Error: ' + error.message, 'error'); return; }
       
       document.getElementById('preview-name').textContent = displayName || 'YourName';
+      
+      // Update header cache
+      try {
+        localStorage.setItem('tgco_header_label', displayName || 'Player');
+        headerUsernameLabel.textContent = displayName || 'Player';
+      } catch (e) {}
+      
       showStatus('Profile updated!', 'success');
     });
 
@@ -1539,16 +2036,12 @@
       document.getElementById('cancel-modal').classList.remove('open');
     }
 
-    // Close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(modal => {
       modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.classList.remove('open');
-        }
+        if (e.target === modal) modal.classList.remove('open');
       });
     });
 
-    // Close on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
