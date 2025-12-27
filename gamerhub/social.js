@@ -826,7 +826,7 @@ class SocialSystem {
   }
 
   startPresenceHeartbeat() {
-    // Update presence every 30 seconds
+    // Update presence every 60 seconds (was 30s, reduced to avoid rate limits)
     setInterval(() => {
       if (this.currentUser) {
         const lobbyInfo = this.getLobbyInfo();
@@ -836,7 +836,7 @@ class SocialSystem {
           this.updatePresence('online');
         }
       }
-    }, 30000);
+    }, 60000);
 
     // Set offline when leaving page
     window.addEventListener('beforeunload', () => {
