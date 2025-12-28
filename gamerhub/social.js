@@ -1,6 +1,6 @@
 /* =============================================
-   SOCIAL SYSTEM v2 - TheGaming.co
-   Features: Friends, Invites, Join Game, Toast Notifications, Browser Alerts
+   SOCIAL SYSTEM v3 - TheGaming.co
+   Features: Friends, Invites, Party Mode, Toast Notifications
    ============================================= */
 
 class SocialSystem {
@@ -12,10 +12,15 @@ class SocialSystem {
     this.pendingRequests = [];
     this.sentRequests = [];
     this.gameInvites = [];
+    this.partyInvites = [];
+    this.currentParty = null;
+    this.partyMembers = [];
     this.isOpen = false;
     this.activeTab = 'friends';
     this.invitesChannel = null;
     this.requestsChannel = null;
+    this.partyChannel = null;
+    this.partyInviteChannel = null;
     this.notificationCount = 0;
     this.originalTitle = document.title;
     this.titleFlashInterval = null;
@@ -29,32 +34,180 @@ class SocialSystem {
     
     this.currentUser = session.user;
     await this.loadUserProfile();
+    this.injectStyles();
     this.injectHTML();
     this.injectNotificationContainer();
     this.bindEvents();
     await this.loadFriends();
     await this.loadRequests();
     await this.loadInvites();
+    await this.loadParty();
+    await this.loadPartyInvites();
     await this.updatePresence('online');
     this.startPresenceHeartbeat();
     this.subscribeToRealtime();
     this.updateNotificationDot();
-    this.requestBrowserNotificationPermission();
   }
 
-  // ==================== NOTIFICATIONS ====================
+  // ==================== STYLES ====================
 
-  injectNotificationContainer() {
-    if (document.getElementById('toast-container')) return;
-    
-    const container = document.createElement('div');
-    container.id = 'toast-container';
-    container.innerHTML = '';
-    document.body.appendChild(container);
-
-    // Add styles
+  injectStyles() {
+    if (document.getElementById('social-party-styles')) return;
     const style = document.createElement('style');
+    style.id = 'social-party-styles';
     style.textContent = `
+      /* Party Section */
+      .party-section {
+        background: linear-gradient(135deg, rgba(108, 92, 231, 0.2) 0%, rgba(108, 92, 231, 0.05) 100%);
+        border: 1px solid rgba(108, 92, 231, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .party-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .party-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .party-title .crown { color: #f1c40f; }
+      .party-status {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.5);
+        padding: 4px 8px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 12px;
+      }
+      .party-status.in-game {
+        background: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+      }
+      .party-members {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .party-member {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 8px;
+      }
+      .party-member .member-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        position: relative;
+      }
+      .party-member .member-avatar .crown-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        font-size: 12px;
+      }
+      .party-member .member-info {
+        flex: 1;
+      }
+      .party-member .member-name {
+        font-weight: 500;
+        color: #fff;
+        font-size: 0.9rem;
+      }
+      .party-member .member-status {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.5);
+      }
+      .party-member .member-actions {
+        display: flex;
+        gap: 4px;
+      }
+      .party-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .party-btn {
+        flex: 1;
+        min-width: 100px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .party-btn.primary {
+        background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
+        color: white;
+      }
+      .party-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); }
+      .party-btn.secondary {
+        background: rgba(255,255,255,0.1);
+        color: white;
+      }
+      .party-btn.secondary:hover { background: rgba(255,255,255,0.15); }
+      .party-btn.danger {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+      }
+      .party-btn.danger:hover { background: rgba(231, 76, 60, 0.3); }
+      .party-btn.small {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        min-width: auto;
+        flex: none;
+      }
+      
+      /* No party state */
+      .no-party {
+        text-align: center;
+        padding: 20px;
+      }
+      .no-party-icon { font-size: 48px; margin-bottom: 12px; }
+      .no-party-text { color: rgba(255,255,255,0.6); margin-bottom: 16px; }
+      
+      /* Party game banner */
+      .party-game-banner {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .party-game-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .party-game-icon { font-size: 24px; }
+      .party-game-text { font-weight: 500; }
+      .party-game-name { font-size: 0.85rem; opacity: 0.9; }
+      
+      /* Party invite in friends list */
+      .invite-to-party-btn {
+        background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%) !important;
+      }
+      
+      /* Toast styles */
       #toast-container {
         position: fixed;
         top: 20px;
@@ -74,34 +227,20 @@ class SocialSystem {
         max-width: 400px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         pointer-events: auto;
-        animation: slideIn 0.3s ease-out;
+        animation: toastSlideIn 0.3s ease-out;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 12px;
+        position: relative;
       }
       .toast.invite { border-left: 4px solid #6c5ce7; }
       .toast.request { border-left: 4px solid #00cec9; }
-      .toast-icon {
-        font-size: 24px;
-        flex-shrink: 0;
-      }
-      .toast-content {
-        flex: 1;
-      }
-      .toast-title {
-        font-weight: 600;
-        color: #fff;
-        margin-bottom: 4px;
-      }
-      .toast-message {
-        color: rgba(255,255,255,0.7);
-        font-size: 0.9rem;
-      }
-      .toast-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-      }
+      .toast.party { border-left: 4px solid #f39c12; }
+      .toast-icon { font-size: 24px; flex-shrink: 0; }
+      .toast-content { flex: 1; }
+      .toast-title { font-weight: 600; color: #fff; margin-bottom: 4px; }
+      .toast-message { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+      .toast-actions { display: flex; gap: 8px; margin-top: 10px; }
       .toast-btn {
         padding: 6px 14px;
         border-radius: 6px;
@@ -111,15 +250,9 @@ class SocialSystem {
         font-weight: 500;
         transition: all 0.2s;
       }
-      .toast-btn.primary {
-        background: #6c5ce7;
-        color: white;
-      }
+      .toast-btn.primary { background: #6c5ce7; color: white; }
       .toast-btn.primary:hover { background: #5b4cdb; }
-      .toast-btn.secondary {
-        background: rgba(255,255,255,0.1);
-        color: white;
-      }
+      .toast-btn.secondary { background: rgba(255,255,255,0.1); color: white; }
       .toast-btn.secondary:hover { background: rgba(255,255,255,0.2); }
       .toast-close {
         position: absolute;
@@ -130,20 +263,28 @@ class SocialSystem {
         color: rgba(255,255,255,0.4);
         cursor: pointer;
         font-size: 18px;
-        padding: 4px;
       }
       .toast-close:hover { color: white; }
-      @keyframes slideIn {
+      @keyframes toastSlideIn {
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
       }
-      @keyframes slideOut {
+      .toast.removing { animation: toastSlideOut 0.3s ease-in forwards; }
+      @keyframes toastSlideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
       }
-      .toast.removing { animation: slideOut 0.3s ease-in forwards; }
     `;
     document.head.appendChild(style);
+  }
+
+  // ==================== NOTIFICATIONS ====================
+
+  injectNotificationContainer() {
+    if (document.getElementById('toast-container')) return;
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
   }
 
   showToast(type, title, message, actions = []) {
@@ -153,7 +294,7 @@ class SocialSystem {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
-    const icon = type === 'invite' ? '🎮' : '👋';
+    const icons = { invite: '🎮', request: '👋', party: '🎉' };
     
     let actionsHTML = '';
     if (actions.length > 0) {
@@ -163,7 +304,7 @@ class SocialSystem {
     }
 
     toast.innerHTML = `
-      <div class="toast-icon">${icon}</div>
+      <div class="toast-icon">${icons[type] || '📢'}</div>
       <div class="toast-content">
         <div class="toast-title">${this.escapeHtml(title)}</div>
         <div class="toast-message">${this.escapeHtml(message)}</div>
@@ -172,29 +313,32 @@ class SocialSystem {
       <button class="toast-close">×</button>
     `;
 
-    // Bind actions
     toast.querySelectorAll('.toast-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
-        if (action) {
-          const [method, ...args] = action.split(':');
-          if (method === 'join') this.joinFriendGame(args[0], args[1], args[2]);
-          else if (method === 'accept') this.acceptInvite(args[0], args[1], args[2]);
-          else if (method === 'decline') this.declineInvite(args[0]);
-          else if (method === 'acceptRequest') this.acceptRequest(args[0]);
-          else if (method === 'declineRequest') this.declineRequest(args[0]);
-          else if (method === 'openSidebar') this.open();
-        }
+        if (action) this.handleToastAction(action);
         this.removeToast(toast);
       });
     });
 
     toast.querySelector('.toast-close').addEventListener('click', () => this.removeToast(toast));
-
     container.appendChild(toast);
-
-    // Auto-remove after 10 seconds
     setTimeout(() => this.removeToast(toast), 10000);
+  }
+
+  handleToastAction(action) {
+    const [method, ...args] = action.split(':');
+    switch(method) {
+      case 'join': this.joinFriendGame(args[0], args[1], args[2]); break;
+      case 'accept': this.acceptInvite(args[0], args[1], args[2]); break;
+      case 'decline': this.declineInvite(args[0]); break;
+      case 'acceptRequest': this.acceptRequest(args[0]); break;
+      case 'declineRequest': this.declineRequest(args[0]); break;
+      case 'acceptParty': this.acceptPartyInvite(args[0]); break;
+      case 'declineParty': this.declinePartyInvite(args[0]); break;
+      case 'joinPartyGame': this.joinPartyGame(); break;
+      case 'openSidebar': this.open(); break;
+    }
   }
 
   removeToast(toast) {
@@ -203,12 +347,9 @@ class SocialSystem {
     setTimeout(() => toast.remove(), 300);
   }
 
-  // Browser tab notifications
   updateBrowserNotification() {
-    const count = this.pendingRequests.length + this.gameInvites.length;
+    const count = this.pendingRequests.length + this.gameInvites.length + this.partyInvites.length;
     this.notificationCount = count;
-
-    // Update title
     if (count > 0) {
       document.title = `(${count}) ${this.originalTitle}`;
       this.startTitleFlash();
@@ -216,9 +357,6 @@ class SocialSystem {
       document.title = this.originalTitle;
       this.stopTitleFlash();
     }
-
-    // Update favicon with badge (optional)
-    this.updateFavicon(count);
   }
 
   startTitleFlash() {
@@ -240,161 +378,398 @@ class SocialSystem {
     document.title = this.originalTitle;
   }
 
-  updateFavicon(count) {
-    // Create or update favicon with notification badge
-    const existingLink = document.querySelector("link[rel*='icon']");
-    if (count === 0 && existingLink) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-
-    // Draw original favicon or default
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, 32, 32);
-      
-      if (count > 0) {
-        // Draw red badge
-        ctx.fillStyle = '#e74c3c';
-        ctx.beginPath();
-        ctx.arc(24, 8, 8, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // Draw count
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 10px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(count > 9 ? '9+' : count.toString(), 24, 8);
-      }
-
-      // Update favicon
-      let link = document.querySelector("link[rel*='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = canvas.toDataURL();
-    };
-    img.src = existingLink?.href || '/favicon.ico';
-  }
-
-  requestBrowserNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      // Will request on first interaction
-    }
-  }
-
   sendBrowserNotification(title, body, onClick) {
     if ('Notification' in window && Notification.permission === 'granted') {
-      const notification = new Notification(title, {
-        body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico'
-      });
-      notification.onclick = () => {
-        window.focus();
-        if (onClick) onClick();
-        notification.close();
-      };
+      const notification = new Notification(title, { body, icon: '/favicon.ico' });
+      notification.onclick = () => { window.focus(); if (onClick) onClick(); notification.close(); };
     }
   }
 
-  // ==================== REALTIME SUBSCRIPTIONS ====================
+  // ==================== REALTIME ====================
 
   subscribeToRealtime() {
-    // Subscribe to game invites
-    this.invitesChannel = this.supabase
-      .channel('game_invites_realtime')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'game_invites',
-        filter: `to_user=eq.${this.currentUser.id}`
-      }, async (payload) => {
+    // Game invites
+    this.invitesChannel = this.supabase.channel('game_invites_rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
         await this.loadInvites();
         this.updateNotificationDot();
         this.updateBrowserNotification();
-        
-        // Get sender info
-        const { data: sender } = await this.supabase
-          .from('profiles')
-          .select('display_name, gamer_tag')
-          .eq('id', payload.new.from_user)
-          .single();
-        
+        const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag').eq('id', payload.new.from_user).single();
         const senderName = sender?.gamer_tag || sender?.display_name || 'Someone';
-        
         this.showToast('invite', 'Game Invite!', `${senderName} invited you to ${payload.new.game_name}`, [
           { label: 'Join', style: 'primary', action: `accept:${payload.new.id}:${payload.new.game_name}:${payload.new.room_code}` },
           { label: 'Ignore', style: 'secondary', action: `decline:${payload.new.id}` }
         ]);
+        if (document.hidden) this.sendBrowserNotification('Game Invite!', `${senderName} invited you to ${payload.new.game_name}`);
+      }).subscribe();
 
-        // Browser notification if tab not focused
-        if (document.hidden) {
-          this.sendBrowserNotification('Game Invite!', `${senderName} invited you to ${payload.new.game_name}`, () => this.open());
-        }
-      })
-      .subscribe();
-
-    // Subscribe to friend requests
-    this.requestsChannel = this.supabase
-      .channel('friend_requests_realtime')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'friend_requests',
-        filter: `to_user=eq.${this.currentUser.id}`
-      }, async (payload) => {
+    // Friend requests
+    this.requestsChannel = this.supabase.channel('friend_requests_rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friend_requests', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
         await this.loadRequests();
         this.updateNotificationDot();
         this.updateBrowserNotification();
-        
-        // Get sender info
-        const { data: sender } = await this.supabase
-          .from('profiles')
-          .select('display_name, gamer_tag, discriminator')
-          .eq('id', payload.new.from_user)
-          .single();
-        
+        const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag, discriminator').eq('id', payload.new.from_user).single();
         const senderName = sender?.gamer_tag || sender?.display_name || 'Someone';
         const tag = sender?.discriminator ? `#${sender.discriminator}` : '';
-        
         this.showToast('request', 'Friend Request', `${senderName}${tag} wants to be friends`, [
           { label: 'Accept', style: 'primary', action: `acceptRequest:${payload.new.id}` },
           { label: 'View', style: 'secondary', action: 'openSidebar' }
         ]);
+        if (document.hidden) this.sendBrowserNotification('Friend Request', `${senderName} wants to be friends`);
+      }).subscribe();
 
-        if (document.hidden) {
-          this.sendBrowserNotification('Friend Request', `${senderName} wants to be friends`, () => this.open());
+    // Party invites
+    this.partyInviteChannel = this.supabase.channel('party_invites_rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'party_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
+        await this.loadPartyInvites();
+        this.updateNotificationDot();
+        this.updateBrowserNotification();
+        const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag').eq('id', payload.new.from_user).single();
+        const senderName = sender?.gamer_tag || sender?.display_name || 'Someone';
+        this.showToast('party', 'Party Invite!', `${senderName} invited you to their party`, [
+          { label: 'Join', style: 'primary', action: `acceptParty:${payload.new.id}` },
+          { label: 'Decline', style: 'secondary', action: `declineParty:${payload.new.id}` }
+        ]);
+        if (document.hidden) this.sendBrowserNotification('Party Invite!', `${senderName} invited you to their party`);
+      }).subscribe();
+
+    // Party updates (for members to see when leader starts game)
+    this.subscribeToPartyUpdates();
+  }
+
+  subscribeToPartyUpdates() {
+    if (this.partyChannel) this.partyChannel.unsubscribe();
+    if (!this.currentParty) return;
+
+    this.partyChannel = this.supabase.channel(`party_${this.currentParty.party_id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parties', filter: `id=eq.${this.currentParty.party_id}` }, async (payload) => {
+        if (payload.eventType === 'DELETE') {
+          // Party disbanded
+          this.currentParty = null;
+          this.partyMembers = [];
+          this.renderParty();
+          this.showToast('party', 'Party Disbanded', 'The party leader has disbanded the party');
+          return;
         }
+        
+        const oldGame = this.currentParty?.current_room;
+        await this.loadParty();
+        
+        // If leader started a new game and we're not the leader, show join notification
+        if (this.currentParty && this.currentParty.current_room && this.currentParty.current_room !== oldGame) {
+          if (this.currentParty.leader_id !== this.currentUser.id) {
+            this.showToast('party', 'Party Game Started!', `Leader started ${this.currentParty.current_game}`, [
+              { label: 'Join Now', style: 'primary', action: 'joinPartyGame' }
+            ]);
+            if (document.hidden) this.sendBrowserNotification('Party Game Started!', `Join ${this.currentParty.current_game}`);
+          }
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'party_members', filter: `party_id=eq.${this.currentParty.party_id}` }, async () => {
+        await this.loadParty();
       })
       .subscribe();
   }
 
-  // ==================== JOIN FRIEND'S GAME ====================
+  // ==================== PARTY FUNCTIONS ====================
 
-  joinFriendGame(friendId, game, roomCode) {
-    if (!roomCode) {
-      alert('Could not get room code');
-      return;
+  async loadParty() {
+    try {
+      const { data, error } = await this.supabase.rpc('get_my_party');
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        this.currentParty = {
+          party_id: data[0].party_id,
+          party_name: data[0].party_name,
+          leader_id: data[0].leader_id,
+          current_game: data[0].current_game,
+          current_room: data[0].current_room,
+          status: data[0].status
+        };
+        this.partyMembers = data.map(m => ({
+          id: m.member_id,
+          name: m.member_gamer_tag || m.member_name,
+          gamer_tag: m.member_gamer_tag,
+          discriminator: m.member_discriminator,
+          role: m.member_role,
+          status: m.member_status
+        }));
+        this.subscribeToPartyUpdates();
+      } else {
+        this.currentParty = null;
+        this.partyMembers = [];
+      }
+      this.renderParty();
+    } catch (err) {
+      console.error('Error loading party:', err);
     }
-    window.location.href = this.getGameLobbyUrl(game, roomCode);
   }
 
-  // ==================== LOAD PROFILE ====================
+  async loadPartyInvites() {
+    try {
+      const { data, error } = await this.supabase
+        .from('party_invites')
+        .select('id, party_id, from_user, created_at, profiles!party_invites_from_user_fkey(display_name, gamer_tag)')
+        .eq('to_user', this.currentUser.id)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString());
+      if (error) throw error;
+      this.partyInvites = data || [];
+      this.renderPartyInvites();
+    } catch (err) {
+      console.error('Error loading party invites:', err);
+    }
+  }
+
+  async createParty() {
+    try {
+      const { data, error } = await this.supabase.rpc('create_party', { party_name: 'Party' });
+      if (error) throw error;
+      await this.loadParty();
+      this.showToast('party', 'Party Created!', 'Invite friends to join your party');
+    } catch (err) {
+      console.error('Error creating party:', err);
+      if (err.message?.includes('Already in a party')) {
+        alert('You are already in a party!');
+      } else {
+        alert('Could not create party');
+      }
+    }
+  }
+
+  async inviteToParty(userId) {
+    try {
+      const { error } = await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+      if (error) throw error;
+      this.showToast('party', 'Invite Sent', 'Party invite sent!');
+    } catch (err) {
+      console.error('Error inviting to party:', err);
+      alert(err.message || 'Could not send party invite');
+    }
+  }
+
+  async acceptPartyInvite(inviteId) {
+    try {
+      const { error } = await this.supabase.rpc('accept_party_invite', { invite_id: inviteId });
+      if (error) throw error;
+      await this.loadParty();
+      await this.loadPartyInvites();
+      this.showToast('party', 'Joined Party!', 'You are now in the party');
+    } catch (err) {
+      console.error('Error accepting party invite:', err);
+      alert(err.message || 'Could not join party');
+    }
+  }
+
+  async declinePartyInvite(inviteId) {
+    try {
+      await this.supabase.from('party_invites').update({ status: 'declined' }).eq('id', inviteId);
+      await this.loadPartyInvites();
+    } catch (err) {
+      console.error('Error declining party invite:', err);
+    }
+  }
+
+  async leaveParty() {
+    if (!confirm(this.isPartyLeader() ? 'Disband the party?' : 'Leave the party?')) return;
+    try {
+      const { error } = await this.supabase.rpc('leave_party');
+      if (error) throw error;
+      this.currentParty = null;
+      this.partyMembers = [];
+      this.renderParty();
+    } catch (err) {
+      console.error('Error leaving party:', err);
+      alert('Could not leave party');
+    }
+  }
+
+  async kickFromParty(userId) {
+    if (!confirm('Kick this player from the party?')) return;
+    try {
+      const { error } = await this.supabase.rpc('kick_from_party', { kick_user_id: userId });
+      if (error) throw error;
+      await this.loadParty();
+    } catch (err) {
+      console.error('Error kicking from party:', err);
+    }
+  }
+
+  async transferLeadership(userId) {
+    if (!confirm('Transfer leadership to this player?')) return;
+    try {
+      const { error } = await this.supabase.rpc('transfer_party_leadership', { new_leader_id: userId });
+      if (error) throw error;
+      await this.loadParty();
+    } catch (err) {
+      console.error('Error transferring leadership:', err);
+    }
+  }
+
+  async partyStartGame() {
+    const lobbyInfo = this.getLobbyInfo();
+    if (!lobbyInfo) {
+      alert('Create or join a game lobby first, then click "Start Party Game"');
+      return;
+    }
+    try {
+      const { error } = await this.supabase.rpc('party_start_game', { 
+        game_name: lobbyInfo.game, 
+        room_code: lobbyInfo.roomCode 
+      });
+      if (error) throw error;
+      await this.loadParty();
+    } catch (err) {
+      console.error('Error starting party game:', err);
+    }
+  }
+
+  joinPartyGame() {
+    if (!this.currentParty?.current_room) return;
+    window.location.href = this.getGameLobbyUrl(this.currentParty.current_game, this.currentParty.current_room);
+  }
+
+  isPartyLeader() {
+    return this.currentParty?.leader_id === this.currentUser.id;
+  }
+
+  // ==================== RENDER PARTY ====================
+
+  renderParty() {
+    const container = document.getElementById('party-section');
+    if (!container) return;
+
+    if (!this.currentParty) {
+      container.innerHTML = `
+        <div class="no-party">
+          <div class="no-party-icon">🎉</div>
+          <p class="no-party-text">No active party</p>
+          <button class="party-btn primary" id="create-party-btn">Create Party</button>
+        </div>
+      `;
+      document.getElementById('create-party-btn')?.addEventListener('click', () => this.createParty());
+      return;
+    }
+
+    const isLeader = this.isPartyLeader();
+    const inGame = this.currentParty.status === 'in_game' && this.currentParty.current_room;
+
+    let gameBanner = '';
+    if (inGame) {
+      gameBanner = `
+        <div class="party-game-banner">
+          <div class="party-game-info">
+            <div class="party-game-icon">🎮</div>
+            <div>
+              <div class="party-game-text">Playing</div>
+              <div class="party-game-name">${this.escapeHtml(this.currentParty.current_game)}</div>
+            </div>
+          </div>
+          ${!isLeader ? `<button class="party-btn primary small" id="join-party-game-btn">Join</button>` : ''}
+        </div>
+      `;
+    }
+
+    const membersHTML = this.partyMembers.map(m => {
+      const isMe = m.id === this.currentUser.id;
+      const isMemberLeader = m.role === 'leader';
+      const initial = (m.name || '?')[0].toUpperCase();
+      
+      let actions = '';
+      if (isLeader && !isMe) {
+        actions = `
+          <button class="party-btn small secondary transfer-btn" data-user-id="${m.id}" title="Make Leader">👑</button>
+          <button class="party-btn small danger kick-btn" data-user-id="${m.id}" title="Kick">✕</button>
+        `;
+      }
+
+      return `
+        <div class="party-member">
+          <div class="member-avatar">
+            ${initial}
+            ${isMemberLeader ? '<span class="crown-badge">👑</span>' : ''}
+          </div>
+          <div class="member-info">
+            <div class="member-name">${this.escapeHtml(m.name)}${isMe ? ' (You)' : ''}</div>
+            <div class="member-status">${m.status === 'online' ? '🟢 Online' : m.status === 'in_game' ? '🎮 In Game' : '⚫ Offline'}</div>
+          </div>
+          <div class="member-actions">${actions}</div>
+        </div>
+      `;
+    }).join('');
+
+    let actionButtons = '';
+    if (isLeader) {
+      if (this.isInLobby()) {
+        actionButtons = `<button class="party-btn primary" id="party-start-btn">🚀 Start Party Game</button>`;
+      } else {
+        actionButtons = `<button class="party-btn secondary" id="party-start-btn" disabled>Join a lobby to start</button>`;
+      }
+    }
+
+    container.innerHTML = `
+      <div class="party-section">
+        <div class="party-header">
+          <div class="party-title">
+            <span>🎉</span>
+            <span>${this.escapeHtml(this.currentParty.party_name)}</span>
+          </div>
+          <div class="party-status ${inGame ? 'in-game' : ''}">${inGame ? 'In Game' : 'Idle'}</div>
+        </div>
+        ${gameBanner}
+        <div class="party-members">${membersHTML}</div>
+        <div class="party-actions">
+          ${actionButtons}
+          <button class="party-btn ${isLeader ? 'danger' : 'secondary'}" id="leave-party-btn">${isLeader ? 'Disband' : 'Leave'}</button>
+        </div>
+      </div>
+    `;
+
+    // Bind events
+    document.getElementById('party-start-btn')?.addEventListener('click', () => this.partyStartGame());
+    document.getElementById('leave-party-btn')?.addEventListener('click', () => this.leaveParty());
+    document.getElementById('join-party-game-btn')?.addEventListener('click', () => this.joinPartyGame());
+    document.querySelectorAll('.kick-btn').forEach(btn => btn.addEventListener('click', () => this.kickFromParty(btn.dataset.userId)));
+    document.querySelectorAll('.transfer-btn').forEach(btn => btn.addEventListener('click', () => this.transferLeadership(btn.dataset.userId)));
+  }
+
+  renderPartyInvites() {
+    const container = document.getElementById('party-invites-container');
+    if (!container) return;
+    if (this.partyInvites.length === 0) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+      <div class="invites-section" style="border-color: rgba(243, 156, 18, 0.3); background: rgba(243, 156, 18, 0.1);">
+        <h3>🎉 PARTY INVITES</h3>
+        ${this.partyInvites.map(inv => {
+          const name = inv.profiles?.gamer_tag || inv.profiles?.display_name || 'Someone';
+          return `
+            <div class="invite-item" data-invite-id="${inv.id}">
+              <div class="invite-info">
+                <div class="invite-from">${this.escapeHtml(name)}</div>
+                <div class="invite-game">invited you to their party</div>
+              </div>
+              <div class="friend-actions">
+                <button class="action-btn primary accept-party-btn" data-invite-id="${inv.id}">Join</button>
+                <button class="action-btn secondary decline-party-btn" data-invite-id="${inv.id}">✕</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    document.querySelectorAll('.accept-party-btn').forEach(btn => btn.addEventListener('click', () => this.acceptPartyInvite(btn.dataset.inviteId)));
+    document.querySelectorAll('.decline-party-btn').forEach(btn => btn.addEventListener('click', () => this.declinePartyInvite(btn.dataset.inviteId)));
+  }
+
+  // ==================== UI ====================
 
   async loadUserProfile() {
     try {
-      const { data, error } = await this.supabase
-        .from('profiles')
-        .select('id, display_name, gamer_tag, discriminator')
-        .eq('id', this.currentUser.id)
-        .single();
+      const { data, error } = await this.supabase.from('profiles').select('id, display_name, gamer_tag, discriminator').eq('id', this.currentUser.id).single();
       if (error) throw error;
       this.userProfile = data;
     } catch (err) {
@@ -408,8 +783,6 @@ class SocialSystem {
     if (this.userProfile?.display_name && this.userProfile?.discriminator) return `${this.userProfile.display_name}#${this.userProfile.discriminator}`;
     return this.currentUser.id.substring(0, 8).toUpperCase();
   }
-
-  // ==================== UI ====================
 
   injectHTML() {
     if (document.getElementById('social-sidebar')) return;
@@ -440,7 +813,7 @@ class SocialSystem {
       <div class="social-overlay" id="social-overlay"></div>
       <div class="social-sidebar" id="social-sidebar">
         <div class="social-header">
-          <h2>FRIENDS</h2>
+          <h2>SOCIAL</h2>
           <button class="social-close" id="social-close">✕</button>
         </div>
         <div class="social-profile-card">
@@ -454,13 +827,20 @@ class SocialSystem {
             <button onclick="window.socialSystem.copyHandle()" title="Copy">📋</button>
           </div>
         </div>
+        
         <div class="social-tabs">
-          <button class="social-tab active" data-tab="friends">Friends</button>
+          <button class="social-tab active" data-tab="party">Party</button>
+          <button class="social-tab" data-tab="friends">Friends</button>
           <button class="social-tab" data-tab="requests">Requests<span class="badge" id="requests-badge" style="display: none;">0</span></button>
           <button class="social-tab" data-tab="search">Search</button>
         </div>
+        
         <div class="social-content">
-          <div class="social-panel active" id="panel-friends">
+          <div class="social-panel active" id="panel-party">
+            <div id="party-invites-container"></div>
+            <div id="party-section"></div>
+          </div>
+          <div class="social-panel" id="panel-friends">
             <div id="invites-container"></div>
             <div id="friends-list"><div class="loading-friends"><div class="skeleton"></div><div class="skeleton"></div></div></div>
           </div>
@@ -479,10 +859,7 @@ class SocialSystem {
   bindEvents() {
     document.getElementById('friends-btn')?.addEventListener('click', () => {
       this.toggle();
-      // Request notification permission on first interaction
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
+      if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
     });
     document.getElementById('social-close')?.addEventListener('click', () => this.close());
     document.getElementById('social-overlay')?.addEventListener('click', () => this.close());
@@ -500,11 +877,6 @@ class SocialSystem {
       if (!e.target.closest('.friend-options')) {
         document.querySelectorAll('.friend-options-menu.open').forEach(menu => menu.classList.remove('open'));
       }
-    });
-
-    // Clear notifications when sidebar opens
-    document.getElementById('friends-btn')?.addEventListener('click', () => {
-      this.stopTitleFlash();
     });
   }
 
@@ -545,45 +917,32 @@ class SocialSystem {
 
   async loadRequests() {
     try {
-      const { data: incoming, error: inErr } = await this.supabase
-        .from('friend_requests')
+      const { data: incoming, error: inErr } = await this.supabase.from('friend_requests')
         .select('id, from_user, created_at, profiles!friend_requests_from_user_fkey(display_name, gamer_tag, discriminator)')
-        .eq('to_user', this.currentUser.id)
-        .eq('status', 'pending');
+        .eq('to_user', this.currentUser.id).eq('status', 'pending');
       if (inErr) throw inErr;
-      
-      const { data: sent, error: sentErr } = await this.supabase
-        .from('friend_requests')
+      const { data: sent, error: sentErr } = await this.supabase.from('friend_requests')
         .select('id, to_user, created_at, profiles!friend_requests_to_user_fkey(display_name, gamer_tag, discriminator)')
-        .eq('from_user', this.currentUser.id)
-        .eq('status', 'pending');
+        .eq('from_user', this.currentUser.id).eq('status', 'pending');
       if (sentErr) throw sentErr;
-      
       this.pendingRequests = incoming || [];
       this.sentRequests = sent || [];
       this.renderRequests();
       this.updateNotificationDot();
       this.updateBrowserNotification();
-    } catch (err) {
-      console.error('Error loading requests:', err);
-    }
+    } catch (err) { console.error('Error loading requests:', err); }
   }
 
   async loadInvites() {
     try {
-      const { data, error } = await this.supabase
-        .from('game_invites')
+      const { data, error } = await this.supabase.from('game_invites')
         .select('id, from_user, game_name, room_code, created_at, expires_at, profiles!game_invites_from_user_fkey(display_name, gamer_tag)')
-        .eq('to_user', this.currentUser.id)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString());
+        .eq('to_user', this.currentUser.id).eq('status', 'pending').gt('expires_at', new Date().toISOString());
       if (error) throw error;
       this.gameInvites = data || [];
       this.renderInvites();
       this.updateBrowserNotification();
-    } catch (err) {
-      console.error('Error loading invites:', err);
-    }
+    } catch (err) { console.error('Error loading invites:', err); }
   }
 
   getDisplayName(profile) { return profile?.gamer_tag || profile?.display_name || 'Unknown'; }
@@ -617,15 +976,18 @@ class SocialSystem {
     const lastSeen = friend.last_seen ? this.timeAgo(new Date(friend.last_seen)) : '';
     if (statusClass === 'offline' && lastSeen) statusText = `Last seen ${lastSeen}`;
 
-    // Show Invite button if we're in a lobby, Join button if they're in a game
     const canInvite = (friend.status === 'online' || friend.status === 'in_game') && this.isInLobby();
     const canJoin = friend.status === 'in_game' && friend.current_room;
+    const canInviteToParty = this.isPartyLeader() && (friend.status === 'online' || friend.status === 'in_game');
 
     let actionButtons = '';
+    if (canInviteToParty) {
+      actionButtons = `<button class="action-btn invite-to-party-btn" data-friend-id="${friend.friend_id}" title="Invite to Party">🎉</button>`;
+    }
     if (canJoin) {
-      actionButtons = `<button class="action-btn primary join-btn" data-friend-id="${friend.friend_id}" data-game="${friend.current_game || 'Unknown'}" data-room="${friend.current_room}">Join</button>`;
+      actionButtons += `<button class="action-btn primary join-btn" data-friend-id="${friend.friend_id}" data-game="${friend.current_game || 'Unknown'}" data-room="${friend.current_room}">Join</button>`;
     } else if (canInvite) {
-      actionButtons = `<button class="action-btn primary invite-btn" data-friend-id="${friend.friend_id}">Invite</button>`;
+      actionButtons += `<button class="action-btn primary invite-btn" data-friend-id="${friend.friend_id}">Invite</button>`;
     }
 
     return `
@@ -671,8 +1033,7 @@ class SocialSystem {
           this.sentRequests.map(req => {
             const name = this.getDisplayName(req.profiles);
             const tag = req.profiles?.discriminator ? `#${req.profiles.discriminator}` : '';
-            return `<div class="friend-item">
-              <div class="friend-avatar">${name[0].toUpperCase()}</div>
+            return `<div class="friend-item"><div class="friend-avatar">${name[0].toUpperCase()}</div>
               <div class="friend-info"><div class="friend-name">${this.escapeHtml(name)}<span class="friend-tag">${tag}</span></div><div class="friend-status">Pending...</div></div>
               <div class="friend-actions"><button class="action-btn secondary cancel-request-btn" data-request-id="${req.id}">Cancel</button></div>
             </div>`;
@@ -715,6 +1076,7 @@ class SocialSystem {
     });
     document.querySelectorAll('.invite-btn').forEach(btn => btn.addEventListener('click', () => this.sendInvite(btn.dataset.friendId)));
     document.querySelectorAll('.join-btn').forEach(btn => btn.addEventListener('click', () => this.joinFriendGame(btn.dataset.friendId, btn.dataset.game, btn.dataset.room)));
+    document.querySelectorAll('.invite-to-party-btn').forEach(btn => btn.addEventListener('click', () => this.inviteToParty(btn.dataset.friendId)));
     document.querySelectorAll('.unfriend-btn').forEach(btn => btn.addEventListener('click', () => this.removeFriend(btn.dataset.friendId)));
     document.querySelectorAll('.block-btn').forEach(btn => btn.addEventListener('click', () => this.blockUser(btn.dataset.friendId)));
   }
@@ -738,7 +1100,6 @@ class SocialSystem {
     try {
       let data = [], error = null;
       const tagMatch = query.match(/^(.+)#(\d{4})$/);
-      
       if (tagMatch) {
         const [, username, discriminator] = tagMatch;
         const result = await this.supabase.from('profiles').select('id, display_name, gamer_tag, discriminator')
@@ -783,6 +1144,11 @@ class SocialSystem {
     }
   }
 
+  joinFriendGame(friendId, game, roomCode) {
+    if (!roomCode) { alert('Could not get room code'); return; }
+    window.location.href = this.getGameLobbyUrl(game, roomCode);
+  }
+
   async sendFriendRequest(userId) {
     try {
       const { error } = await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId });
@@ -790,10 +1156,7 @@ class SocialSystem {
       await this.loadRequests();
       const searchInput = document.getElementById('user-search-input');
       if (searchInput?.value) this.searchUsers(searchInput.value);
-    } catch (err) {
-      console.error('Error sending friend request:', err);
-      alert('Could not send friend request');
-    }
+    } catch (err) { console.error('Error sending friend request:', err); alert('Could not send friend request'); }
   }
 
   async acceptRequest(requestId) {
@@ -802,24 +1165,19 @@ class SocialSystem {
       if (error) throw error;
       await this.loadFriends();
       await this.loadRequests();
-    } catch (err) {
-      console.error('Error accepting request:', err);
-      alert('Could not accept request');
-    }
+    } catch (err) { console.error('Error accepting request:', err); alert('Could not accept request'); }
   }
 
   async declineRequest(requestId) {
     try {
-      const { error } = await this.supabase.from('friend_requests').update({ status: 'declined' }).eq('id', requestId);
-      if (error) throw error;
+      await this.supabase.from('friend_requests').update({ status: 'declined' }).eq('id', requestId);
       await this.loadRequests();
     } catch (err) { console.error('Error declining request:', err); }
   }
 
   async cancelRequest(requestId) {
     try {
-      const { error } = await this.supabase.from('friend_requests').delete().eq('id', requestId);
-      if (error) throw error;
+      await this.supabase.from('friend_requests').delete().eq('id', requestId);
       await this.loadRequests();
     } catch (err) { console.error('Error canceling request:', err); }
   }
@@ -836,8 +1194,7 @@ class SocialSystem {
   async blockUser(userId) {
     if (!confirm('Block this user?')) return;
     try {
-      const { error: blockErr } = await this.supabase.from('blocked_users').insert({ user_id: this.currentUser.id, blocked_user_id: userId });
-      if (blockErr) throw blockErr;
+      await this.supabase.from('blocked_users').insert({ user_id: this.currentUser.id, blocked_user_id: userId });
       await this.supabase.rpc('remove_friend', { friend_user_id: userId });
       await this.loadFriends();
     } catch (err) { console.error('Error blocking user:', err); alert('Could not block user'); }
@@ -878,13 +1235,13 @@ class SocialSystem {
   }
 
   startPresenceHeartbeat() {
+    // Immediate check
+    this.updatePresenceForCurrentPage();
+    
     setInterval(() => {
-      if (this.currentUser) {
-        const lobbyInfo = this.getLobbyInfo();
-        if (lobbyInfo) this.updatePresence('in_game', lobbyInfo.game, lobbyInfo.roomCode);
-        else this.updatePresence('online');
-      }
+      if (this.currentUser) this.updatePresenceForCurrentPage();
     }, 60000);
+    
     window.addEventListener('beforeunload', () => {
       if (this.currentUser) {
         const data = JSON.stringify({ user_id: this.currentUser.id, status: 'offline', last_seen: new Date().toISOString() });
@@ -893,13 +1250,30 @@ class SocialSystem {
     });
   }
 
+  updatePresenceForCurrentPage() {
+    const lobbyInfo = this.getLobbyInfo();
+    if (lobbyInfo) {
+      this.updatePresence('in_game', lobbyInfo.game, lobbyInfo.roomCode);
+      // If party leader, also update party
+      if (this.isPartyLeader()) {
+        this.supabase.rpc('party_start_game', { game_name: lobbyInfo.game, room_code: lobbyInfo.roomCode });
+      }
+    } else {
+      this.updatePresence('online');
+      // Clear party game if leader leaves lobby
+      if (this.isPartyLeader() && this.currentParty?.current_room) {
+        this.supabase.rpc('party_clear_game');
+      }
+    }
+  }
+
   // ==================== HELPERS ====================
 
   isInLobby() { return window.location.pathname.includes('lobby') || window.location.search.includes('room=') || document.querySelector('[data-room-code]') !== null; }
 
   getLobbyInfo() {
     const urlParams = new URLSearchParams(window.location.search);
-    const roomCode = urlParams.get('room') || urlParams.get('code') || document.querySelector('[data-room-code]')?.dataset.roomCode;
+    const roomCode = urlParams.get('room') || urlParams.get('code') || urlParams.get('join') || document.querySelector('[data-room-code]')?.dataset.roomCode;
     if (!roomCode) return null;
     const path = window.location.pathname;
     let game = 'Unknown';
@@ -924,7 +1298,7 @@ class SocialSystem {
 
   updateNotificationDot() {
     const dot = document.getElementById('social-notification-dot');
-    if (dot) dot.classList.toggle('visible', this.pendingRequests.length > 0 || this.gameInvites.length > 0);
+    if (dot) dot.classList.toggle('visible', this.pendingRequests.length > 0 || this.gameInvites.length > 0 || this.partyInvites.length > 0);
   }
 
   timeAgo(date) {
