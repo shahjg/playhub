@@ -68,12 +68,33 @@ class SocialSystem {
     await this.loadUserProfile();
     this.injectStyles();
     this.injectHTML();
+    this.updateNameplate(); // Update nameplate with correct profile data
     this.bindEvents();
     await this.loadAll();
     await this.updatePresence('online');
     this.startPresenceHeartbeat();
     this.subscribeToRealtime();
     this.updateNotificationBadge();
+  }
+
+  updateNameplate() {
+    const displayName = this.userProfile?.gamer_tag || this.userProfile?.display_name || 'Player';
+    const initial = displayName[0].toUpperCase();
+    const handle = this.generateHandle();
+    const avatarStyle = this.getAvatarStyle(this.userProfile);
+    
+    const avatarEl = document.querySelector('.s-profile-avatar');
+    const nameEl = document.querySelector('.s-profile-name');
+    const handleEl = document.getElementById('my-handle');
+    
+    if (avatarEl) {
+      avatarEl.style.cssText = avatarStyle;
+      if (!this.userProfile?.avatar_url) {
+        avatarEl.textContent = initial;
+      }
+    }
+    if (nameEl) nameEl.textContent = displayName;
+    if (handleEl) handleEl.textContent = handle;
   }
 
   async loadAll() {
@@ -791,11 +812,7 @@ class SocialSystem {
       else headerActions.appendChild(btn);
     }
 
-    const displayName = this.userProfile?.gamer_tag || this.userProfile?.display_name || 'Player';
-    const initial = displayName[0].toUpperCase();
-    const handle = this.generateHandle();
-    const avatarStyle = this.getAvatarStyle(this.userProfile);
-
+    // Use placeholders - updateNameplate() will fill in correct values
     const html = `
       <div class="s-overlay" id="s-overlay"></div>
       
@@ -807,11 +824,11 @@ class SocialSystem {
         
         <div class="s-profile">
           <div class="s-profile-inner">
-            <div class="s-profile-avatar" style="${avatarStyle}">${this.userProfile?.avatar_url ? '' : initial}</div>
+            <div class="s-profile-avatar"></div>
             <div class="s-profile-info">
-              <div class="s-profile-name">${this.escapeHtml(displayName)}</div>
+              <div class="s-profile-name"></div>
               <div class="s-profile-tag">
-                <code class="s-profile-code" id="my-handle">${this.escapeHtml(handle)}</code>
+                <code class="s-profile-code" id="my-handle"></code>
                 <button class="s-copy-btn" id="copy-handle">${this.icons.copy}</button>
               </div>
             </div>
@@ -824,8 +841,8 @@ class SocialSystem {
         </div>
         
         <div class="s-tabs">
-          <button class="s-tab active" data-tab="friends">Friends</button>
           <button class="s-tab" data-tab="party">Party</button>
+          <button class="s-tab active" data-tab="friends">Friends</button>
           <button class="s-tab" data-tab="requests">Requests <span class="s-tab-count" id="req-count" style="display:none;">0</span></button>
         </div>
         
@@ -1147,7 +1164,7 @@ class SocialSystem {
           current_game: data[0].current_game,
           current_room: data[0].current_room,
           status: data[0].status,
-          max_size: data[0].max_size || 8
+          max_size: data[0].max_size || 20
         };
         this.partyMembers = data.map(m => ({
           id: m.member_id, 
