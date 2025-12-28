@@ -1,6 +1,6 @@
 /* =============================================
    SOCIAL SYSTEM - TheGaming.co
-   Include this on every page after Supabase
+   Fixed column names: fromuser/touser, userid/friendid
    ============================================= */
 
 class SocialSystem {
@@ -54,7 +54,6 @@ class SocialSystem {
   }
 
   generateHandle() {
-    // Discord-style: GamerTag#1234
     if (this.userProfile?.gamer_tag && this.userProfile?.discriminator) {
       return `${this.userProfile.gamer_tag}#${this.userProfile.discriminator}`;
     }
@@ -225,18 +224,19 @@ class SocialSystem {
 
   async loadRequests() {
     try {
+      // FIXED: Using fromuser/touser instead of from_user/to_user
       const { data: incoming, error: inErr } = await this.supabase
         .from('friend_requests')
-        .select('id, from_user, created_at, profiles!friend_requests_from_user_fkey(display_name, gamer_tag, discriminator)')
-        .eq('to_user', this.currentUser.id)
+        .select('id, fromuser, createat, profiles!friend_requests_fromuser_fkey(display_name, gamer_tag, discriminator)')
+        .eq('touser', this.currentUser.id)
         .eq('status', 'pending');
       
       if (inErr) throw inErr;
       
       const { data: sent, error: sentErr } = await this.supabase
         .from('friend_requests')
-        .select('id, to_user, created_at, profiles!friend_requests_to_user_fkey(display_name, gamer_tag, discriminator)')
-        .eq('from_user', this.currentUser.id)
+        .select('id, touser, createat, profiles!friend_requests_touser_fkey(display_name, gamer_tag, discriminator)')
+        .eq('fromuser', this.currentUser.id)
         .eq('status', 'pending');
       
       if (sentErr) throw sentErr;
@@ -254,8 +254,8 @@ class SocialSystem {
     try {
       const { data, error } = await this.supabase
         .from('game_invites')
-        .select('id, from_user, game_name, room_code, created_at, expires_at, profiles!game_invites_from_user_fkey(display_name, gamer_tag)')
-        .eq('to_user', this.currentUser.id)
+        .select('id, fromuser, game_name, room_code, createat, expires_at, profiles!game_invites_fromuser_fkey(display_name, gamer_tag)')
+        .eq('touser', this.currentUser.id)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString());
       
@@ -463,7 +463,6 @@ class SocialSystem {
       let data = [];
       let error = null;
 
-      // Check if query is in Username#1234 format
       const tagMatch = query.match(/^(.+)#(\d{4})$/);
       
       if (tagMatch) {
@@ -496,8 +495,10 @@ class SocialSystem {
       }
 
       const friendIds = this.friends.map(f => f.friend_id);
-      const sentIds = this.sentRequests.map(r => r.to_user);
-      const receivedIds = this.pendingRequests.map(r => r.from_user);
+      // FIXED: Using touser instead of to_user
+      const sentIds = this.sentRequests.map(r => r.touser);
+      // FIXED: Using fromuser instead of from_user
+      const receivedIds = this.pendingRequests.map(r => r.fromuser);
 
       container.innerHTML = data.map(user => {
         const isFriend = friendIds.includes(user.id);
@@ -526,7 +527,8 @@ class SocialSystem {
       document.querySelectorAll('.add-friend-btn').forEach(btn => btn.addEventListener('click', () => this.sendFriendRequest(btn.dataset.userId)));
       document.querySelectorAll('.accept-from-search-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const request = this.pendingRequests.find(r => r.from_user === btn.dataset.userId);
+          // FIXED: Using fromuser
+          const request = this.pendingRequests.find(r => r.fromuser === btn.dataset.userId);
           if (request) this.acceptRequest(request.id);
         });
       });
@@ -539,7 +541,8 @@ class SocialSystem {
 
   async sendFriendRequest(userId) {
     try {
-      const { error } = await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId });
+      // FIXED: Using fromuser/touser
+      const { error } = await this.supabase.from('friend_requests').insert({ fromuser: this.currentUser.id, touser: userId });
       if (error) throw error;
       await this.loadRequests();
       const searchInput = document.getElementById('user-search-input');
@@ -607,7 +610,8 @@ class SocialSystem {
     const lobbyInfo = this.getLobbyInfo();
     if (!lobbyInfo) { alert('You must be in a game lobby to invite friends'); return; }
     try {
-      const { error } = await this.supabase.from('game_invites').insert({ from_user: this.currentUser.id, to_user: friendId, game_name: lobbyInfo.game, room_code: lobbyInfo.roomCode });
+      // FIXED: Using fromuser/touser
+      const { error } = await this.supabase.from('game_invites').insert({ fromuser: this.currentUser.id, touser: friendId, game_name: lobbyInfo.game, room_code: lobbyInfo.roomCode });
       if (error) throw error;
       const btn = document.querySelector(`.invite-btn[data-friend-id="${friendId}"]`);
       if (btn) { btn.textContent = 'Sent!'; btn.disabled = true; setTimeout(() => { btn.textContent = 'Invite'; btn.disabled = false; }, 3000); }
@@ -655,7 +659,8 @@ class SocialSystem {
   subscribeToInvites() {
     this.invitesChannel = this.supabase
       .channel('game_invites_channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `to_user=eq.${this.currentUser.id}` }, () => {
+      // FIXED: Using touser
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `touser=eq.${this.currentUser.id}` }, () => {
         this.loadInvites();
         this.updateNotificationDot();
       })
