@@ -151,32 +151,34 @@
         .user-pill {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            width: 36px;
             height: 36px;
-            padding: 0 16px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.04);
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b9d, #a855f7);
             cursor: pointer;
-            transition: background 0.2s ease, transform 0.15s ease;
-            color: inherit;
-            font-family: inherit;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            color: white;
+            border: none;
         }
 
-        .user-pill:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-1px); }
+        .user-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+        }
 
         .user-pill-label {
             font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            white-space: nowrap;
-            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
         }
 
         .user-pill-skeleton {
-            width: 100px;
+            width: 36px;
             height: 36px;
-            border-radius: 999px;
+            border-radius: 50%;
             background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
@@ -881,7 +883,7 @@
                 <div class="nav-right-logged-in">
                     <div class="user-menu-wrapper">
                         <button class="user-pill" type="button" id="user-menu-button" aria-haspopup="true" aria-expanded="false">
-                            <span class="user-pill-label" id="header-username-label">Player</span>
+                            <span class="user-pill-label" id="header-username-label">P</span>
                         </button>
                         <div class="user-menu" id="user-menu" role="menu">
                             <a href="profile.html" class="user-menu-item" role="menuitem"><span>Profile</span></a>
@@ -1090,13 +1092,11 @@
     function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
         const base = (display_name && display_name.trim()) || (gamer_tag && gamer_tag.trim()) || (user && user.email && user.email.split('@')[0]) || '';
         const trimmed = base.trim();
-        if (!trimmed) { headerUsernameLabel.textContent = 'Player'; headerUsernameLabel.title = ''; return; }
-        const maxLen = 16;
-        let label = trimmed;
-        if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
-        headerUsernameLabel.textContent = label;
+        if (!trimmed) { headerUsernameLabel.textContent = 'P'; headerUsernameLabel.title = 'Player'; return; }
+        const initial = trimmed.charAt(0).toUpperCase();
+        headerUsernameLabel.textContent = initial;
         headerUsernameLabel.title = trimmed;
-        try { localStorage.setItem('tgco_header_full', trimmed); localStorage.setItem('tgco_header_label', label); } catch (e) {}
+        try { localStorage.setItem('tgco_header_full', trimmed); localStorage.setItem('tgco_header_label', initial); } catch (e) {}
     }
 
     async function loadSessionAndProfile() {
@@ -1158,7 +1158,7 @@
 
     // ========== SOCKET EVENTS ==========
     socket.on('connect', () => {
-        console.log('Connected');
+        console.log('Connected to server');
         if (roomCode && playerName) {
             socket.emit('rejoin-room', { roomCode, playerName });
         }
@@ -1173,6 +1173,7 @@
     });
 
     socket.on('room-state', (data) => {
+        console.log('Room state:', data);
         if (data.room) {
             state.players = data.room.players;
             renderPlayers();
@@ -1193,13 +1194,19 @@
         }
     });
 
-    // Role assignment
+    // Role assignment - FIXED to handle multiple possible property names
     socket.on('role-assigned', (data) => {
-        console.log('Role assigned:', data);
+        console.log('Role assigned - FULL DATA:', JSON.stringify(data, null, 2));
+        
         state.isSpy = data.isSpy;
         state.location = data.location;
         state.role = data.role;
-        state.allLocations = data.allLocations || [];
+        
+        // Try multiple possible property names for locations
+        state.allLocations = data.allLocations || data.locations || data.possibleLocations || data.locationList || [];
+        
+        console.log('Parsed locations:', state.allLocations);
+        console.log('Number of locations:', state.allLocations.length);
         
         // Start timer if we have a time value
         if (data.timeLimit) {
@@ -1212,6 +1219,19 @@
         renderLocations();
     });
 
+    // Also listen for game-started which might contain locations
+    socket.on('game-started', (data) => {
+        console.log('Game started - FULL DATA:', JSON.stringify(data, null, 2));
+        
+        // Check if locations are sent here
+        const locations = data.allLocations || data.locations || data.possibleLocations || data.locationList;
+        if (locations && locations.length > 0) {
+            state.allLocations = locations;
+            console.log('Got locations from game-started:', state.allLocations.length);
+            renderLocations();
+        }
+    });
+
     // Timer
     socket.on('timer-update', (data) => {
         state.timeRemaining = data.timeRemaining;
@@ -1220,6 +1240,15 @@
     });
 
     socket.on('question-phase-start', (data) => {
+        console.log('Question phase start:', data);
+        
+        // Check if locations come with this event
+        const locations = data.allLocations || data.locations || data.possibleLocations || data.locationList;
+        if (locations && locations.length > 0) {
+            state.allLocations = locations;
+            renderLocations();
+        }
+        
         if (data.timeLimit) {
             state.timeRemaining = data.timeLimit;
             state.serverTime = Date.now();
@@ -1257,6 +1286,7 @@
     function updateTimer() {
         displayTimer(state.timeRemaining);
     }
+
     socket.on('vote-called', (data) => {
         console.log('Vote called');
         openVote();
@@ -1287,7 +1317,7 @@
     });
 
     socket.on('error', (data) => {
-        console.error('Error:', data.message);
+        console.error('Socket error:', data.message);
     });
 
     // ========== UI FUNCTIONS ==========
@@ -1341,8 +1371,10 @@
     function renderLocations() {
         const grid = document.getElementById('locations-grid');
         
-        if (!state.allLocations.length) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 1.5rem; color: var(--text-muted);">No locations loaded</div>';
+        console.log('Rendering locations, count:', state.allLocations.length);
+        
+        if (!state.allLocations || state.allLocations.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 1.5rem; color: var(--text-muted);">No locations available for this pack</div>';
             return;
         }
 
@@ -1444,11 +1476,15 @@
         state.selectedGuess = null;
         const list = document.getElementById('guess-list');
         
-        list.innerHTML = state.allLocations.map(loc => `
-            <div class="vote-option" onclick="selectGuess(this, '${escapeHtml(loc)}')" data-loc="${escapeHtml(loc)}">
-                <span class="vote-option-name">${escapeHtml(loc)}</span>
-            </div>
-        `).join('');
+        if (!state.allLocations || state.allLocations.length === 0) {
+            list.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-muted);">No locations loaded</div>';
+        } else {
+            list.innerHTML = state.allLocations.map(loc => `
+                <div class="vote-option" onclick="selectGuess(this, '${escapeHtml(loc)}')" data-loc="${escapeHtml(loc)}">
+                    <span class="vote-option-name">${escapeHtml(loc)}</span>
+                </div>
+            `).join('');
+        }
 
         document.getElementById('submit-guess').disabled = true;
         document.getElementById('guess-overlay').classList.add('visible');
