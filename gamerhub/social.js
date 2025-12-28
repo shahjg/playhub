@@ -483,6 +483,45 @@ class SocialSystem {
         padding: 0 5px;
       }
 
+      /* Party Invites Banner */
+      #party-invites-banner:empty { display: none; }
+      .s-party-invites-wrap {
+        padding: 12px 16px;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(99, 102, 241, 0.08));
+        border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+      }
+      .s-party-invite-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--s-accent);
+        margin-bottom: 8px;
+        animation: s-pulse 2s ease-in-out infinite;
+      }
+      @keyframes s-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+        50% { box-shadow: 0 0 0 4px rgba(139, 92, 246, 0); }
+      }
+      .s-party-invite-card:last-child { margin-bottom: 0; }
+      .s-party-invite-card .s-invite-info { flex: 1; min-width: 0; }
+      .s-party-invite-card .s-invite-title {
+        font-weight: 600;
+        color: var(--s-text);
+        font-size: 0.9rem;
+      }
+      .s-party-invite-card .s-invite-sub {
+        font-size: 0.75rem;
+        color: var(--s-accent-light);
+      }
+      .s-party-invite-card .s-invite-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
       /* ===== CONTENT ===== */
       .s-content {
         flex: 1;
@@ -887,11 +926,36 @@ class SocialSystem {
         background: var(--s-bg-tertiary);
       }
       .s-chat-header {
-        padding: 10px 16px;
-        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
         font-weight: 600;
+        color: var(--s-text);
+        cursor: pointer;
+        transition: background 0.2s;
+        user-select: none;
+      }
+      .s-chat-header:hover { background: var(--s-bg-hover); }
+      .s-chat-badge {
+        background: var(--s-accent);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 18px;
+        text-align: center;
+      }
+      .s-chat-toggle-icon {
+        margin-left: auto;
         color: var(--s-text-muted);
-        border-bottom: 1px solid var(--s-border);
+        transition: transform 0.2s;
+      }
+      .s-chat-toggle-icon svg { width: 16px; height: 16px; }
+      .s-chat-body {
+        border-top: 1px solid var(--s-border);
       }
       .s-chat-messages {
         height: 150px;
@@ -1332,10 +1396,13 @@ class SocialSystem {
         </div>
         
         <div class="s-tabs">
-          <button class="s-tab" data-tab="party">Party</button>
+          <button class="s-tab" data-tab="party">Party <span class="s-tab-count" id="party-invite-count" style="display:none;">0</span></button>
           <button class="s-tab active" data-tab="friends">Friends</button>
           <button class="s-tab" data-tab="requests">Requests <span class="s-tab-count" id="req-count" style="display:none;">0</span></button>
         </div>
+        
+        <!-- Party invites banner - shows on ALL tabs when you have invites -->
+        <div id="party-invites-banner"></div>
         
         <div class="s-content">
           <!-- Friends Tab -->
@@ -1494,14 +1561,25 @@ class SocialSystem {
   }
 
   subscribeToParty() {
-    if (this.channels.party) this.channels.party.unsubscribe();
+    if (this.channels.party) {
+      this.supabase.removeChannel(this.channels.party);
+    }
     if (!this.currentParty) return;
 
+    console.log('Subscribing to party:', this.currentParty.party_id);
+
     this.channels.party = this.supabase.channel(`party_${this.currentParty.party_id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'parties', filter: `id=eq.${this.currentParty.party_id}` }, async (payload) => {
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'parties', 
+        filter: `id=eq.${this.currentParty.party_id}` 
+      }, async (payload) => {
+        console.log('Party update:', payload);
         if (payload.eventType === 'DELETE') {
           this.currentParty = null;
           this.partyMembers = [];
+          this.partyMessages = [];
           this.renderParty();
           this.showToast('party', 'Party Ended', 'The party has been disbanded');
           return;
@@ -1520,10 +1598,51 @@ class SocialSystem {
         }
         this.lastHostUrl = this.currentParty?.current_room || null;
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'party_members', filter: `party_id=eq.${this.currentParty.party_id}` }, () => {
-        this.loadParty();
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'party_members'
+      }, async (payload) => {
+        console.log('Party member joined:', payload);
+        // Check if it's for our party
+        if (payload.new.party_id === this.currentParty?.party_id) {
+          await this.loadParty();
+          this.playSound('join');
+          
+          // Get the new member's name
+          if (payload.new.user_id !== this.currentUser.id) {
+            const { data: profile } = await this.supabase
+              .from('profiles')
+              .select('gamer_tag, display_name')
+              .eq('id', payload.new.user_id)
+              .single();
+            const name = profile?.gamer_tag || profile?.display_name || 'Someone';
+            this.showToast('party', 'Member Joined', `${name} joined the party!`, []);
+          }
+        }
       })
-      .subscribe();
+      .on('postgres_changes', { 
+        event: 'DELETE', 
+        schema: 'public', 
+        table: 'party_members'
+      }, async (payload) => {
+        console.log('Party member left:', payload);
+        if (payload.old.party_id === this.currentParty?.party_id) {
+          // Check if it was us who got kicked
+          if (payload.old.user_id === this.currentUser.id) {
+            this.currentParty = null;
+            this.partyMembers = [];
+            this.partyMessages = [];
+            this.renderParty();
+            this.showToast('party', 'Removed from Party', 'You have left the party');
+          } else {
+            await this.loadParty();
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.log('Party subscription status:', status);
+      });
   }
 
   // ==================== TOAST ====================
@@ -1535,7 +1654,7 @@ class SocialSystem {
     const toast = document.createElement('div');
     toast.className = `s-toast ${type}`;
     
-    const iconMap = { game: this.icons.gamepad, party: this.icons.users, friend: this.icons.userPlus, follow: this.icons.link };
+    const iconMap = { game: this.icons.gamepad, party: this.icons.users, friend: this.icons.userPlus, follow: this.icons.link, message: this.icons.message };
     
     toast.innerHTML = `
       <div class="s-toast-icon">${iconMap[type] || this.icons.users}</div>
@@ -1974,13 +2093,17 @@ class SocialSystem {
           </div>
         </div>
         <div class="s-party-chat" id="party-chat-section">
-          <div class="s-chat-header">
+          <div class="s-chat-header" id="chat-toggle">
             <span>Party Chat</span>
+            <span class="s-chat-badge" id="chat-badge" style="display:none;">0</span>
+            <span class="s-chat-toggle-icon">${this.icons.chevronDown}</span>
           </div>
-          <div class="s-chat-messages" id="party-messages"></div>
-          <div class="s-chat-input-wrap">
-            <input type="text" class="s-chat-input" id="party-chat-input" placeholder="Type a message..." maxlength="200">
-            <button class="s-btn s-btn-primary s-btn-icon" id="send-chat-btn">${this.icons.send}</button>
+          <div class="s-chat-body" id="chat-body" style="display:none;">
+            <div class="s-chat-messages" id="party-messages"></div>
+            <div class="s-chat-input-wrap">
+              <input type="text" class="s-chat-input" id="party-chat-input" placeholder="Type a message..." maxlength="200">
+              <button class="s-btn s-btn-primary s-btn-icon" id="send-chat-btn">${this.icons.send}</button>
+            </div>
           </div>
         </div>
         <div class="s-party-actions">
@@ -1997,6 +2120,7 @@ class SocialSystem {
     document.getElementById('party-chat-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') this.sendPartyMessage();
     });
+    document.getElementById('chat-toggle')?.addEventListener('click', () => this.toggleChat());
     
     container.querySelectorAll('.kick-btn').forEach(b => b.addEventListener('click', () => this.kickFromParty(b.dataset.id)));
     container.querySelectorAll('.transfer-btn').forEach(b => b.addEventListener('click', () => this.transferLeadership(b.dataset.id)));
@@ -2098,6 +2222,31 @@ class SocialSystem {
     }
   }
 
+  toggleChat() {
+    const body = document.getElementById('chat-body');
+    const icon = document.querySelector('.s-chat-toggle-icon');
+    const badge = document.getElementById('chat-badge');
+    
+    if (body) {
+      const isHidden = body.style.display === 'none';
+      body.style.display = isHidden ? 'block' : 'none';
+      if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      
+      // Clear unread badge when opening
+      if (isHidden && badge) {
+        badge.style.display = 'none';
+        badge.textContent = '0';
+        this.unreadMessages = 0;
+      }
+      
+      // Scroll to bottom when opening
+      if (isHidden) {
+        const messages = document.getElementById('party-messages');
+        if (messages) messages.scrollTop = messages.scrollHeight;
+      }
+    }
+  }
+
   // Party Chat Functions
   async subscribeToPartyChat() {
     if (!this.currentParty) return;
@@ -2106,31 +2255,44 @@ class SocialSystem {
       this.supabase.removeChannel(this.chatChannel);
     }
 
+    this.unreadMessages = 0;
     await this.loadPartyMessages();
+
+    console.log('Subscribing to party chat:', this.currentParty.party_id);
 
     this.chatChannel = this.supabase
       .channel(`party-chat-${this.currentParty.party_id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'party_messages',
-        filter: `party_id=eq.${this.currentParty.party_id}`
+        table: 'party_messages'
       }, (payload) => {
-        this.handleNewPartyMessage(payload.new);
+        console.log('Chat message received:', payload);
+        // Filter to our party
+        if (payload.new.party_id === this.currentParty?.party_id) {
+          this.handleNewPartyMessage(payload.new);
+        }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Chat subscription status:', status);
+      });
   }
 
   async loadPartyMessages() {
     if (!this.currentParty) return;
     
     try {
-      const { data } = await this.supabase
+      const { data, error } = await this.supabase
         .from('party_messages')
-        .select('id, user_id, message, created_at, profiles(display_name, gamer_tag, name_color, is_premium)')
+        .select('id, user_id, message, created_at')
         .eq('party_id', this.currentParty.party_id)
         .order('created_at', { ascending: true })
         .limit(50);
+      
+      if (error) {
+        console.error('Load messages error:', error);
+        return;
+      }
       
       this.partyMessages = data || [];
       this.renderPartyChatMessages();
@@ -2146,14 +2308,30 @@ class SocialSystem {
       user_id: msg.user_id,
       message: msg.message,
       created_at: msg.created_at,
-      profiles: member ? { gamer_tag: member.name, name_color: member.name_color, is_premium: member.is_premium } : null
+      member: member
     };
     
     this.partyMessages.push(newMsg);
     this.renderPartyChatMessages();
     
+    // Play sound and show notification if not from self
     if (msg.user_id !== this.currentUser.id) {
       this.playSound('message');
+      
+      // Update unread badge if chat is closed
+      const chatBody = document.getElementById('chat-body');
+      if (chatBody && chatBody.style.display === 'none') {
+        this.unreadMessages = (this.unreadMessages || 0) + 1;
+        const badge = document.getElementById('chat-badge');
+        if (badge) {
+          badge.textContent = this.unreadMessages > 9 ? '9+' : this.unreadMessages;
+          badge.style.display = 'inline-flex';
+        }
+      }
+      
+      // Show toast notification
+      const name = member?.name || 'Someone';
+      this.showToast('message', 'New Message', `${name}: ${msg.message.substring(0, 50)}${msg.message.length > 50 ? '...' : ''}`, []);
     }
   }
 
@@ -2167,10 +2345,10 @@ class SocialSystem {
     }
 
     container.innerHTML = this.partyMessages.map(msg => {
-      const profile = msg.profiles || {};
-      const name = profile.gamer_tag || profile.display_name || 'Unknown';
+      const member = msg.member || this.partyMembers.find(m => m.id === msg.user_id) || {};
+      const name = member.name || 'Unknown';
       const isMe = msg.user_id === this.currentUser.id;
-      const nameStyle = profile.is_premium && profile.name_color ? `color: ${profile.name_color}` : '';
+      const nameStyle = member.is_premium && member.name_color ? `color: ${member.name_color}` : '';
       const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
       return `
@@ -2194,13 +2372,18 @@ class SocialSystem {
     input.value = '';
     
     try {
-      await this.supabase.from('party_messages').insert({
+      const { error } = await this.supabase.from('party_messages').insert({
         party_id: this.currentParty.party_id,
         user_id: this.currentUser.id,
         message: message
       });
+      
+      if (error) {
+        console.error('Send message error:', error);
+        input.value = message;
+      }
     } catch (e) {
-      console.error('Send message error:', e);
+      console.error('Send message exception:', e);
       input.value = message;
     }
   }
@@ -2225,27 +2408,57 @@ class SocialSystem {
 
   renderPartyInvites() {
     const container = document.getElementById('party-invites');
-    if (!container) return;
-    if (!this.partyInvites.length) { container.innerHTML = ''; return; }
+    const banner = document.getElementById('party-invites-banner');
+    const countBadge = document.getElementById('party-invite-count');
+    
+    // Update tab badge
+    if (countBadge) {
+      if (this.partyInvites.length > 0) {
+        countBadge.textContent = this.partyInvites.length;
+        countBadge.style.display = 'inline-flex';
+      } else {
+        countBadge.style.display = 'none';
+      }
+    }
+    
+    if (!this.partyInvites.length) { 
+      if (container) container.innerHTML = ''; 
+      if (banner) banner.innerHTML = '';
+      return; 
+    }
 
-    container.innerHTML = `<div class="s-label">Party Invites</div>` + this.partyInvites.map(inv => {
+    // Create the invite cards HTML
+    const invitesHtml = this.partyInvites.map(inv => {
       const name = inv.profiles?.gamer_tag || inv.profiles?.display_name || 'Someone';
+      const avatarStyle = this.getAvatarStyle(inv.profiles || {});
+      const initial = (name[0] || '?').toUpperCase();
       return `
-        <div class="s-invite party">
-          <div class="s-invite-icon">${this.icons.users}</div>
+        <div class="s-party-invite-card">
+          <div class="s-avatar-sm" style="${avatarStyle}">${inv.profiles?.avatar_url ? '' : initial}</div>
           <div class="s-invite-info">
             <div class="s-invite-title">${this.escapeHtml(name)}</div>
-            <div class="s-invite-sub">Invited to party</div>
+            <div class="s-invite-sub">invited you to their party</div>
           </div>
           <div class="s-invite-actions">
-            <button class="s-btn s-btn-primary accept-party-btn" data-id="${inv.id}">Join</button>
-            <button class="s-btn s-btn-secondary s-btn-icon decline-party-btn" data-id="${inv.id}">${this.icons.x}</button>
+            <button class="s-btn s-btn-primary accept-party-btn" data-id="${inv.id}">${this.icons.check} Join</button>
+            <button class="s-btn s-btn-ghost s-btn-icon decline-party-btn" data-id="${inv.id}">${this.icons.x}</button>
           </div>
         </div>`;
     }).join('');
 
-    container.querySelectorAll('.accept-party-btn').forEach(b => b.addEventListener('click', () => this.acceptPartyInvite(b.dataset.id)));
-    container.querySelectorAll('.decline-party-btn').forEach(b => b.addEventListener('click', () => this.declinePartyInvite(b.dataset.id)));
+    // Show in BOTH the banner (visible on all tabs) and party tab
+    const fullHtml = `<div class="s-party-invites-wrap">${invitesHtml}</div>`;
+    
+    if (banner) banner.innerHTML = fullHtml;
+    if (container) container.innerHTML = ''; // Don't duplicate in party tab since banner shows
+
+    // Bind click handlers
+    document.querySelectorAll('.accept-party-btn').forEach(b => {
+      b.onclick = () => this.acceptPartyInvite(b.dataset.id);
+    });
+    document.querySelectorAll('.decline-party-btn').forEach(b => {
+      b.onclick = () => this.declinePartyInvite(b.dataset.id);
+    });
   }
 
   // ==================== ACTIONS ====================
@@ -2474,6 +2687,8 @@ class SocialSystem {
   }
 
   async inviteToParty(userId) {
+    console.log('Inviting to party:', userId, 'Party:', this.currentParty?.party_id);
+    
     // Update button immediately
     const btn = document.querySelector(`.party-invite-btn[data-id="${userId}"]`);
     if (btn) {
@@ -2484,10 +2699,13 @@ class SocialSystem {
     }
     
     try {
-      const { error } = await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+      const { data, error } = await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+      
+      console.log('Invite result:', { data, error });
       
       if (error) {
         console.error('Party invite error:', error);
+        this.showToast('party', 'Invite Failed', error.message || 'Could not send invite', []);
         if (btn) {
           btn.innerHTML = '!';
           btn.classList.remove('s-btn-success');
@@ -2496,7 +2714,10 @@ class SocialSystem {
         return;
       }
       
-      // Reset button after 2 seconds
+      this.playSound('invite');
+      this.showToast('party', 'Invite Sent', 'Party invite sent!', []);
+      
+      // Reset button after 3 seconds
       setTimeout(() => {
         if (btn) {
           btn.innerHTML = this.icons.userPlus;
@@ -2504,10 +2725,11 @@ class SocialSystem {
           btn.classList.remove('s-btn-success');
           btn.classList.add('s-btn-primary');
         }
-      }, 2000);
+      }, 3000);
       
     } catch (e) { 
-      console.error('Party invite exception:', e); 
+      console.error('Party invite exception:', e);
+      this.showToast('party', 'Error', 'Could not send invite', []);
     }
   }
 
