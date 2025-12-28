@@ -1551,7 +1551,7 @@ class SocialSystem {
       await this.loadRequests();
       const input = document.getElementById('s-search');
       if (input?.value) this.searchUsers(input.value);
-    } catch (e) { console.error(e); alert('Failed to send request'); }
+    } catch (e) { console.error(e); }
   }
 
   async acceptRequest(id) {
@@ -1577,7 +1577,6 @@ class SocialSystem {
   }
 
   async removeFriend(id) {
-    if (!confirm('Remove this friend?')) return;
     try {
       await this.supabase.rpc('remove_friend', { friend_user_id: id });
       await this.loadFriends();
@@ -1585,7 +1584,6 @@ class SocialSystem {
   }
 
   async blockUser(id) {
-    if (!confirm('Block this user?')) return;
     try {
       await this.supabase.from('blocked_users').insert({ user_id: this.currentUser.id, blocked_user_id: id });
       await this.supabase.rpc('remove_friend', { friend_user_id: id });
@@ -1630,18 +1628,16 @@ class SocialSystem {
     try {
       await this.supabase.rpc('create_party', { party_name: 'Party' });
       await this.loadParty();
-      this.showToast('party', 'Party Created', 'Invite friends from the Friends tab');
+      this.renderFriends(); // Re-render to show invite buttons
     } catch (e) {
       console.error(e);
-      if (e.message?.includes('Already')) alert('Already in a party');
     }
   }
 
   async inviteToParty(userId) {
     try {
       await this.supabase.rpc('invite_to_party', { invitee_id: userId });
-      this.showToast('party', 'Invite Sent', 'Party invite sent');
-    } catch (e) { console.error(e); alert(e.message || 'Could not invite'); }
+    } catch (e) { console.error(e); }
   }
 
   async acceptPartyInvite(id) {
@@ -1649,8 +1645,8 @@ class SocialSystem {
       await this.supabase.rpc('accept_party_invite', { invite_id: id });
       await this.loadParty();
       await this.loadPartyInvites();
-      this.showToast('party', 'Joined Party', 'You will follow the host automatically');
-    } catch (e) { console.error(e); alert(e.message || 'Could not join'); }
+      this.renderFriends(); // Re-render friends list
+    } catch (e) { console.error(e); }
   }
 
   async declinePartyInvite(id) {
@@ -1661,17 +1657,16 @@ class SocialSystem {
   }
 
   async leaveParty() {
-    if (!confirm('Leave the party?')) return;
     try {
       await this.supabase.rpc('leave_party');
       this.currentParty = null;
       this.partyMembers = [];
       this.renderParty();
+      this.renderFriends(); // Re-render to remove invite buttons
     } catch (e) { console.error(e); }
   }
 
   async kickFromParty(userId) {
-    if (!confirm('Kick this player?')) return;
     try {
       await this.supabase.rpc('kick_from_party', { kick_user_id: userId });
       await this.loadParty();
@@ -1679,7 +1674,6 @@ class SocialSystem {
   }
 
   async transferLeadership(userId) {
-    if (!confirm('Make this player the host?')) return;
     try {
       await this.supabase.rpc('transfer_party_leadership', { new_leader_id: userId });
       await this.loadParty();
