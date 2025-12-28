@@ -228,7 +228,7 @@ class SocialSystem {
       const { data: incoming, error: inErr } = await this.supabase
         .from('friend_requests')
         .select('id, fromuser, createat, profiles!friend_requests_fromuser_fkey(display_name, gamer_tag, discriminator)')
-        .eq('touser', this.currentUser.id)
+        .eq('to_user', this.currentUser.id)
         .eq('status', 'pending');
       
       if (inErr) throw inErr;
@@ -236,7 +236,7 @@ class SocialSystem {
       const { data: sent, error: sentErr } = await this.supabase
         .from('friend_requests')
         .select('id, touser, createat, profiles!friend_requests_touser_fkey(display_name, gamer_tag, discriminator)')
-        .eq('fromuser', this.currentUser.id)
+        .eq('from_user', this.currentUser.id)
         .eq('status', 'pending');
       
       if (sentErr) throw sentErr;
