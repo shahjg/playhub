@@ -1666,26 +1666,17 @@ io.on('connection', (socket) => {
       room: room
     });
     
-   // If game is active, send the player their role
+    // If game is active, send the player their role
     if (room.gameState === 'playing' && room.gameData && room.gameData.roleAssignments) {
       const playerRole = room.gameData.roleAssignments[playerName];
       if (playerRole) {
         console.log(`Sending role assignment to ${playerName}: ${playerRole.role}`);
-        
-        // For spyfall/spyhunt, include allLocations
-        if (room.gameType === 'spyfall' || room.gameType === 'spyhunt') {
-          socket.emit('role-assigned', {
-            ...playerRole,
-            allLocations: room.gameData.allLocations || []
-          });
-        } else {
-          socket.emit('role-assigned', playerRole);
-        }
+        socket.emit('role-assigned', playerRole);
         
         // Handle game phase transitions based on game type
         if (room.gameType === 'imposter') {
           handleImposterPhaseTransition(room, socket, roomCode, playerName);
-        } else if (room.gameType === 'spyfall' || room.gameType === 'spyhunt') {
+        } else if (room.gameType === 'spyfall') {
           handleSpyfallPhaseTransition(room, socket, roomCode, playerName);
         }
       }
@@ -1898,8 +1889,8 @@ io.on('connection', (socket) => {
 // Initialize game based on game type
 if (room.gameType === 'imposter') {
   initImposterGame(room, category || 'random');
-} else if (room.gameType === 'spyfall' || room.gameType === 'spyhunt') {
-  initSpyfallGame(room, category || 'random', twoSpies || false);}
+} else if (room.gameType === 'spyfall') {
+  initSpyfallGame(room, category || 'random', twoSpies || false);
 } else if (room.gameType === 'werewolf') {
   initWerewolfGame(room);
 } else if (room.gameType === 'herd-mentality') {
@@ -1925,7 +1916,7 @@ partyGames.initSketchGuessGame(room, category || 'medium');
 }
 room.gameState = 'playing';
 // Send role assignments to each player
-if (room.gameType === 'spyfall' || room.gameType === 'spyhunt') {
+if (room.gameType === 'spyfall') {
       room.players.forEach(p => {
         const roleData = room.gameData.roleAssignments[p.name];
         if (roleData) {
