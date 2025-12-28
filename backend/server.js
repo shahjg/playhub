@@ -1666,12 +1666,21 @@ io.on('connection', (socket) => {
       room: room
     });
     
-    // If game is active, send the player their role
+ // If game is active, send the player their role
     if (room.gameState === 'playing' && room.gameData && room.gameData.roleAssignments) {
       const playerRole = room.gameData.roleAssignments[playerName];
       if (playerRole) {
         console.log(`Sending role assignment to ${playerName}: ${playerRole.role}`);
-        socket.emit('role-assigned', playerRole);
+        
+        // Include allLocations for Spyfall game type
+        if (room.gameType === 'spyfall') {
+          socket.emit('role-assigned', {
+            ...playerRole,
+            allLocations: room.gameData.allLocations || []
+          });
+        } else {
+          socket.emit('role-assigned', playerRole);
+        }
         
         // Handle game phase transitions based on game type
         if (room.gameType === 'imposter') {
