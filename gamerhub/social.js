@@ -1,6 +1,6 @@
 /* =============================================
-   SOCIAL SYSTEM - TheGaming.co
-   Column names: from_user/to_user, user_id/friend_id
+   SOCIAL SYSTEM v2 - TheGaming.co
+   Features: Friends, Invites, Join Game, Toast Notifications, Browser Alerts
    ============================================= */
 
 class SocialSystem {
@@ -14,8 +14,11 @@ class SocialSystem {
     this.gameInvites = [];
     this.isOpen = false;
     this.activeTab = 'friends';
-    this.presenceChannel = null;
     this.invitesChannel = null;
+    this.requestsChannel = null;
+    this.notificationCount = 0;
+    this.originalTitle = document.title;
+    this.titleFlashInterval = null;
     
     this.init();
   }
@@ -27,15 +30,363 @@ class SocialSystem {
     this.currentUser = session.user;
     await this.loadUserProfile();
     this.injectHTML();
+    this.injectNotificationContainer();
     this.bindEvents();
     await this.loadFriends();
     await this.loadRequests();
     await this.loadInvites();
     await this.updatePresence('online');
     this.startPresenceHeartbeat();
-    this.subscribeToInvites();
+    this.subscribeToRealtime();
     this.updateNotificationDot();
+    this.requestBrowserNotificationPermission();
   }
+
+  // ==================== NOTIFICATIONS ====================
+
+  injectNotificationContainer() {
+    if (document.getElementById('toast-container')) return;
+    
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.innerHTML = '';
+    document.body.appendChild(container);
+
+    // Add styles
+    const style = document.createElement('style');
+    style.textContent = `
+      #toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10001;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+      }
+      .toast {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 16px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        pointer-events: auto;
+        animation: slideIn 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .toast.invite { border-left: 4px solid #6c5ce7; }
+      .toast.request { border-left: 4px solid #00cec9; }
+      .toast-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+      .toast-content {
+        flex: 1;
+      }
+      .toast-title {
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 4px;
+      }
+      .toast-message {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.9rem;
+      }
+      .toast-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .toast-btn {
+        padding: 6px 14px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      .toast-btn.primary {
+        background: #6c5ce7;
+        color: white;
+      }
+      .toast-btn.primary:hover { background: #5b4cdb; }
+      .toast-btn.secondary {
+        background: rgba(255,255,255,0.1);
+        color: white;
+      }
+      .toast-btn.secondary:hover { background: rgba(255,255,255,0.2); }
+      .toast-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        cursor: pointer;
+        font-size: 18px;
+        padding: 4px;
+      }
+      .toast-close:hover { color: white; }
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+      .toast.removing { animation: slideOut 0.3s ease-in forwards; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  showToast(type, title, message, actions = []) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'invite' ? '🎮' : '👋';
+    
+    let actionsHTML = '';
+    if (actions.length > 0) {
+      actionsHTML = `<div class="toast-actions">
+        ${actions.map(a => `<button class="toast-btn ${a.style || 'secondary'}" data-action="${a.action}">${a.label}</button>`).join('')}
+      </div>`;
+    }
+
+    toast.innerHTML = `
+      <div class="toast-icon">${icon}</div>
+      <div class="toast-content">
+        <div class="toast-title">${this.escapeHtml(title)}</div>
+        <div class="toast-message">${this.escapeHtml(message)}</div>
+        ${actionsHTML}
+      </div>
+      <button class="toast-close">×</button>
+    `;
+
+    // Bind actions
+    toast.querySelectorAll('.toast-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        if (action) {
+          const [method, ...args] = action.split(':');
+          if (method === 'join') this.joinFriendGame(args[0], args[1], args[2]);
+          else if (method === 'accept') this.acceptInvite(args[0], args[1], args[2]);
+          else if (method === 'decline') this.declineInvite(args[0]);
+          else if (method === 'acceptRequest') this.acceptRequest(args[0]);
+          else if (method === 'declineRequest') this.declineRequest(args[0]);
+          else if (method === 'openSidebar') this.open();
+        }
+        this.removeToast(toast);
+      });
+    });
+
+    toast.querySelector('.toast-close').addEventListener('click', () => this.removeToast(toast));
+
+    container.appendChild(toast);
+
+    // Auto-remove after 10 seconds
+    setTimeout(() => this.removeToast(toast), 10000);
+  }
+
+  removeToast(toast) {
+    if (!toast || !toast.parentNode) return;
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }
+
+  // Browser tab notifications
+  updateBrowserNotification() {
+    const count = this.pendingRequests.length + this.gameInvites.length;
+    this.notificationCount = count;
+
+    // Update title
+    if (count > 0) {
+      document.title = `(${count}) ${this.originalTitle}`;
+      this.startTitleFlash();
+    } else {
+      document.title = this.originalTitle;
+      this.stopTitleFlash();
+    }
+
+    // Update favicon with badge (optional)
+    this.updateFavicon(count);
+  }
+
+  startTitleFlash() {
+    if (this.titleFlashInterval) return;
+    let showCount = true;
+    this.titleFlashInterval = setInterval(() => {
+      if (this.notificationCount > 0) {
+        document.title = showCount ? `(${this.notificationCount}) ${this.originalTitle}` : `💬 ${this.originalTitle}`;
+        showCount = !showCount;
+      }
+    }, 1500);
+  }
+
+  stopTitleFlash() {
+    if (this.titleFlashInterval) {
+      clearInterval(this.titleFlashInterval);
+      this.titleFlashInterval = null;
+    }
+    document.title = this.originalTitle;
+  }
+
+  updateFavicon(count) {
+    // Create or update favicon with notification badge
+    const existingLink = document.querySelector("link[rel*='icon']");
+    if (count === 0 && existingLink) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+
+    // Draw original favicon or default
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 32, 32);
+      
+      if (count > 0) {
+        // Draw red badge
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(24, 8, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw count
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(count > 9 ? '9+' : count.toString(), 24, 8);
+      }
+
+      // Update favicon
+      let link = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = canvas.toDataURL();
+    };
+    img.src = existingLink?.href || '/favicon.ico';
+  }
+
+  requestBrowserNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Will request on first interaction
+    }
+  }
+
+  sendBrowserNotification(title, body, onClick) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notification = new Notification(title, {
+        body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico'
+      });
+      notification.onclick = () => {
+        window.focus();
+        if (onClick) onClick();
+        notification.close();
+      };
+    }
+  }
+
+  // ==================== REALTIME SUBSCRIPTIONS ====================
+
+  subscribeToRealtime() {
+    // Subscribe to game invites
+    this.invitesChannel = this.supabase
+      .channel('game_invites_realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'game_invites',
+        filter: `to_user=eq.${this.currentUser.id}`
+      }, async (payload) => {
+        await this.loadInvites();
+        this.updateNotificationDot();
+        this.updateBrowserNotification();
+        
+        // Get sender info
+        const { data: sender } = await this.supabase
+          .from('profiles')
+          .select('display_name, gamer_tag')
+          .eq('id', payload.new.from_user)
+          .single();
+        
+        const senderName = sender?.gamer_tag || sender?.display_name || 'Someone';
+        
+        this.showToast('invite', 'Game Invite!', `${senderName} invited you to ${payload.new.game_name}`, [
+          { label: 'Join', style: 'primary', action: `accept:${payload.new.id}:${payload.new.game_name}:${payload.new.room_code}` },
+          { label: 'Ignore', style: 'secondary', action: `decline:${payload.new.id}` }
+        ]);
+
+        // Browser notification if tab not focused
+        if (document.hidden) {
+          this.sendBrowserNotification('Game Invite!', `${senderName} invited you to ${payload.new.game_name}`, () => this.open());
+        }
+      })
+      .subscribe();
+
+    // Subscribe to friend requests
+    this.requestsChannel = this.supabase
+      .channel('friend_requests_realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'friend_requests',
+        filter: `to_user=eq.${this.currentUser.id}`
+      }, async (payload) => {
+        await this.loadRequests();
+        this.updateNotificationDot();
+        this.updateBrowserNotification();
+        
+        // Get sender info
+        const { data: sender } = await this.supabase
+          .from('profiles')
+          .select('display_name, gamer_tag, discriminator')
+          .eq('id', payload.new.from_user)
+          .single();
+        
+        const senderName = sender?.gamer_tag || sender?.display_name || 'Someone';
+        const tag = sender?.discriminator ? `#${sender.discriminator}` : '';
+        
+        this.showToast('request', 'Friend Request', `${senderName}${tag} wants to be friends`, [
+          { label: 'Accept', style: 'primary', action: `acceptRequest:${payload.new.id}` },
+          { label: 'View', style: 'secondary', action: 'openSidebar' }
+        ]);
+
+        if (document.hidden) {
+          this.sendBrowserNotification('Friend Request', `${senderName} wants to be friends`, () => this.open());
+        }
+      })
+      .subscribe();
+  }
+
+  // ==================== JOIN FRIEND'S GAME ====================
+
+  joinFriendGame(friendId, game, roomCode) {
+    if (!roomCode) {
+      alert('Could not get room code');
+      return;
+    }
+    window.location.href = this.getGameLobbyUrl(game, roomCode);
+  }
+
+  // ==================== LOAD PROFILE ====================
 
   async loadUserProfile() {
     try {
@@ -44,7 +395,6 @@ class SocialSystem {
         .select('id, display_name, gamer_tag, discriminator')
         .eq('id', this.currentUser.id)
         .single();
-      
       if (error) throw error;
       this.userProfile = data;
     } catch (err) {
@@ -54,14 +404,12 @@ class SocialSystem {
   }
 
   generateHandle() {
-    if (this.userProfile?.gamer_tag && this.userProfile?.discriminator) {
-      return `${this.userProfile.gamer_tag}#${this.userProfile.discriminator}`;
-    }
-    if (this.userProfile?.display_name && this.userProfile?.discriminator) {
-      return `${this.userProfile.display_name}#${this.userProfile.discriminator}`;
-    }
+    if (this.userProfile?.gamer_tag && this.userProfile?.discriminator) return `${this.userProfile.gamer_tag}#${this.userProfile.discriminator}`;
+    if (this.userProfile?.display_name && this.userProfile?.discriminator) return `${this.userProfile.display_name}#${this.userProfile.discriminator}`;
     return this.currentUser.id.substring(0, 8).toUpperCase();
   }
+
+  // ==================== UI ====================
 
   injectHTML() {
     if (document.getElementById('social-sidebar')) return;
@@ -77,10 +425,8 @@ class SocialSystem {
         </svg>
         <span class="notification-dot" id="social-notification-dot"></span>
       `;
-      
       const navLoggedIn = headerActions.querySelector('.nav-right-logged-in');
       const navLoggedOut = headerActions.querySelector('.nav-right-logged-out');
-      
       if (navLoggedIn) headerActions.insertBefore(friendsBtn, navLoggedIn);
       else if (navLoggedOut) headerActions.insertBefore(friendsBtn, navLoggedOut);
       else headerActions.appendChild(friendsBtn);
@@ -97,7 +443,6 @@ class SocialSystem {
           <h2>FRIENDS</h2>
           <button class="social-close" id="social-close">✕</button>
         </div>
-        
         <div class="social-profile-card">
           <div class="social-profile-info">
             <div class="social-profile-avatar">${initial}</div>
@@ -109,36 +454,36 @@ class SocialSystem {
             <button onclick="window.socialSystem.copyHandle()" title="Copy">📋</button>
           </div>
         </div>
-        
         <div class="social-tabs">
           <button class="social-tab active" data-tab="friends">Friends</button>
           <button class="social-tab" data-tab="requests">Requests<span class="badge" id="requests-badge" style="display: none;">0</span></button>
           <button class="social-tab" data-tab="search">Search</button>
         </div>
-        
         <div class="social-content">
           <div class="social-panel active" id="panel-friends">
             <div id="invites-container"></div>
-            <div id="friends-list"><div class="loading-friends"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></div>
+            <div id="friends-list"><div class="loading-friends"><div class="skeleton"></div><div class="skeleton"></div></div></div>
           </div>
-          <div class="social-panel" id="panel-requests">
-            <div id="incoming-requests"></div>
-            <div id="sent-requests"></div>
-          </div>
+          <div class="social-panel" id="panel-requests"><div id="incoming-requests"></div><div id="sent-requests"></div></div>
           <div class="social-panel" id="panel-search">
             <div class="search-wrapper"><input type="text" class="search-input" id="user-search-input" placeholder="Username#1234 or name..."></div>
             <div class="search-results" id="search-results"></div>
-            <p class="search-hint">Search by name or paste a friend's tag (e.g. nanu32#4829)</p>
+            <p class="search-hint">Search by name or paste a friend's tag</p>
           </div>
         </div>
       </div>
     `;
-    
     document.body.insertAdjacentHTML('beforeend', sidebarHTML);
   }
 
   bindEvents() {
-    document.getElementById('friends-btn')?.addEventListener('click', () => this.toggle());
+    document.getElementById('friends-btn')?.addEventListener('click', () => {
+      this.toggle();
+      // Request notification permission on first interaction
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    });
     document.getElementById('social-close')?.addEventListener('click', () => this.close());
     document.getElementById('social-overlay')?.addEventListener('click', () => this.close());
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.isOpen) this.close(); });
@@ -156,6 +501,11 @@ class SocialSystem {
         document.querySelectorAll('.friend-options-menu.open').forEach(menu => menu.classList.remove('open'));
       }
     });
+
+    // Clear notifications when sidebar opens
+    document.getElementById('friends-btn')?.addEventListener('click', () => {
+      this.stopTitleFlash();
+    });
   }
 
   toggle() { this.isOpen ? this.close() : this.open(); }
@@ -164,6 +514,7 @@ class SocialSystem {
     document.getElementById('social-sidebar')?.classList.add('open');
     document.getElementById('social-overlay')?.classList.add('open');
     document.body.style.overflow = 'hidden';
+    this.stopTitleFlash();
   }
   close() {
     this.isOpen = false;
@@ -176,6 +527,8 @@ class SocialSystem {
     document.querySelectorAll('.social-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
     document.querySelectorAll('.social-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab}`));
   }
+
+  // ==================== DATA LOADING ====================
 
   async loadFriends() {
     try {
@@ -210,6 +563,7 @@ class SocialSystem {
       this.sentRequests = sent || [];
       this.renderRequests();
       this.updateNotificationDot();
+      this.updateBrowserNotification();
     } catch (err) {
       console.error('Error loading requests:', err);
     }
@@ -226,12 +580,15 @@ class SocialSystem {
       if (error) throw error;
       this.gameInvites = data || [];
       this.renderInvites();
+      this.updateBrowserNotification();
     } catch (err) {
       console.error('Error loading invites:', err);
     }
   }
 
   getDisplayName(profile) { return profile?.gamer_tag || profile?.display_name || 'Unknown'; }
+
+  // ==================== RENDERING ====================
 
   renderFriends() {
     const container = document.getElementById('friends-list');
@@ -256,10 +613,21 @@ class SocialSystem {
     const tagDisplay = friend.discriminator ? `#${friend.discriminator}` : '';
     let statusText = 'Offline';
     if (friend.status === 'online') statusText = 'Online';
-    if (friend.status === 'in_game') statusText = `In Game: ${friend.current_game || 'Unknown'}`;
+    if (friend.status === 'in_game') statusText = `Playing ${friend.current_game || 'a game'}`;
     const lastSeen = friend.last_seen ? this.timeAgo(new Date(friend.last_seen)) : '';
     if (statusClass === 'offline' && lastSeen) statusText = `Last seen ${lastSeen}`;
+
+    // Show Invite button if we're in a lobby, Join button if they're in a game
     const canInvite = (friend.status === 'online' || friend.status === 'in_game') && this.isInLobby();
+    const canJoin = friend.status === 'in_game' && friend.current_room;
+
+    let actionButtons = '';
+    if (canJoin) {
+      actionButtons = `<button class="action-btn primary join-btn" data-friend-id="${friend.friend_id}" data-game="${friend.current_game || 'Unknown'}" data-room="${friend.current_room}">Join</button>`;
+    } else if (canInvite) {
+      actionButtons = `<button class="action-btn primary invite-btn" data-friend-id="${friend.friend_id}">Invite</button>`;
+    }
+
     return `
       <div class="friend-item" data-friend-id="${friend.friend_id}">
         <div class="friend-avatar">${initial}<div class="status-dot ${statusClass}"></div></div>
@@ -268,7 +636,7 @@ class SocialSystem {
           <div class="friend-status ${friend.status === 'in_game' ? 'in-game' : ''}">${statusText}</div>
         </div>
         <div class="friend-actions">
-          ${canInvite ? `<button class="action-btn primary invite-btn" data-friend-id="${friend.friend_id}">Invite</button>` : ''}
+          ${actionButtons}
           <div class="friend-options">
             <button class="action-btn icon-only options-btn" data-friend-id="${friend.friend_id}">⋮</button>
             <div class="friend-options-menu">
@@ -334,6 +702,8 @@ class SocialSystem {
     this.bindInviteActions();
   }
 
+  // ==================== ACTIONS ====================
+
   bindFriendActions() {
     document.querySelectorAll('.options-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -344,6 +714,7 @@ class SocialSystem {
       });
     });
     document.querySelectorAll('.invite-btn').forEach(btn => btn.addEventListener('click', () => this.sendInvite(btn.dataset.friendId)));
+    document.querySelectorAll('.join-btn').forEach(btn => btn.addEventListener('click', () => this.joinFriendGame(btn.dataset.friendId, btn.dataset.game, btn.dataset.room)));
     document.querySelectorAll('.unfriend-btn').forEach(btn => btn.addEventListener('click', () => this.removeFriend(btn.dataset.friendId)));
     document.querySelectorAll('.block-btn').forEach(btn => btn.addEventListener('click', () => this.blockUser(btn.dataset.friendId)));
   }
@@ -463,7 +834,7 @@ class SocialSystem {
   }
 
   async blockUser(userId) {
-    if (!confirm('Block this user? They won\'t be able to see your status or send you requests.')) return;
+    if (!confirm('Block this user?')) return;
     try {
       const { error: blockErr } = await this.supabase.from('blocked_users').insert({ user_id: this.currentUser.id, blocked_user_id: userId });
       if (blockErr) throw blockErr;
@@ -498,6 +869,8 @@ class SocialSystem {
     } catch (err) { console.error('Error declining invite:', err); }
   }
 
+  // ==================== PRESENCE ====================
+
   async updatePresence(status, game = null, room = null) {
     try {
       await this.supabase.from('user_presence').upsert({ user_id: this.currentUser.id, status, current_game: game, current_room: room, last_seen: new Date().toISOString() });
@@ -520,11 +893,7 @@ class SocialSystem {
     });
   }
 
-  subscribeToInvites() {
-    this.invitesChannel = this.supabase.channel('game_invites_channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `to_user=eq.${this.currentUser.id}` }, () => { this.loadInvites(); this.updateNotificationDot(); })
-      .subscribe();
-  }
+  // ==================== HELPERS ====================
 
   isInLobby() { return window.location.pathname.includes('lobby') || window.location.search.includes('room=') || document.querySelector('[data-room-code]') !== null; }
 
