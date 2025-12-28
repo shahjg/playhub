@@ -1,6 +1,6 @@
 /* =============================================
-   SOCIAL SYSTEM v5 - TheGaming.co
-   Clean, Modern, Premium Design
+   SOCIAL SYSTEM v6 - TheGaming.co
+   Features: Premium Sync, Party Chat, Status, Sounds
    ============================================= */
 
 class SocialSystem {
@@ -42,8 +42,25 @@ class SocialSystem {
       play: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
       crown: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 19h19v3h-19zM22.1 6.5L17.5 11l-5.5-9-5.5 9L2 6.5l2.5 11h15.1l2.5-11z"/></svg>`,
       link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
-      arrowRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`
+      arrowRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+      send: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
+      message: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+      chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+      circle: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>`,
+      moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+      minusCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+      eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
     };
+
+    // Sound effects (base64 encoded short sounds)
+    this.sounds = {
+      notification: null,
+      invite: null,
+      join: null,
+      message: null
+    };
+    this.soundsEnabled = true;
+    this.initSounds();
 
     // Default avatar icons for users without profile pictures
     this.avatarIcons = [
@@ -56,8 +73,62 @@ class SocialSystem {
       { id: 'dark', gradient: ['#374151', '#1f2937'] },
       { id: 'ocean', gradient: ['#0ea5e9', '#6366f1'] }
     ];
+
+    // Status options
+    this.statusOptions = [
+      { id: 'online', label: 'Online', color: '#22c55e' },
+      { id: 'away', label: 'Away', color: '#f59e0b' },
+      { id: 'dnd', label: 'Do Not Disturb', color: '#ef4444' },
+      { id: 'invisible', label: 'Invisible', color: '#6b7280' }
+    ];
+    this.userStatus = 'online';
+
+    // Party chat
+    this.partyMessages = [];
+    this.chatChannel = null;
     
     this.init();
+  }
+
+  // Initialize sound effects
+  initSounds() {
+    // Create audio context on first user interaction
+    const initAudio = () => {
+      // Simple beep sounds using oscillator
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      document.removeEventListener('click', initAudio);
+    };
+    document.addEventListener('click', initAudio, { once: true });
+  }
+
+  playSound(type) {
+    if (!this.soundsEnabled || !this.audioContext) return;
+    
+    try {
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      
+      // Different sounds for different events
+      const sounds = {
+        notification: { freq: 880, duration: 0.15, type: 'sine' },
+        invite: { freq: 660, duration: 0.2, type: 'sine' },
+        join: { freq: 523, duration: 0.1, type: 'triangle' },
+        message: { freq: 440, duration: 0.08, type: 'sine' }
+      };
+      
+      const sound = sounds[type] || sounds.notification;
+      osc.frequency.value = sound.freq;
+      osc.type = sound.type;
+      gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + sound.duration);
+      
+      osc.start();
+      osc.stop(this.audioContext.currentTime + sound.duration);
+    } catch (e) {
+      console.log('Sound error:', e);
+    }
   }
 
   async init() {
@@ -279,6 +350,9 @@ class SocialSystem {
         background: var(--s-bg-secondary);
         border: 1px solid var(--s-border);
         border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
       .s-profile-inner {
         display: flex;
@@ -740,6 +814,231 @@ class SocialSystem {
       }
       .s-btn-sm svg { width: 14px; height: 14px; }
 
+      /* Modal */
+      .s-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100002;
+        backdrop-filter: blur(4px);
+      }
+      .s-modal {
+        background: var(--s-bg);
+        border: 1px solid var(--s-border);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 360px;
+        max-height: 80vh;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      .s-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-modal-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--s-text);
+      }
+      .s-modal-body {
+        padding: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .s-modal-friends-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .s-modal-friend {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 10px;
+        transition: all 0.2s;
+      }
+      .s-modal-friend.offline { opacity: 0.5; }
+      .s-modal-friend-name {
+        flex: 1;
+        font-size: 0.9rem;
+        color: var(--s-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .s-btn-block { width: 100%; }
+
+      /* Party Chat */
+      .s-party-chat {
+        border-top: 1px solid var(--s-border);
+        background: var(--s-bg-tertiary);
+      }
+      .s-chat-header {
+        padding: 10px 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--s-text-muted);
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-chat-messages {
+        height: 150px;
+        overflow-y: auto;
+        padding: 10px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .s-chat-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--s-text-muted);
+        font-size: 0.8rem;
+      }
+      .s-chat-msg {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+      .s-chat-msg.me .s-chat-name { color: var(--s-accent-light); }
+      .s-chat-name {
+        font-weight: 600;
+        color: var(--s-text);
+      }
+      .s-chat-text {
+        color: var(--s-text);
+        word-break: break-word;
+      }
+      .s-chat-time {
+        font-size: 0.7rem;
+        color: var(--s-text-muted);
+        margin-left: auto;
+      }
+      .s-chat-input-wrap {
+        display: flex;
+        gap: 8px;
+        padding: 10px 16px;
+        border-top: 1px solid var(--s-border);
+      }
+      .s-chat-input {
+        flex: 1;
+        padding: 10px 14px;
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border);
+        border-radius: 10px;
+        color: var(--s-text);
+        font-size: 0.85rem;
+      }
+      .s-chat-input:focus {
+        outline: none;
+        border-color: var(--s-accent);
+      }
+
+      /* Premium Name Styles */
+      .s-name.glow {
+        text-shadow: 0 0 10px currentColor;
+      }
+      .s-name.rainbow {
+        background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #ff6b6b);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: rainbow 3s linear infinite;
+      }
+      @keyframes rainbow {
+        to { background-position: 200% center; }
+      }
+      .s-premium-title {
+        font-size: 0.7rem;
+        color: var(--s-text-muted);
+        margin-top: 2px;
+      }
+      .s-badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+        background: linear-gradient(135deg, var(--s-accent), #8b5cf6);
+        color: white;
+        border-radius: 4px;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+
+      /* Status Selector */
+      .s-status-selector {
+        position: relative;
+      }
+      .s-status-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--s-bg-tertiary);
+        border: 1px solid var(--s-border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--s-text);
+        font-size: 0.85rem;
+        width: 100%;
+      }
+      .s-status-btn svg { width: 14px; height: 14px; color: var(--s-text-muted); margin-left: auto; }
+      .s-status-btn:hover { background: var(--s-bg-hover); border-color: var(--s-accent); }
+      .s-status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--s-success);
+        flex-shrink: 0;
+      }
+      .s-status-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        background: var(--s-bg);
+        border: 1px solid var(--s-border);
+        border-radius: 10px;
+        overflow: hidden;
+        display: none;
+        z-index: 10;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      }
+      .s-status-dropdown.open { display: block; }
+      .s-status-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 0.85rem;
+        color: var(--s-text);
+      }
+      .s-status-option:hover { background: var(--s-bg-hover); }
+      .s-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
       /* Party Share Link */
       .s-party-share {
         padding: 12px 16px;
@@ -1004,6 +1303,27 @@ class SocialSystem {
               </div>
             </div>
           </div>
+          <div class="s-status-selector">
+            <button class="s-status-btn" id="status-btn">
+              <div class="s-status-indicator" id="status-indicator"></div>
+              <span id="status-label">Online</span>
+              ${this.icons.chevronDown}
+            </button>
+            <div class="s-status-dropdown" id="status-dropdown">
+              <div class="s-status-option" data-status="online">
+                <div class="s-status-dot" style="background:#22c55e"></div>Online
+              </div>
+              <div class="s-status-option" data-status="away">
+                <div class="s-status-dot" style="background:#f59e0b"></div>Away
+              </div>
+              <div class="s-status-option" data-status="dnd">
+                <div class="s-status-dot" style="background:#ef4444"></div>Do Not Disturb
+              </div>
+              <div class="s-status-option" data-status="invisible">
+                <div class="s-status-dot" style="background:#6b7280"></div>Invisible
+              </div>
+            </div>
+          </div>
         </div>
         
         <div class="s-search">
@@ -1085,6 +1405,22 @@ class SocialSystem {
       if (!e.target.closest('.s-options')) {
         document.querySelectorAll('.s-options-menu.open').forEach(m => m.classList.remove('open'));
       }
+      if (!e.target.closest('.s-status-selector')) {
+        document.getElementById('status-dropdown')?.classList.remove('open');
+      }
+    });
+
+    // Status selector
+    document.getElementById('status-btn')?.addEventListener('click', () => {
+      document.getElementById('status-dropdown')?.classList.toggle('open');
+    });
+    document.querySelectorAll('.s-status-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const status = opt.dataset.status;
+        this.setUserStatus(status);
+        document.getElementById('status-dropdown')?.classList.remove('open');
+        document.getElementById('status-label').textContent = opt.textContent.trim();
+      });
     });
   }
 
@@ -1118,6 +1454,7 @@ class SocialSystem {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
         await this.loadInvites();
         this.updateNotificationBadge();
+        this.playSound('invite');
         const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag').eq('id', payload.new.from_user).single();
         const name = sender?.gamer_tag || sender?.display_name || 'Someone';
         this.showToast('game', 'Game Invite', `${name} invited you to ${payload.new.game_name}`, [
@@ -1130,6 +1467,7 @@ class SocialSystem {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friend_requests', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
         await this.loadRequests();
         this.updateNotificationBadge();
+        this.playSound('notification');
         const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag, discriminator').eq('id', payload.new.from_user).single();
         const name = sender?.gamer_tag || sender?.display_name || 'Someone';
         const tag = sender?.discriminator ? `#${sender.discriminator}` : '';
@@ -1143,6 +1481,7 @@ class SocialSystem {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'party_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
         await this.loadPartyInvites();
         this.updateNotificationBadge();
+        this.playSound('invite');
         const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag').eq('id', payload.new.from_user).single();
         const name = sender?.gamer_tag || sender?.display_name || 'Someone';
         this.showToast('party', 'Party Invite', `${name} invited you to their party`, [
@@ -1345,13 +1684,21 @@ class SocialSystem {
           role: m.member_role, 
           status: m.member_status,
           avatar_url: m.member_avatar_url,
-          avatar_icon: m.member_avatar_icon
+          avatar_icon: m.member_avatar_icon,
+          is_premium: m.member_is_premium,
+          name_color: m.member_name_color,
+          name_effect: m.member_name_effect,
+          title: m.member_title,
+          title_color: m.member_title_color,
+          badge: m.member_badge
         }));
         this.lastHostUrl = this.currentParty.current_room;
         this.subscribeToParty();
+        this.subscribeToPartyChat();
       } else {
         this.currentParty = null;
         this.partyMembers = [];
+        this.partyMessages = [];
       }
       this.renderParty();
     } catch (e) { console.error(e); }
@@ -1406,11 +1753,12 @@ class SocialSystem {
     const avatarClass = (!f.status || f.status === 'offline') ? 'offline' : '';
     const statusText = f.status === 'in_game' ? `Playing ${f.current_game || 'a game'}` : f.status === 'online' ? 'Online' : f.last_seen ? `${this.timeAgo(new Date(f.last_seen))}` : 'Offline';
     const avatarStyle = this.getAvatarStyle(f);
+    const nameStyle = this.getPremiumNameStyle(f);
     
     const isOnline = f.status === 'online' || f.status === 'in_game';
     const canInviteToGame = isOnline && this.isInLobby();
     const canJoin = f.status === 'in_game' && f.current_room;
-    const canPartyInvite = this.isPartyLeader(); // Show for all friends if you're party leader
+    const canPartyInvite = this.isPartyLeader();
 
     let actions = '';
     
@@ -1426,11 +1774,16 @@ class SocialSystem {
       actions += `<button class="s-btn s-btn-secondary invite-btn" data-id="${f.friend_id}">Invite</button>`;
     }
 
+    // Premium badges and titles
+    let badgeHtml = f.badge ? `<span class="s-badge">${this.escapeHtml(f.badge)}</span>` : '';
+    let titleHtml = f.title ? `<div class="s-premium-title" style="${f.title_color ? 'color:' + f.title_color : ''}">${this.escapeHtml(f.title)}</div>` : '';
+
     return `
       <div class="s-user" data-id="${f.friend_id}">
         <div class="s-avatar ${avatarClass}" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
         <div class="s-user-info">
-          <div class="s-user-name">${this.escapeHtml(name)}<span class="disc">${tag}</span></div>
+          <div class="s-user-name"><span class="s-name ${f.name_effect || ''}" style="${nameStyle}">${this.escapeHtml(name)}</span>${badgeHtml}<span class="disc">${tag}</span></div>
+          ${titleHtml}
           <div class="s-user-status ${f.status === 'in_game' ? 'playing' : ''}">${statusText}</div>
         </div>
         <div class="s-user-actions">
@@ -1565,6 +1918,7 @@ class SocialSystem {
       const isMemberLeader = m.role === 'leader';
       const initial = (m.name || '?')[0].toUpperCase();
       const avatarStyle = this.getAvatarStyle(m);
+      const nameStyle = this.getPremiumNameStyle(m);
       
       let actions = '';
       if (isLeader && !isMe) {
@@ -1572,57 +1926,34 @@ class SocialSystem {
           <button class="s-btn s-btn-ghost s-btn-icon transfer-btn" data-id="${m.id}" title="Make Host">${this.icons.crown}</button>
           <button class="s-btn s-btn-ghost s-btn-icon kick-btn" data-id="${m.id}" title="Kick">${this.icons.x}</button>`;
       }
+
+      let titleHtml = '';
+      if (m.title) {
+        const titleStyle = m.title_color ? `color: ${m.title_color}` : '';
+        titleHtml = `<span class="s-premium-title" style="${titleStyle}">${this.escapeHtml(m.title)}</span>`;
+      }
+
+      let badgeHtml = '';
+      if (m.badge) {
+        badgeHtml = `<span class="s-badge">${this.escapeHtml(m.badge)}</span>`;
+      }
       
       return `
         <div class="s-party-member">
           <div class="s-party-member-avatar" style="${avatarStyle}">${m.avatar_url ? '' : initial}${isMemberLeader ? `<span class="s-crown">${this.icons.crown}</span>` : ''}</div>
           <div class="s-party-member-info">
             <div class="s-party-member-name">
-              ${this.escapeHtml(m.name)}
+              <span class="s-name ${m.name_effect || ''}" style="${nameStyle}">${this.escapeHtml(m.name)}</span>
+              ${badgeHtml}
               ${isMemberLeader ? '<span class="s-host-tag">Host</span>' : ''}
               ${isMe ? '<span class="s-you-tag">(You)</span>' : ''}
             </div>
+            ${titleHtml}
             <div class="s-party-member-status">${m.status === 'online' ? 'Online' : m.status === 'in_game' ? 'In Game' : 'Offline'}</div>
           </div>
           <div class="s-user-actions">${actions}</div>
         </div>`;
     }).join('');
-
-    // Invite section for leaders
-    let inviteSection = '';
-    if (isLeader && this.friends.length > 0) {
-      const partyMemberIds = this.partyMembers.map(m => m.id);
-      const availableFriends = this.friends.filter(f => !partyMemberIds.includes(f.friend_id));
-      const onlineFriends = availableFriends.filter(f => f.status === 'online' || f.status === 'in_game');
-      const offlineFriends = availableFriends.filter(f => !f.status || f.status === 'offline');
-      
-      if (availableFriends.length > 0) {
-        inviteSection = `
-          <div class="s-party-invite-section">
-            <div class="s-party-invite-header">
-              <span class="s-invite-title">Invite Friends</span>
-              ${onlineFriends.length > 1 ? `<button class="s-btn s-btn-primary s-btn-sm" id="invite-all-btn">Invite All (${onlineFriends.length})</button>` : ''}
-            </div>
-            <div class="s-party-invite-list">
-              ${onlineFriends.length > 0 ? onlineFriends.map(f => this.renderInviteFriendRow(f)).join('') : '<div class="s-empty-mini">No friends online</div>'}
-              ${offlineFriends.length > 0 ? `
-                <div class="s-invite-offline-toggle" id="show-offline-toggle">
-                  <span>Show Offline (${offlineFriends.length})</span>
-                  <span class="s-toggle-arrow">›</span>
-                </div>
-                <div class="s-invite-offline-list" id="offline-friends-list" style="display:none;">
-                  ${offlineFriends.map(f => this.renderInviteFriendRow(f)).join('')}
-                </div>
-              ` : ''}
-            </div>
-          </div>`;
-      } else {
-        inviteSection = `
-          <div class="s-party-invite-section">
-            <div class="s-empty-mini">All friends in party!</div>
-          </div>`;
-      }
-    }
 
     container.innerHTML = `
       <div class="s-party">
@@ -1639,103 +1970,256 @@ class SocialSystem {
               <code class="s-share-code" id="party-code">${partyCode}</code>
             </div>
             <button class="s-btn s-btn-secondary s-btn-icon" id="copy-party-link" title="Copy invite link">${this.icons.link}</button>
+            ${isLeader ? `<button class="s-btn s-btn-primary" id="open-invite-modal">${this.icons.userPlus} Invite</button>` : ''}
+          </div>
+        </div>
+        <div class="s-party-chat" id="party-chat-section">
+          <div class="s-chat-header">
+            <span>Party Chat</span>
+          </div>
+          <div class="s-chat-messages" id="party-messages"></div>
+          <div class="s-chat-input-wrap">
+            <input type="text" class="s-chat-input" id="party-chat-input" placeholder="Type a message..." maxlength="200">
+            <button class="s-btn s-btn-primary s-btn-icon" id="send-chat-btn">${this.icons.send}</button>
           </div>
         </div>
         <div class="s-party-actions">
           <button class="s-btn s-btn-danger" id="leave-party" style="width:100%">${this.icons.logout} Leave</button>
         </div>
-      </div>
-      ${inviteSection}`;
+      </div>`;
 
     // Bind events
     document.getElementById('leave-party')?.addEventListener('click', () => this.leaveParty());
     document.getElementById('join-party-game')?.addEventListener('click', () => this.joinPartyGame());
     document.getElementById('copy-party-link')?.addEventListener('click', () => this.copyPartyLink(partyCode));
-    document.getElementById('invite-all-btn')?.addEventListener('click', () => this.inviteAllOnline());
-    document.getElementById('show-offline-toggle')?.addEventListener('click', () => {
-      const list = document.getElementById('offline-friends-list');
-      const arrow = document.querySelector('.s-toggle-arrow');
-      if (list) {
-        const isHidden = list.style.display === 'none';
-        list.style.display = isHidden ? 'block' : 'none';
-        if (arrow) arrow.textContent = isHidden ? '‹' : '›';
-      }
+    document.getElementById('open-invite-modal')?.addEventListener('click', () => this.openInviteModal());
+    document.getElementById('send-chat-btn')?.addEventListener('click', () => this.sendPartyMessage());
+    document.getElementById('party-chat-input')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.sendPartyMessage();
     });
     
     container.querySelectorAll('.kick-btn').forEach(b => b.addEventListener('click', () => this.kickFromParty(b.dataset.id)));
     container.querySelectorAll('.transfer-btn').forEach(b => b.addEventListener('click', () => this.transferLeadership(b.dataset.id)));
-    container.querySelectorAll('.quick-invite-btn').forEach(b => {
-      b.onclick = () => this.inviteToPartyQuick(b.dataset.id, b);
+
+    this.renderPartyChatMessages();
+  }
+
+  getPremiumNameStyle(user) {
+    if (!user.is_premium || !user.name_color) return '';
+    return `color: ${user.name_color};`;
+  }
+
+  openInviteModal() {
+    const partyMemberIds = this.partyMembers.map(m => m.id);
+    const availableFriends = this.friends.filter(f => !partyMemberIds.includes(f.friend_id));
+    const onlineFriends = availableFriends.filter(f => f.status === 'online' || f.status === 'in_game');
+    const offlineFriends = availableFriends.filter(f => !f.status || f.status === 'offline');
+
+    const friendsList = [...onlineFriends, ...offlineFriends].map(f => {
+      const name = f.gamer_tag || f.display_name || 'Unknown';
+      const initial = name[0].toUpperCase();
+      const isOnline = f.status === 'online' || f.status === 'in_game';
+      const avatarStyle = this.getAvatarStyle(f);
+      const statusClass = f.status === 'in_game' ? 'in-game' : f.status === 'online' ? 'online' : '';
+      const nameStyle = this.getPremiumNameStyle(f);
+      
+      return `
+        <div class="s-modal-friend ${isOnline ? '' : 'offline'}" data-id="${f.friend_id}">
+          <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot-sm ${statusClass}"></div></div>
+          <span class="s-modal-friend-name" style="${nameStyle}">${this.escapeHtml(name)}</span>
+          <button class="s-btn s-btn-primary s-btn-sm s-modal-invite-btn" data-id="${f.friend_id}">${this.icons.userPlus}</button>
+        </div>`;
+    }).join('');
+
+    const modal = document.createElement('div');
+    modal.className = 's-modal-overlay';
+    modal.id = 'invite-modal';
+    modal.innerHTML = `
+      <div class="s-modal">
+        <div class="s-modal-header">
+          <span class="s-modal-title">Invite to Party</span>
+          <button class="s-btn s-btn-ghost s-btn-icon s-modal-close">${this.icons.x}</button>
+        </div>
+        <div class="s-modal-body">
+          ${availableFriends.length > 0 ? `
+            ${onlineFriends.length > 1 ? `<button class="s-btn s-btn-primary s-btn-block" id="modal-invite-all">Invite All Online (${onlineFriends.length})</button>` : ''}
+            <div class="s-modal-friends-list">${friendsList}</div>
+          ` : '<div class="s-empty-mini">No friends to invite</div>'}
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+
+    // Bind modal events
+    modal.querySelector('.s-modal-close').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.querySelectorAll('.s-modal-invite-btn').forEach(btn => {
+      btn.onclick = async () => {
+        btn.innerHTML = this.icons.check;
+        btn.disabled = true;
+        btn.classList.remove('s-btn-primary');
+        btn.classList.add('s-btn-success');
+        await this.inviteToPartyQuick(btn.dataset.id);
+      };
+    });
+
+    document.getElementById('modal-invite-all')?.addEventListener('click', async () => {
+      const btn = document.getElementById('modal-invite-all');
+      btn.innerHTML = 'Sending...';
+      btn.disabled = true;
+      
+      for (const friend of onlineFriends) {
+        const invBtn = modal.querySelector(`.s-modal-invite-btn[data-id="${friend.friend_id}"]`);
+        if (invBtn) {
+          invBtn.innerHTML = this.icons.check;
+          invBtn.disabled = true;
+          invBtn.classList.remove('s-btn-primary');
+          invBtn.classList.add('s-btn-success');
+        }
+        await this.inviteToPartyQuick(friend.friend_id);
+      }
+      
+      btn.innerHTML = `${this.icons.check} Sent!`;
+      setTimeout(() => modal.remove(), 1000);
     });
   }
 
-  renderInviteFriendRow(f) {
-    const name = f.gamer_tag || f.display_name || 'Unknown';
-    const initial = name[0].toUpperCase();
-    const isOnline = f.status === 'online' || f.status === 'in_game';
-    const avatarStyle = this.getAvatarStyle(f);
-    const statusClass = f.status === 'in_game' ? 'in-game' : f.status === 'online' ? 'online' : '';
-    
-    return `
-      <div class="s-invite-row ${isOnline ? '' : 'offline'}">
-        <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot-sm ${statusClass}"></div></div>
-        <span class="s-invite-name">${this.escapeHtml(name)}</span>
-        <button class="s-btn s-btn-primary s-btn-sm quick-invite-btn" data-id="${f.friend_id}">${this.icons.userPlus}</button>
-      </div>`;
+  async inviteToPartyQuick(userId) {
+    try {
+      const { error } = await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+      if (error) {
+        console.error('Party invite error:', error);
+      } else {
+        this.playSound('invite');
+      }
+    } catch (e) {
+      console.error('Party invite exception:', e);
+    }
   }
 
-  async inviteToPartyQuick(userId, btn) {
-    if (btn) {
-      btn.innerHTML = this.icons.check;
-      btn.disabled = true;
-      btn.classList.remove('s-btn-primary');
-      btn.classList.add('s-btn-success');
+  // Party Chat Functions
+  async subscribeToPartyChat() {
+    if (!this.currentParty) return;
+    
+    if (this.chatChannel) {
+      this.supabase.removeChannel(this.chatChannel);
     }
+
+    await this.loadPartyMessages();
+
+    this.chatChannel = this.supabase
+      .channel(`party-chat-${this.currentParty.party_id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'party_messages',
+        filter: `party_id=eq.${this.currentParty.party_id}`
+      }, (payload) => {
+        this.handleNewPartyMessage(payload.new);
+      })
+      .subscribe();
+  }
+
+  async loadPartyMessages() {
+    if (!this.currentParty) return;
     
     try {
-      await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+      const { data } = await this.supabase
+        .from('party_messages')
+        .select('id, user_id, message, created_at, profiles(display_name, gamer_tag, name_color, is_premium)')
+        .eq('party_id', this.currentParty.party_id)
+        .order('created_at', { ascending: true })
+        .limit(50);
+      
+      this.partyMessages = data || [];
+      this.renderPartyChatMessages();
     } catch (e) {
-      console.error('Party invite error:', e);
-      if (btn) {
-        btn.innerHTML = '!';
-        btn.classList.remove('s-btn-success');
-        btn.classList.add('s-btn-danger');
-      }
+      console.error('Load party messages error:', e);
     }
   }
 
-  async inviteAllOnline() {
-    const partyMemberIds = this.partyMembers.map(m => m.id);
-    const onlineFriends = this.friends.filter(f => 
-      (f.status === 'online' || f.status === 'in_game') && 
-      !partyMemberIds.includes(f.friend_id)
-    );
+  handleNewPartyMessage(msg) {
+    const member = this.partyMembers.find(m => m.id === msg.user_id);
+    const newMsg = {
+      id: msg.id,
+      user_id: msg.user_id,
+      message: msg.message,
+      created_at: msg.created_at,
+      profiles: member ? { gamer_tag: member.name, name_color: member.name_color, is_premium: member.is_premium } : null
+    };
     
-    const inviteAllBtn = document.getElementById('invite-all-btn');
-    if (inviteAllBtn) {
-      inviteAllBtn.innerHTML = 'Sending...';
-      inviteAllBtn.disabled = true;
+    this.partyMessages.push(newMsg);
+    this.renderPartyChatMessages();
+    
+    if (msg.user_id !== this.currentUser.id) {
+      this.playSound('message');
     }
-    
-    // Update all buttons
-    document.querySelectorAll('.quick-invite-btn').forEach(btn => {
-      btn.innerHTML = this.icons.check;
-      btn.disabled = true;
-      btn.classList.remove('s-btn-primary');
-      btn.classList.add('s-btn-success');
-    });
-    
-    // Send all invites
-    for (const friend of onlineFriends) {
-      try {
-        await this.supabase.rpc('invite_to_party', { invitee_id: friend.friend_id });
-      } catch (e) {
-        console.error('Failed to invite:', friend.friend_id, e);
-      }
+  }
+
+  renderPartyChatMessages() {
+    const container = document.getElementById('party-messages');
+    if (!container) return;
+
+    if (!this.partyMessages.length) {
+      container.innerHTML = '<div class="s-chat-empty">No messages yet</div>';
+      return;
     }
+
+    container.innerHTML = this.partyMessages.map(msg => {
+      const profile = msg.profiles || {};
+      const name = profile.gamer_tag || profile.display_name || 'Unknown';
+      const isMe = msg.user_id === this.currentUser.id;
+      const nameStyle = profile.is_premium && profile.name_color ? `color: ${profile.name_color}` : '';
+      const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      return `
+        <div class="s-chat-msg ${isMe ? 'me' : ''}">
+          <span class="s-chat-name" style="${nameStyle}">${this.escapeHtml(name)}</span>
+          <span class="s-chat-text">${this.escapeHtml(msg.message)}</span>
+          <span class="s-chat-time">${time}</span>
+        </div>`;
+    }).join('');
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async sendPartyMessage() {
+    const input = document.getElementById('party-chat-input');
+    if (!input || !this.currentParty) return;
     
-    if (inviteAllBtn) {
-      inviteAllBtn.innerHTML = `${this.icons.check} Sent!`;
+    const message = input.value.trim();
+    if (!message) return;
+    
+    input.value = '';
+    
+    try {
+      await this.supabase.from('party_messages').insert({
+        party_id: this.currentParty.party_id,
+        user_id: this.currentUser.id,
+        message: message
+      });
+    } catch (e) {
+      console.error('Send message error:', e);
+      input.value = message;
+    }
+  }
+
+  async setUserStatus(status) {
+    this.userStatus = status;
+    try {
+      await this.supabase.rpc('update_user_status', { new_status: status });
+      this.updateStatusIndicator();
+    } catch (e) {
+      console.error('Set status error:', e);
+    }
+  }
+
+  updateStatusIndicator() {
+    const indicator = document.getElementById('status-indicator');
+    const statusOpt = this.statusOptions.find(s => s.id === this.userStatus);
+    if (indicator && statusOpt) {
+      indicator.style.background = statusOpt.color;
     }
   }
 
