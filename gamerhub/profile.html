@@ -1721,9 +1721,14 @@
 
       const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
       if (error) { showStatus('Error loading profile: ' + error.message, 'error'); return; }
-      currentProfile = profile;
+     currentProfile = profile;
 
-      document.getElementById('display-name').value = profile.display_name || '';
+// Update header with user's initial
+const initial = (profile.display_name || profile.email || 'U').charAt(0).toUpperCase();
+headerUsernameLabel.textContent = initial;
+localStorage.setItem('tgco_header_label', initial);
+
+document.getElementById('display-name').value = profile.display_name || '';
       document.getElementById('email').value = profile.email || user.email || '';
       document.getElementById('account-type').value = profile.account_type === 'premium' ? 'Premium ⭐' : 'Free';
       document.getElementById('member-since').value = new Date(profile.created_at).toLocaleDateString();
