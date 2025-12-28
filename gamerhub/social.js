@@ -1534,11 +1534,15 @@ class SocialSystem {
       const addBtns = container.querySelectorAll('.add-btn');
       const acceptBtns = container.querySelectorAll('.accept-search-btn');
       
+      console.log('Found add buttons:', addBtns.length);
+      
       addBtns.forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          this.sendFriendRequest(btn.getAttribute('data-id'));
+          const userId = btn.getAttribute('data-id');
+          console.log('Add button clicked, userId:', userId);
+          this.sendFriendRequest(userId);
         };
       });
       
@@ -1547,6 +1551,7 @@ class SocialSystem {
           e.preventDefault();
           e.stopPropagation();
           const userId = btn.getAttribute('data-id');
+          console.log('Accept button clicked, userId:', userId);
           const req = this.pendingRequests.find(r => r.from_user === userId);
           if (req) this.acceptRequest(req.id);
         };
@@ -1560,12 +1565,41 @@ class SocialSystem {
   // ==================== API CALLS ====================
 
   async sendFriendRequest(userId) {
+    console.log('Sending friend request to:', userId);
+    
+    // Update button immediately for feedback
+    const btn = document.querySelector(`.add-btn[data-id="${userId}"]`);
+    if (btn) {
+      btn.innerHTML = 'Sent!';
+      btn.disabled = true;
+      btn.classList.remove('s-btn-primary');
+      btn.classList.add('s-btn-secondary');
+    }
+    
     try {
-      await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId });
+      const { data, error } = await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId }).select();
+      
+      if (error) {
+        // 409 = conflict = request already exists, that's fine
+        if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+          console.log('Friend request already exists');
+          if (btn) btn.innerHTML = 'Pending';
+        } else {
+          console.error('Friend request error:', error);
+          if (btn) {
+            btn.innerHTML = 'Error';
+            btn.classList.remove('s-btn-secondary');
+            btn.classList.add('s-btn-danger');
+          }
+        }
+        return;
+      }
+      
+      console.log('Friend request sent:', data);
       await this.loadRequests();
-      const input = document.getElementById('s-search');
-      if (input?.value) this.searchUsers(input.value);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error('Friend request exception:', e); 
+    }
   }
 
   async acceptRequest(id) {
