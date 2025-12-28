@@ -1,6 +1,6 @@
 /* =============================================
    SOCIAL SYSTEM - TheGaming.co
-   Fixed column names: fromuser/touser, userid/friendid
+   Column names: from_user/to_user, user_id/friend_id
    ============================================= */
 
 class SocialSystem {
@@ -81,13 +81,9 @@ class SocialSystem {
       const navLoggedIn = headerActions.querySelector('.nav-right-logged-in');
       const navLoggedOut = headerActions.querySelector('.nav-right-logged-out');
       
-      if (navLoggedIn) {
-        headerActions.insertBefore(friendsBtn, navLoggedIn);
-      } else if (navLoggedOut) {
-        headerActions.insertBefore(friendsBtn, navLoggedOut);
-      } else {
-        headerActions.appendChild(friendsBtn);
-      }
+      if (navLoggedIn) headerActions.insertBefore(friendsBtn, navLoggedIn);
+      else if (navLoggedOut) headerActions.insertBefore(friendsBtn, navLoggedOut);
+      else headerActions.appendChild(friendsBtn);
     }
 
     const displayName = this.userProfile?.gamer_tag || this.userProfile?.display_name || 'Player';
@@ -116,34 +112,21 @@ class SocialSystem {
         
         <div class="social-tabs">
           <button class="social-tab active" data-tab="friends">Friends</button>
-          <button class="social-tab" data-tab="requests">
-            Requests
-            <span class="badge" id="requests-badge" style="display: none;">0</span>
-          </button>
+          <button class="social-tab" data-tab="requests">Requests<span class="badge" id="requests-badge" style="display: none;">0</span></button>
           <button class="social-tab" data-tab="search">Search</button>
         </div>
         
         <div class="social-content">
           <div class="social-panel active" id="panel-friends">
             <div id="invites-container"></div>
-            <div id="friends-list">
-              <div class="loading-friends">
-                <div class="skeleton"></div>
-                <div class="skeleton"></div>
-                <div class="skeleton"></div>
-              </div>
-            </div>
+            <div id="friends-list"><div class="loading-friends"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></div>
           </div>
-          
           <div class="social-panel" id="panel-requests">
             <div id="incoming-requests"></div>
             <div id="sent-requests"></div>
           </div>
-          
           <div class="social-panel" id="panel-search">
-            <div class="search-wrapper">
-              <input type="text" class="search-input" id="user-search-input" placeholder="Username#1234 or name...">
-            </div>
+            <div class="search-wrapper"><input type="text" class="search-input" id="user-search-input" placeholder="Username#1234 or name..."></div>
             <div class="search-results" id="search-results"></div>
             <p class="search-hint">Search by name or paste a friend's tag (e.g. nanu32#4829)</p>
           </div>
@@ -158,14 +141,8 @@ class SocialSystem {
     document.getElementById('friends-btn')?.addEventListener('click', () => this.toggle());
     document.getElementById('social-close')?.addEventListener('click', () => this.close());
     document.getElementById('social-overlay')?.addEventListener('click', () => this.close());
-    
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) this.close();
-    });
-    
-    document.querySelectorAll('.social-tab').forEach(tab => {
-      tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
-    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.isOpen) this.close(); });
+    document.querySelectorAll('.social-tab').forEach(tab => tab.addEventListener('click', () => this.switchTab(tab.dataset.tab)));
     
     const searchInput = document.getElementById('user-search-input');
     let searchTimeout;
@@ -176,37 +153,28 @@ class SocialSystem {
     
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.friend-options')) {
-        document.querySelectorAll('.friend-options-menu.open').forEach(menu => {
-          menu.classList.remove('open');
-        });
+        document.querySelectorAll('.friend-options-menu.open').forEach(menu => menu.classList.remove('open'));
       }
     });
   }
 
   toggle() { this.isOpen ? this.close() : this.open(); }
-
   open() {
     this.isOpen = true;
     document.getElementById('social-sidebar')?.classList.add('open');
     document.getElementById('social-overlay')?.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
-
   close() {
     this.isOpen = false;
     document.getElementById('social-sidebar')?.classList.remove('open');
     document.getElementById('social-overlay')?.classList.remove('open');
     document.body.style.overflow = '';
   }
-
   switchTab(tab) {
     this.activeTab = tab;
-    document.querySelectorAll('.social-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === tab);
-    });
-    document.querySelectorAll('.social-panel').forEach(p => {
-      p.classList.toggle('active', p.id === `panel-${tab}`);
-    });
+    document.querySelectorAll('.social-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.querySelectorAll('.social-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab}`));
   }
 
   async loadFriends() {
@@ -224,21 +192,18 @@ class SocialSystem {
 
   async loadRequests() {
     try {
-      // FIXED: Using fromuser/touser instead of from_user/to_user
       const { data: incoming, error: inErr } = await this.supabase
         .from('friend_requests')
-        .select('id, fromuser, createat, profiles!friend_requests_fromuser_fkey(display_name, gamer_tag, discriminator)')
+        .select('id, from_user, created_at, profiles!friend_requests_from_user_fkey(display_name, gamer_tag, discriminator)')
         .eq('to_user', this.currentUser.id)
         .eq('status', 'pending');
-      
       if (inErr) throw inErr;
       
       const { data: sent, error: sentErr } = await this.supabase
         .from('friend_requests')
-        .select('id, touser, createat, profiles!friend_requests_touser_fkey(display_name, gamer_tag, discriminator)')
+        .select('id, to_user, created_at, profiles!friend_requests_to_user_fkey(display_name, gamer_tag, discriminator)')
         .eq('from_user', this.currentUser.id)
         .eq('status', 'pending');
-      
       if (sentErr) throw sentErr;
       
       this.pendingRequests = incoming || [];
@@ -254,11 +219,10 @@ class SocialSystem {
     try {
       const { data, error } = await this.supabase
         .from('game_invites')
-        .select('id, fromuser, game_name, room_code, createat, expires_at, profiles!game_invites_fromuser_fkey(display_name, gamer_tag)')
-        .eq('touser', this.currentUser.id)
+        .select('id, from_user, game_name, room_code, created_at, expires_at, profiles!game_invites_from_user_fkey(display_name, gamer_tag)')
+        .eq('to_user', this.currentUser.id)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString());
-      
       if (error) throw error;
       this.gameInvites = data || [];
       this.renderInvites();
@@ -267,32 +231,20 @@ class SocialSystem {
     }
   }
 
-  getDisplayName(profile) {
-    return profile?.gamer_tag || profile?.display_name || 'Unknown';
-  }
+  getDisplayName(profile) { return profile?.gamer_tag || profile?.display_name || 'Unknown'; }
 
   renderFriends() {
     const container = document.getElementById('friends-list');
     if (!container) return;
-
     if (this.friends.length === 0) {
       container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p class="empty-state-text">No friends yet.<br>Search for players to add them!</p></div>';
       return;
     }
-
     const online = this.friends.filter(f => f.status === 'online' || f.status === 'in_game');
     const offline = this.friends.filter(f => f.status === 'offline' || !f.status);
-
     let html = '';
-    if (online.length > 0) {
-      html += `<div class="section-label">ONLINE — ${online.length}</div>`;
-      html += online.map(f => this.renderFriendItem(f)).join('');
-    }
-    if (offline.length > 0) {
-      html += `<div class="section-label" style="margin-top: 20px;">OFFLINE — ${offline.length}</div>`;
-      html += offline.map(f => this.renderFriendItem(f)).join('');
-    }
-
+    if (online.length > 0) { html += `<div class="section-label">ONLINE — ${online.length}</div>` + online.map(f => this.renderFriendItem(f)).join(''); }
+    if (offline.length > 0) { html += `<div class="section-label" style="margin-top: 20px;">OFFLINE — ${offline.length}</div>` + offline.map(f => this.renderFriendItem(f)).join(''); }
     container.innerHTML = html;
     this.bindFriendActions();
   }
@@ -302,16 +254,12 @@ class SocialSystem {
     const initial = displayName[0].toUpperCase();
     const statusClass = friend.status || 'offline';
     const tagDisplay = friend.discriminator ? `#${friend.discriminator}` : '';
-    
     let statusText = 'Offline';
     if (friend.status === 'online') statusText = 'Online';
     if (friend.status === 'in_game') statusText = `In Game: ${friend.current_game || 'Unknown'}`;
-    
     const lastSeen = friend.last_seen ? this.timeAgo(new Date(friend.last_seen)) : '';
     if (statusClass === 'offline' && lastSeen) statusText = `Last seen ${lastSeen}`;
-
     const canInvite = (friend.status === 'online' || friend.status === 'in_game') && this.isInLobby();
-
     return `
       <div class="friend-item" data-friend-id="${friend.friend_id}">
         <div class="friend-avatar">${initial}<div class="status-dot ${statusClass}"></div></div>
@@ -329,8 +277,7 @@ class SocialSystem {
             </div>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
   renderRequests() {
@@ -341,24 +288,14 @@ class SocialSystem {
           this.pendingRequests.map(req => {
             const name = this.getDisplayName(req.profiles);
             const tag = req.profiles?.discriminator ? `#${req.profiles.discriminator}` : '';
-            return `
-            <div class="friend-item" data-request-id="${req.id}">
+            return `<div class="friend-item" data-request-id="${req.id}">
               <div class="friend-avatar">${name[0].toUpperCase()}<div class="status-dot online"></div></div>
-              <div class="friend-info">
-                <div class="friend-name">${this.escapeHtml(name)}<span class="friend-tag">${tag}</span></div>
-                <div class="friend-status">Wants to be friends</div>
-              </div>
-              <div class="friend-actions">
-                <button class="action-btn accept accept-request-btn" data-request-id="${req.id}">✓</button>
-                <button class="action-btn decline decline-request-btn" data-request-id="${req.id}">✕</button>
-              </div>
+              <div class="friend-info"><div class="friend-name">${this.escapeHtml(name)}<span class="friend-tag">${tag}</span></div><div class="friend-status">Wants to be friends</div></div>
+              <div class="friend-actions"><button class="action-btn accept accept-request-btn" data-request-id="${req.id}">✓</button><button class="action-btn decline decline-request-btn" data-request-id="${req.id}">✕</button></div>
             </div>`;
           }).join('');
-      } else {
-        incomingContainer.innerHTML = '';
-      }
+      } else { incomingContainer.innerHTML = ''; }
     }
-
     const sentContainer = document.getElementById('sent-requests');
     if (sentContainer) {
       if (this.sentRequests.length > 0) {
@@ -366,31 +303,18 @@ class SocialSystem {
           this.sentRequests.map(req => {
             const name = this.getDisplayName(req.profiles);
             const tag = req.profiles?.discriminator ? `#${req.profiles.discriminator}` : '';
-            return `
-            <div class="friend-item">
+            return `<div class="friend-item">
               <div class="friend-avatar">${name[0].toUpperCase()}</div>
-              <div class="friend-info">
-                <div class="friend-name">${this.escapeHtml(name)}<span class="friend-tag">${tag}</span></div>
-                <div class="friend-status">Pending...</div>
-              </div>
-              <div class="friend-actions">
-                <button class="action-btn secondary cancel-request-btn" data-request-id="${req.id}">Cancel</button>
-              </div>
+              <div class="friend-info"><div class="friend-name">${this.escapeHtml(name)}<span class="friend-tag">${tag}</span></div><div class="friend-status">Pending...</div></div>
+              <div class="friend-actions"><button class="action-btn secondary cancel-request-btn" data-request-id="${req.id}">Cancel</button></div>
             </div>`;
           }).join('');
-      } else {
-        sentContainer.innerHTML = '';
-      }
+      } else { sentContainer.innerHTML = ''; }
     }
-
     const badge = document.getElementById('requests-badge');
     if (badge) {
-      if (this.pendingRequests.length > 0) {
-        badge.textContent = this.pendingRequests.length;
-        badge.style.display = 'inline-flex';
-      } else {
-        badge.style.display = 'none';
-      }
+      if (this.pendingRequests.length > 0) { badge.textContent = this.pendingRequests.length; badge.style.display = 'inline-flex'; }
+      else { badge.style.display = 'none'; }
     }
     this.bindRequestActions();
   }
@@ -398,28 +322,15 @@ class SocialSystem {
   renderInvites() {
     const container = document.getElementById('invites-container');
     if (!container) return;
-
-    if (this.gameInvites.length === 0) {
-      container.innerHTML = '';
-      return;
-    }
-
+    if (this.gameInvites.length === 0) { container.innerHTML = ''; return; }
     container.innerHTML = `<div class="invites-section"><h3>🎮 GAME INVITES</h3>` +
       this.gameInvites.map(inv => {
         const name = inv.profiles?.gamer_tag || inv.profiles?.display_name || 'Someone';
-        return `
-        <div class="invite-item" data-invite-id="${inv.id}">
-          <div class="invite-info">
-            <div class="invite-from">${this.escapeHtml(name)}</div>
-            <div class="invite-game">invited you to ${this.escapeHtml(inv.game_name)}</div>
-          </div>
-          <div class="friend-actions">
-            <button class="action-btn primary join-invite-btn" data-invite-id="${inv.id}" data-room="${inv.room_code}" data-game="${inv.game_name}">Join</button>
-            <button class="action-btn secondary ignore-invite-btn" data-invite-id="${inv.id}">✕</button>
-          </div>
+        return `<div class="invite-item" data-invite-id="${inv.id}">
+          <div class="invite-info"><div class="invite-from">${this.escapeHtml(name)}</div><div class="invite-game">invited you to ${this.escapeHtml(inv.game_name)}</div></div>
+          <div class="friend-actions"><button class="action-btn primary join-invite-btn" data-invite-id="${inv.id}" data-room="${inv.room_code}" data-game="${inv.game_name}">Join</button><button class="action-btn secondary ignore-invite-btn" data-invite-id="${inv.id}">✕</button></div>
         </div>`;
       }).join('') + '</div>';
-
     this.bindInviteActions();
   }
 
@@ -444,61 +355,35 @@ class SocialSystem {
   }
 
   bindInviteActions() {
-    document.querySelectorAll('.join-invite-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.acceptInvite(btn.dataset.inviteId, btn.dataset.game, btn.dataset.room));
-    });
+    document.querySelectorAll('.join-invite-btn').forEach(btn => btn.addEventListener('click', () => this.acceptInvite(btn.dataset.inviteId, btn.dataset.game, btn.dataset.room)));
     document.querySelectorAll('.ignore-invite-btn').forEach(btn => btn.addEventListener('click', () => this.declineInvite(btn.dataset.inviteId)));
   }
 
   async searchUsers(query) {
     const container = document.getElementById('search-results');
     if (!container) return;
-
-    if (!query || query.length < 2) {
-      container.innerHTML = '';
-      return;
-    }
+    if (!query || query.length < 2) { container.innerHTML = ''; return; }
 
     try {
-      let data = [];
-      let error = null;
-
+      let data = [], error = null;
       const tagMatch = query.match(/^(.+)#(\d{4})$/);
       
       if (tagMatch) {
         const [, username, discriminator] = tagMatch;
-        const result = await this.supabase
-          .from('profiles')
-          .select('id, display_name, gamer_tag, discriminator')
-          .or(`gamer_tag.ilike.${username},display_name.ilike.${username}`)
-          .eq('discriminator', discriminator)
-          .neq('id', this.currentUser.id)
-          .limit(10);
-        data = result.data;
-        error = result.error;
+        const result = await this.supabase.from('profiles').select('id, display_name, gamer_tag, discriminator')
+          .or(`gamer_tag.ilike.${username},display_name.ilike.${username}`).eq('discriminator', discriminator).neq('id', this.currentUser.id).limit(10);
+        data = result.data; error = result.error;
       } else {
-        const result = await this.supabase
-          .from('profiles')
-          .select('id, display_name, gamer_tag, discriminator')
-          .or(`display_name.ilike.%${query}%,gamer_tag.ilike.%${query}%`)
-          .neq('id', this.currentUser.id)
-          .limit(10);
-        data = result.data;
-        error = result.error;
+        const result = await this.supabase.from('profiles').select('id, display_name, gamer_tag, discriminator')
+          .or(`display_name.ilike.%${query}%,gamer_tag.ilike.%${query}%`).neq('id', this.currentUser.id).limit(10);
+        data = result.data; error = result.error;
       }
-
       if (error) throw error;
-
-      if (!data || data.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p class="empty-state-text">No users found</p></div>';
-        return;
-      }
+      if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state"><p class="empty-state-text">No users found</p></div>'; return; }
 
       const friendIds = this.friends.map(f => f.friend_id);
-      // FIXED: Using touser instead of to_user
-      const sentIds = this.sentRequests.map(r => r.touser);
-      // FIXED: Using fromuser instead of from_user
-      const receivedIds = this.pendingRequests.map(r => r.fromuser);
+      const sentIds = this.sentRequests.map(r => r.to_user);
+      const receivedIds = this.pendingRequests.map(r => r.from_user);
 
       container.innerHTML = data.map(user => {
         const isFriend = friendIds.includes(user.id);
@@ -506,33 +391,21 @@ class SocialSystem {
         const hasReceivedRequest = receivedIds.includes(user.id);
         const displayName = user.gamer_tag || user.display_name || 'Unknown';
         const tagDisplay = user.discriminator ? `#${user.discriminator}` : '';
-
         let actionBtn = '';
         if (isFriend) actionBtn = '<span style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">Friends ✓</span>';
         else if (hasSentRequest) actionBtn = '<span style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">Pending...</span>';
         else if (hasReceivedRequest) actionBtn = `<button class="action-btn accept accept-from-search-btn" data-user-id="${user.id}">Accept</button>`;
         else actionBtn = `<button class="action-btn primary add-friend-btn" data-user-id="${user.id}">Add</button>`;
-
-        return `
-          <div class="search-result-item">
-            <div class="friend-avatar">${displayName[0].toUpperCase()}</div>
-            <div class="friend-info">
-              <div class="friend-name">${this.escapeHtml(displayName)}<span class="friend-tag">${tagDisplay}</span></div>
-            </div>
-            <div class="friend-actions">${actionBtn}</div>
-          </div>
-        `;
+        return `<div class="search-result-item"><div class="friend-avatar">${displayName[0].toUpperCase()}</div><div class="friend-info"><div class="friend-name">${this.escapeHtml(displayName)}<span class="friend-tag">${tagDisplay}</span></div></div><div class="friend-actions">${actionBtn}</div></div>`;
       }).join('');
 
       document.querySelectorAll('.add-friend-btn').forEach(btn => btn.addEventListener('click', () => this.sendFriendRequest(btn.dataset.userId)));
       document.querySelectorAll('.accept-from-search-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          // FIXED: Using fromuser
-          const request = this.pendingRequests.find(r => r.fromuser === btn.dataset.userId);
+          const request = this.pendingRequests.find(r => r.from_user === btn.dataset.userId);
           if (request) this.acceptRequest(request.id);
         });
       });
-
     } catch (err) {
       console.error('Search error:', err);
       container.innerHTML = '<div class="empty-state"><p class="empty-state-text">Error searching. Try again.</p></div>';
@@ -541,8 +414,7 @@ class SocialSystem {
 
   async sendFriendRequest(userId) {
     try {
-      // FIXED: Using fromuser/touser
-      const { error } = await this.supabase.from('friend_requests').insert({ fromuser: this.currentUser.id, touser: userId });
+      const { error } = await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId });
       if (error) throw error;
       await this.loadRequests();
       const searchInput = document.getElementById('user-search-input');
@@ -587,10 +459,7 @@ class SocialSystem {
       const { error } = await this.supabase.rpc('remove_friend', { friend_user_id: friendId });
       if (error) throw error;
       await this.loadFriends();
-    } catch (err) {
-      console.error('Error removing friend:', err);
-      alert('Could not remove friend');
-    }
+    } catch (err) { console.error('Error removing friend:', err); alert('Could not remove friend'); }
   }
 
   async blockUser(userId) {
@@ -600,18 +469,14 @@ class SocialSystem {
       if (blockErr) throw blockErr;
       await this.supabase.rpc('remove_friend', { friend_user_id: userId });
       await this.loadFriends();
-    } catch (err) {
-      console.error('Error blocking user:', err);
-      alert('Could not block user');
-    }
+    } catch (err) { console.error('Error blocking user:', err); alert('Could not block user'); }
   }
 
   async sendInvite(friendId) {
     const lobbyInfo = this.getLobbyInfo();
     if (!lobbyInfo) { alert('You must be in a game lobby to invite friends'); return; }
     try {
-      // FIXED: Using fromuser/touser
-      const { error } = await this.supabase.from('game_invites').insert({ fromuser: this.currentUser.id, touser: friendId, game_name: lobbyInfo.game, room_code: lobbyInfo.roomCode });
+      const { error } = await this.supabase.from('game_invites').insert({ from_user: this.currentUser.id, to_user: friendId, game_name: lobbyInfo.game, room_code: lobbyInfo.roomCode });
       if (error) throw error;
       const btn = document.querySelector(`.invite-btn[data-friend-id="${friendId}"]`);
       if (btn) { btn.textContent = 'Sent!'; btn.disabled = true; setTimeout(() => { btn.textContent = 'Invite'; btn.disabled = false; }, 3000); }
@@ -647,7 +512,6 @@ class SocialSystem {
         else this.updatePresence('online');
       }
     }, 60000);
-
     window.addEventListener('beforeunload', () => {
       if (this.currentUser) {
         const data = JSON.stringify({ user_id: this.currentUser.id, status: 'offline', last_seen: new Date().toISOString() });
@@ -657,19 +521,12 @@ class SocialSystem {
   }
 
   subscribeToInvites() {
-    this.invitesChannel = this.supabase
-      .channel('game_invites_channel')
-      // FIXED: Using touser
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `touser=eq.${this.currentUser.id}` }, () => {
-        this.loadInvites();
-        this.updateNotificationDot();
-      })
+    this.invitesChannel = this.supabase.channel('game_invites_channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `to_user=eq.${this.currentUser.id}` }, () => { this.loadInvites(); this.updateNotificationDot(); })
       .subscribe();
   }
 
-  isInLobby() {
-    return window.location.pathname.includes('lobby') || window.location.search.includes('room=') || document.querySelector('[data-room-code]') !== null;
-  }
+  isInLobby() { return window.location.pathname.includes('lobby') || window.location.search.includes('room=') || document.querySelector('[data-room-code]') !== null; }
 
   getLobbyInfo() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -692,12 +549,7 @@ class SocialSystem {
   }
 
   getGameLobbyUrl(game, roomCode) {
-    const gameUrls = {
-      'Spyhunt': '/spyhunt/lobby.html', 'Spyfall': '/spyhunt/lobby.html', 'Codenames': '/codenames/lobby.html',
-      'Werewolf': '/werewolf/lobby.html', 'Imposter': '/imposter/lobby.html', 'Herd Mentality': '/herd-mentality/lobby.html',
-      'Kiss Marry Kill': '/kiss-marry-kill/lobby.html', 'This or That': '/this-or-that/lobby.html',
-      '21 Questions': '/21-questions/lobby.html', 'Sketch & Guess': '/sketch/lobby.html'
-    };
+    const gameUrls = { 'Spyhunt': '/spyhunt/lobby.html', 'Spyfall': '/spyhunt/lobby.html', 'Codenames': '/codenames/lobby.html', 'Werewolf': '/werewolf/lobby.html', 'Imposter': '/imposter/lobby.html', 'Herd Mentality': '/herd-mentality/lobby.html', 'Kiss Marry Kill': '/kiss-marry-kill/lobby.html', 'This or That': '/this-or-that/lobby.html', '21 Questions': '/21-questions/lobby.html', 'Sketch & Guess': '/sketch/lobby.html' };
     return `${gameUrls[game] || '/lobby.html'}?join=${roomCode}`;
   }
 
@@ -715,11 +567,7 @@ class SocialSystem {
     return date.toLocaleDateString();
   }
 
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+  escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
   copyHandle() {
     const handle = this.generateHandle();
@@ -727,28 +575,17 @@ class SocialSystem {
       const btn = document.querySelector('.social-profile-handle button');
       if (btn) { const original = btn.textContent; btn.textContent = '✓'; setTimeout(() => { btn.textContent = original; }, 1500); }
     }).catch(() => {
-      const input = document.createElement('input');
-      input.value = handle;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
+      const input = document.createElement('input'); input.value = handle; document.body.appendChild(input); input.select(); document.execCommand('copy'); document.body.removeChild(input);
     });
   }
 }
 
 function initSocialSystem() {
-  if (typeof supabase !== 'undefined' && typeof supabaseClient !== 'undefined') {
-    window.socialSystem = new SocialSystem(supabaseClient);
-  } else {
-    setTimeout(initSocialSystem, 100);
-  }
+  if (typeof supabase !== 'undefined' && typeof supabaseClient !== 'undefined') window.socialSystem = new SocialSystem(supabaseClient);
+  else setTimeout(initSocialSystem, 100);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initSocialSystem);
-} else {
-  initSocialSystem();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSocialSystem);
+else initSocialSystem();
 
 window.SocialSystem = SocialSystem;
