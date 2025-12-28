@@ -463,7 +463,7 @@ class SocialSystem {
         justify-content: center;
         gap: 6px;
       }
-      .s-btn svg { width: 16px; height: 16px; }
+      .s-btn svg { width: 16px; height: 16px; pointer-events: none; }
       .s-btn-primary {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
@@ -1530,12 +1530,26 @@ class SocialSystem {
           </div>`;
       }).join('');
 
-      container.querySelectorAll('.add-btn').forEach(b => b.addEventListener('click', () => this.sendFriendRequest(b.dataset.id)));
-      container.querySelectorAll('.accept-search-btn').forEach(b => {
-        b.addEventListener('click', () => {
-          const req = this.pendingRequests.find(r => r.from_user === b.dataset.id);
+      // Bind click events directly with explicit function calls
+      const addBtns = container.querySelectorAll('.add-btn');
+      const acceptBtns = container.querySelectorAll('.accept-search-btn');
+      
+      addBtns.forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.sendFriendRequest(btn.getAttribute('data-id'));
+        };
+      });
+      
+      acceptBtns.forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const userId = btn.getAttribute('data-id');
+          const req = this.pendingRequests.find(r => r.from_user === userId);
           if (req) this.acceptRequest(req.id);
-        });
+        };
       });
     } catch (e) { 
       console.error(e); 
