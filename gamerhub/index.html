@@ -1997,11 +1997,11 @@
     async function loadSessionAndProfile() {
         const { data, error } = await supabaseClient.auth.getSession();
         
-        if (error) {
-            console.error('getSession error:', error);
-            updateAuthUI(null);
-            return;
-        }
+if (error) {
+    console.error('getSession error:', error);
+    // DON'T log out - keep cached state
+    return;
+}
 
         const user = data?.session?.user ?? null;
         updateAuthUI(user);
@@ -2034,11 +2034,12 @@
 
     loadSessionAndProfile();
 
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
-        const user = session?.user ?? null;
-        updateAuthUI(user);
-        if (user) loadSessionAndProfile();
-    });
+ supabaseClient.auth.onAuthStateChange((event, session) => {
+    // Only react to explicit sign out
+    if (event === 'SIGNED_OUT') {
+        updateAuthUI(null);
+    }
+});
 
     let userMenuOpen = false;
 
