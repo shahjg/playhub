@@ -68,13 +68,56 @@ class SocialSystem {
     await this.loadUserProfile();
     this.injectStyles();
     this.injectHTML();
-    this.updateNameplate(); // Update nameplate with correct profile data
+    this.updateNameplate();
     this.bindEvents();
     await this.loadAll();
     await this.updatePresence('online');
     this.startPresenceHeartbeat();
     this.subscribeToRealtime();
     this.updateNotificationBadge();
+    
+    // Check for party join code in URL
+    this.checkPartyJoinCode();
+  }
+
+  async checkPartyJoinCode() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('partycode') || params.get('party') || params.get('joinparty');
+    
+    if (!code) return;
+    
+    // Clean URL (remove the party code param)
+    params.delete('partycode');
+    params.delete('party');
+    params.delete('joinparty');
+    const newUrl = params.toString() 
+      ? `${window.location.pathname}?${params.toString()}` 
+      : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+    
+    // Check if already in a party
+    if (this.currentParty) {
+      this.showToast('party', 'Already in Party', 'Leave your current party first');
+      return;
+    }
+    
+    // Try to join party
+    try {
+      const { error } = await this.supabase.rpc('join_party_by_code', { code: code.toUpperCase() });
+      
+      if (error) {
+        console.error('Failed to join party:', error);
+        this.showToast('party', 'Could not join', error.message || 'Invalid or expired code');
+      } else {
+        await this.loadParty();
+        this.open();
+        this.switchTab('party');
+        this.showToast('party', 'Joined Party!', 'You are now in the party');
+      }
+    } catch (e) {
+      console.error('Join party error:', e);
+      this.showToast('party', 'Error', 'Could not join party');
+    }
   }
 
   updateNameplate() {
@@ -599,6 +642,134 @@ class SocialSystem {
       .s-party-actions {
         padding: 12px 16px;
         border-top: 1px solid var(--s-border);
+      }
+
+      /* Party Invite Section */
+      .s-party-invite-section {
+        margin-top: 16px;
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .s-party-invite-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-invite-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--s-text);
+      }
+      .s-party-invite-list {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .s-invite-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-invite-row:last-child { border-bottom: none; }
+      .s-invite-row.offline { opacity: 0.5; }
+      .s-avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: white;
+        position: relative;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+      }
+      .s-status-dot-sm {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid var(--s-bg-secondary);
+        background: #6b7280;
+      }
+      .s-status-dot-sm.online { background: var(--s-success); }
+      .s-status-dot-sm.in-game { background: var(--s-accent); }
+      .s-invite-name {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--s-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .s-invite-offline-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        color: var(--s-text-muted);
+        font-size: 0.8rem;
+        cursor: pointer;
+        border-top: 1px solid var(--s-border);
+        transition: background 0.2s;
+      }
+      .s-invite-offline-toggle:hover { background: var(--s-bg-hover); }
+      .s-toggle-arrow {
+        font-size: 1.2rem;
+        transition: transform 0.2s;
+      }
+      .s-empty-mini {
+        padding: 16px;
+        text-align: center;
+        color: var(--s-text-muted);
+        font-size: 0.8rem;
+      }
+      .s-btn-sm {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+      .s-btn-sm svg { width: 14px; height: 14px; }
+
+      /* Party Share Link */
+      .s-party-share {
+        padding: 12px 16px;
+        border-top: 1px solid var(--s-border);
+        background: rgba(99, 102, 241, 0.05);
+      }
+      .s-share-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .s-share-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .s-share-label {
+        font-size: 0.75rem;
+        color: var(--s-text-muted);
+      }
+      .s-share-code {
+        font-family: 'SF Mono', 'Consolas', monospace;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--s-accent-light);
+        background: rgba(99, 102, 241, 0.15);
+        padding: 4px 10px;
+        border-radius: 6px;
+        letter-spacing: 0.05em;
       }
 
       /* No party - inline create */
@@ -1164,7 +1335,8 @@ class SocialSystem {
           current_game: data[0].current_game,
           current_room: data[0].current_room,
           status: data[0].status,
-          max_size: data[0].max_size || 20
+          max_size: data[0].max_size || 20,
+          invite_code: data[0].invite_code
         };
         this.partyMembers = data.map(m => ({
           id: m.member_id, 
@@ -1235,14 +1407,24 @@ class SocialSystem {
     const statusText = f.status === 'in_game' ? `Playing ${f.current_game || 'a game'}` : f.status === 'online' ? 'Online' : f.last_seen ? `${this.timeAgo(new Date(f.last_seen))}` : 'Offline';
     const avatarStyle = this.getAvatarStyle(f);
     
-    const canInvite = (f.status === 'online' || f.status === 'in_game') && this.isInLobby();
+    const isOnline = f.status === 'online' || f.status === 'in_game';
+    const canInviteToGame = isOnline && this.isInLobby();
     const canJoin = f.status === 'in_game' && f.current_room;
-    const canPartyInvite = this.isPartyLeader() && (f.status === 'online' || f.status === 'in_game');
+    const canPartyInvite = this.isPartyLeader(); // Show for all friends if you're party leader
 
     let actions = '';
-    if (canPartyInvite) actions += `<button class="s-btn s-btn-secondary s-btn-icon party-invite-btn" data-id="${f.friend_id}" title="Invite to Party">${this.icons.plus}</button>`;
-    if (canJoin) actions += `<button class="s-btn s-btn-primary join-btn" data-id="${f.friend_id}" data-game="${f.current_game}" data-room="${f.current_room}">Join</button>`;
-    else if (canInvite) actions += `<button class="s-btn s-btn-primary invite-btn" data-id="${f.friend_id}">Invite</button>`;
+    
+    // Party invite button - show for party leaders
+    if (canPartyInvite) {
+      actions += `<button class="s-btn s-btn-primary s-btn-icon party-invite-btn" data-id="${f.friend_id}" title="Invite to Party">${this.icons.userPlus}</button>`;
+    }
+    
+    // Join/Invite to game buttons
+    if (canJoin) {
+      actions += `<button class="s-btn s-btn-success join-btn" data-id="${f.friend_id}" data-game="${f.current_game}" data-room="${f.current_room}">Join</button>`;
+    } else if (canInviteToGame) {
+      actions += `<button class="s-btn s-btn-secondary invite-btn" data-id="${f.friend_id}">Invite</button>`;
+    }
 
     return `
       <div class="s-user" data-id="${f.friend_id}">
@@ -1360,7 +1542,8 @@ class SocialSystem {
     const isLeader = this.isPartyLeader();
     const inGame = this.currentParty.status === 'in_game' && this.currentParty.current_room;
     const memberCount = this.partyMembers.length;
-    const maxSize = this.currentParty.max_size || 8;
+    const maxSize = this.currentParty.max_size || 20;
+    const partyCode = this.currentParty.invite_code || this.currentParty.party_id.substring(0, 8).toUpperCase();
 
     let gameBanner = '';
     if (inGame) {
@@ -1405,6 +1588,42 @@ class SocialSystem {
         </div>`;
     }).join('');
 
+    // Invite section for leaders
+    let inviteSection = '';
+    if (isLeader && this.friends.length > 0) {
+      const partyMemberIds = this.partyMembers.map(m => m.id);
+      const availableFriends = this.friends.filter(f => !partyMemberIds.includes(f.friend_id));
+      const onlineFriends = availableFriends.filter(f => f.status === 'online' || f.status === 'in_game');
+      const offlineFriends = availableFriends.filter(f => !f.status || f.status === 'offline');
+      
+      if (availableFriends.length > 0) {
+        inviteSection = `
+          <div class="s-party-invite-section">
+            <div class="s-party-invite-header">
+              <span class="s-invite-title">Invite Friends</span>
+              ${onlineFriends.length > 1 ? `<button class="s-btn s-btn-primary s-btn-sm" id="invite-all-btn">Invite All (${onlineFriends.length})</button>` : ''}
+            </div>
+            <div class="s-party-invite-list">
+              ${onlineFriends.length > 0 ? onlineFriends.map(f => this.renderInviteFriendRow(f)).join('') : '<div class="s-empty-mini">No friends online</div>'}
+              ${offlineFriends.length > 0 ? `
+                <div class="s-invite-offline-toggle" id="show-offline-toggle">
+                  <span>Show Offline (${offlineFriends.length})</span>
+                  <span class="s-toggle-arrow">›</span>
+                </div>
+                <div class="s-invite-offline-list" id="offline-friends-list" style="display:none;">
+                  ${offlineFriends.map(f => this.renderInviteFriendRow(f)).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>`;
+      } else {
+        inviteSection = `
+          <div class="s-party-invite-section">
+            <div class="s-empty-mini">All friends in party!</div>
+          </div>`;
+      }
+    }
+
     container.innerHTML = `
       <div class="s-party">
         <div class="s-party-header">
@@ -1413,15 +1632,111 @@ class SocialSystem {
         </div>
         ${gameBanner}
         <div class="s-party-members">${members}</div>
+        <div class="s-party-share">
+          <div class="s-share-row">
+            <div class="s-share-info">
+              <span class="s-share-label">Invite Code</span>
+              <code class="s-share-code" id="party-code">${partyCode}</code>
+            </div>
+            <button class="s-btn s-btn-secondary s-btn-icon" id="copy-party-link" title="Copy invite link">${this.icons.link}</button>
+          </div>
+        </div>
         <div class="s-party-actions">
           <button class="s-btn s-btn-danger" id="leave-party" style="width:100%">${this.icons.logout} Leave</button>
         </div>
-      </div>`;
+      </div>
+      ${inviteSection}`;
 
+    // Bind events
     document.getElementById('leave-party')?.addEventListener('click', () => this.leaveParty());
     document.getElementById('join-party-game')?.addEventListener('click', () => this.joinPartyGame());
+    document.getElementById('copy-party-link')?.addEventListener('click', () => this.copyPartyLink(partyCode));
+    document.getElementById('invite-all-btn')?.addEventListener('click', () => this.inviteAllOnline());
+    document.getElementById('show-offline-toggle')?.addEventListener('click', () => {
+      const list = document.getElementById('offline-friends-list');
+      const arrow = document.querySelector('.s-toggle-arrow');
+      if (list) {
+        const isHidden = list.style.display === 'none';
+        list.style.display = isHidden ? 'block' : 'none';
+        if (arrow) arrow.textContent = isHidden ? '‹' : '›';
+      }
+    });
+    
     container.querySelectorAll('.kick-btn').forEach(b => b.addEventListener('click', () => this.kickFromParty(b.dataset.id)));
     container.querySelectorAll('.transfer-btn').forEach(b => b.addEventListener('click', () => this.transferLeadership(b.dataset.id)));
+    container.querySelectorAll('.quick-invite-btn').forEach(b => {
+      b.onclick = () => this.inviteToPartyQuick(b.dataset.id, b);
+    });
+  }
+
+  renderInviteFriendRow(f) {
+    const name = f.gamer_tag || f.display_name || 'Unknown';
+    const initial = name[0].toUpperCase();
+    const isOnline = f.status === 'online' || f.status === 'in_game';
+    const avatarStyle = this.getAvatarStyle(f);
+    const statusClass = f.status === 'in_game' ? 'in-game' : f.status === 'online' ? 'online' : '';
+    
+    return `
+      <div class="s-invite-row ${isOnline ? '' : 'offline'}">
+        <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot-sm ${statusClass}"></div></div>
+        <span class="s-invite-name">${this.escapeHtml(name)}</span>
+        <button class="s-btn s-btn-primary s-btn-sm quick-invite-btn" data-id="${f.friend_id}">${this.icons.userPlus}</button>
+      </div>`;
+  }
+
+  async inviteToPartyQuick(userId, btn) {
+    if (btn) {
+      btn.innerHTML = this.icons.check;
+      btn.disabled = true;
+      btn.classList.remove('s-btn-primary');
+      btn.classList.add('s-btn-success');
+    }
+    
+    try {
+      await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+    } catch (e) {
+      console.error('Party invite error:', e);
+      if (btn) {
+        btn.innerHTML = '!';
+        btn.classList.remove('s-btn-success');
+        btn.classList.add('s-btn-danger');
+      }
+    }
+  }
+
+  async inviteAllOnline() {
+    const partyMemberIds = this.partyMembers.map(m => m.id);
+    const onlineFriends = this.friends.filter(f => 
+      (f.status === 'online' || f.status === 'in_game') && 
+      !partyMemberIds.includes(f.friend_id)
+    );
+    
+    const inviteAllBtn = document.getElementById('invite-all-btn');
+    if (inviteAllBtn) {
+      inviteAllBtn.innerHTML = 'Sending...';
+      inviteAllBtn.disabled = true;
+    }
+    
+    // Update all buttons
+    document.querySelectorAll('.quick-invite-btn').forEach(btn => {
+      btn.innerHTML = this.icons.check;
+      btn.disabled = true;
+      btn.classList.remove('s-btn-primary');
+      btn.classList.add('s-btn-success');
+    });
+    
+    // Send all invites
+    for (const friend of onlineFriends) {
+      try {
+        await this.supabase.rpc('invite_to_party', { invitee_id: friend.friend_id });
+      } catch (e) {
+        console.error('Failed to invite:', friend.friend_id, e);
+      }
+    }
+    
+    if (inviteAllBtn) {
+      inviteAllBtn.innerHTML = `${this.icons.check} Sent!`;
+    }
   }
 
   renderPartyInvites() {
@@ -1534,14 +1849,11 @@ class SocialSystem {
       const addBtns = container.querySelectorAll('.add-btn');
       const acceptBtns = container.querySelectorAll('.accept-search-btn');
       
-      console.log('Found add buttons:', addBtns.length);
-      
       addBtns.forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const userId = btn.getAttribute('data-id');
-          console.log('Add button clicked, userId:', userId);
           this.sendFriendRequest(userId);
         };
       });
@@ -1551,7 +1863,6 @@ class SocialSystem {
           e.preventDefault();
           e.stopPropagation();
           const userId = btn.getAttribute('data-id');
-          console.log('Accept button clicked, userId:', userId);
           const req = this.pendingRequests.find(r => r.from_user === userId);
           if (req) this.acceptRequest(req.id);
         };
@@ -1565,8 +1876,6 @@ class SocialSystem {
   // ==================== API CALLS ====================
 
   async sendFriendRequest(userId) {
-    console.log('Sending friend request to:', userId);
-    
     // Update button immediately for feedback
     const btn = document.querySelector(`.add-btn[data-id="${userId}"]`);
     if (btn) {
@@ -1577,12 +1886,11 @@ class SocialSystem {
     }
     
     try {
-      const { data, error } = await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId }).select();
+      const { error } = await this.supabase.from('friend_requests').insert({ from_user: this.currentUser.id, to_user: userId });
       
       if (error) {
-        // 409 = conflict = request already exists, that's fine
-        if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
-          console.log('Friend request already exists');
+        // Duplicate = request already exists
+        if (error.code === '23505' || error.message?.includes('duplicate')) {
           if (btn) btn.innerHTML = 'Pending';
         } else {
           console.error('Friend request error:', error);
@@ -1595,7 +1903,6 @@ class SocialSystem {
         return;
       }
       
-      console.log('Friend request sent:', data);
       await this.loadRequests();
     } catch (e) { 
       console.error('Friend request exception:', e); 
@@ -1683,9 +1990,41 @@ class SocialSystem {
   }
 
   async inviteToParty(userId) {
+    // Update button immediately
+    const btn = document.querySelector(`.party-invite-btn[data-id="${userId}"]`);
+    if (btn) {
+      btn.innerHTML = this.icons.check;
+      btn.disabled = true;
+      btn.classList.remove('s-btn-primary');
+      btn.classList.add('s-btn-success');
+    }
+    
     try {
-      await this.supabase.rpc('invite_to_party', { invitee_id: userId });
-    } catch (e) { console.error(e); }
+      const { error } = await this.supabase.rpc('invite_to_party', { invitee_id: userId });
+      
+      if (error) {
+        console.error('Party invite error:', error);
+        if (btn) {
+          btn.innerHTML = '!';
+          btn.classList.remove('s-btn-success');
+          btn.classList.add('s-btn-danger');
+        }
+        return;
+      }
+      
+      // Reset button after 2 seconds
+      setTimeout(() => {
+        if (btn) {
+          btn.innerHTML = this.icons.userPlus;
+          btn.disabled = false;
+          btn.classList.remove('s-btn-success');
+          btn.classList.add('s-btn-primary');
+        }
+      }, 2000);
+      
+    } catch (e) { 
+      console.error('Party invite exception:', e); 
+    }
   }
 
   async acceptPartyInvite(id) {
@@ -1829,6 +2168,28 @@ class SocialSystem {
     navigator.clipboard.writeText(this.generateHandle()).then(() => {
       const btn = document.getElementById('copy-handle');
       if (btn) { btn.innerHTML = this.icons.check; setTimeout(() => btn.innerHTML = this.icons.copy, 1500); }
+    });
+  }
+
+  copyPartyLink(code) {
+    const link = `${window.location.origin}?partycode=${code}`;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('copy-party-link');
+      const codeEl = document.getElementById('party-code');
+      if (btn) { 
+        btn.innerHTML = this.icons.check; 
+        btn.classList.remove('s-btn-secondary');
+        btn.classList.add('s-btn-success');
+        setTimeout(() => { 
+          btn.innerHTML = this.icons.link; 
+          btn.classList.remove('s-btn-success');
+          btn.classList.add('s-btn-secondary');
+        }, 2000); 
+      }
+      if (codeEl) {
+        codeEl.textContent = 'Copied!';
+        setTimeout(() => { codeEl.textContent = code; }, 1500);
+      }
     });
   }
 }
