@@ -1746,7 +1746,7 @@ class SocialSystem {
       .s-chat-bubble {
         position: fixed;
         bottom: 20px;
-        right: 420px;
+        right: 20px;
         width: 50px;
         height: 50px;
         background: var(--s-accent);
@@ -1780,7 +1780,7 @@ class SocialSystem {
       .s-chat-list {
         position: fixed;
         bottom: 80px;
-        right: 420px;
+        right: 20px;
         width: 280px;
         max-height: 350px;
         background: var(--s-bg-primary);
@@ -1842,8 +1842,8 @@ class SocialSystem {
       
       .s-dm-popup {
         position: fixed;
-        bottom: 20px;
-        right: 420px;
+        bottom: 80px;
+        right: 20px;
         width: 320px;
         height: 400px;
         background: var(--s-bg-primary);
@@ -3294,9 +3294,9 @@ class SocialSystem {
       const memberClass = m.isPremium && borderClass ? `s-party-member ${borderClass}` : 's-party-member';
       
       return `
-        <div class="${memberClass}">
-          <div class="s-party-member-avatar" style="${avatarStyle}">${m.avatar_url ? '' : initial}${isMemberLeader ? `<span class="s-crown">${this.icons.crown}</span>` : ''}</div>
-          <div class="s-party-member-info">
+        <div class="${memberClass}" data-id="${m.id}">
+          <div class="s-party-member-avatar clickable-profile" style="${avatarStyle};cursor:pointer;" data-uid="${m.id}">${m.avatar_url ? '' : initial}${isMemberLeader ? `<span class="s-crown">${this.icons.crown}</span>` : ''}</div>
+          <div class="s-party-member-info clickable-profile" style="cursor:pointer;" data-uid="${m.id}">
             <div class="s-party-member-name">
               ${badgeHtml}
               <span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(m.name)}</span>
@@ -3369,6 +3369,11 @@ class SocialSystem {
     
     container.querySelectorAll('.kick-btn').forEach(b => b.addEventListener('click', () => this.kickFromParty(b.dataset.id)));
     container.querySelectorAll('.transfer-btn').forEach(b => b.addEventListener('click', () => this.transferLeadership(b.dataset.id)));
+    
+    // Party member profile clicks
+    container.querySelectorAll('.s-party-member .clickable-profile').forEach(el => {
+      el.onclick = () => this.openProfileModal(el.dataset.uid);
+    });
 
     this.renderPartyChatMessages();
   }
@@ -3632,16 +3637,21 @@ class SocialSystem {
 
   async sendPartyMessage() {
     const input = document.getElementById('party-chat-input');
-    if (!input || !this.currentParty) return;
+    if (!input || !this.currentParty) {
+      console.log('Send blocked: no input or party', { hasInput: !!input, hasParty: !!this.currentParty });
+      return;
+    }
     
     const message = input.value.trim();
     if (!message) return;
     
+    const partyId = this.currentParty.party_id;
     input.value = '';
     
     try {
+      console.log('Sending party message:', { partyId, message: message.substring(0, 20) });
       const { error } = await this.supabase.from('party_messages').insert({
-        party_id: this.currentParty.party_id,
+        party_id: partyId,
         user_id: this.currentUser.id,
         message: message
       });
@@ -3649,6 +3659,7 @@ class SocialSystem {
       if (error) {
         console.error('Send message error:', error);
         input.value = message;
+        this.showToast('message', 'Error', 'Could not send message');
       }
     } catch (e) {
       console.error('Send message exception:', e);
@@ -4735,9 +4746,36 @@ class SocialSystem {
 
   async loadClubInvites() {
     try {
-      const { data } = await this.supabase.rpc('get_my_club_invites');
+      // Try RPC first, fallback to direct query
+      let { data, error } = await this.supabase.rpc('get_my_club_invites');
+      
+      if (error) {
+        // Fallback to direct query
+        const result = await this.supabase
+          .from('club_invites')
+          .select('id, club_id, from_user, created_at, clubs(name, tag), profiles!club_invites_from_user_fkey(display_name, gamer_tag)')
+          .eq('to_user', this.currentUser.id)
+          .eq('status', 'pending');
+        
+        if (!result.error && result.data) {
+          // Transform to match RPC format
+          data = result.data.map(inv => ({
+            id: inv.id,
+            club_id: inv.club_id,
+            club_name: inv.clubs?.name,
+            club_tag: inv.clubs?.tag,
+            from_user: inv.from_user,
+            from_user_name: inv.profiles?.gamer_tag || inv.profiles?.display_name || 'Unknown',
+            created_at: inv.created_at
+          }));
+        }
+      }
+      
       this.clubInvites = data || [];
-    } catch (e) { console.error('Load club invites error:', e); }
+    } catch (e) { 
+      console.error('Load club invites error:', e);
+      this.clubInvites = [];
+    }
   }
 
   renderClub() {
