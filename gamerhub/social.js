@@ -2080,8 +2080,122 @@ class SocialSystem {
         background-position: center;
       }
       .s-club-members-list {
-        max-height: 200px;
+        max-height: 150px;
         overflow-y: auto;
+      }
+      .s-club-header-actions {
+        display: flex;
+        gap: 6px;
+        margin-left: auto;
+      }
+      
+      /* ===== V8: CLUB CHAT ===== */
+      .s-club-chat {
+        margin-top: 12px;
+        border: 1px solid var(--s-border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .s-club-chat .s-chat-body {
+        max-height: 180px;
+      }
+      .s-club-chat .s-chat-messages {
+        max-height: 120px;
+      }
+      
+      /* ===== V8: LEADERBOARD MODAL ===== */
+      .s-leaderboard-modal {
+        width: 400px;
+        max-width: 95vw;
+        max-height: 80vh;
+      }
+      .s-leaderboard-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 12px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-lb-tab {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--s-bg-secondary);
+        color: var(--s-text-muted);
+        font-size: 0.75rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      .s-lb-tab:hover { background: var(--s-bg-tertiary); }
+      .s-lb-tab.active { 
+        background: var(--s-accent); 
+        color: white; 
+      }
+      .s-leaderboard-content {
+        padding: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .s-lb-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 6px;
+      }
+      .s-lb-row.gold { 
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+        border: 1px solid rgba(255, 215, 0, 0.3);
+      }
+      .s-lb-row.silver { 
+        background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.05));
+        border: 1px solid rgba(192, 192, 192, 0.3);
+      }
+      .s-lb-row.bronze { 
+        background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.05));
+        border: 1px solid rgba(205, 127, 50, 0.3);
+      }
+      .s-lb-rank {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--s-bg-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--s-text);
+      }
+      .s-lb-row.gold .s-lb-rank { background: #FFD700; color: #000; }
+      .s-lb-row.silver .s-lb-rank { background: #C0C0C0; color: #000; }
+      .s-lb-row.bronze .s-lb-rank { background: #CD7F32; color: #fff; }
+      .s-lb-name {
+        flex: 1;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--s-text);
+      }
+      .s-lb-game {
+        font-size: 0.7rem;
+        color: var(--s-text-muted);
+        max-width: 80px;
+        text-align: right;
+      }
+      .s-lb-score {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--s-accent);
+        min-width: 60px;
+        text-align: right;
+      }
+      .s-loading {
+        text-align: center;
+        padding: 30px;
+        color: var(--s-text-muted);
       }
       
       /* ===== V8: CONFIRM MODAL ===== */
@@ -2405,7 +2519,7 @@ class SocialSystem {
         document.getElementById('status-dropdown')?.classList.remove('open');
       }
       // V8: Close emoji picker when clicking outside
-      if (!e.target.closest('.s-emoji-picker') && !e.target.closest('#dm-popup-emoji') && !e.target.closest('#party-emoji-btn')) {
+      if (!e.target.closest('.s-emoji-picker') && !e.target.closest('#dm-popup-emoji') && !e.target.closest('#party-emoji-btn') && !e.target.closest('#club-emoji-btn')) {
         const picker = document.getElementById('s-emoji-picker');
         if (picker) picker.style.display = 'none';
       }
@@ -3553,13 +3667,15 @@ class SocialSystem {
     await this.loadPartyMessages();
 
     const partyId = this.currentParty.party_id;
+    const myId = this.currentUser.id;
+    const myName = this.currentUser.gamer_tag || this.currentUser.display_name || 'Someone';
     console.log('Subscribing to chat:', partyId);
 
     // Use unique channel name to prevent conflicts
     const channelName = `chat-${partyId}-${Date.now()}`;
 
     this.chatChannel = this.supabase
-      .channel(channelName)
+      .channel(channelName, { config: { presence: { key: myId } } })
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -3571,9 +3687,71 @@ class SocialSystem {
         console.log('Chat message:', payload.new.message?.substring(0, 20));
         this.handleNewPartyMessage(payload.new);
       })
-      .subscribe((status, err) => {
-        console.log('Chat subscription:', status, err || '');
+      .on('presence', { event: 'sync' }, () => {
+        const state = this.chatChannel.presenceState();
+        this.updateTypingIndicator(state, myId);
+      })
+      .subscribe(async (status) => {
+        console.log('Chat subscription:', status);
+        if (status === 'SUBSCRIBED') {
+          await this.chatChannel.track({ typing: false, name: myName });
+        }
       });
+      
+    // Set up typing broadcast on input
+    this.setupTypingBroadcast();
+  }
+
+  setupTypingBroadcast() {
+    const input = document.getElementById('party-chat-input');
+    if (!input || !this.chatChannel) return;
+    
+    let typingTimeout = null;
+    const myName = this.currentUser.gamer_tag || this.currentUser.display_name || 'Someone';
+    
+    input.addEventListener('input', () => {
+      if (!this.chatChannel) return;
+      
+      // Broadcast typing
+      this.chatChannel.track({ typing: true, name: myName });
+      
+      // Clear previous timeout
+      if (typingTimeout) clearTimeout(typingTimeout);
+      
+      // Stop typing after 2 seconds of no input
+      typingTimeout = setTimeout(() => {
+        if (this.chatChannel) {
+          this.chatChannel.track({ typing: false, name: myName });
+        }
+      }, 2000);
+    });
+  }
+
+  updateTypingIndicator(presenceState, myId) {
+    const indicator = document.getElementById('party-typing');
+    const nameEl = document.getElementById('typing-name');
+    if (!indicator || !nameEl) return;
+    
+    // Get users who are typing (not me)
+    const typingUsers = [];
+    for (const [userId, presence] of Object.entries(presenceState)) {
+      if (userId !== myId && presence[0]?.typing) {
+        typingUsers.push(presence[0].name || 'Someone');
+      }
+    }
+    
+    if (typingUsers.length > 0) {
+      if (typingUsers.length === 1) {
+        nameEl.textContent = typingUsers[0];
+      } else if (typingUsers.length === 2) {
+        nameEl.textContent = typingUsers.join(' and ');
+      } else {
+        nameEl.textContent = `${typingUsers.length} people`;
+      }
+      indicator.style.display = 'flex';
+    } else {
+      indicator.style.display = 'none';
+    }
   }
 
   async loadPartyMessages() {
@@ -4760,13 +4938,56 @@ class SocialSystem {
           cosmetics: m.member_cosmetics,
           joined_at: m.member_joined_at
         }));
+        
+        // Subscribe to club chat
+        this.subscribeToClubChat();
       } else {
         this.currentClub = null;
         this.clubMembers = [];
+        this.clubMessages = [];
+        
+        // Unsubscribe from club chat
+        if (this.channels.clubChat) {
+          this.supabase.removeChannel(this.channels.clubChat);
+          this.channels.clubChat = null;
+        }
       }
       
       this.renderClub();
     } catch (e) { console.error('Load club error:', e); }
+  }
+
+  subscribeToClubChat() {
+    if (!this.currentClub) return;
+    
+    // Remove existing subscription
+    if (this.channels.clubChat) {
+      this.supabase.removeChannel(this.channels.clubChat);
+    }
+    
+    const clubId = this.currentClub.id;
+    
+    this.channels.clubChat = this.supabase.channel(`club-chat-${clubId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'club_messages'
+      }, (payload) => {
+        // Client-side filter
+        if (payload.new.club_id !== clubId) return;
+        
+        // Add message to list
+        this.clubMessages.push(payload.new);
+        this.renderClubMessages();
+        
+        // Play sound if not from me
+        if (payload.new.user_id !== this.currentUser.id) {
+          this.playSound('message');
+        }
+      })
+      .subscribe((status) => {
+        console.log('Club chat subscription:', status);
+      });
   }
 
   async loadClubInvites() {
@@ -4863,10 +5084,30 @@ class SocialSystem {
           <div class="s-club-tag-display">[${this.escapeHtml(this.currentClub.tag)}]</div>
           <div class="s-club-members-count">${this.clubMembers.length}/${this.currentClub.max_members} members</div>
         </div>
-        ${isAdmin ? `<button class="s-btn s-btn-primary" id="open-club-invite-modal">Invite</button>` : ''}
+        <div class="s-club-header-actions">
+          ${isAdmin ? `<button class="s-btn s-btn-primary s-btn-sm" id="open-club-invite-modal">Invite</button>` : ''}
+          <button class="s-btn s-btn-secondary s-btn-sm" id="open-club-leaderboard">🏆</button>
+        </div>
       </div>
       
-      <div class="s-label">Members (${this.clubMembers.length})</div>
+      <!-- Club Chat -->
+      <div class="s-club-chat">
+        <div class="s-chat-header" id="club-chat-toggle">
+          <span>Club Chat</span>
+          <span class="s-chat-badge" id="club-chat-badge" style="display:none;">0</span>
+          <span class="s-chat-toggle-icon" style="transform:rotate(180deg);">${this.icons.chevronDown}</span>
+        </div>
+        <div class="s-chat-body" id="club-chat-body">
+          <div class="s-chat-messages" id="club-messages"></div>
+          <div class="s-chat-input-wrap" style="position:relative;">
+            <button class="s-btn s-btn-ghost s-btn-icon" id="club-emoji-btn" style="position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:2;">${this.icons.smile}</button>
+            <input type="text" id="club-chat-input" placeholder="Message your club..." maxlength="500" style="padding-left:36px;">
+            <button class="s-btn s-btn-primary s-btn-icon" id="send-club-chat-btn">${this.icons.send}</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="s-label" style="margin-top:12px;">Members (${this.clubMembers.length})</div>
       <div class="s-club-members-list">
         ${this.clubMembers.map(m => this.renderClubMember(m, isLeader, isAdmin)).join('')}
       </div>
@@ -4899,6 +5140,18 @@ class SocialSystem {
       this.leaveClub();
     });
     document.getElementById('open-club-invite-modal')?.addEventListener('click', () => this.openClubInviteModal());
+    document.getElementById('open-club-leaderboard')?.addEventListener('click', () => this.openClubLeaderboard());
+    
+    // Club chat events
+    document.getElementById('club-chat-toggle')?.addEventListener('click', () => this.toggleClubChat());
+    document.getElementById('send-club-chat-btn')?.addEventListener('click', () => this.sendClubMessage());
+    document.getElementById('club-chat-input')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.sendClubMessage();
+    });
+    document.getElementById('club-emoji-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleEmojiPicker('club-chat-input');
+    });
     
     container.querySelectorAll('.club-kick-btn').forEach(b => {
       b.onclick = () => this.kickFromClub(b.dataset.id);
@@ -4909,6 +5162,217 @@ class SocialSystem {
     container.querySelectorAll('.club-member-avatar').forEach(el => {
       el.onclick = () => this.openProfileModal(el.dataset.id);
     });
+    
+    // Load club messages
+    this.loadClubMessages();
+  }
+
+  toggleClubChat() {
+    const body = document.getElementById('club-chat-body');
+    const icon = document.querySelector('#club-chat-toggle .s-chat-toggle-icon');
+    if (!body) return;
+    
+    if (body.style.display === 'none') {
+      body.style.display = 'flex';
+      if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+      body.style.display = 'none';
+      if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+  }
+
+  async loadClubMessages() {
+    if (!this.currentClub) return;
+    
+    try {
+      const { data } = await this.supabase
+        .from('club_messages')
+        .select('id, user_id, message, created_at')
+        .eq('club_id', this.currentClub.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      this.clubMessages = (data || []).reverse();
+      this.renderClubMessages();
+    } catch (e) {
+      console.error('Load club messages error:', e);
+    }
+  }
+
+  renderClubMessages() {
+    const container = document.getElementById('club-messages');
+    if (!container) return;
+    
+    if (!this.clubMessages.length) {
+      container.innerHTML = '<div class="s-chat-empty">No messages yet. Say hi to your club!</div>';
+      return;
+    }
+    
+    container.innerHTML = this.clubMessages.map(msg => {
+      const member = this.clubMembers.find(m => m.id === msg.user_id);
+      const name = member?.name || 'Unknown';
+      const isMe = msg.user_id === this.currentUser.id;
+      const time = this.formatTimeAgo(msg.created_at);
+      
+      return `
+        <div class="s-chat-msg ${isMe ? 'me' : ''}">
+          <span class="s-chat-author">${this.escapeHtml(name)}</span>
+          <span class="s-chat-text">${this.escapeHtml(msg.message)}</span>
+          <span class="s-chat-time">${time}</span>
+        </div>
+      `;
+    }).join('');
+    
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async sendClubMessage() {
+    const input = document.getElementById('club-chat-input');
+    if (!input || !this.currentClub) return;
+    
+    const message = input.value.trim();
+    if (!message) return;
+    
+    input.value = '';
+    
+    try {
+      const { error } = await this.supabase.from('club_messages').insert({
+        club_id: this.currentClub.id,
+        user_id: this.currentUser.id,
+        message: message
+      });
+      
+      if (error) {
+        console.error('Send club message error:', error);
+        input.value = message;
+      }
+    } catch (e) {
+      console.error('Send club message exception:', e);
+      input.value = message;
+    }
+  }
+
+  async openClubLeaderboard() {
+    if (!this.currentClub) return;
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 's-modal-overlay';
+    modal.id = 'club-leaderboard-modal';
+    modal.innerHTML = `
+      <div class="s-modal s-leaderboard-modal">
+        <div class="s-modal-header">
+          <span class="s-modal-title">🏆 [${this.escapeHtml(this.currentClub.tag)}] Leaderboard</span>
+          <button class="s-btn s-btn-ghost s-btn-icon s-modal-close">✕</button>
+        </div>
+        <div class="s-modal-body">
+          <div class="s-leaderboard-tabs">
+            <button class="s-lb-tab active" data-game="all">All Games</button>
+            <button class="s-lb-tab" data-game="reaction-time">⚡ Reaction</button>
+            <button class="s-lb-tab" data-game="aim-trainer">🎯 Aim</button>
+            <button class="s-lb-tab" data-game="typing-test">⌨️ Typing</button>
+          </div>
+          <div class="s-leaderboard-content" id="club-lb-content">
+            <div class="s-loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Bind events
+    modal.querySelector('.s-modal-close').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.querySelectorAll('.s-lb-tab').forEach(tab => {
+      tab.onclick = () => {
+        modal.querySelectorAll('.s-lb-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        this.loadClubLeaderboard(tab.dataset.game);
+      };
+    });
+    
+    // Load initial data
+    this.loadClubLeaderboard('all');
+  }
+
+  async loadClubLeaderboard(gameFilter = 'all') {
+    const content = document.getElementById('club-lb-content');
+    if (!content) return;
+    
+    content.innerHTML = '<div class="s-loading">Loading...</div>';
+    
+    try {
+      // Get best scores for club members
+      const memberIds = this.clubMembers.map(m => m.id);
+      
+      let query = this.supabase
+        .from('best_scores')
+        .select('user_id, game_id, score, created_at')
+        .in('user_id', memberIds)
+        .order('score', { ascending: true })
+        .limit(100);
+      
+      if (gameFilter !== 'all') {
+        query = query.ilike('game_id', `${gameFilter}%`);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        content.innerHTML = '<div class="s-empty-mini">No scores yet for this category</div>';
+        return;
+      }
+      
+      // Group by game and get top score per member per game
+      const gameScores = {};
+      data.forEach(score => {
+        const key = `${score.game_id}-${score.user_id}`;
+        if (!gameScores[key] || score.score < gameScores[key].score) {
+          gameScores[key] = score;
+        }
+      });
+      
+      // Convert to array and sort
+      const scores = Object.values(gameScores).sort((a, b) => a.score - b.score);
+      
+      // Render leaderboard
+      content.innerHTML = scores.slice(0, 20).map((score, i) => {
+        const member = this.clubMembers.find(m => m.id === score.user_id);
+        const name = member?.name || 'Unknown';
+        const gameName = this.getGameDisplayName(score.game_id);
+        const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const scoreDisplay = this.formatScore(score.game_id, score.score);
+        
+        return `
+          <div class="s-lb-row ${rankClass}">
+            <span class="s-lb-rank">${i + 1}</span>
+            <span class="s-lb-name">${this.escapeHtml(name)}</span>
+            <span class="s-lb-game">${gameName}</span>
+            <span class="s-lb-score">${scoreDisplay}</span>
+          </div>
+        `;
+      }).join('');
+      
+    } catch (e) {
+      console.error('Load club leaderboard error:', e);
+      content.innerHTML = '<div class="s-empty-mini">Error loading leaderboard</div>';
+    }
+  }
+
+  formatScore(gameId, score) {
+    if (gameId.includes('reaction') || gameId.includes('aim')) {
+      return `${score}ms`;
+    } else if (gameId.includes('typing')) {
+      return `${score} WPM`;
+    } else if (gameId.includes('memory') || gameId.includes('chimp') || gameId.includes('sequence')) {
+      return `Level ${score}`;
+    } else {
+      return score.toString();
+    }
   }
 
   openClubInviteModal() {
@@ -5114,6 +5578,7 @@ class SocialSystem {
       let btnId;
       if (inputId === 'dm-popup-input') btnId = 'dm-popup-emoji';
       else if (inputId === 'party-chat-input') btnId = 'party-emoji-btn';
+      else if (inputId === 'club-chat-input') btnId = 'club-emoji-btn';
       else btnId = 'party-emoji-btn';
       
       const btn = document.getElementById(btnId);
