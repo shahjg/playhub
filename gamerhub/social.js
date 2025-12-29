@@ -2097,105 +2097,198 @@ class SocialSystem {
         overflow: hidden;
       }
       .s-club-chat .s-chat-body {
+        display: flex;
+        flex-direction: column;
         max-height: 180px;
       }
       .s-club-chat .s-chat-messages {
+        flex: 1;
+        min-height: 100px;
         max-height: 120px;
       }
+      .s-club-chat .s-chat-input-wrap {
+        flex-shrink: 0;
+      }
+      .s-club-chat .s-chat-input {
+        flex: 1;
+        min-width: 0;
+      }
       
-      /* ===== V8: LEADERBOARD MODAL ===== */
-      .s-leaderboard-modal {
-        width: 400px;
+      /* ===== V8: LEADERBOARD DROPDOWN ===== */
+      .s-leaderboard-dropdown {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 420px;
         max-width: 95vw;
-        max-height: 80vh;
+        max-height: 70vh;
+        background: var(--s-bg-primary);
+        border: 1px solid var(--s-border);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        overflow: hidden;
+        animation: leaderboardIn 0.25s ease;
+      }
+      @keyframes leaderboardIn {
+        from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      }
+      .s-leaderboard-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .s-lb-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--s-border);
+        background: linear-gradient(135deg, var(--s-bg-secondary), var(--s-bg-primary));
+      }
+      .s-lb-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--s-text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .s-lb-title-icon {
+        font-size: 1.3rem;
+      }
+      .s-lb-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        background: var(--s-bg-tertiary);
+        color: var(--s-text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+      }
+      .s-lb-close:hover {
+        background: var(--s-danger);
+        color: white;
       }
       .s-leaderboard-tabs {
         display: flex;
         gap: 6px;
-        padding: 12px;
+        padding: 12px 16px;
         overflow-x: auto;
         border-bottom: 1px solid var(--s-border);
+        background: var(--s-bg-secondary);
       }
+      .s-leaderboard-tabs::-webkit-scrollbar { height: 4px; }
+      .s-leaderboard-tabs::-webkit-scrollbar-thumb { background: var(--s-border); border-radius: 2px; }
       .s-lb-tab {
-        padding: 6px 12px;
+        padding: 8px 14px;
         border-radius: 8px;
         border: none;
-        background: var(--s-bg-secondary);
+        background: var(--s-bg-primary);
         color: var(--s-text-muted);
-        font-size: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 500;
         cursor: pointer;
         white-space: nowrap;
         transition: all 0.15s;
       }
-      .s-lb-tab:hover { background: var(--s-bg-tertiary); }
+      .s-lb-tab:hover { background: var(--s-bg-tertiary); color: var(--s-text); }
       .s-lb-tab.active { 
         background: var(--s-accent); 
         color: white; 
       }
       .s-leaderboard-content {
-        padding: 12px;
-        max-height: 400px;
+        padding: 16px;
+        max-height: 350px;
         overflow-y: auto;
       }
       .s-lb-row {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
+        gap: 12px;
+        padding: 12px 14px;
         background: var(--s-bg-secondary);
-        border-radius: 8px;
-        margin-bottom: 6px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        transition: transform 0.15s;
       }
+      .s-lb-row:hover { transform: translateX(4px); }
       .s-lb-row.gold { 
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
         border: 1px solid rgba(255, 215, 0, 0.3);
       }
       .s-lb-row.silver { 
-        background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.05));
+        background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(192, 192, 192, 0.05));
         border: 1px solid rgba(192, 192, 192, 0.3);
       }
       .s-lb-row.bronze { 
-        background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.05));
+        background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.05));
         border: 1px solid rgba(205, 127, 50, 0.3);
       }
       .s-lb-rank {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: var(--s-bg-tertiary);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 600;
+        font-size: 0.8rem;
+        font-weight: 700;
         color: var(--s-text);
+        flex-shrink: 0;
       }
-      .s-lb-row.gold .s-lb-rank { background: #FFD700; color: #000; }
-      .s-lb-row.silver .s-lb-rank { background: #C0C0C0; color: #000; }
-      .s-lb-row.bronze .s-lb-rank { background: #CD7F32; color: #fff; }
+      .s-lb-row.gold .s-lb-rank { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+      .s-lb-row.silver .s-lb-rank { background: linear-gradient(135deg, #E8E8E8, #A8A8A8); color: #000; }
+      .s-lb-row.bronze .s-lb-rank { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
       .s-lb-name {
         flex: 1;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         font-weight: 500;
         color: var(--s-text);
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .s-lb-game {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         color: var(--s-text-muted);
         max-width: 80px;
         text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .s-lb-score {
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 0.9rem;
+        font-weight: 700;
         color: var(--s-accent);
-        min-width: 60px;
+        min-width: 70px;
         text-align: right;
       }
       .s-loading {
         text-align: center;
+        padding: 40px;
+        color: var(--s-text-muted);
+      }
+      .s-empty-mini {
+        text-align: center;
         padding: 30px;
         color: var(--s-text-muted);
+        font-size: 0.85rem;
       }
       
       /* ===== V8: CONFIRM MODAL ===== */
@@ -5172,8 +5265,10 @@ class SocialSystem {
     const icon = document.querySelector('#club-chat-toggle .s-chat-toggle-icon');
     if (!body) return;
     
-    if (body.style.display === 'none') {
-      body.style.display = 'flex';
+    const isHidden = body.style.display === 'none';
+    
+    if (isHidden) {
+      body.style.display = '';  // Reset to CSS default (flex from stylesheet)
       if (icon) icon.style.transform = 'rotate(180deg)';
     } else {
       body.style.display = 'none';
@@ -5255,45 +5350,68 @@ class SocialSystem {
   async openClubLeaderboard() {
     if (!this.currentClub) return;
     
-    // Create modal
-    const modal = document.createElement('div');
-    modal.className = 's-modal-overlay';
-    modal.id = 'club-leaderboard-modal';
-    modal.innerHTML = `
-      <div class="s-modal s-leaderboard-modal">
-        <div class="s-modal-header">
-          <span class="s-modal-title">🏆 [${this.escapeHtml(this.currentClub.tag)}] Leaderboard</span>
-          <button class="s-btn s-btn-ghost s-btn-icon s-modal-close">✕</button>
-        </div>
-        <div class="s-modal-body">
-          <div class="s-leaderboard-tabs">
-            <button class="s-lb-tab active" data-game="all">All</button>
-            <button class="s-lb-tab" data-game="reaction-time">⚡ Reaction</button>
-            <button class="s-lb-tab" data-game="aim-trainer-30">🎯 Aim</button>
-            <button class="s-lb-tab" data-game="typing-test-60s">⌨️ Typing</button>
-            <button class="s-lb-tab" data-game="chimp-test">🐒 Chimp</button>
-            <button class="s-lb-tab" data-game="sequence-memory">📋 Sequence</button>
-          </div>
-          <div class="s-leaderboard-content" id="club-lb-content">
-            <div class="s-loading">Loading...</div>
-          </div>
-        </div>
+    // Remove existing if any
+    document.getElementById('club-leaderboard-modal')?.remove();
+    
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 's-leaderboard-overlay';
+    overlay.id = 'club-leaderboard-modal';
+    
+    // Create dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 's-leaderboard-dropdown';
+    dropdown.innerHTML = `
+      <div class="s-lb-header">
+        <span class="s-lb-title">
+          <span class="s-lb-title-icon">🏆</span>
+          [${this.escapeHtml(this.currentClub.tag)}] Leaderboard
+        </span>
+        <button class="s-lb-close" id="lb-close-btn">✕</button>
+      </div>
+      <div class="s-leaderboard-tabs">
+        <button class="s-lb-tab active" data-game="all">All</button>
+        <button class="s-lb-tab" data-game="reaction-time">⚡ Reaction</button>
+        <button class="s-lb-tab" data-game="aim-trainer-30">🎯 Aim</button>
+        <button class="s-lb-tab" data-game="typing-test-60s">⌨️ Typing</button>
+        <button class="s-lb-tab" data-game="chimp-test">🐒 Chimp</button>
+        <button class="s-lb-tab" data-game="sequence-memory">📋 Sequence</button>
+      </div>
+      <div class="s-leaderboard-content" id="club-lb-content">
+        <div class="s-loading">Loading...</div>
       </div>
     `;
     
-    document.body.appendChild(modal);
+    document.body.appendChild(overlay);
+    document.body.appendChild(dropdown);
+    
+    // Close function
+    const closeLeaderboard = () => {
+      overlay.remove();
+      dropdown.remove();
+    };
     
     // Bind events
-    modal.querySelector('.s-modal-close').onclick = () => modal.remove();
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    dropdown.querySelector('#lb-close-btn').onclick = closeLeaderboard;
+    overlay.onclick = closeLeaderboard;
     
-    modal.querySelectorAll('.s-lb-tab').forEach(tab => {
+    // Tab switching
+    dropdown.querySelectorAll('.s-lb-tab').forEach(tab => {
       tab.onclick = () => {
-        modal.querySelectorAll('.s-lb-tab').forEach(t => t.classList.remove('active'));
+        dropdown.querySelectorAll('.s-lb-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         this.loadClubLeaderboard(tab.dataset.game);
       };
     });
+    
+    // ESC to close
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        closeLeaderboard();
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
     
     // Load initial data
     this.loadClubLeaderboard('all');
