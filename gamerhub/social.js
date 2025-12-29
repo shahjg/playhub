@@ -5392,18 +5392,17 @@ class SocialSystem {
     dropdown.innerHTML = `
       <div class="s-lb-header">
         <span class="s-lb-title">
-          <span class="s-lb-title-icon">🏆</span>
           [${this.escapeHtml(this.currentClub.tag)}] Leaderboard
         </span>
         <button class="s-lb-close" id="lb-close-btn">✕</button>
       </div>
       <div class="s-leaderboard-tabs">
-        <button class="s-lb-tab active" data-game="top-members">👑 Top Members</button>
+        <button class="s-lb-tab active" data-game="top-members">Top Members</button>
         <button class="s-lb-tab" data-game="all">All Games</button>
-        <button class="s-lb-tab" data-game="reaction-time">⚡ Reaction</button>
-        <button class="s-lb-tab" data-game="aim-trainer-30">🎯 Aim</button>
-        <button class="s-lb-tab" data-game="typing-test-60s">⌨️ Typing</button>
-        <button class="s-lb-tab" data-game="chimp-test">🐒 Chimp</button>
+        <button class="s-lb-tab" data-game="reaction-time">Reaction</button>
+        <button class="s-lb-tab" data-game="aim-trainer-30">Aim</button>
+        <button class="s-lb-tab" data-game="typing-test-60s">Typing</button>
+        <button class="s-lb-tab" data-game="chimp-test">Chimp</button>
       </div>
       <div class="s-leaderboard-content" id="club-lb-content">
         <div class="s-loading">Loading...</div>
@@ -5622,16 +5621,16 @@ class SocialSystem {
 
   getGameDisplayName(gameId) {
     const names = {
-      'reaction-time': '⚡ Reaction',
-      'aim-trainer-15': '🎯 Aim 15',
-      'aim-trainer-30': '🎯 Aim 30',
-      'aim-trainer-50': '🎯 Aim 50',
-      'typing-test-30s': '⌨️ Typing 30s',
-      'typing-test-60s': '⌨️ Typing 60s',
-      'chimp-test': '🐒 Chimp',
-      'sequence-memory': '📋 Sequence',
-      'number-memory': '🔢 Numbers',
-      'verbal-memory': '📝 Verbal'
+      'reaction-time': 'Reaction',
+      'aim-trainer-15': 'Aim 15',
+      'aim-trainer-30': 'Aim 30',
+      'aim-trainer-50': 'Aim 50',
+      'typing-test-30s': 'Typing 30s',
+      'typing-test-60s': 'Typing 60s',
+      'chimp-test': 'Chimp',
+      'sequence-memory': 'Sequence',
+      'number-memory': 'Numbers',
+      'verbal-memory': 'Verbal'
     };
     return names[gameId] || gameId;
   }
