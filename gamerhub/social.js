@@ -1,6 +1,7 @@
 /* =============================================
-   SOCIAL SYSTEM v6 - TheGaming.co
-   Features: Premium Sync, Party Chat, Status, Sounds
+   SOCIAL SYSTEM v8 - TheGaming.co
+   Features: Clubs, DMs, Profile Cards, Emoji, 
+             Typing Indicator, Unblock UI, Leaderboards
    ============================================= */
 
 class SocialSystem {
@@ -24,6 +25,20 @@ class SocialSystem {
     this.lastHostUrl = null;
     this.isFollowingHost = true;
     
+    // V8: New state for clubs, DMs, blocked users
+    this.currentClub = null;
+    this.clubMembers = [];
+    this.clubMessages = [];
+    this.clubInvites = [];
+    this.blockedUsers = [];
+    this.dmConversations = [];
+    this.activeDmUser = null;
+    this.dmMessages = [];
+    this.typingUsers = {}; // { oduserId: timestamp }
+    this.isTyping = false;
+    this.typingTimeout = null;
+    this.profileModalUser = null;
+    
     // SVG Icons
     this.icons = {
       users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
@@ -46,11 +61,29 @@ class SocialSystem {
       send: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
       message: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
       chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+      chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
       circle: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>`,
       moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
       minusCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
-      eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+      // V8: New icons
+      smile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`,
+      trophy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+      clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+      calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+      flag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
+      userX: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>`,
+      unlock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`,
+      inbox: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`
     };
+    
+    // Common emojis for picker
+    this.commonEmojis = [
+      '😀', '😂', '😊', '🥰', '😎', '🤔', '😮', '😢',
+      '🔥', '❤️', '💯', '👍', '👎', '👏', '🙌', '💪',
+      '🎮', '🏆', '⚡', '🎯', '🚀', '💀', '😈', '👀',
+      'GG', 'EZ', 'WP', 'GL', 'HF', 'AFK', 'BRB', 'LOL'
+    ];
 
     // Sound effects (base64 encoded short sounds)
     this.sounds = {
@@ -276,7 +309,12 @@ class SocialSystem {
       this.loadRequests(),
       this.loadInvites(),
       this.loadParty(),
-      this.loadPartyInvites()
+      this.loadPartyInvites(),
+      // V8: New data
+      this.loadBlockedUsers(),
+      this.loadDmConversations(),
+      this.loadClub(),
+      this.loadClubInvites()
     ]);
   }
 
@@ -1472,6 +1510,435 @@ class SocialSystem {
         to { transform: translateX(100%); opacity: 0; }
       }
 
+      /* ===== V8: PROFILE MODAL ===== */
+      .s-modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      .s-profile-modal {
+        background: var(--s-bg-primary);
+        border: 1px solid var(--s-border);
+        border-radius: 20px;
+        width: 90%;
+        max-width: 380px;
+        max-height: 85vh;
+        overflow-y: auto;
+        position: relative;
+        animation: modalIn 0.25s ease;
+      }
+      @keyframes modalIn { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+      .s-modal-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border);
+        color: var(--s-text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+      .s-modal-close:hover { background: var(--s-bg-tertiary); color: var(--s-text); }
+      .s-modal-close svg { width: 16px; height: 16px; }
+      
+      .s-pm-header {
+        padding: 24px;
+        text-align: center;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-pm-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 600;
+        color: white;
+        background-size: cover;
+        background-position: center;
+        border: 3px solid var(--s-border);
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .s-pm-avatar:hover { transform: scale(1.05); }
+      .s-pm-name {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--s-text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .s-pm-name .disc { color: var(--s-text-muted); font-weight: 400; }
+      .s-pm-title {
+        font-size: 0.85rem;
+        margin-top: 4px;
+      }
+      .s-pm-club-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        background: var(--s-accent);
+        color: white;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+      .s-pm-stats {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        padding: 16px;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-pm-stat {
+        text-align: center;
+      }
+      .s-pm-stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--s-text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .s-pm-stat-value svg { width: 16px; height: 16px; color: var(--s-text-muted); }
+      .s-pm-stat-label {
+        font-size: 0.7rem;
+        color: var(--s-text-muted);
+        margin-top: 2px;
+      }
+      
+      .s-pm-scores {
+        padding: 16px;
+      }
+      .s-pm-scores-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--s-text-muted);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .s-pm-scores-title svg { width: 14px; height: 14px; }
+      .s-pm-score-row {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 10px;
+        margin-bottom: 6px;
+      }
+      .s-pm-score-game {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--s-text);
+      }
+      .s-pm-score-value {
+        font-weight: 600;
+        color: var(--s-accent);
+        margin-right: 12px;
+      }
+      .s-pm-score-rank {
+        font-size: 0.75rem;
+        color: var(--s-text-muted);
+        padding: 4px 8px;
+        background: var(--s-bg-tertiary);
+        border-radius: 6px;
+      }
+      .s-pm-score-rank.gold { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
+      
+      .s-pm-actions {
+        display: flex;
+        gap: 8px;
+        padding: 16px;
+        border-top: 1px solid var(--s-border);
+      }
+      .s-pm-actions .s-btn { flex: 1; }
+
+      /* ===== V8: EMOJI PICKER ===== */
+      .s-emoji-picker {
+        position: absolute;
+        bottom: 100%;
+        left: 8px;
+        margin-bottom: 8px;
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border);
+        border-radius: 12px;
+        padding: 8px;
+        z-index: 100;
+        animation: fadeIn 0.15s ease;
+      }
+      .s-emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 4px;
+      }
+      .s-emoji-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+      }
+      .s-emoji-btn:hover { background: var(--s-bg-tertiary); }
+
+      /* ===== V8: TYPING INDICATOR ===== */
+      .s-typing-indicator {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        color: var(--s-text-muted);
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .s-typing-dots {
+        display: flex;
+        gap: 3px;
+      }
+      .s-typing-dots span {
+        width: 6px;
+        height: 6px;
+        background: var(--s-text-muted);
+        border-radius: 50%;
+        animation: typingBounce 1.2s ease-in-out infinite;
+      }
+      .s-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+      .s-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes typingBounce {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-4px); }
+      }
+
+      /* ===== V8: DM STYLES ===== */
+      .s-dm-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border);
+        border-radius: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .s-dm-item:hover { background: var(--s-bg-tertiary); border-color: var(--s-border-light); }
+      .s-dm-info { flex: 1; min-width: 0; }
+      .s-dm-name { font-weight: 500; font-size: 0.9rem; color: var(--s-text); }
+      .s-dm-preview {
+        font-size: 0.8rem;
+        color: var(--s-text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+      }
+      .s-dm-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+      .s-dm-time { font-size: 0.7rem; color: var(--s-text-muted); }
+      .s-dm-unread {
+        min-width: 18px;
+        height: 18px;
+        background: var(--s-accent);
+        border-radius: 9px;
+        font-size: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 5px;
+        color: white;
+      }
+      
+      .s-dm-chat-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-bottom: 1px solid var(--s-border);
+        background: var(--s-bg-secondary);
+        border-radius: 12px 12px 0 0;
+      }
+      .s-dm-back {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--s-bg-tertiary);
+        border: none;
+        color: var(--s-text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .s-dm-back:hover { color: var(--s-text); }
+      .s-dm-back svg { width: 16px; height: 16px; }
+      .s-dm-chat-name { font-weight: 600; color: var(--s-text); }
+      
+      .s-dm-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .s-dm-msg {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        word-wrap: break-word;
+      }
+      .s-dm-msg.me {
+        align-self: flex-end;
+        background: var(--s-accent);
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+      .s-dm-msg.them {
+        align-self: flex-start;
+        background: var(--s-bg-tertiary);
+        color: var(--s-text);
+        border-bottom-left-radius: 4px;
+      }
+      .s-dm-msg-time {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.5);
+        margin-top: 4px;
+        text-align: right;
+      }
+      .s-dm-msg.them .s-dm-msg-time { color: var(--s-text-muted); }
+
+      /* ===== V8: CLUB STYLES ===== */
+      .s-club-create {
+        text-align: center;
+        padding: 30px 20px;
+      }
+      .s-club-create-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 16px;
+        background: var(--s-bg-secondary);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--s-text-muted);
+      }
+      .s-club-create-icon svg { width: 28px; height: 28px; }
+      .s-club-create h3 {
+        font-size: 1.1rem;
+        color: var(--s-text);
+        margin-bottom: 8px;
+      }
+      .s-club-create p {
+        font-size: 0.85rem;
+        color: var(--s-text-muted);
+        margin-bottom: 20px;
+      }
+      
+      .s-club-form {
+        max-width: 280px;
+        margin: 0 auto;
+      }
+      .s-club-form input {
+        width: 100%;
+        padding: 12px 14px;
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border);
+        border-radius: 10px;
+        color: var(--s-text);
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      .s-club-form input:focus { outline: none; border-color: var(--s-accent); }
+      .s-club-form input::placeholder { color: var(--s-text-muted); }
+      
+      .s-club-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: var(--s-bg-secondary);
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+      .s-club-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--s-accent), #6366f1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: white;
+      }
+      .s-club-info { flex: 1; }
+      .s-club-name { font-weight: 600; font-size: 1rem; color: var(--s-text); }
+      .s-club-tag-display {
+        font-size: 0.8rem;
+        color: var(--s-accent);
+        font-weight: 600;
+      }
+      .s-club-members-count {
+        font-size: 0.75rem;
+        color: var(--s-text-muted);
+      }
+
+      /* ===== V8: BLOCKED USERS ===== */
+      .s-blocked-section {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--s-border);
+      }
+      .s-blocked-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 10px;
+        margin-bottom: 8px;
+      }
+      .s-blocked-info { flex: 1; }
+      .s-blocked-name { font-size: 0.9rem; color: var(--s-text); }
+
       /* ===== MOBILE ===== */
       @media (max-width: 480px) {
         .s-panel { max-width: 100%; }
@@ -1480,9 +1947,12 @@ class SocialSystem {
         .s-profile { margin: 12px; padding: 14px; }
         .s-search { margin: 0 12px 10px; }
         .s-tabs { margin: 0 12px 10px; }
+        .s-tabs .s-tab { padding: 8px 10px; font-size: 0.7rem; }
         .s-content { padding: 0 12px 12px; }
         #s-toasts { top: 12px; right: 12px; left: 12px; }
         .s-toast { min-width: auto; width: 100%; }
+        .s-profile-modal { max-width: 95%; margin: 10px; }
+        .s-emoji-grid { grid-template-columns: repeat(6, 1fr); }
       }
     `;
     document.head.appendChild(style);
@@ -1558,7 +2028,9 @@ class SocialSystem {
         <div class="s-tabs">
           <button class="s-tab" data-tab="party">Party <span class="s-tab-count" id="party-invite-count" style="display:none;">0</span></button>
           <button class="s-tab active" data-tab="friends">Friends</button>
-          <button class="s-tab" data-tab="requests">Requests <span class="s-tab-count" id="req-count" style="display:none;">0</span></button>
+          <button class="s-tab" data-tab="messages">DMs <span class="s-tab-count" id="dm-count" style="display:none;">0</span></button>
+          <button class="s-tab" data-tab="club">${this.icons.flag} Club</button>
+          <button class="s-tab" data-tab="requests">! <span class="s-tab-count" id="req-count" style="display:none;">0</span></button>
         </div>
         
         <!-- Party invites banner - shows on ALL tabs when you have invites -->
@@ -1578,11 +2050,38 @@ class SocialSystem {
             <div id="party-section"></div>
           </div>
           
+          <!-- Messages Tab (DMs) -->
+          <div class="s-tab-panel" id="panel-messages">
+            <div id="dm-list"></div>
+            <div id="dm-chat" style="display:none;"></div>
+          </div>
+          
+          <!-- Club Tab -->
+          <div class="s-tab-panel" id="panel-club">
+            <div id="club-section"></div>
+          </div>
+          
           <!-- Requests Tab -->
           <div class="s-tab-panel" id="panel-requests">
             <div id="incoming-requests"></div>
             <div id="sent-requests"></div>
+            <div id="blocked-section"></div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Profile Modal -->
+      <div id="s-profile-modal" class="s-modal-overlay" style="display:none;">
+        <div class="s-profile-modal">
+          <button class="s-modal-close" id="close-profile-modal">${this.icons.x}</button>
+          <div id="profile-modal-content"></div>
+        </div>
+      </div>
+      
+      <!-- Emoji Picker -->
+      <div id="s-emoji-picker" class="s-emoji-picker" style="display:none;">
+        <div class="s-emoji-grid">
+          ${this.commonEmojis.map(e => `<button class="s-emoji-btn" data-emoji="${e}">${e}</button>`).join('')}
         </div>
       </div>
       
@@ -1615,7 +2114,15 @@ class SocialSystem {
     document.getElementById('s-overlay')?.addEventListener('click', () => this.close());
     document.getElementById('copy-handle')?.addEventListener('click', () => this.copyHandle());
     
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.isOpen) this.close(); });
+    document.addEventListener('keydown', (e) => { 
+      if (e.key === 'Escape') {
+        if (document.getElementById('s-profile-modal')?.style.display !== 'none') {
+          this.closeProfileModal();
+        } else if (this.isOpen) {
+          this.close();
+        }
+      }
+    });
     
     document.querySelectorAll('.s-tab').forEach(tab => {
       tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
@@ -1635,6 +2142,11 @@ class SocialSystem {
       if (!e.target.closest('.s-status-selector')) {
         document.getElementById('status-dropdown')?.classList.remove('open');
       }
+      // V8: Close emoji picker when clicking outside
+      if (!e.target.closest('.s-emoji-picker') && !e.target.closest('#dm-emoji-btn') && !e.target.closest('#party-emoji-btn')) {
+        const picker = document.getElementById('s-emoji-picker');
+        if (picker) picker.style.display = 'none';
+      }
     });
 
     // Status selector
@@ -1648,6 +2160,17 @@ class SocialSystem {
         document.getElementById('status-dropdown')?.classList.remove('open');
         document.getElementById('status-label').textContent = opt.textContent.trim();
       });
+    });
+
+    // V8: Profile modal close
+    document.getElementById('close-profile-modal')?.addEventListener('click', () => this.closeProfileModal());
+    document.getElementById('s-profile-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 's-profile-modal') this.closeProfileModal();
+    });
+
+    // V8: Emoji picker buttons
+    document.querySelectorAll('.s-emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.insertEmoji(btn.dataset.emoji));
     });
   }
 
@@ -2302,7 +2825,7 @@ class SocialSystem {
 
     return `
       <div class="${userClass}" data-id="${f.friend_id}">
-        <div class="s-avatar ${avatarClass}" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
+        <div class="s-avatar ${avatarClass} friend-avatar-click" style="${avatarStyle};cursor:pointer;" data-uid="${f.friend_id}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
         <div class="s-user-info">
           <div class="s-user-name">${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
           ${titleHtml}
@@ -2313,6 +2836,9 @@ class SocialSystem {
           <div class="s-options">
             <button class="s-btn s-btn-ghost s-btn-icon options-btn">${this.icons.moreVertical}</button>
             <div class="s-options-menu">
+              <button class="s-options-item dm-btn" data-id="${f.friend_id}">${this.icons.message} Message</button>
+              ${this.currentClub && this.clubMembers.find(m => m.id === this.currentUser.id && ['leader', 'officer'].includes(m.role)) ? 
+                `<button class="s-options-item club-invite-btn" data-id="${f.friend_id}">${this.icons.flag} Invite to Club</button>` : ''}
               <button class="s-options-item unfriend-btn" data-id="${f.friend_id}">${this.icons.userMinus} Remove</button>
               <button class="s-options-item danger block-btn" data-id="${f.friend_id}">${this.icons.shield} Block</button>
             </div>
@@ -2512,8 +3038,13 @@ class SocialSystem {
           </div>
           <div class="s-chat-body" id="chat-body" style="display:none;">
             <div class="s-chat-messages" id="party-messages"></div>
-            <div class="s-chat-input-wrap">
-              <input type="text" class="s-chat-input" id="party-chat-input" placeholder="Type a message..." maxlength="200">
+            <div class="s-typing-indicator" id="party-typing" style="display:none;">
+              <div class="s-typing-dots"><span></span><span></span><span></span></div>
+              <span id="typing-name">Someone</span> is typing...
+            </div>
+            <div class="s-chat-input-wrap" style="position:relative;">
+              <button class="s-btn s-btn-ghost s-btn-icon" id="party-emoji-btn" style="position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:2;">${this.icons.smile}</button>
+              <input type="text" class="s-chat-input" id="party-chat-input" placeholder="Type a message..." maxlength="200" style="padding-left:36px;">
               <button class="s-btn s-btn-primary s-btn-icon" id="send-chat-btn">${this.icons.send}</button>
             </div>
           </div>
@@ -2533,6 +3064,10 @@ class SocialSystem {
       if (e.key === 'Enter') this.sendPartyMessage();
     });
     document.getElementById('chat-toggle')?.addEventListener('click', () => this.toggleChat());
+    document.getElementById('party-emoji-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleEmojiPicker('party-chat-input');
+    });
     
     container.querySelectorAll('.kick-btn').forEach(b => b.addEventListener('click', () => this.kickFromParty(b.dataset.id)));
     container.querySelectorAll('.transfer-btn').forEach(b => b.addEventListener('click', () => this.transferLeadership(b.dataset.id)));
@@ -2912,6 +3447,10 @@ class SocialSystem {
     document.querySelectorAll('.party-invite-btn').forEach(b => b.addEventListener('click', () => this.inviteToParty(b.dataset.id)));
     document.querySelectorAll('.unfriend-btn').forEach(b => b.addEventListener('click', () => this.removeFriend(b.dataset.id)));
     document.querySelectorAll('.block-btn').forEach(b => b.addEventListener('click', () => this.blockUser(b.dataset.id)));
+    // V8: New buttons
+    document.querySelectorAll('.friend-avatar-click').forEach(el => el.addEventListener('click', () => this.openProfileModal(el.dataset.uid)));
+    document.querySelectorAll('.dm-btn').forEach(b => b.addEventListener('click', () => { this.switchTab('messages'); this.openDmChat(b.dataset.id); }));
+    document.querySelectorAll('.club-invite-btn').forEach(b => b.addEventListener('click', () => this.inviteToClub(b.dataset.id)));
   }
 
   bindRequestActions() {
@@ -3346,6 +3885,769 @@ class SocialSystem {
         setTimeout(() => { codeEl.textContent = code; }, 1500);
       }
     });
+  }
+
+  // ==================== V8: BLOCKED USERS ====================
+  
+  async loadBlockedUsers() {
+    try {
+      const { data } = await this.supabase.rpc('get_blocked_users');
+      this.blockedUsers = data || [];
+      this.renderBlockedUsers();
+    } catch (e) { console.error('Load blocked error:', e); }
+  }
+
+  renderBlockedUsers() {
+    const container = document.getElementById('blocked-section');
+    if (!container) return;
+
+    if (!this.blockedUsers.length) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="s-blocked-section">
+        <div class="s-label">Blocked Users</div>
+        ${this.blockedUsers.map(u => `
+          <div class="s-blocked-item">
+            <div class="s-avatar-sm" style="${this.getAvatarStyle(u)}">${u.avatar_url ? '' : (u.gamer_tag || u.display_name || '?')[0].toUpperCase()}</div>
+            <div class="s-blocked-info">
+              <div class="s-blocked-name">${this.escapeHtml(u.gamer_tag || u.display_name || 'Unknown')}</div>
+            </div>
+            <button class="s-btn s-btn-secondary unblock-btn" data-id="${u.blocked_id}">${this.icons.unlock} Unblock</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    container.querySelectorAll('.unblock-btn').forEach(btn => {
+      btn.onclick = () => this.unblockUser(btn.dataset.id);
+    });
+  }
+
+  async unblockUser(userId) {
+    try {
+      await this.supabase.rpc('unblock_user', { p_blocked_id: userId });
+      this.blockedUsers = this.blockedUsers.filter(u => u.blocked_id !== userId);
+      this.renderBlockedUsers();
+      this.showToast('friend', 'Unblocked', 'User has been unblocked');
+    } catch (e) { 
+      console.error('Unblock error:', e); 
+      this.showToast('friend', 'Error', 'Could not unblock user');
+    }
+  }
+
+  // ==================== V8: PROFILE MODAL ====================
+
+  async openProfileModal(userId) {
+    const modal = document.getElementById('s-profile-modal');
+    const content = document.getElementById('profile-modal-content');
+    if (!modal || !content) return;
+
+    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--s-text-muted);">Loading...</div>';
+    modal.style.display = 'flex';
+
+    try {
+      // Get profile data
+      const { data: profile } = await this.supabase.rpc('get_user_profile_stats', { p_user_id: userId });
+      if (!profile || !profile.length) {
+        content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--s-text-muted);">User not found</div>';
+        return;
+      }
+
+      const p = profile[0];
+      
+      // Get scores
+      const { data: scores } = await this.supabase.rpc('get_user_best_scores', { p_user_id: userId });
+
+      // Format playtime
+      const playtime = this.formatPlaytime(p.total_playtime_seconds || 0);
+      
+      // Format join date
+      const joinDate = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown';
+
+      // Cosmetics
+      const cosmetics = p.cosmetics || {};
+      const isPremium = p.account_type === 'premium';
+      const nameColor = isPremium && cosmetics.border_color ? this.COSMETIC_COLORS[cosmetics.border_color] || 'inherit' : 'inherit';
+      const nameEffect = isPremium && cosmetics.name_effect ? `tgco-effect-${cosmetics.name_effect}` : '';
+      const badgeIcon = isPremium && cosmetics.badge_icon ? cosmetics.badge_icon : '';
+      const title = isPremium && cosmetics.title ? cosmetics.title : '';
+
+      const name = p.gamer_tag || p.display_name || 'Unknown';
+      const tag = p.discriminator ? `#${p.discriminator}` : '';
+      const avatarStyle = this.getAvatarStyle(p);
+
+      // Game name mapping
+      const gameNames = {
+        'reaction-time': '⚡ Reaction',
+        'typing-test-15': '⌨️ Typing 15s',
+        'typing-test-30': '⌨️ Typing 30s',
+        'typing-test-60': '⌨️ Typing 60s',
+        'typing-test-120': '⌨️ Typing 2m',
+        'aim-trainer-15': '🎯 Aim 15',
+        'aim-trainer-30': '🎯 Aim 30',
+        'aim-trainer-50': '🎯 Aim 50',
+        'chimp-test': '🐒 Chimp',
+        'number-memory': '🔢 Numbers',
+        'sequence-memory': '📋 Sequence',
+        'visual-memory': '👁️ Visual',
+        'verbal-memory': '💬 Verbal',
+        'math-speed-add': '➕ Math Add',
+        'math-speed-sub': '➖ Math Sub',
+        'math-speed-mul': '✖️ Math Mul',
+        'math-speed-div': '➗ Math Div'
+      };
+
+      const gameUnits = {
+        'reaction-time': 'ms',
+        'aim-trainer-15': 'ms', 'aim-trainer-30': 'ms', 'aim-trainer-50': 'ms',
+        'typing-test-15': 'WPM', 'typing-test-30': 'WPM', 'typing-test-60': 'WPM', 'typing-test-120': 'WPM',
+        'chimp-test': 'lvl', 'number-memory': 'digits', 'sequence-memory': 'lvl',
+        'visual-memory': 'lvl', 'verbal-memory': 'words',
+        'math-speed-add': 'solved', 'math-speed-sub': 'solved', 'math-speed-mul': 'solved', 'math-speed-div': 'solved'
+      };
+
+      // Render scores
+      let scoresHtml = '';
+      if (scores && scores.length) {
+        scoresHtml = scores.slice(0, 6).map(s => {
+          const gameName = gameNames[s.game_id] || s.game_id;
+          const unit = gameUnits[s.game_id] || '';
+          const rankClass = s.global_rank === 1 ? 'gold' : '';
+          const trophy = s.global_rank === 1 ? ' 🏆' : '';
+          return `
+            <div class="s-pm-score-row">
+              <span class="s-pm-score-game">${gameName}</span>
+              <span class="s-pm-score-value">${s.score} ${unit}</span>
+              <span class="s-pm-score-rank ${rankClass}">#${s.global_rank}${trophy}</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        scoresHtml = '<div style="text-align:center;padding:20px;color:var(--s-text-muted);font-size:0.85rem;">No scores yet</div>';
+      }
+
+      // Actions based on relationship
+      let actionsHtml = '';
+      const isMe = userId === this.currentUser.id;
+      if (!isMe) {
+        if (p.is_blocked) {
+          actionsHtml = `<button class="s-btn s-btn-secondary" onclick="socialSystem.unblockUser('${userId}')">${this.icons.unlock} Unblock</button>`;
+        } else if (p.is_friend) {
+          actionsHtml = `
+            <button class="s-btn s-btn-primary" onclick="socialSystem.openDmChat('${userId}')">${this.icons.message} Message</button>
+            ${this.currentParty && this.isPartyLeader() ? `<button class="s-btn s-btn-secondary" onclick="socialSystem.inviteToParty('${userId}')">${this.icons.userPlus} Party</button>` : ''}
+          `;
+        } else {
+          actionsHtml = `<button class="s-btn s-btn-primary" onclick="socialSystem.sendFriendRequest('${userId}')">${this.icons.userPlus} Add Friend</button>`;
+        }
+      }
+
+      content.innerHTML = `
+        <div class="s-pm-header">
+          <div class="s-pm-avatar" style="${avatarStyle}" onclick="socialSystem.closeProfileModal()">${p.avatar_url ? '' : name[0].toUpperCase()}</div>
+          <div class="s-pm-name ${nameEffect}" style="color: ${nameColor};">
+            ${badgeIcon} ${this.escapeHtml(name)}<span class="disc">${tag}</span>
+          </div>
+          ${title ? `<div class="s-pm-title" style="color: ${nameColor};">${this.escapeHtml(title)}</div>` : ''}
+          ${p.club_tag ? `<span class="s-pm-club-tag">[${this.escapeHtml(p.club_tag)}] ${this.escapeHtml(p.club_name)}</span>` : ''}
+        </div>
+        
+        <div class="s-pm-stats">
+          <div class="s-pm-stat">
+            <div class="s-pm-stat-value">${this.icons.clock} ${playtime}</div>
+            <div class="s-pm-stat-label">Playtime</div>
+          </div>
+          <div class="s-pm-stat">
+            <div class="s-pm-stat-value">${this.icons.calendar} ${joinDate}</div>
+            <div class="s-pm-stat-label">Joined</div>
+          </div>
+        </div>
+        
+        <div class="s-pm-scores">
+          <div class="s-pm-scores-title">${this.icons.trophy} Best Scores</div>
+          ${scoresHtml}
+        </div>
+        
+        ${actionsHtml ? `<div class="s-pm-actions">${actionsHtml}</div>` : ''}
+      `;
+
+      this.profileModalUser = userId;
+    } catch (e) {
+      console.error('Profile modal error:', e);
+      content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--s-text-muted);">Error loading profile</div>';
+    }
+  }
+
+  closeProfileModal() {
+    const modal = document.getElementById('s-profile-modal');
+    if (modal) modal.style.display = 'none';
+    this.profileModalUser = null;
+  }
+
+  formatPlaytime(seconds) {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${mins}m`;
+  }
+
+  // ==================== V8: DIRECT MESSAGES ====================
+
+  async loadDmConversations() {
+    try {
+      const { data } = await this.supabase.rpc('get_dm_conversations');
+      this.dmConversations = data || [];
+      this.renderDmList();
+      this.updateDmBadge();
+    } catch (e) { console.error('Load DMs error:', e); }
+  }
+
+  updateDmBadge() {
+    const badge = document.getElementById('dm-count');
+    if (!badge) return;
+    const unread = this.dmConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+    if (unread > 0) {
+      badge.textContent = unread;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  renderDmList() {
+    const container = document.getElementById('dm-list');
+    const chatContainer = document.getElementById('dm-chat');
+    if (!container) return;
+
+    // If in chat view, don't render list
+    if (chatContainer && chatContainer.style.display !== 'none') return;
+
+    if (!this.dmConversations.length) {
+      container.innerHTML = `
+        <div class="s-empty">
+          <div class="s-empty-icon">${this.icons.inbox}</div>
+          <p class="s-empty-text">No messages yet<br>Click a friend to start chatting</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.dmConversations.map(c => {
+      const name = c.other_user_name || 'Unknown';
+      const avatarStyle = this.getAvatarStyle({ avatar_url: c.other_user_avatar_url, avatar_icon: c.other_user_avatar_icon });
+      const preview = c.last_message ? (c.last_message.length > 30 ? c.last_message.substring(0, 30) + '...' : c.last_message) : 'No messages';
+      const time = c.last_message_at ? this.formatTimeAgo(c.last_message_at) : '';
+      const statusClass = c.other_user_status === 'online' || c.other_user_status === 'in_game' ? 'online' : '';
+
+      return `
+        <div class="s-dm-item" data-user="${c.other_user_id}">
+          <div class="s-avatar" style="${avatarStyle}">
+            ${c.other_user_avatar_url ? '' : name[0].toUpperCase()}
+            <div class="s-status-dot ${statusClass}"></div>
+          </div>
+          <div class="s-dm-info">
+            <div class="s-dm-name">${this.escapeHtml(name)}</div>
+            <div class="s-dm-preview">${this.escapeHtml(preview)}</div>
+          </div>
+          <div class="s-dm-meta">
+            <span class="s-dm-time">${time}</span>
+            ${c.unread_count > 0 ? `<span class="s-dm-unread">${c.unread_count}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.s-dm-item').forEach(item => {
+      item.onclick = () => this.openDmChat(item.dataset.user);
+    });
+  }
+
+  async openDmChat(userId) {
+    this.activeDmUser = userId;
+    const listContainer = document.getElementById('dm-list');
+    const chatContainer = document.getElementById('dm-chat');
+    if (!chatContainer) return;
+
+    // Find conversation info
+    const conv = this.dmConversations.find(c => c.other_user_id === userId);
+    const friend = this.friends.find(f => f.friend_id === userId);
+    const name = conv?.other_user_name || friend?.gamer_tag || friend?.display_name || 'User';
+    const avatarStyle = this.getAvatarStyle(conv || friend || {});
+
+    if (listContainer) listContainer.style.display = 'none';
+    chatContainer.style.display = 'flex';
+    chatContainer.style.flexDirection = 'column';
+    chatContainer.style.height = '100%';
+
+    chatContainer.innerHTML = `
+      <div class="s-dm-chat-header">
+        <button class="s-dm-back" id="dm-back">${this.icons.chevronLeft}</button>
+        <div class="s-avatar-sm" style="${avatarStyle}">${name[0].toUpperCase()}</div>
+        <div class="s-dm-chat-name">${this.escapeHtml(name)}</div>
+        <div style="flex:1;"></div>
+        <button class="s-btn s-btn-ghost s-btn-icon" onclick="socialSystem.openProfileModal('${userId}')">${this.icons.user}</button>
+      </div>
+      <div class="s-dm-messages" id="dm-messages-container"></div>
+      <div class="s-typing-indicator" id="dm-typing" style="display:none;">
+        <div class="s-typing-dots"><span></span><span></span><span></span></div>
+        <span>${this.escapeHtml(name)} is typing...</span>
+      </div>
+      <div class="s-party-chat-input" style="position:relative;">
+        <button class="s-btn s-btn-ghost s-btn-icon" id="dm-emoji-btn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);">${this.icons.smile}</button>
+        <input type="text" id="dm-input" placeholder="Type a message..." style="padding-left:44px;">
+        <button class="s-btn s-btn-primary s-btn-icon" id="dm-send">${this.icons.send}</button>
+      </div>
+    `;
+
+    // Load messages
+    await this.loadDmMessages(userId);
+    
+    // Mark as read
+    await this.markDmRead(userId);
+
+    // Bind events
+    document.getElementById('dm-back').onclick = () => this.closeDmChat();
+    document.getElementById('dm-send').onclick = () => this.sendDm();
+    document.getElementById('dm-input').onkeypress = (e) => {
+      if (e.key === 'Enter') this.sendDm();
+      this.handleDmTyping();
+    };
+    document.getElementById('dm-emoji-btn').onclick = (e) => {
+      e.stopPropagation();
+      this.toggleEmojiPicker('dm-input');
+    };
+
+    // Subscribe to new messages
+    this.subscribeToDm(userId);
+  }
+
+  closeDmChat() {
+    const listContainer = document.getElementById('dm-list');
+    const chatContainer = document.getElementById('dm-chat');
+    if (listContainer) listContainer.style.display = 'block';
+    if (chatContainer) chatContainer.style.display = 'none';
+    
+    if (this.channels.dm) {
+      this.supabase.removeChannel(this.channels.dm);
+      this.channels.dm = null;
+    }
+    
+    this.activeDmUser = null;
+    this.renderDmList();
+  }
+
+  async loadDmMessages(userId) {
+    try {
+      const { data } = await this.supabase.rpc('get_dm_messages', { p_other_user: userId, p_limit: 50 });
+      this.dmMessages = (data || []).reverse();
+      this.renderDmMessages();
+    } catch (e) { console.error('Load DM messages error:', e); }
+  }
+
+  renderDmMessages() {
+    const container = document.getElementById('dm-messages-container');
+    if (!container) return;
+
+    if (!this.dmMessages.length) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--s-text-muted);font-size:0.85rem;">No messages yet. Say hi! 👋</div>';
+      return;
+    }
+
+    container.innerHTML = this.dmMessages.map(m => {
+      const isMe = m.is_me || m.from_user === this.currentUser.id;
+      const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="s-dm-msg ${isMe ? 'me' : 'them'}">
+          ${this.escapeHtml(m.message)}
+          <div class="s-dm-msg-time">${time}</div>
+        </div>
+      `;
+    }).join('');
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async sendDm() {
+    const input = document.getElementById('dm-input');
+    if (!input || !this.activeDmUser) return;
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = '';
+
+    try {
+      const { data, error } = await this.supabase.rpc('send_dm', { 
+        p_to_user: this.activeDmUser, 
+        p_message: message 
+      });
+
+      if (error) throw error;
+
+      // Add to local messages immediately
+      this.dmMessages.push({
+        id: data,
+        from_user: this.currentUser.id,
+        to_user: this.activeDmUser,
+        message: message,
+        created_at: new Date().toISOString(),
+        is_me: true
+      });
+      this.renderDmMessages();
+    } catch (e) {
+      console.error('Send DM error:', e);
+      this.showToast('message', 'Error', 'Could not send message');
+    }
+  }
+
+  async markDmRead(userId) {
+    try {
+      await this.supabase.rpc('mark_dm_read', { p_other_user: userId });
+      // Update local unread count
+      const conv = this.dmConversations.find(c => c.other_user_id === userId);
+      if (conv) conv.unread_count = 0;
+      this.updateDmBadge();
+    } catch (e) { console.error('Mark read error:', e); }
+  }
+
+  subscribeToDm(userId) {
+    if (this.channels.dm) {
+      this.supabase.removeChannel(this.channels.dm);
+    }
+
+    const myId = this.currentUser.id;
+    this.channels.dm = this.supabase.channel(`dm-${myId}-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
+        const msg = payload.new;
+        // Only messages between us
+        if ((msg.from_user === userId && msg.to_user === myId) || 
+            (msg.from_user === myId && msg.to_user === userId)) {
+          // Don't duplicate our own messages
+          if (msg.from_user !== myId) {
+            this.dmMessages.push({
+              ...msg,
+              is_me: false
+            });
+            this.renderDmMessages();
+            this.playSound('message');
+          }
+        }
+      })
+      .subscribe();
+  }
+
+  handleDmTyping() {
+    // Could implement typing indicator broadcast here via Presence
+    // For now, just local state management
+  }
+
+  // ==================== V8: CLUBS ====================
+
+  async loadClub() {
+    try {
+      const { data } = await this.supabase.rpc('get_my_club');
+      
+      if (data?.length > 0) {
+        this.currentClub = {
+          id: data[0].club_id,
+          name: data[0].club_name,
+          tag: data[0].club_tag,
+          description: data[0].club_description,
+          leader_id: data[0].club_leader_id,
+          avatar_url: data[0].club_avatar_url,
+          max_members: data[0].club_max_members,
+          created_at: data[0].club_created_at
+        };
+        
+        this.clubMembers = data.map(m => ({
+          id: m.member_id,
+          name: m.member_gamer_tag || m.member_name,
+          discriminator: m.member_discriminator,
+          role: m.member_role,
+          avatar_url: m.member_avatar_url,
+          avatar_icon: m.member_avatar_icon,
+          status: m.member_status,
+          account_type: m.member_account_type,
+          cosmetics: m.member_cosmetics,
+          joined_at: m.member_joined_at
+        }));
+      } else {
+        this.currentClub = null;
+        this.clubMembers = [];
+      }
+      
+      this.renderClub();
+    } catch (e) { console.error('Load club error:', e); }
+  }
+
+  async loadClubInvites() {
+    try {
+      const { data } = await this.supabase.from('club_invites')
+        .select('id, club_id, from_user, clubs(name, tag), profiles!club_invites_from_user_fkey(display_name, gamer_tag)')
+        .eq('to_user', this.currentUser.id)
+        .eq('status', 'pending');
+      this.clubInvites = data || [];
+    } catch (e) { console.error('Load club invites error:', e); }
+  }
+
+  renderClub() {
+    const container = document.getElementById('club-section');
+    if (!container) return;
+
+    if (!this.currentClub) {
+      // Show create club UI or invites
+      container.innerHTML = `
+        <div class="s-club-create">
+          <div class="s-club-create-icon">${this.icons.flag}</div>
+          <h3>Join or Create a Club</h3>
+          <p>Clubs let you compete with friends on leaderboards</p>
+          
+          <div class="s-club-form">
+            <input type="text" id="club-name-input" placeholder="Club Name" maxlength="20">
+            <input type="text" id="club-tag-input" placeholder="Tag (2-5 chars)" maxlength="5" style="text-transform:uppercase;">
+            <button class="s-btn s-btn-primary" id="create-club-btn" style="width:100%;">${this.icons.plus} Create Club</button>
+          </div>
+          
+          ${this.clubInvites.length ? `
+            <div style="margin-top:24px;">
+              <div class="s-label">Club Invites</div>
+              ${this.clubInvites.map(inv => `
+                <div class="s-party-invite-card">
+                  <div class="s-invite-info">
+                    <div class="s-invite-title">[${inv.clubs?.tag}] ${inv.clubs?.name}</div>
+                    <div class="s-invite-sub">from ${inv.profiles?.gamer_tag || inv.profiles?.display_name}</div>
+                  </div>
+                  <div class="s-invite-actions">
+                    <button class="s-btn s-btn-primary accept-club-inv" data-id="${inv.id}">${this.icons.check}</button>
+                    <button class="s-btn s-btn-ghost decline-club-inv" data-id="${inv.id}">${this.icons.x}</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      document.getElementById('create-club-btn')?.addEventListener('click', () => this.createClub());
+      container.querySelectorAll('.accept-club-inv').forEach(b => {
+        b.onclick = () => this.acceptClubInvite(b.dataset.id);
+      });
+      container.querySelectorAll('.decline-club-inv').forEach(b => {
+        b.onclick = () => this.declineClubInvite(b.dataset.id);
+      });
+      return;
+    }
+
+    // Show club
+    const isLeader = this.currentClub.leader_id === this.currentUser.id;
+    const isAdmin = this.clubMembers.find(m => m.id === this.currentUser.id && ['leader', 'officer'].includes(m.role));
+
+    container.innerHTML = `
+      <div class="s-club-header">
+        <div class="s-club-avatar">${this.currentClub.tag.substring(0, 2)}</div>
+        <div class="s-club-info">
+          <div class="s-club-name">${this.escapeHtml(this.currentClub.name)}</div>
+          <div class="s-club-tag-display">[${this.escapeHtml(this.currentClub.tag)}]</div>
+          <div class="s-club-members-count">${this.clubMembers.length}/${this.currentClub.max_members} members</div>
+        </div>
+        <button class="s-btn s-btn-ghost s-btn-icon" id="club-settings-btn">${this.icons.moreVertical}</button>
+      </div>
+      
+      <div class="s-label">Members</div>
+      ${this.clubMembers.map(m => this.renderClubMember(m, isLeader, isAdmin)).join('')}
+      
+      <div style="margin-top:16px;">
+        <button class="s-btn s-btn-secondary" id="leave-club-btn" style="width:100%;">${this.icons.logout} Leave Club</button>
+      </div>
+    `;
+
+    document.getElementById('leave-club-btn')?.addEventListener('click', () => this.leaveClub());
+    
+    container.querySelectorAll('.club-kick-btn').forEach(b => {
+      b.onclick = () => this.kickFromClub(b.dataset.id);
+    });
+    container.querySelectorAll('.club-promote-btn').forEach(b => {
+      b.onclick = () => this.promoteClubMember(b.dataset.id);
+    });
+    container.querySelectorAll('.club-member-avatar').forEach(el => {
+      el.onclick = () => this.openProfileModal(el.dataset.id);
+    });
+  }
+
+  renderClubMember(m, isLeader, isAdmin) {
+    const name = m.name || 'Unknown';
+    const avatarStyle = this.getAvatarStyle(m);
+    const roleIcon = m.role === 'leader' ? this.icons.crown : m.role === 'officer' ? this.icons.shield : '';
+    const statusClass = m.status === 'online' || m.status === 'in_game' ? 'online' : '';
+    const isMe = m.id === this.currentUser.id;
+    
+    let actions = '';
+    if (!isMe && isAdmin && m.role === 'member') {
+      actions = `<button class="s-btn s-btn-ghost s-btn-icon club-kick-btn" data-id="${m.id}">${this.icons.x}</button>`;
+    }
+    if (isLeader && !isMe && m.role !== 'leader') {
+      actions += `<button class="s-btn s-btn-ghost s-btn-icon club-promote-btn" data-id="${m.id}" title="Promote to Officer">${this.icons.shield}</button>`;
+    }
+
+    return `
+      <div class="s-user">
+        <div class="s-avatar club-member-avatar" style="${avatarStyle};cursor:pointer;" data-id="${m.id}">
+          ${m.avatar_url ? '' : name[0].toUpperCase()}
+          <div class="s-status-dot ${statusClass}"></div>
+        </div>
+        <div class="s-user-info">
+          <div class="s-user-name">
+            ${roleIcon ? `<span style="color:var(--s-accent);">${roleIcon}</span>` : ''}
+            ${this.escapeHtml(name)}
+            ${m.discriminator ? `<span class="disc">#${m.discriminator}</span>` : ''}
+          </div>
+          <div class="s-user-status">${m.role}</div>
+        </div>
+        <div class="s-user-actions">${actions}</div>
+      </div>
+    `;
+  }
+
+  async createClub() {
+    const nameInput = document.getElementById('club-name-input');
+    const tagInput = document.getElementById('club-tag-input');
+    
+    const name = nameInput?.value.trim();
+    const tag = tagInput?.value.trim().toUpperCase();
+    
+    if (!name || name.length < 2) {
+      this.showToast('party', 'Error', 'Club name must be at least 2 characters');
+      return;
+    }
+    if (!tag || tag.length < 2 || tag.length > 5) {
+      this.showToast('party', 'Error', 'Tag must be 2-5 characters');
+      return;
+    }
+
+    try {
+      const { data, error } = await this.supabase.rpc('create_club', { 
+        p_name: name, 
+        p_tag: tag 
+      });
+      
+      if (error) throw error;
+      
+      await this.loadClub();
+      this.showToast('party', 'Club Created!', `[${tag}] ${name}`);
+    } catch (e) {
+      console.error('Create club error:', e);
+      this.showToast('party', 'Error', e.message || 'Could not create club');
+    }
+  }
+
+  async leaveClub() {
+    if (!confirm('Are you sure you want to leave this club?')) return;
+    
+    try {
+      await this.supabase.rpc('leave_club');
+      this.currentClub = null;
+      this.clubMembers = [];
+      this.renderClub();
+      this.showToast('party', 'Left Club', 'You have left the club');
+    } catch (e) {
+      console.error('Leave club error:', e);
+    }
+  }
+
+  async kickFromClub(userId) {
+    try {
+      await this.supabase.rpc('kick_from_club', { p_user_id: userId });
+      await this.loadClub();
+    } catch (e) { console.error('Kick error:', e); }
+  }
+
+  async promoteClubMember(userId) {
+    try {
+      await this.supabase.rpc('set_club_role', { p_user_id: userId, p_role: 'officer' });
+      await this.loadClub();
+      this.showToast('party', 'Promoted', 'Member promoted to officer');
+    } catch (e) { console.error('Promote error:', e); }
+  }
+
+  async inviteToClub(userId) {
+    try {
+      const { error } = await this.supabase.rpc('invite_to_club', { p_user_id: userId });
+      if (error) throw error;
+      this.showToast('party', 'Invite Sent', 'Club invite sent!');
+    } catch (e) {
+      console.error('Club invite error:', e);
+      this.showToast('party', 'Error', e.message || 'Could not send invite');
+    }
+  }
+
+  async acceptClubInvite(inviteId) {
+    try {
+      await this.supabase.rpc('accept_club_invite', { p_invite_id: inviteId });
+      await this.loadClub();
+      await this.loadClubInvites();
+    } catch (e) { console.error('Accept club invite error:', e); }
+  }
+
+  async declineClubInvite(inviteId) {
+    try {
+      await this.supabase.from('club_invites').update({ status: 'declined' }).eq('id', inviteId);
+      this.clubInvites = this.clubInvites.filter(i => i.id !== inviteId);
+      this.renderClub();
+    } catch (e) { console.error('Decline club invite error:', e); }
+  }
+
+  // ==================== V8: EMOJI PICKER ====================
+
+  toggleEmojiPicker(inputId) {
+    const picker = document.getElementById('s-emoji-picker');
+    if (!picker) return;
+
+    if (picker.style.display === 'none') {
+      picker.style.display = 'block';
+      picker.dataset.targetInput = inputId;
+      
+      // Position near the button
+      const btn = document.getElementById(inputId === 'dm-input' ? 'dm-emoji-btn' : 'party-emoji-btn');
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        picker.style.bottom = 'auto';
+        picker.style.top = (rect.top - picker.offsetHeight - 8) + 'px';
+        picker.style.left = rect.left + 'px';
+      }
+    } else {
+      picker.style.display = 'none';
+    }
+  }
+
+  insertEmoji(emoji) {
+    const picker = document.getElementById('s-emoji-picker');
+    const inputId = picker?.dataset.targetInput;
+    const input = document.getElementById(inputId);
+    
+    if (input) {
+      input.value += emoji;
+      input.focus();
+    }
+    
+    if (picker) picker.style.display = 'none';
+  }
+
+  // ==================== V8: HELPER FUNCTIONS ====================
+
+  formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    
+    if (diff < 60) return 'now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd';
+    return date.toLocaleDateString();
   }
 }
 
