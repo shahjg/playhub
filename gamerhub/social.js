@@ -196,10 +196,13 @@ class SocialSystem {
     const initial = displayName[0].toUpperCase();
     const handle = this.generateHandle();
     const avatarStyle = this.getAvatarStyle(this.userProfile);
+    const nameStyle = this.getPremiumNameStyle(this.userProfile);
+    const nameEffect = this.userProfile?.name_effect || '';
     
     const avatarEl = document.querySelector('.s-profile-avatar');
     const nameEl = document.querySelector('.s-profile-name');
     const handleEl = document.getElementById('my-handle');
+    const statusIndicator = document.getElementById('status-indicator');
     
     if (avatarEl) {
       avatarEl.style.cssText = avatarStyle;
@@ -207,8 +210,22 @@ class SocialSystem {
         avatarEl.textContent = initial;
       }
     }
-    if (nameEl) nameEl.textContent = displayName;
+    if (nameEl) {
+      // Apply premium styling
+      nameEl.innerHTML = `<span class="s-name ${nameEffect}" style="${nameStyle}">${this.escapeHtml(displayName)}</span>`;
+      
+      // Add badge if premium
+      if (this.userProfile?.badge) {
+        nameEl.innerHTML += `<span class="s-badge" style="margin-left: 8px;">${this.escapeHtml(this.userProfile.badge)}</span>`;
+      }
+    }
     if (handleEl) handleEl.textContent = handle;
+    
+    // Update status indicator
+    if (statusIndicator) {
+      const statusOpt = this.statusOptions.find(s => s.id === this.userStatus);
+      if (statusOpt) statusIndicator.style.background = statusOpt.color;
+    }
   }
 
   async loadAll() {
@@ -379,6 +396,13 @@ class SocialSystem {
         font-size: 1rem;
         color: var(--s-text);
         margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .s-profile-name .s-name {
+        color: inherit;
       }
       .s-profile-tag {
         display: inline-flex;
@@ -1015,14 +1039,43 @@ class SocialSystem {
       }
 
       /* Premium Name Styles */
+      .s-name {
+        display: inline;
+      }
       .s-name.glow {
-        text-shadow: 0 0 10px currentColor;
+        text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
       }
       .s-name.rainbow {
         background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #ff6b6b);
         background-size: 200% auto;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: rainbow 3s linear infinite;
+      }
+      .s-name.gold {
+        background: linear-gradient(135deg, #f5d742, #ffeb3b, #ffc107, #f5d742);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: rainbow 4s linear infinite;
+        text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+      }
+      .s-name.fire {
+        background: linear-gradient(135deg, #ff4500, #ff6b35, #ff8c00, #ff4500);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: rainbow 2s linear infinite;
+      }
+      .s-name.ice {
+        background: linear-gradient(135deg, #00d4ff, #7fdbff, #39cccc, #00d4ff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         animation: rainbow 3s linear infinite;
       }
       @keyframes rainbow {
@@ -1032,6 +1085,7 @@ class SocialSystem {
         font-size: 0.7rem;
         color: var(--s-text-muted);
         margin-top: 2px;
+        display: block;
       }
       .s-badge {
         font-size: 0.65rem;
@@ -1561,25 +1615,29 @@ class SocialSystem {
   }
 
   subscribeToParty() {
+    // Prevent double subscription
     if (this.channels.party) {
       this.supabase.removeChannel(this.channels.party);
+      this.channels.party = null;
     }
     if (!this.currentParty) return;
 
-    console.log('Subscribing to party:', this.currentParty.party_id);
+    const partyId = this.currentParty.party_id;
+    console.log('Subscribing to party:', partyId);
 
-    this.channels.party = this.supabase.channel(`party_${this.currentParty.party_id}`)
+    this.channels.party = this.supabase.channel(`party-realtime-${partyId}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'parties', 
-        filter: `id=eq.${this.currentParty.party_id}` 
+        filter: `id=eq.${partyId}` 
       }, async (payload) => {
-        console.log('Party update:', payload);
+        console.log('Party update:', payload.eventType);
         if (payload.eventType === 'DELETE') {
           this.currentParty = null;
           this.partyMembers = [];
           this.partyMessages = [];
+          if (this.chatChannel) this.supabase.removeChannel(this.chatChannel);
           this.renderParty();
           this.showToast('party', 'Party Ended', 'The party has been disbanded');
           return;
@@ -1588,7 +1646,6 @@ class SocialSystem {
         const oldUrl = this.lastHostUrl;
         await this.loadParty();
         
-        // AUTO-FOLLOW
         if (this.currentParty && this.currentParty.leader_id !== this.currentUser.id && this.isFollowingHost) {
           const newUrl = this.currentParty.current_room;
           if (newUrl && newUrl !== oldUrl && newUrl !== window.location.pathname + window.location.search) {
@@ -1601,47 +1658,40 @@ class SocialSystem {
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'party_members'
+        table: 'party_members',
+        filter: `party_id=eq.${partyId}`
       }, async (payload) => {
-        console.log('Party member joined:', payload);
-        // Check if it's for our party
-        if (payload.new.party_id === this.currentParty?.party_id) {
-          await this.loadParty();
-          this.playSound('join');
-          
-          // Get the new member's name
-          if (payload.new.user_id !== this.currentUser.id) {
-            const { data: profile } = await this.supabase
-              .from('profiles')
-              .select('gamer_tag, display_name')
-              .eq('id', payload.new.user_id)
-              .single();
-            const name = profile?.gamer_tag || profile?.display_name || 'Someone';
-            this.showToast('party', 'Member Joined', `${name} joined the party!`, []);
-          }
+        console.log('Member joined:', payload.new.user_id);
+        // Instant update - reload party immediately
+        await this.loadParty();
+        this.playSound('join');
+        
+        if (payload.new.user_id !== this.currentUser.id) {
+          const member = this.partyMembers.find(m => m.id === payload.new.user_id);
+          const name = member?.name || 'Someone';
+          this.showToast('party', 'Member Joined', `${name} joined the party!`, []);
         }
       })
       .on('postgres_changes', { 
         event: 'DELETE', 
         schema: 'public', 
-        table: 'party_members'
+        table: 'party_members',
+        filter: `party_id=eq.${partyId}`
       }, async (payload) => {
-        console.log('Party member left:', payload);
-        if (payload.old.party_id === this.currentParty?.party_id) {
-          // Check if it was us who got kicked
-          if (payload.old.user_id === this.currentUser.id) {
-            this.currentParty = null;
-            this.partyMembers = [];
-            this.partyMessages = [];
-            this.renderParty();
-            this.showToast('party', 'Removed from Party', 'You have left the party');
-          } else {
-            await this.loadParty();
-          }
+        console.log('Member left:', payload.old.user_id);
+        if (payload.old.user_id === this.currentUser.id) {
+          this.currentParty = null;
+          this.partyMembers = [];
+          this.partyMessages = [];
+          if (this.chatChannel) this.supabase.removeChannel(this.chatChannel);
+          this.renderParty();
+          this.showToast('party', 'Removed', 'You have left the party');
+        } else {
+          await this.loadParty();
         }
       })
       .subscribe((status) => {
-        console.log('Party subscription status:', status);
+        console.log('Party subscription:', status);
       });
   }
 
@@ -1739,8 +1789,12 @@ class SocialSystem {
 
   async loadUserProfile() {
     try {
-      const { data } = await this.supabase.from('profiles').select('id, display_name, gamer_tag, discriminator, avatar_url, avatar_icon').eq('id', this.currentUser.id).single();
+      const { data } = await this.supabase.from('profiles')
+        .select('id, display_name, gamer_tag, discriminator, avatar_url, avatar_icon, is_premium, name_color, name_effect, title, title_color, badge, user_status')
+        .eq('id', this.currentUser.id)
+        .single();
       this.userProfile = data || { display_name: 'Player', id: this.currentUser.id };
+      this.userStatus = data?.user_status || 'online';
     } catch (e) { console.error(e); }
   }
 
@@ -1784,7 +1838,16 @@ class SocialSystem {
 
   async loadParty() {
     try {
-      const { data } = await this.supabase.rpc('get_my_party');
+      const { data, error } = await this.supabase.rpc('get_my_party');
+      
+      if (error) {
+        console.error('Load party error:', error);
+        return;
+      }
+      
+      const wasInParty = !!this.currentParty;
+      const oldPartyId = this.currentParty?.party_id;
+      
       if (data?.length > 0) {
         this.currentParty = {
           party_id: data[0].party_id,
@@ -1811,16 +1874,29 @@ class SocialSystem {
           title_color: m.member_title_color,
           badge: m.member_badge
         }));
+        
+        // Debug premium
+        console.log('Party members with premium:', this.partyMembers.map(m => ({ 
+          name: m.name, 
+          is_premium: m.is_premium, 
+          name_color: m.name_color,
+          badge: m.badge 
+        })));
+        
         this.lastHostUrl = this.currentParty.current_room;
-        this.subscribeToParty();
-        this.subscribeToPartyChat();
+        
+        // Only subscribe if party changed or first time
+        if (!wasInParty || oldPartyId !== this.currentParty.party_id) {
+          this.subscribeToParty();
+          this.subscribeToPartyChat();
+        }
       } else {
         this.currentParty = null;
         this.partyMembers = [];
         this.partyMessages = [];
       }
       this.renderParty();
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Load party exception:', e); }
   }
 
   async loadPartyInvites() {
@@ -2251,30 +2327,31 @@ class SocialSystem {
   async subscribeToPartyChat() {
     if (!this.currentParty) return;
     
+    // Prevent double subscription
     if (this.chatChannel) {
       this.supabase.removeChannel(this.chatChannel);
+      this.chatChannel = null;
     }
 
     this.unreadMessages = 0;
     await this.loadPartyMessages();
 
-    console.log('Subscribing to party chat:', this.currentParty.party_id);
+    const partyId = this.currentParty.party_id;
+    console.log('Subscribing to chat:', partyId);
 
     this.chatChannel = this.supabase
-      .channel(`party-chat-${this.currentParty.party_id}`)
+      .channel(`party-chat-${partyId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'party_messages'
+        table: 'party_messages',
+        filter: `party_id=eq.${partyId}`
       }, (payload) => {
-        console.log('Chat message received:', payload);
-        // Filter to our party
-        if (payload.new.party_id === this.currentParty?.party_id) {
-          this.handleNewPartyMessage(payload.new);
-        }
+        console.log('Chat message:', payload.new.message?.substring(0, 20));
+        this.handleNewPartyMessage(payload.new);
       })
       .subscribe((status) => {
-        console.log('Chat subscription status:', status);
+        console.log('Chat subscription:', status);
       });
   }
 
