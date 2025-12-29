@@ -206,25 +206,51 @@ class SocialSystem {
     const avatarStyle = this.getAvatarStyle(this.userProfile);
     const nameStyle = this.getPremiumNameStyle(this.userProfile);
     const nameEffectClass = this.getNameEffectClass(this.userProfile);
+    const borderClass = this.getBorderColorClass(this.userProfile);
     
-    const avatarEl = document.querySelector('.s-profile-avatar');
-    const nameEl = document.querySelector('.s-profile-name');
+    // Get border color for title
+    const borderColor = this.userProfile?.border_color || this.userProfile?.cosmetics?.border_color || 'gray';
+    const titleColor = this.COSMETIC_COLORS[borderColor] || this.COSMETIC_COLORS.gray;
+    
+    const avatarEl = document.getElementById('s-profile-avatar');
+    const nameEl = document.getElementById('s-profile-name');
     const handleEl = document.getElementById('my-handle');
     const statusIndicator = document.getElementById('status-indicator');
+    const profileInner = document.getElementById('s-profile-inner');
     
     if (avatarEl) {
       avatarEl.style.cssText = avatarStyle;
       if (!this.userProfile?.avatar_url) {
         avatarEl.textContent = initial;
+      } else {
+        avatarEl.textContent = '';
       }
     }
+    
+    // Apply border color to profile section
+    if (profileInner) {
+      if (this.userProfile?.isPremium && borderClass) {
+        profileInner.className = `s-profile-inner ${borderClass}`;
+      } else {
+        profileInner.className = 's-profile-inner';
+      }
+    }
+    
     if (nameEl) {
       // Badge icon
       const badge = this.userProfile?.badge_icon || this.userProfile?.cosmetics?.badge_icon;
       const badgeHtml = badge && this.userProfile?.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
       
+      // Title with matching color
+      const title = this.userProfile?.title || this.userProfile?.cosmetics?.title;
+      const titleStyle = this.userProfile?.isPremium ? `color: ${titleColor};` : '';
+      const titleHtml = title && this.userProfile?.isPremium ? `<div class="s-premium-title" style="${titleStyle}">${this.escapeHtml(title)}</div>` : '';
+      
       // Apply premium styling
-      nameEl.innerHTML = `${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(displayName)}</span>`;
+      nameEl.innerHTML = `
+        <div class="s-profile-name-row">${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(displayName)}</span></div>
+        ${titleHtml}
+      `;
     }
     if (handleEl) handleEl.textContent = handle;
     
@@ -382,6 +408,27 @@ class SocialSystem {
         display: flex;
         align-items: center;
         gap: 14px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+      }
+      /* Profile border colors */
+      .s-profile-inner.gold-border { border-color: #fbbf24; background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), transparent); }
+      .s-profile-inner.diamond-border { border-color: #67e8f9; background: linear-gradient(135deg, rgba(103, 232, 249, 0.1), transparent); }
+      .s-profile-inner.ruby-border { border-color: #f87171; background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), transparent); }
+      .s-profile-inner.emerald-border { border-color: #34d399; background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), transparent); }
+      .s-profile-inner.amethyst-border { border-color: #c084fc; background: linear-gradient(135deg, rgba(192, 132, 252, 0.1), transparent); }
+      .s-profile-inner.platinum-border { border-color: #e2e8f0; background: linear-gradient(135deg, rgba(226, 232, 240, 0.1), transparent); }
+      .s-profile-inner.obsidian-border { border-color: #1e1b4b; background: linear-gradient(135deg, rgba(30, 27, 75, 0.2), transparent); }
+      .s-profile-inner.rose-border { border-color: #fb7185; background: linear-gradient(135deg, rgba(251, 113, 133, 0.1), transparent); }
+      .s-profile-inner.rainbow-border {
+        border-color: transparent;
+        background: 
+          linear-gradient(var(--s-bg-tertiary), var(--s-bg-tertiary)) padding-box,
+          linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;
+        background-size: 100% 100%, 300% 100%;
+        animation: tgcoRainbow 3s linear infinite;
       }
       .s-profile-avatar {
         width: 50px;
@@ -403,10 +450,11 @@ class SocialSystem {
         font-size: 1rem;
         color: var(--s-text);
         margin-bottom: 6px;
+      }
+      .s-profile-name-row {
         display: flex;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 4px;
+        gap: 6px;
       }
       .s-profile-name .s-name {
         color: inherit;
@@ -1093,6 +1141,10 @@ class SocialSystem {
         text-transform: uppercase;
         letter-spacing: 0.05em;
       }
+      .s-profile-name .s-premium-title {
+        font-size: 0.65rem;
+        margin-top: 4px;
+      }
       
       /* Badge icon (emoji style) */
       .s-badge-icon {
@@ -1173,13 +1225,14 @@ class SocialSystem {
         left: 0;
         right: 0;
         margin-top: 4px;
-        background: var(--s-bg);
-        border: 1px solid var(--s-border);
+        background: var(--s-bg-secondary);
+        border: 1px solid var(--s-border-light);
         border-radius: 10px;
         overflow: hidden;
         display: none;
-        z-index: 10;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 100;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
       }
       .s-status-dropdown.open { display: block; }
       .s-status-option {
@@ -1191,8 +1244,9 @@ class SocialSystem {
         transition: background 0.2s;
         font-size: 0.85rem;
         color: var(--s-text);
+        background: var(--s-bg-secondary);
       }
-      .s-status-option:hover { background: var(--s-bg-hover); }
+      .s-status-option:hover { background: var(--s-bg-tertiary); }
       .s-status-dot {
         width: 10px;
         height: 10px;
@@ -1453,11 +1507,11 @@ class SocialSystem {
           <button class="s-close" id="s-close">${this.icons.x}</button>
         </div>
         
-        <div class="s-profile">
-          <div class="s-profile-inner">
-            <div class="s-profile-avatar"></div>
+        <div class="s-profile" id="s-profile-section">
+          <div class="s-profile-inner" id="s-profile-inner">
+            <div class="s-profile-avatar" id="s-profile-avatar"></div>
             <div class="s-profile-info">
-              <div class="s-profile-name"></div>
+              <div class="s-profile-name" id="s-profile-name"></div>
               <div class="s-profile-tag">
                 <code class="s-profile-code" id="my-handle"></code>
                 <button class="s-copy-btn" id="copy-handle">${this.icons.copy}</button>
@@ -1641,22 +1695,45 @@ class SocialSystem {
         ]);
       }).subscribe();
 
-    this.channels.partyInvites = this.supabase.channel('partyinv_ch')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'party_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
-        console.log('🎉 Party invite received:', payload);
+    this.channels.partyInvites = this.supabase.channel(`partyinv-${this.currentUser.id}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'party_invites'
+      }, async (payload) => {
+        console.log('🎉 Party invite INSERT:', payload);
+        // Filter client-side - only react to invites for me
+        if (payload.new.to_user !== this.currentUser.id) return;
+        
+        console.log('✅ Party invite is for me!');
         await this.loadPartyInvites();
         this.updateNotificationBadge();
         this.playSound('invite');
         this.flashTitle('Party Invite!');
         const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag').eq('id', payload.new.from_user).single();
         const name = sender?.gamer_tag || sender?.display_name || 'Someone';
-        this.showToast('party', 'Party Invite', `${name} invited you to their party!`, [
+        this.showToast('party', 'Party Invite!', `${name} invited you to their party!`, [
           { label: 'Join', style: 'primary', action: `acceptPartyInvite:${payload.new.id}` },
           { label: 'Decline', action: `declinePartyInvite:${payload.new.id}` }
         ]);
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'party_invites', filter: `to_user=eq.${this.currentUser.id}` }, async () => {
-        await this.loadPartyInvites();
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'party_invites'
+      }, async (payload) => {
+        if (payload.new.to_user === this.currentUser.id) {
+          await this.loadPartyInvites();
+        }
+      })
+      .on('postgres_changes', { 
+        event: 'DELETE', 
+        schema: 'public', 
+        table: 'party_invites'
+      }, async (payload) => {
+        if (payload.old.to_user === this.currentUser.id) {
+          await this.loadPartyInvites();
+        }
       })
       .subscribe((status) => {
         console.log('Party invites subscription:', status);
@@ -2093,8 +2170,11 @@ class SocialSystem {
     // Cosmetics format - badge_icon and title
     const badge = f.badge_icon || f.cosmetics?.badge_icon;
     const title = f.title || f.cosmetics?.title;
+    const borderColor = f.border_color || f.cosmetics?.border_color || 'gray';
+    const titleColor = f.isPremium ? (this.COSMETIC_COLORS[borderColor] || this.COSMETIC_COLORS.gray) : '';
+    
     let badgeHtml = badge && f.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
-    let titleHtml = title && f.isPremium ? `<div class="s-premium-title">${this.escapeHtml(title)}</div>` : '';
+    let titleHtml = title && f.isPremium ? `<div class="s-premium-title" style="color: ${titleColor};">${this.escapeHtml(title)}</div>` : '';
 
     // Add border class for premium users
     const userClass = f.isPremium && borderClass ? `s-user ${borderClass}` : 's-user';
@@ -2254,7 +2334,9 @@ class SocialSystem {
       let titleHtml = '';
       const title = m.title || m.cosmetics?.title;
       if (title && m.isPremium) {
-        titleHtml = `<span class="s-premium-title">${this.escapeHtml(title)}</span>`;
+        const borderColor = m.border_color || m.cosmetics?.border_color || 'gray';
+        const titleColor = this.COSMETIC_COLORS[borderColor] || this.COSMETIC_COLORS.gray;
+        titleHtml = `<span class="s-premium-title" style="color: ${titleColor};">${this.escapeHtml(title)}</span>`;
       }
 
       let badgeHtml = '';
@@ -2913,7 +2995,9 @@ class SocialSystem {
   }
 
   async inviteToParty(userId) {
-    console.log('Inviting to party:', userId, 'Party:', this.currentParty?.party_id);
+    console.log('📤 Sending party invite to:', userId);
+    console.log('   My party:', this.currentParty?.party_id);
+    console.log('   I am leader:', this.isPartyLeader());
     
     // Get friend name for toast
     const friend = this.friends.find(f => f.friend_id === userId);
@@ -2931,10 +3015,10 @@ class SocialSystem {
     try {
       const { data, error } = await this.supabase.rpc('invite_to_party', { invitee_id: userId });
       
-      console.log('Invite result:', { data, error });
+      console.log('📥 Invite result:', { data, error });
       
       if (error) {
-        console.error('Party invite error:', error);
+        console.error('❌ Party invite error:', error);
         this.showToast('party', 'Invite Failed', error.message || 'Could not send invite', []);
         if (btn) {
           btn.innerHTML = '!';
@@ -2944,6 +3028,7 @@ class SocialSystem {
         return;
       }
       
+      console.log('✅ Invite sent successfully! ID:', data);
       this.playSound('invite');
       this.showToast('party', 'Invite Sent!', `Invited ${friendName} to the party`, []);
       
@@ -2958,7 +3043,7 @@ class SocialSystem {
       }, 3000);
       
     } catch (e) { 
-      console.error('Party invite exception:', e);
+      console.error('❌ Party invite exception:', e);
       this.showToast('party', 'Error', 'Could not send invite', []);
     }
   }
