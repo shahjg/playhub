@@ -5086,7 +5086,7 @@ class SocialSystem {
         </div>
         <div class="s-club-header-actions">
           ${isAdmin ? `<button class="s-btn s-btn-primary s-btn-sm" id="open-club-invite-modal">Invite</button>` : ''}
-          <button class="s-btn s-btn-secondary s-btn-sm" id="open-club-leaderboard">🏆</button>
+          <button class="s-btn s-btn-secondary s-btn-sm" id="open-club-leaderboard">Leaderboard</button>
         </div>
       </div>
       
@@ -5101,7 +5101,7 @@ class SocialSystem {
           <div class="s-chat-messages" id="club-messages"></div>
           <div class="s-chat-input-wrap" style="position:relative;">
             <button class="s-btn s-btn-ghost s-btn-icon" id="club-emoji-btn" style="position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:2;">${this.icons.smile}</button>
-            <input type="text" id="club-chat-input" placeholder="Message your club..." maxlength="500" style="padding-left:36px;">
+            <input type="text" class="s-chat-input" id="club-chat-input" placeholder="Message your club..." maxlength="500" style="padding-left:36px;">
             <button class="s-btn s-btn-primary s-btn-icon" id="send-club-chat-btn">${this.icons.send}</button>
           </div>
         </div>
@@ -5267,10 +5267,12 @@ class SocialSystem {
         </div>
         <div class="s-modal-body">
           <div class="s-leaderboard-tabs">
-            <button class="s-lb-tab active" data-game="all">All Games</button>
+            <button class="s-lb-tab active" data-game="all">All</button>
             <button class="s-lb-tab" data-game="reaction-time">⚡ Reaction</button>
-            <button class="s-lb-tab" data-game="aim-trainer">🎯 Aim</button>
-            <button class="s-lb-tab" data-game="typing-test">⌨️ Typing</button>
+            <button class="s-lb-tab" data-game="aim-trainer-30">🎯 Aim</button>
+            <button class="s-lb-tab" data-game="typing-test-60s">⌨️ Typing</button>
+            <button class="s-lb-tab" data-game="chimp-test">🐒 Chimp</button>
+            <button class="s-lb-tab" data-game="sequence-memory">📋 Sequence</button>
           </div>
           <div class="s-leaderboard-content" id="club-lb-content">
             <div class="s-loading">Loading...</div>
@@ -5304,52 +5306,53 @@ class SocialSystem {
     content.innerHTML = '<div class="s-loading">Loading...</div>';
     
     try {
-      // Get best scores for club members
-      const memberIds = this.clubMembers.map(m => m.id);
+      let allScores = [];
       
-      let query = this.supabase
-        .from('best_scores')
-        .select('user_id, game_id, score, created_at')
-        .in('user_id', memberIds)
-        .order('score', { ascending: true })
-        .limit(100);
-      
-      if (gameFilter !== 'all') {
-        query = query.ilike('game_id', `${gameFilter}%`);
+      if (gameFilter === 'all') {
+        // Query multiple game types
+        const gameTypes = ['reaction-time', 'aim-trainer-15', 'aim-trainer-30', 'typing-test-30s', 'typing-test-60s', 'chimp-test', 'sequence-memory', 'number-memory'];
+        
+        for (const gameId of gameTypes) {
+          try {
+            const { data } = await this.supabase.rpc('get_club_leaderboard', { p_game_id: gameId });
+            if (data && data.length > 0) {
+              // Just take top 3 from each game
+              allScores.push(...data.slice(0, 3).map(s => ({ ...s, game_id: gameId })));
+            }
+          } catch (e) {
+            // Skip games that fail
+          }
+        }
+      } else {
+        // Query specific game
+        const { data, error } = await this.supabase.rpc('get_club_leaderboard', { p_game_id: gameFilter });
+        if (error) throw error;
+        if (data) {
+          allScores = data.map(s => ({ ...s, game_id: gameFilter }));
+        }
       }
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        content.innerHTML = '<div class="s-empty-mini">No scores yet for this category</div>';
+      if (allScores.length === 0) {
+        content.innerHTML = '<div class="s-empty-mini">No scores yet. Play some games!</div>';
         return;
       }
       
-      // Group by game and get top score per member per game
-      const gameScores = {};
-      data.forEach(score => {
-        const key = `${score.game_id}-${score.user_id}`;
-        if (!gameScores[key] || score.score < gameScores[key].score) {
-          gameScores[key] = score;
-        }
-      });
-      
-      // Convert to array and sort
-      const scores = Object.values(gameScores).sort((a, b) => a.score - b.score);
+      // Sort by rank for single game, or interleave for all games
+      if (gameFilter !== 'all') {
+        allScores.sort((a, b) => a.rank - b.rank);
+      }
       
       // Render leaderboard
-      content.innerHTML = scores.slice(0, 20).map((score, i) => {
-        const member = this.clubMembers.find(m => m.id === score.user_id);
-        const name = member?.name || 'Unknown';
+      content.innerHTML = allScores.slice(0, 20).map((score, i) => {
+        const name = score.gamer_tag || score.display_name || 'Unknown';
         const gameName = this.getGameDisplayName(score.game_id);
-        const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const displayRank = gameFilter === 'all' ? i + 1 : score.rank;
+        const rankClass = displayRank === 1 ? 'gold' : displayRank === 2 ? 'silver' : displayRank === 3 ? 'bronze' : '';
         const scoreDisplay = this.formatScore(score.game_id, score.score);
         
         return `
           <div class="s-lb-row ${rankClass}">
-            <span class="s-lb-rank">${i + 1}</span>
+            <span class="s-lb-rank">${displayRank}</span>
             <span class="s-lb-name">${this.escapeHtml(name)}</span>
             <span class="s-lb-game">${gameName}</span>
             <span class="s-lb-score">${scoreDisplay}</span>
@@ -5359,7 +5362,10 @@ class SocialSystem {
       
     } catch (e) {
       console.error('Load club leaderboard error:', e);
-      content.innerHTML = '<div class="s-empty-mini">Error loading leaderboard</div>';
+      content.innerHTML = `<div class="s-empty-mini">
+        <p>Could not load leaderboard</p>
+        <p style="font-size:0.7rem;color:var(--s-text-muted);margin-top:8px;">Play some games to see scores here!</p>
+      </div>`;
     }
   }
 
