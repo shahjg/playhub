@@ -726,6 +726,12 @@ class SocialSystem {
         gap: 6px;
       }
       .s-user-name .disc { color: var(--s-text-muted); font-weight: 400; }
+      .s-club-tag-inline { 
+        color: var(--s-accent); 
+        font-weight: 600; 
+        font-size: 0.75rem;
+        opacity: 0.9;
+      }
       .s-user-status { font-size: 0.75rem; color: var(--s-text-muted); margin-top: 2px; }
       .s-user-status.playing { color: var(--s-accent-light); }
       
@@ -1737,6 +1743,103 @@ class SocialSystem {
       }
 
       /* ===== V8: FLOATING DM POPUP ===== */
+      .s-chat-bubble {
+        position: fixed;
+        bottom: 20px;
+        right: 420px;
+        width: 50px;
+        height: 50px;
+        background: var(--s-accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        transition: transform 0.2s, background 0.2s;
+      }
+      .s-chat-bubble:hover { transform: scale(1.1); background: #7c3aed; }
+      .s-chat-bubble svg { width: 24px; height: 24px; color: white; }
+      .s-chat-bubble-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 20px;
+        height: 20px;
+        background: #ef4444;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 5px;
+      }
+      .s-chat-list {
+        position: fixed;
+        bottom: 80px;
+        right: 420px;
+        width: 280px;
+        max-height: 350px;
+        background: var(--s-bg-primary);
+        border: 1px solid var(--s-border);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        overflow: hidden;
+        animation: popupIn 0.2s ease;
+      }
+      .s-chat-list-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--s-border);
+        font-weight: 600;
+        color: var(--s-text);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .s-chat-list-body {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .s-chat-list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .s-chat-list-item:hover { background: var(--s-bg-secondary); }
+      .s-chat-list-name { font-size: 0.85rem; font-weight: 500; color: var(--s-text); }
+      .s-chat-list-preview { font-size: 0.75rem; color: var(--s-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .s-chat-list-unread {
+        min-width: 18px;
+        height: 18px;
+        background: var(--s-accent);
+        border-radius: 9px;
+        font-size: 10px;
+        font-weight: 600;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+      }
+      .s-chat-list-empty {
+        text-align: center;
+        padding: 30px 20px;
+        color: var(--s-text-muted);
+        font-size: 0.85rem;
+      }
+      
+      @media (max-width: 768px) {
+        .s-chat-bubble { right: 20px; bottom: 80px; }
+        .s-chat-list { right: 20px; bottom: 140px; width: 90%; max-width: 300px; }
+      }
+      
       .s-dm-popup {
         position: fixed;
         bottom: 20px;
@@ -2197,6 +2300,21 @@ class SocialSystem {
         </div>
       </div>
       
+      <!-- Floating Chat Bubble -->
+      <div id="s-chat-bubble" class="s-chat-bubble" style="display:none;">
+        ${this.icons.message}
+        <span id="s-chat-bubble-badge" class="s-chat-bubble-badge" style="display:none;">0</span>
+      </div>
+      
+      <!-- Chat List Dropdown -->
+      <div id="s-chat-list" class="s-chat-list" style="display:none;">
+        <div class="s-chat-list-header">
+          <span>Messages</span>
+          <button class="s-btn s-btn-ghost s-btn-icon" id="chat-list-close" style="width:24px;height:24px;">${this.icons.x}</button>
+        </div>
+        <div class="s-chat-list-body" id="chat-list-body"></div>
+      </div>
+      
       <!-- Floating DM Popup -->
       <div id="s-dm-popup" class="s-dm-popup" style="display:none;">
         <div class="s-dm-popup-header" id="dm-popup-header">
@@ -2335,6 +2453,10 @@ class SocialSystem {
       e.stopPropagation();
       this.toggleEmojiPicker('dm-popup-input');
     });
+
+    // V8: Chat bubble events
+    document.getElementById('s-chat-bubble')?.addEventListener('click', () => this.toggleChatList());
+    document.getElementById('chat-list-close')?.addEventListener('click', () => this.closeChatList());
   }
 
   toggle() { this.isOpen ? this.close() : this.open(); }
@@ -2345,6 +2467,9 @@ class SocialSystem {
     document.getElementById('s-overlay')?.classList.add('open');
     document.body.style.overflow = 'hidden';
     this.stopTitleFlash();
+    // Hide chat bubble when panel is open
+    document.getElementById('s-chat-bubble').style.display = 'none';
+    this.closeChatList();
   }
   
   close() {
@@ -2352,6 +2477,8 @@ class SocialSystem {
     document.getElementById('s-panel')?.classList.remove('open');
     document.getElementById('s-overlay')?.classList.remove('open');
     document.body.style.overflow = '';
+    // Show chat bubble when panel is closed
+    this.updateChatBubble();
   }
   
   switchTab(tab) {
@@ -2712,7 +2839,13 @@ class SocialSystem {
 
   async loadFriends() {
     try {
-      const { data } = await this.supabase.rpc('get_friends_with_presence');
+      // Try new function with clubs, fallback to old one
+      let { data, error } = await this.supabase.rpc('get_friends_with_clubs');
+      if (error) {
+        // Fallback to old function
+        const result = await this.supabase.rpc('get_friends_with_presence');
+        data = result.data;
+      }
       // Map friends with cosmetics format
       this.friends = (data || []).map(f => {
         const cosmetics = f.cosmetics || {};
@@ -2724,7 +2857,9 @@ class SocialSystem {
           badge_icon: isPremium ? cosmetics.badge_icon : null,
           border_color: isPremium ? cosmetics.border_color : 'gray',
           name_effect: isPremium ? cosmetics.name_effect : 'none',
-          title: isPremium ? cosmetics.title : null
+          title: isPremium ? cosmetics.title : null,
+          club_tag: f.club_tag || null,
+          club_name: f.club_name || null
         };
       });
       this.renderFriends();
@@ -2982,6 +3117,9 @@ class SocialSystem {
     
     let badgeHtml = badge && f.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
     let titleHtml = title && f.isPremium ? `<div class="s-premium-title" style="color: ${titleColor};">${this.escapeHtml(title)}</div>` : '';
+    
+    // Club tag display
+    let clubTagHtml = f.club_tag ? `<span class="s-club-tag-inline">[${this.escapeHtml(f.club_tag)}]</span> ` : '';
 
     // Add border class for premium users
     const userClass = f.isPremium && borderClass ? `s-user ${borderClass}` : 's-user';
@@ -2990,7 +3128,7 @@ class SocialSystem {
       <div class="${userClass}" data-id="${f.friend_id}">
         <div class="s-avatar ${avatarClass} clickable-profile" style="${avatarStyle};cursor:pointer;" data-uid="${f.friend_id}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
         <div class="s-user-info clickable-profile" style="cursor:pointer;" data-uid="${f.friend_id}">
-          <div class="s-user-name">${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
+          <div class="s-user-name">${badgeHtml}${clubTagHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
           ${titleHtml}
           <div class="s-user-status ${f.status === 'in_game' ? 'playing' : ''}">${statusText}</div>
         </div>
@@ -4292,19 +4430,123 @@ class SocialSystem {
   // ==================== V8: DIRECT MESSAGES ====================
 
   async loadDmConversations() {
-    // Load DM conversations in background (for future notifications)
     try {
       const { data } = await this.supabase.rpc('get_dm_conversations');
       this.dmConversations = data || [];
+      this.updateChatBubble();
     } catch (e) { console.error('Load DMs error:', e); }
   }
 
+  updateChatBubble() {
+    const bubble = document.getElementById('s-chat-bubble');
+    const badge = document.getElementById('s-chat-bubble-badge');
+    if (!bubble || !badge) return;
+
+    // Only show bubble when panel is closed
+    if (this.isOpen) {
+      bubble.style.display = 'none';
+      return;
+    }
+
+    bubble.style.display = 'flex';
+    
+    // Count unread
+    const unread = this.dmConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+    if (unread > 0) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  toggleChatList() {
+    const list = document.getElementById('s-chat-list');
+    if (!list) return;
+    
+    if (list.style.display === 'none' || list.style.display === '') {
+      this.renderChatList();
+      list.style.display = 'block';
+    } else {
+      list.style.display = 'none';
+    }
+  }
+
+  closeChatList() {
+    const list = document.getElementById('s-chat-list');
+    if (list) list.style.display = 'none';
+  }
+
+  renderChatList() {
+    const body = document.getElementById('chat-list-body');
+    if (!body) return;
+
+    if (!this.dmConversations.length && !this.friends.length) {
+      body.innerHTML = '<div class="s-chat-list-empty">No conversations yet.<br>Add friends to start chatting!</div>';
+      return;
+    }
+
+    // Show friends you can message (with existing convos first)
+    const convUsers = this.dmConversations.map(c => c.other_user_id);
+    const friendsWithoutConvo = this.friends.filter(f => !convUsers.includes(f.friend_id));
+    
+    let html = '';
+    
+    // Existing conversations
+    this.dmConversations.forEach(c => {
+      const name = c.other_user_name || 'Unknown';
+      const preview = c.last_message ? (c.last_message.length > 25 ? c.last_message.substring(0, 25) + '...' : c.last_message) : 'Start chatting';
+      const avatarStyle = this.getAvatarStyle({ avatar_url: c.other_user_avatar_url, avatar_icon: c.other_user_avatar_icon });
+      
+      html += `
+        <div class="s-chat-list-item" data-user="${c.other_user_id}">
+          <div class="s-avatar-sm" style="${avatarStyle}">${c.other_user_avatar_url ? '' : name[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="s-chat-list-name">${this.escapeHtml(name)}</div>
+            <div class="s-chat-list-preview">${this.escapeHtml(preview)}</div>
+          </div>
+          ${c.unread_count > 0 ? `<span class="s-chat-list-unread">${c.unread_count}</span>` : ''}
+        </div>
+      `;
+    });
+
+    // Friends without conversations (show a few)
+    friendsWithoutConvo.slice(0, 5).forEach(f => {
+      const name = f.gamer_tag || f.display_name || 'Unknown';
+      const avatarStyle = this.getAvatarStyle(f);
+      
+      html += `
+        <div class="s-chat-list-item" data-user="${f.friend_id}">
+          <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : name[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="s-chat-list-name">${this.escapeHtml(name)}</div>
+            <div class="s-chat-list-preview">Start chatting</div>
+          </div>
+        </div>
+      `;
+    });
+
+    if (!html) {
+      body.innerHTML = '<div class="s-chat-list-empty">Add friends to start chatting!</div>';
+      return;
+    }
+
+    body.innerHTML = html;
+    
+    body.querySelectorAll('.s-chat-list-item').forEach(item => {
+      item.onclick = () => {
+        this.closeChatList();
+        this.openDmChat(item.dataset.user);
+      };
+    });
+  }
+
   updateDmBadge() {
-    // No badge needed since we removed the DMs tab
+    this.updateChatBubble();
   }
 
   renderDmList() {
-    // No longer needed - using popup instead
+    // No longer needed - using chat list popup instead
   }
 
   async openDmChat(userId) {
@@ -4493,10 +4735,7 @@ class SocialSystem {
 
   async loadClubInvites() {
     try {
-      const { data } = await this.supabase.from('club_invites')
-        .select('id, club_id, from_user, clubs(name, tag), profiles!club_invites_from_user_fkey(display_name, gamer_tag)')
-        .eq('to_user', this.currentUser.id)
-        .eq('status', 'pending');
+      const { data } = await this.supabase.rpc('get_my_club_invites');
       this.clubInvites = data || [];
     } catch (e) { console.error('Load club invites error:', e); }
   }
@@ -4524,8 +4763,8 @@ class SocialSystem {
               ${this.clubInvites.map(inv => `
                 <div class="s-party-invite-card">
                   <div class="s-invite-info">
-                    <div class="s-invite-title">[${inv.clubs?.tag}] ${inv.clubs?.name}</div>
-                    <div class="s-invite-sub">from ${inv.profiles?.gamer_tag || inv.profiles?.display_name}</div>
+                    <div class="s-invite-title">[${inv.club_tag}] ${inv.club_name}</div>
+                    <div class="s-invite-sub">from ${inv.from_user_name}</div>
                   </div>
                   <div class="s-invite-actions">
                     <button class="s-btn s-btn-primary accept-club-inv" data-id="${inv.id}">Join</button>
