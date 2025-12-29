@@ -1679,16 +1679,14 @@ class SocialSystem {
 
       /* ===== V8: EMOJI PICKER ===== */
       .s-emoji-picker {
-        position: absolute;
-        bottom: 100%;
-        left: 8px;
-        margin-bottom: 8px;
+        position: fixed;
         background: var(--s-bg-secondary);
         border: 1px solid var(--s-border);
         border-radius: 12px;
         padding: 8px;
-        z-index: 100;
+        z-index: 10001;
         animation: fadeIn 0.15s ease;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       }
       .s-emoji-grid {
         display: grid;
@@ -1864,18 +1862,6 @@ class SocialSystem {
         text-align: center;
         padding: 30px 20px;
       }
-      .s-club-create-icon {
-        width: 60px;
-        height: 60px;
-        margin: 0 auto 16px;
-        background: var(--s-bg-secondary);
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--s-text-muted);
-      }
-      .s-club-create-icon svg { width: 28px; height: 28px; }
       .s-club-create h3 {
         font-size: 1.1rem;
         color: var(--s-text);
@@ -1977,30 +1963,6 @@ class SocialSystem {
       .s-blocked-name { font-size: 0.85rem; color: var(--s-text); }
       .s-btn-sm { padding: 4px 10px; font-size: 0.75rem; }
 
-      /* ===== V8: CLUB EXTRAS ===== */
-      .s-club-invite-section {
-        margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid var(--s-border);
-      }
-      .s-club-invite-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .s-club-invite-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 10px;
-        background: var(--s-bg-secondary);
-        border-radius: 8px;
-      }
-      .s-club-invite-name {
-        flex: 1;
-        font-size: 0.85rem;
-        color: var(--s-text);
-      }
       .s-avatar-sm {
         width: 28px;
         height: 28px;
@@ -2019,7 +1981,6 @@ class SocialSystem {
         overflow-y: auto;
       }
       
-      /* Club Leaderboard */
       /* ===== V8: CONFIRM MODAL ===== */
       .s-confirm-modal {
         position: absolute;
@@ -2201,7 +2162,7 @@ class SocialSystem {
         <div class="s-tabs">
           <button class="s-tab" data-tab="party">Party <span class="s-tab-count" id="party-invite-count" style="display:none;">0</span></button>
           <button class="s-tab active" data-tab="friends">Friends</button>
-          <button class="s-tab" data-tab="club">${this.icons.flag} Club</button>
+          <button class="s-tab" data-tab="club">Club</button>
           <button class="s-tab" data-tab="requests">! <span class="s-tab-count" id="req-count" style="display:none;">0</span></button>
         </div>
         
@@ -2358,7 +2319,10 @@ class SocialSystem {
 
     // V8: Emoji picker buttons
     document.querySelectorAll('.s-emoji-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.insertEmoji(btn.dataset.emoji));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.insertEmoji(btn.dataset.emoji);
+      });
     });
 
     // V8: DM Popup events
@@ -3130,7 +3094,7 @@ class SocialSystem {
       container.innerHTML = `
         <div class="s-no-party">
           <span class="s-no-party-text">Not in a party</span>
-          <button class="s-btn s-btn-primary" id="create-party-btn">${this.icons.plus} Create</button>
+          <button class="s-btn s-btn-primary" id="create-party-btn">Create Party</button>
         </div>`;
       document.getElementById('create-party-btn')?.addEventListener('click', () => this.createParty());
       return;
@@ -3223,7 +3187,7 @@ class SocialSystem {
               <code class="s-share-code" id="party-code">${partyCode}</code>
             </div>
             <button class="s-btn s-btn-secondary s-btn-icon" id="copy-party-link" title="Copy invite link">${this.icons.link}</button>
-            ${isLeader ? `<button class="s-btn s-btn-primary" id="open-invite-modal">${this.icons.userPlus} Invite</button>` : ''}
+            ${isLeader ? `<button class="s-btn s-btn-primary" id="open-invite-modal">Invite</button>` : ''}
           </div>
         </div>
         <div class="s-party-chat" id="party-chat-section">
@@ -3310,7 +3274,7 @@ class SocialSystem {
         <div class="s-modal-friend ${isOnline ? '' : 'offline'}" data-id="${f.friend_id}">
           <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot-sm ${statusClass}"></div></div>
           <span class="s-modal-friend-name" style="${nameStyle}">${this.escapeHtml(name)}</span>
-          <button class="s-btn s-btn-primary s-btn-sm s-modal-invite-btn" data-id="${f.friend_id}">${this.icons.userPlus}</button>
+          <button class="s-btn s-btn-primary s-btn-sm s-modal-invite-btn" data-id="${f.friend_id}">Invite</button>
         </div>`;
     }).join('');
 
@@ -3339,7 +3303,7 @@ class SocialSystem {
     
     modal.querySelectorAll('.s-modal-invite-btn').forEach(btn => {
       btn.onclick = async () => {
-        btn.innerHTML = this.icons.check;
+        btn.innerHTML = 'Sent!';
         btn.disabled = true;
         btn.classList.remove('s-btn-primary');
         btn.classList.add('s-btn-success');
@@ -3355,7 +3319,7 @@ class SocialSystem {
       for (const friend of onlineFriends) {
         const invBtn = modal.querySelector(`.s-modal-invite-btn[data-id="${friend.friend_id}"]`);
         if (invBtn) {
-          invBtn.innerHTML = this.icons.check;
+          invBtn.innerHTML = 'Sent!';
           invBtn.disabled = true;
           invBtn.classList.remove('s-btn-primary');
           invBtn.classList.add('s-btn-success');
@@ -3363,7 +3327,7 @@ class SocialSystem {
         await this.inviteToPartyQuick(friend.friend_id);
       }
       
-      btn.innerHTML = `${this.icons.check} Sent!`;
+      btn.innerHTML = 'All Sent!';
       setTimeout(() => modal.remove(), 1000);
     });
   }
@@ -4545,14 +4509,13 @@ class SocialSystem {
       // Show create club UI or invites
       container.innerHTML = `
         <div class="s-club-create">
-          <div class="s-club-create-icon">${this.icons.flag}</div>
           <h3>Join or Create a Club</h3>
           <p>Clubs let you compete with friends on leaderboards</p>
           
           <div class="s-club-form">
             <input type="text" id="club-name-input" placeholder="Club Name" maxlength="20">
             <input type="text" id="club-tag-input" placeholder="Tag (2-5 chars)" maxlength="5" style="text-transform:uppercase;">
-            <button class="s-btn s-btn-primary" id="create-club-btn" style="width:100%;">${this.icons.plus} Create Club</button>
+            <button class="s-btn s-btn-primary" id="create-club-btn" style="width:100%;">Create Club</button>
           </div>
           
           ${this.clubInvites.length ? `
@@ -4565,8 +4528,8 @@ class SocialSystem {
                     <div class="s-invite-sub">from ${inv.profiles?.gamer_tag || inv.profiles?.display_name}</div>
                   </div>
                   <div class="s-invite-actions">
-                    <button class="s-btn s-btn-primary accept-club-inv" data-id="${inv.id}">${this.icons.check}</button>
-                    <button class="s-btn s-btn-ghost decline-club-inv" data-id="${inv.id}">${this.icons.x}</button>
+                    <button class="s-btn s-btn-primary accept-club-inv" data-id="${inv.id}">Join</button>
+                    <button class="s-btn s-btn-ghost decline-club-inv" data-id="${inv.id}">✕</button>
                   </div>
                 </div>
               `).join('')}
@@ -4590,10 +4553,6 @@ class SocialSystem {
     const myMember = this.clubMembers.find(m => m.id === this.currentUser.id);
     const isAdmin = myMember && ['leader', 'officer'].includes(myMember.role);
 
-    // Get friends not in club for invite section
-    const clubMemberIds = this.clubMembers.map(m => m.id);
-    const invitableFriends = this.friends.filter(f => !clubMemberIds.includes(f.friend_id));
-
     container.innerHTML = `
       <div class="s-club-header">
         <div class="s-club-avatar">${this.currentClub.tag.substring(0, 2)}</div>
@@ -4602,31 +4561,8 @@ class SocialSystem {
           <div class="s-club-tag-display">[${this.escapeHtml(this.currentClub.tag)}]</div>
           <div class="s-club-members-count">${this.clubMembers.length}/${this.currentClub.max_members} members</div>
         </div>
+        ${isAdmin ? `<button class="s-btn s-btn-primary" id="open-club-invite-modal">Invite</button>` : ''}
       </div>
-      
-      ${isAdmin && invitableFriends.length > 0 ? `
-        <div class="s-club-invite-section">
-          <div class="s-label">${this.icons.userPlus} Invite Friends</div>
-          <div class="s-club-invite-list">
-            ${invitableFriends.slice(0, 5).map(f => {
-              const name = f.gamer_tag || f.display_name || 'Unknown';
-              const avatarStyle = this.getAvatarStyle(f);
-              return `
-                <div class="s-club-invite-item">
-                  <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : name[0].toUpperCase()}</div>
-                  <span class="s-club-invite-name">${this.escapeHtml(name)}</span>
-                  <button class="s-btn s-btn-primary s-btn-sm club-invite-friend-btn" data-id="${f.friend_id}">${this.icons.plus} Invite</button>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      ` : isAdmin ? `
-        <div class="s-club-invite-section">
-          <div class="s-label">${this.icons.userPlus} Invite Friends</div>
-          <p style="color:var(--s-text-muted);font-size:0.85rem;text-align:center;padding:12px;">Add friends first to invite them</p>
-        </div>
-      ` : ''}
       
       <div class="s-label">Members (${this.clubMembers.length})</div>
       <div class="s-club-members-list">
@@ -4634,7 +4570,7 @@ class SocialSystem {
       </div>
       
       <div style="margin-top:16px;">
-        <button class="s-btn s-btn-secondary" id="leave-club-btn" style="width:100%;">${this.icons.logout} Leave Club</button>
+        <button class="s-btn s-btn-secondary" id="leave-club-btn" style="width:100%;">Leave Club</button>
       </div>
       
       <!-- Leave Confirmation Modal -->
@@ -4660,6 +4596,7 @@ class SocialSystem {
       document.getElementById('leave-club-confirm').style.display = 'none';
       this.leaveClub();
     });
+    document.getElementById('open-club-invite-modal')?.addEventListener('click', () => this.openClubInviteModal());
     
     container.querySelectorAll('.club-kick-btn').forEach(b => {
       b.onclick = () => this.kickFromClub(b.dataset.id);
@@ -4670,11 +4607,59 @@ class SocialSystem {
     container.querySelectorAll('.club-member-avatar').forEach(el => {
       el.onclick = () => this.openProfileModal(el.dataset.id);
     });
-    container.querySelectorAll('.club-invite-friend-btn').forEach(b => {
-      b.onclick = async () => {
-        b.disabled = true;
-        b.innerHTML = 'Sent!';
-        await this.inviteToClub(b.dataset.id);
+  }
+
+  openClubInviteModal() {
+    const clubMemberIds = this.clubMembers.map(m => m.id);
+    const availableFriends = this.friends.filter(f => !clubMemberIds.includes(f.friend_id));
+    const onlineFriends = availableFriends.filter(f => f.status === 'online' || f.status === 'in_game');
+    const offlineFriends = availableFriends.filter(f => !f.status || f.status === 'offline');
+
+    const friendsList = [...onlineFriends, ...offlineFriends].map(f => {
+      const name = f.gamer_tag || f.display_name || 'Unknown';
+      const initial = name[0].toUpperCase();
+      const isOnline = f.status === 'online' || f.status === 'in_game';
+      const avatarStyle = this.getAvatarStyle(f);
+      const statusClass = f.status === 'in_game' ? 'in-game' : f.status === 'online' ? 'online' : '';
+      const nameStyle = this.getPremiumNameStyle(f);
+      
+      return `
+        <div class="s-modal-friend ${isOnline ? '' : 'offline'}" data-id="${f.friend_id}">
+          <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot-sm ${statusClass}"></div></div>
+          <span class="s-modal-friend-name" style="${nameStyle}">${this.escapeHtml(name)}</span>
+          <button class="s-btn s-btn-primary s-btn-sm s-club-modal-invite-btn" data-id="${f.friend_id}">Invite</button>
+        </div>`;
+    }).join('');
+
+    const modal = document.createElement('div');
+    modal.className = 's-modal-overlay';
+    modal.id = 'club-invite-modal';
+    modal.innerHTML = `
+      <div class="s-modal">
+        <div class="s-modal-header">
+          <span class="s-modal-title">Invite to Club</span>
+          <button class="s-btn s-btn-ghost s-btn-icon s-modal-close">✕</button>
+        </div>
+        <div class="s-modal-body">
+          ${availableFriends.length > 0 ? `
+            <div class="s-modal-friends-list">${friendsList}</div>
+          ` : '<div class="s-empty-mini">No friends to invite</div>'}
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+
+    // Bind modal events
+    modal.querySelector('.s-modal-close').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.querySelectorAll('.s-club-modal-invite-btn').forEach(btn => {
+      btn.onclick = async () => {
+        btn.innerHTML = 'Sent!';
+        btn.disabled = true;
+        btn.classList.remove('s-btn-primary');
+        btn.classList.add('s-btn-success');
+        await this.inviteToClub(btn.dataset.id);
       };
     });
   }
