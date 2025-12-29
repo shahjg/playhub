@@ -1921,38 +1921,214 @@ class SocialSystem {
         color: var(--s-text-muted);
       }
 
-      /* ===== V8: BLOCKED USERS ===== */
-      .s-blocked-section {
-        margin-top: 20px;
-        padding-top: 16px;
-        border-top: 1px solid var(--s-border);
+      /* ===== V8: BLOCKED USERS (Collapsible) ===== */
+      .s-blocked-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 16px;
+      }
+      .s-blocked-header:hover { background: var(--s-bg-tertiary); }
+      .s-blocked-title {
+        font-size: 0.8rem;
+        color: var(--s-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .s-blocked-title svg { width: 14px; height: 14px; }
+      .s-blocked-arrow {
+        color: var(--s-text-muted);
+        transition: transform 0.2s;
+      }
+      .s-blocked-arrow svg { width: 14px; height: 14px; }
+      .s-blocked-list {
+        margin-top: 8px;
       }
       .s-blocked-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: var(--s-bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 6px;
+      }
+      .s-blocked-name { font-size: 0.85rem; color: var(--s-text); }
+      .s-btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+
+      /* ===== V8: CLUB EXTRAS ===== */
+      .s-club-invite-section {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid var(--s-border);
+      }
+      .s-club-invite-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .s-club-invite-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        background: var(--s-bg-secondary);
+        border-radius: 8px;
+      }
+      .s-club-invite-name {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--s-text);
+      }
+      .s-avatar-sm {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        background-size: cover;
+        background-position: center;
+      }
+      .s-club-members-list {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      
+      /* Club Leaderboard */
+      .s-club-leaderboard {
+        margin-bottom: 16px;
+      }
+      .s-club-top-players {
         background: var(--s-bg-secondary);
         border-radius: 10px;
-        margin-bottom: 8px;
+        overflow: hidden;
       }
-      .s-blocked-info { flex: 1; }
-      .s-blocked-name { font-size: 0.9rem; color: var(--s-text); }
+      .s-club-top-player {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--s-border);
+      }
+      .s-club-top-player:last-child { border-bottom: none; }
+      .s-club-top-medal { font-size: 1rem; margin-right: 10px; }
+      .s-club-top-name { flex: 1; font-size: 0.85rem; color: var(--s-text); }
+      .s-club-top-score { font-size: 0.85rem; color: var(--s-accent); font-weight: 600; }
 
-      /* ===== MOBILE ===== */
+      /* ===== V8: CONFIRM MODAL ===== */
+      .s-confirm-modal {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        border-radius: 20px;
+      }
+      .s-confirm-content {
+        background: var(--s-bg-primary);
+        border: 1px solid var(--s-border);
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 280px;
+        text-align: center;
+      }
+      .s-confirm-content p {
+        font-size: 0.9rem;
+        color: var(--s-text);
+        margin-bottom: 16px;
+      }
+      .s-confirm-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .s-confirm-actions .s-btn { flex: 1; }
+
+      /* ===== V8: PROFILE MODAL "YOU" BADGE ===== */
+      .s-pm-you-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        background: var(--s-accent);
+        color: white;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+
+      /* ===== MOBILE & RESPONSIVE ===== */
       @media (max-width: 480px) {
-        .s-panel { max-width: 100%; }
-        .s-header { padding: 16px; }
-        .s-title { font-size: 1.25rem; }
-        .s-profile { margin: 12px; padding: 14px; }
-        .s-search { margin: 0 12px 10px; }
-        .s-tabs { margin: 0 12px 10px; }
-        .s-tabs .s-tab { padding: 8px 10px; font-size: 0.7rem; }
-        .s-content { padding: 0 12px 12px; }
-        #s-toasts { top: 12px; right: 12px; left: 12px; }
-        .s-toast { min-width: auto; width: 100%; }
-        .s-profile-modal { max-width: 95%; margin: 10px; }
+        .s-panel { max-width: 100%; width: 100%; right: 0; border-radius: 0; }
+        .s-header { padding: 12px 16px; }
+        .s-title { font-size: 1.1rem; }
+        .s-profile { margin: 10px; padding: 12px; }
+        .s-profile-avatar { width: 36px; height: 36px; }
+        .s-profile-name { font-size: 0.85rem; }
+        .s-search { margin: 0 10px 8px; }
+        .s-search-input { padding: 10px 12px 10px 36px; font-size: 0.85rem; }
+        .s-tabs { margin: 0 10px 8px; gap: 4px; flex-wrap: nowrap; overflow-x: auto; }
+        .s-tabs .s-tab { padding: 6px 8px; font-size: 0.7rem; white-space: nowrap; flex-shrink: 0; }
+        .s-tabs .s-tab svg { display: none; }
+        .s-content { padding: 0 10px 10px; }
+        .s-user { padding: 8px 10px; gap: 10px; }
+        .s-avatar { width: 36px; height: 36px; }
+        .s-user-name { font-size: 0.85rem; }
+        .s-user-status { font-size: 0.7rem; }
+        .s-btn { padding: 6px 10px; font-size: 0.8rem; }
+        .s-btn-icon { width: 32px; height: 32px; }
+        #s-toasts { top: 10px; right: 10px; left: 10px; }
+        .s-toast { min-width: auto; width: 100%; padding: 12px; }
+        .s-profile-modal { max-width: 100%; width: 95%; margin: 10px; max-height: 90vh; }
+        .s-pm-header { padding: 16px; }
+        .s-pm-avatar { width: 60px; height: 60px; }
+        .s-pm-name { font-size: 1.1rem; }
+        .s-pm-stats { padding: 12px; gap: 16px; }
+        .s-pm-scores { padding: 12px; }
+        .s-pm-score-row { padding: 8px 10px; }
+        .s-pm-actions { padding: 12px; }
+        .s-emoji-picker { left: 4px; right: 4px; }
         .s-emoji-grid { grid-template-columns: repeat(6, 1fr); }
+        .s-emoji-btn { width: 36px; height: 36px; font-size: 1.1rem; }
+        .s-dm-chat-header { padding: 10px; }
+        .s-dm-messages { padding: 10px; }
+        .s-dm-msg { max-width: 85%; padding: 8px 12px; font-size: 0.85rem; }
+        .s-club-header { padding: 12px; }
+        .s-club-avatar { width: 40px; height: 40px; font-size: 1rem; }
+        .s-club-form input { padding: 10px 12px; }
+      }
+
+      /* Tablet */
+      @media (min-width: 481px) and (max-width: 768px) {
+        .s-panel { width: 360px; }
+        .s-profile-modal { max-width: 360px; }
+      }
+
+      /* Safe areas for notched phones */
+      @supports (padding: max(0px)) {
+        .s-panel {
+          padding-bottom: max(16px, env(safe-area-inset-bottom));
+        }
+        .s-header {
+          padding-top: max(16px, env(safe-area-inset-top));
+        }
+      }
+
+      /* Touch-friendly interactions */
+      @media (hover: none) and (pointer: coarse) {
+        .s-btn { min-height: 44px; }
+        .s-tab { min-height: 40px; }
+        .s-user { min-height: 60px; }
+        .s-options-menu { min-width: 160px; }
+        .s-options-item { padding: 12px 16px; }
       }
     `;
     document.head.appendChild(style);
@@ -1988,7 +2164,7 @@ class SocialSystem {
         
         <div class="s-profile" id="s-profile-section">
           <div class="s-profile-inner" id="s-profile-inner">
-            <div class="s-profile-avatar" id="s-profile-avatar"></div>
+            <div class="s-profile-avatar" id="s-profile-avatar" style="cursor:pointer;" title="View Profile"></div>
             <div class="s-profile-info">
               <div class="s-profile-name" id="s-profile-name"></div>
               <div class="s-profile-tag">
@@ -2166,6 +2342,11 @@ class SocialSystem {
     document.getElementById('close-profile-modal')?.addEventListener('click', () => this.closeProfileModal());
     document.getElementById('s-profile-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 's-profile-modal') this.closeProfileModal();
+    });
+
+    // V8: View own profile by clicking avatar
+    document.getElementById('s-profile-avatar')?.addEventListener('click', () => {
+      if (this.currentUser) this.openProfileModal(this.currentUser.id);
     });
 
     // V8: Emoji picker buttons
@@ -2825,8 +3006,8 @@ class SocialSystem {
 
     return `
       <div class="${userClass}" data-id="${f.friend_id}">
-        <div class="s-avatar ${avatarClass} friend-avatar-click" style="${avatarStyle};cursor:pointer;" data-uid="${f.friend_id}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
-        <div class="s-user-info">
+        <div class="s-avatar ${avatarClass} clickable-profile" style="${avatarStyle};cursor:pointer;" data-uid="${f.friend_id}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
+        <div class="s-user-info clickable-profile" style="cursor:pointer;" data-uid="${f.friend_id}">
           <div class="s-user-name">${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
           ${titleHtml}
           <div class="s-user-status ${f.status === 'in_game' ? 'playing' : ''}">${statusText}</div>
@@ -2836,9 +3017,6 @@ class SocialSystem {
           <div class="s-options">
             <button class="s-btn s-btn-ghost s-btn-icon options-btn">${this.icons.moreVertical}</button>
             <div class="s-options-menu">
-              <button class="s-options-item dm-btn" data-id="${f.friend_id}">${this.icons.message} Message</button>
-              ${this.currentClub && this.clubMembers.find(m => m.id === this.currentUser.id && ['leader', 'officer'].includes(m.role)) ? 
-                `<button class="s-options-item club-invite-btn" data-id="${f.friend_id}">${this.icons.flag} Invite to Club</button>` : ''}
               <button class="s-options-item unfriend-btn" data-id="${f.friend_id}">${this.icons.userMinus} Remove</button>
               <button class="s-options-item danger block-btn" data-id="${f.friend_id}">${this.icons.shield} Block</button>
             </div>
@@ -3447,10 +3625,8 @@ class SocialSystem {
     document.querySelectorAll('.party-invite-btn').forEach(b => b.addEventListener('click', () => this.inviteToParty(b.dataset.id)));
     document.querySelectorAll('.unfriend-btn').forEach(b => b.addEventListener('click', () => this.removeFriend(b.dataset.id)));
     document.querySelectorAll('.block-btn').forEach(b => b.addEventListener('click', () => this.blockUser(b.dataset.id)));
-    // V8: New buttons
-    document.querySelectorAll('.friend-avatar-click').forEach(el => el.addEventListener('click', () => this.openProfileModal(el.dataset.uid)));
-    document.querySelectorAll('.dm-btn').forEach(b => b.addEventListener('click', () => { this.switchTab('messages'); this.openDmChat(b.dataset.id); }));
-    document.querySelectorAll('.club-invite-btn').forEach(b => b.addEventListener('click', () => this.inviteToClub(b.dataset.id)));
+    // Click on avatar or name to open profile
+    document.querySelectorAll('.clickable-profile').forEach(el => el.addEventListener('click', () => this.openProfileModal(el.dataset.uid)));
   }
 
   bindRequestActions() {
@@ -3907,19 +4083,31 @@ class SocialSystem {
     }
 
     container.innerHTML = `
-      <div class="s-blocked-section">
-        <div class="s-label">Blocked Users</div>
+      <div class="s-blocked-header" id="blocked-toggle">
+        <span class="s-blocked-title">${this.icons.eyeOff} Blocked (${this.blockedUsers.length})</span>
+        <span class="s-blocked-arrow">${this.icons.chevronDown}</span>
+      </div>
+      <div class="s-blocked-list" id="blocked-list" style="display:none;">
         ${this.blockedUsers.map(u => `
           <div class="s-blocked-item">
-            <div class="s-avatar-sm" style="${this.getAvatarStyle(u)}">${u.avatar_url ? '' : (u.gamer_tag || u.display_name || '?')[0].toUpperCase()}</div>
-            <div class="s-blocked-info">
-              <div class="s-blocked-name">${this.escapeHtml(u.gamer_tag || u.display_name || 'Unknown')}</div>
-            </div>
-            <button class="s-btn s-btn-secondary unblock-btn" data-id="${u.blocked_id}">${this.icons.unlock} Unblock</button>
+            <span class="s-blocked-name">${this.escapeHtml(u.gamer_tag || u.display_name || 'Unknown')}</span>
+            <button class="s-btn s-btn-sm s-btn-ghost unblock-btn" data-id="${u.blocked_id}">Unblock</button>
           </div>
         `).join('')}
       </div>
     `;
+
+    document.getElementById('blocked-toggle')?.addEventListener('click', () => {
+      const list = document.getElementById('blocked-list');
+      const arrow = container.querySelector('.s-blocked-arrow');
+      if (list.style.display === 'none') {
+        list.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        list.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    });
 
     container.querySelectorAll('.unblock-btn').forEach(btn => {
       btn.onclick = () => this.unblockUser(btn.dataset.id);
@@ -4030,29 +4218,32 @@ class SocialSystem {
       }
 
       // Actions based on relationship
-      let actionsHtml = '';
       const isMe = userId === this.currentUser.id;
-      if (!isMe) {
-        if (p.is_blocked) {
-          actionsHtml = `<button class="s-btn s-btn-secondary" onclick="socialSystem.unblockUser('${userId}')">${this.icons.unlock} Unblock</button>`;
-        } else if (p.is_friend) {
-          actionsHtml = `
-            <button class="s-btn s-btn-primary" onclick="socialSystem.openDmChat('${userId}')">${this.icons.message} Message</button>
-            ${this.currentParty && this.isPartyLeader() ? `<button class="s-btn s-btn-secondary" onclick="socialSystem.inviteToParty('${userId}')">${this.icons.userPlus} Party</button>` : ''}
-          `;
-        } else {
-          actionsHtml = `<button class="s-btn s-btn-primary" onclick="socialSystem.sendFriendRequest('${userId}')">${this.icons.userPlus} Add Friend</button>`;
-        }
+      let actionsHtml = '';
+      
+      if (isMe) {
+        // Own profile - no actions needed, just show stats
+        actionsHtml = '';
+      } else if (p.is_blocked) {
+        actionsHtml = `<button class="s-btn s-btn-secondary" id="pm-unblock">${this.icons.unlock} Unblock</button>`;
+      } else if (p.is_friend) {
+        actionsHtml = `
+          <button class="s-btn s-btn-primary" id="pm-message">${this.icons.message} Message</button>
+          ${this.currentParty && this.isPartyLeader() ? `<button class="s-btn s-btn-secondary" id="pm-party-invite">${this.icons.userPlus} Party</button>` : ''}
+        `;
+      } else {
+        actionsHtml = `<button class="s-btn s-btn-primary" id="pm-add-friend">${this.icons.userPlus} Add Friend</button>`;
       }
 
       content.innerHTML = `
         <div class="s-pm-header">
-          <div class="s-pm-avatar" style="${avatarStyle}" onclick="socialSystem.closeProfileModal()">${p.avatar_url ? '' : name[0].toUpperCase()}</div>
+          <div class="s-pm-avatar" style="${avatarStyle}">${p.avatar_url ? '' : name[0].toUpperCase()}</div>
           <div class="s-pm-name ${nameEffect}" style="color: ${nameColor};">
             ${badgeIcon} ${this.escapeHtml(name)}<span class="disc">${tag}</span>
           </div>
           ${title ? `<div class="s-pm-title" style="color: ${nameColor};">${this.escapeHtml(title)}</div>` : ''}
           ${p.club_tag ? `<span class="s-pm-club-tag">[${this.escapeHtml(p.club_tag)}] ${this.escapeHtml(p.club_name)}</span>` : ''}
+          ${isMe ? '<div class="s-pm-you-badge">You</div>' : ''}
         </div>
         
         <div class="s-pm-stats">
@@ -4073,6 +4264,28 @@ class SocialSystem {
         
         ${actionsHtml ? `<div class="s-pm-actions">${actionsHtml}</div>` : ''}
       `;
+
+      // Bind action buttons
+      document.getElementById('pm-unblock')?.addEventListener('click', async () => {
+        await this.unblockUser(userId);
+        this.closeProfileModal();
+      });
+      
+      document.getElementById('pm-message')?.addEventListener('click', () => {
+        this.closeProfileModal();
+        this.switchTab('messages');
+        setTimeout(() => this.openDmChat(userId), 100);
+      });
+      
+      document.getElementById('pm-party-invite')?.addEventListener('click', async () => {
+        await this.inviteToParty(userId);
+        this.closeProfileModal();
+      });
+      
+      document.getElementById('pm-add-friend')?.addEventListener('click', async () => {
+        await this.sendFriendRequest(userId);
+        this.closeProfileModal();
+      });
 
       this.profileModalUser = userId;
     } catch (e) {
@@ -4444,7 +4657,12 @@ class SocialSystem {
 
     // Show club
     const isLeader = this.currentClub.leader_id === this.currentUser.id;
-    const isAdmin = this.clubMembers.find(m => m.id === this.currentUser.id && ['leader', 'officer'].includes(m.role));
+    const myMember = this.clubMembers.find(m => m.id === this.currentUser.id);
+    const isAdmin = myMember && ['leader', 'officer'].includes(myMember.role);
+
+    // Get friends not in club for invite section
+    const clubMemberIds = this.clubMembers.map(m => m.id);
+    const invitableFriends = this.friends.filter(f => !clubMemberIds.includes(f.friend_id));
 
     container.innerHTML = `
       <div class="s-club-header">
@@ -4454,18 +4672,67 @@ class SocialSystem {
           <div class="s-club-tag-display">[${this.escapeHtml(this.currentClub.tag)}]</div>
           <div class="s-club-members-count">${this.clubMembers.length}/${this.currentClub.max_members} members</div>
         </div>
-        <button class="s-btn s-btn-ghost s-btn-icon" id="club-settings-btn">${this.icons.moreVertical}</button>
       </div>
       
-      <div class="s-label">Members</div>
-      ${this.clubMembers.map(m => this.renderClubMember(m, isLeader, isAdmin)).join('')}
+      <!-- Top Players Mini Leaderboard -->
+      <div class="s-club-leaderboard">
+        <div class="s-label">${this.icons.trophy} Top Players</div>
+        <div id="club-top-players" class="s-club-top-players">
+          <div style="text-align:center;padding:12px;color:var(--s-text-muted);font-size:0.8rem;">Loading...</div>
+        </div>
+      </div>
+      
+      <div class="s-label">Members (${this.clubMembers.length})</div>
+      <div class="s-club-members-list">
+        ${this.clubMembers.map(m => this.renderClubMember(m, isLeader, isAdmin)).join('')}
+      </div>
+      
+      ${isAdmin && invitableFriends.length > 0 ? `
+        <div class="s-club-invite-section">
+          <div class="s-label">${this.icons.userPlus} Invite Friends</div>
+          <div class="s-club-invite-list">
+            ${invitableFriends.slice(0, 5).map(f => {
+              const name = f.gamer_tag || f.display_name || 'Unknown';
+              const avatarStyle = this.getAvatarStyle(f);
+              return `
+                <div class="s-club-invite-item">
+                  <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : name[0].toUpperCase()}</div>
+                  <span class="s-club-invite-name">${this.escapeHtml(name)}</span>
+                  <button class="s-btn s-btn-primary s-btn-sm club-invite-friend-btn" data-id="${f.friend_id}">${this.icons.plus}</button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
       
       <div style="margin-top:16px;">
         <button class="s-btn s-btn-secondary" id="leave-club-btn" style="width:100%;">${this.icons.logout} Leave Club</button>
       </div>
+      
+      <!-- Leave Confirmation Modal -->
+      <div id="leave-club-confirm" class="s-confirm-modal" style="display:none;">
+        <div class="s-confirm-content">
+          <p>Are you sure you want to leave <strong>${this.escapeHtml(this.currentClub.name)}</strong>?</p>
+          <div class="s-confirm-actions">
+            <button class="s-btn s-btn-secondary" id="leave-club-cancel">Cancel</button>
+            <button class="s-btn s-btn-danger" id="leave-club-yes">Leave</button>
+          </div>
+        </div>
+      </div>
     `;
 
-    document.getElementById('leave-club-btn')?.addEventListener('click', () => this.leaveClub());
+    // Bind events
+    document.getElementById('leave-club-btn')?.addEventListener('click', () => {
+      document.getElementById('leave-club-confirm').style.display = 'flex';
+    });
+    document.getElementById('leave-club-cancel')?.addEventListener('click', () => {
+      document.getElementById('leave-club-confirm').style.display = 'none';
+    });
+    document.getElementById('leave-club-yes')?.addEventListener('click', () => {
+      document.getElementById('leave-club-confirm').style.display = 'none';
+      this.leaveClub();
+    });
     
     container.querySelectorAll('.club-kick-btn').forEach(b => {
       b.onclick = () => this.kickFromClub(b.dataset.id);
@@ -4476,6 +4743,46 @@ class SocialSystem {
     container.querySelectorAll('.club-member-avatar').forEach(el => {
       el.onclick = () => this.openProfileModal(el.dataset.id);
     });
+    container.querySelectorAll('.club-invite-friend-btn').forEach(b => {
+      b.onclick = async () => {
+        b.disabled = true;
+        b.innerHTML = this.icons.check;
+        await this.inviteToClub(b.dataset.id);
+      };
+    });
+
+    // Load top players
+    this.loadClubTopPlayers();
+  }
+
+  async loadClubTopPlayers() {
+    const container = document.getElementById('club-top-players');
+    if (!container) return;
+
+    try {
+      // Get best reaction time scores for club members
+      const { data } = await this.supabase.rpc('get_club_leaderboard', { p_game_id: 'reaction-time' });
+      
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--s-text-muted);font-size:0.8rem;">No scores yet</div>';
+        return;
+      }
+
+      const medals = ['🥇', '🥈', '🥉'];
+      container.innerHTML = data.slice(0, 3).map((p, i) => {
+        const name = p.gamer_tag || p.display_name || 'Unknown';
+        return `
+          <div class="s-club-top-player">
+            <span class="s-club-top-medal">${medals[i] || ''}</span>
+            <span class="s-club-top-name">${this.escapeHtml(name)}</span>
+            <span class="s-club-top-score">${p.score}ms</span>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      console.error('Load club leaderboard error:', e);
+      container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--s-text-muted);font-size:0.8rem;">Could not load</div>';
+    }
   }
 
   renderClubMember(m, isLeader, isAdmin) {
@@ -4485,16 +4792,28 @@ class SocialSystem {
     const statusClass = m.status === 'online' || m.status === 'in_game' ? 'online' : '';
     const isMe = m.id === this.currentUser.id;
     
+    // Cosmetics
+    const isPremium = m.account_type === 'premium';
+    const cosmetics = m.cosmetics || {};
+    const badge = isPremium && cosmetics.badge_icon ? cosmetics.badge_icon : '';
+    const borderColor = isPremium ? cosmetics.border_color || 'gray' : 'gray';
+    const nameColor = isPremium ? (this.COSMETIC_COLORS[borderColor] || '') : '';
+    const nameEffect = isPremium && cosmetics.name_effect ? `tgco-effect-${cosmetics.name_effect}` : '';
+    const title = isPremium && cosmetics.title ? cosmetics.title : '';
+    const borderClass = isPremium ? this.getBorderColorClass({ isPremium, border_color: borderColor }) : '';
+    
     let actions = '';
     if (!isMe && isAdmin && m.role === 'member') {
-      actions = `<button class="s-btn s-btn-ghost s-btn-icon club-kick-btn" data-id="${m.id}">${this.icons.x}</button>`;
+      actions = `<button class="s-btn s-btn-ghost s-btn-icon club-kick-btn" data-id="${m.id}" title="Kick">${this.icons.x}</button>`;
     }
     if (isLeader && !isMe && m.role !== 'leader') {
-      actions += `<button class="s-btn s-btn-ghost s-btn-icon club-promote-btn" data-id="${m.id}" title="Promote to Officer">${this.icons.shield}</button>`;
+      actions += `<button class="s-btn s-btn-ghost s-btn-icon club-promote-btn" data-id="${m.id}" title="Promote">${this.icons.shield}</button>`;
     }
 
+    const userClass = borderClass ? `s-user ${borderClass}` : 's-user';
+
     return `
-      <div class="s-user">
+      <div class="${userClass}">
         <div class="s-avatar club-member-avatar" style="${avatarStyle};cursor:pointer;" data-id="${m.id}">
           ${m.avatar_url ? '' : name[0].toUpperCase()}
           <div class="s-status-dot ${statusClass}"></div>
@@ -4502,10 +4821,12 @@ class SocialSystem {
         <div class="s-user-info">
           <div class="s-user-name">
             ${roleIcon ? `<span style="color:var(--s-accent);">${roleIcon}</span>` : ''}
-            ${this.escapeHtml(name)}
+            ${badge ? `<span class="s-badge-icon">${badge}</span>` : ''}
+            <span class="${nameEffect}" style="color:${nameColor || 'inherit'};">${this.escapeHtml(name)}</span>
             ${m.discriminator ? `<span class="disc">#${m.discriminator}</span>` : ''}
           </div>
-          <div class="s-user-status">${m.role}</div>
+          ${title ? `<div class="s-premium-title" style="color:${nameColor};">${this.escapeHtml(title)}</div>` : ''}
+          <div class="s-user-status">${m.role}${isMe ? ' (you)' : ''}</div>
         </div>
         <div class="s-user-actions">${actions}</div>
       </div>
@@ -4545,8 +4866,6 @@ class SocialSystem {
   }
 
   async leaveClub() {
-    if (!confirm('Are you sure you want to leave this club?')) return;
-    
     try {
       await this.supabase.rpc('leave_club');
       this.currentClub = null;
