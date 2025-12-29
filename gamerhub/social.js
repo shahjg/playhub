@@ -136,6 +136,8 @@ class SocialSystem {
     if (!session) return;
     
     this.currentUser = session.user;
+    console.log('🚀 Initializing social system for:', this.currentUser.id);
+    
     await this.loadUserProfile();
     this.injectStyles();
     this.injectHTML();
@@ -147,16 +149,23 @@ class SocialSystem {
     this.subscribeToRealtime();
     this.updateNotificationBadge();
     
-    // Cleanup inactive parties (runs server-side)
-    this.supabase.rpc('cleanup_inactive_parties').catch(() => {});
+    // Cleanup inactive parties (runs server-side, fire and forget)
+    try {
+      await this.supabase.rpc('cleanup_inactive_parties');
+    } catch (e) { /* ignore errors */ }
     
     // Check for party join code in URL
     this.checkPartyJoinCode();
     
-    // Handle window close - update presence
+    // Handle window close - update presence and cleanup
     window.addEventListener('beforeunload', () => {
       this.stopActivityPing();
     });
+    
+    console.log('✅ Social system initialized');
+    console.log('   Party:', this.currentParty ? 'Yes' : 'No');
+    console.log('   Friends:', this.friends.length);
+    console.log('   Party Invites:', this.partyInvites.length);
   }
 
   async checkPartyJoinCode() {
@@ -1668,8 +1677,14 @@ class SocialSystem {
   // ==================== REALTIME ====================
 
   subscribeToRealtime() {
-    this.channels.invites = this.supabase.channel('invites_ch')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
+    const myId = this.currentUser.id;
+    
+    // Game invites subscription
+    this.channels.invites = this.supabase.channel(`game-invites-${myId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites' }, async (payload) => {
+        // Client-side filter
+        if (payload.new.to_user !== myId) return;
+        
         await this.loadInvites();
         this.updateNotificationBadge();
         this.playSound('invite');
@@ -1679,10 +1694,16 @@ class SocialSystem {
           { label: 'Join', style: 'primary', action: `acceptInvite:${payload.new.id}:${payload.new.game_name}:${payload.new.room_code}` },
           { label: 'Ignore', action: `declineInvite:${payload.new.id}` }
         ]);
-      }).subscribe();
+      }).subscribe((status) => {
+        console.log('Game invites subscription:', status);
+      });
 
-    this.channels.requests = this.supabase.channel('requests_ch')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friend_requests', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
+    // Friend requests subscription
+    this.channels.requests = this.supabase.channel(`friend-requests-${myId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friend_requests' }, async (payload) => {
+        // Client-side filter
+        if (payload.new.to_user !== myId) return;
+        
         await this.loadRequests();
         this.updateNotificationBadge();
         this.playSound('notification');
@@ -1693,17 +1714,20 @@ class SocialSystem {
           { label: 'Accept', style: 'primary', action: `acceptRequest:${payload.new.id}` },
           { label: 'Decline', action: `declineRequest:${payload.new.id}` }
         ]);
-      }).subscribe();
+      }).subscribe((status) => {
+        console.log('Friend requests subscription:', status);
+      });
 
-    this.channels.partyInvites = this.supabase.channel(`partyinv-${this.currentUser.id}`)
+    // Party invites subscription
+    this.channels.partyInvites = this.supabase.channel(`party-invites-${myId}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'party_invites'
       }, async (payload) => {
         console.log('🎉 Party invite INSERT:', payload);
-        // Filter client-side - only react to invites for me
-        if (payload.new.to_user !== this.currentUser.id) return;
+        // Client-side filter
+        if (payload.new.to_user !== myId) return;
         
         console.log('✅ Party invite is for me!');
         await this.loadPartyInvites();
@@ -1722,7 +1746,7 @@ class SocialSystem {
         schema: 'public', 
         table: 'party_invites'
       }, async (payload) => {
-        if (payload.new.to_user === this.currentUser.id) {
+        if (payload.new.to_user === myId) {
           await this.loadPartyInvites();
         }
       })
@@ -1731,7 +1755,7 @@ class SocialSystem {
         schema: 'public', 
         table: 'party_invites'
       }, async (payload) => {
-        if (payload.old.to_user === this.currentUser.id) {
+        if (payload.old.to_user === myId) {
           await this.loadPartyInvites();
         }
       })
@@ -1739,42 +1763,54 @@ class SocialSystem {
         console.log('Party invites subscription:', status);
       });
 
-    this.subscribeToParty();
+    // NOTE: Party subscription is handled by loadParty() when user is in a party
+    // Don't call subscribeToParty() here to avoid duplicate subscriptions
   }
 
   subscribeToParty() {
-    // Prevent double subscription
+    // Prevent double subscription - remove existing first
     if (this.channels.party) {
+      console.log('Removing existing party subscription');
       this.supabase.removeChannel(this.channels.party);
       this.channels.party = null;
     }
-    if (!this.currentParty) return;
+    
+    if (!this.currentParty) {
+      console.log('No party to subscribe to');
+      return;
+    }
 
     const partyId = this.currentParty.party_id;
+    const myId = this.currentUser.id;
     console.log('Subscribing to party:', partyId);
 
-    this.channels.party = this.supabase.channel(`party-realtime-${partyId}`)
+    // Use unique channel name with timestamp to prevent conflicts
+    const channelName = `party-${partyId}-${Date.now()}`;
+    
+    this.channels.party = this.supabase.channel(channelName)
+      // Party updates (status, game, leader changes)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
-        table: 'parties', 
-        filter: `id=eq.${partyId}` 
+        table: 'parties'
       }, async (payload) => {
-        console.log('Party update:', payload.eventType);
+        // Client-side filter - only react to our party
+        const relevantId = payload.new?.id || payload.old?.id;
+        if (relevantId !== partyId) return;
+        
+        console.log('Party update:', payload.eventType, payload);
+        
         if (payload.eventType === 'DELETE') {
-          this.currentParty = null;
-          this.partyMembers = [];
-          this.partyMessages = [];
-          if (this.chatChannel) this.supabase.removeChannel(this.chatChannel);
-          this.renderParty();
-          this.showToast('party', 'Party Ended', 'The party has been disbanded');
+          console.log('Party was deleted');
+          this.handleKickedOrDisbanded('The party has been disbanded');
           return;
         }
         
         const oldUrl = this.lastHostUrl;
         await this.loadParty();
         
-        if (this.currentParty && this.currentParty.leader_id !== this.currentUser.id && this.isFollowingHost) {
+        // Auto-follow host to new game
+        if (this.currentParty && this.currentParty.leader_id !== myId && this.isFollowingHost) {
           const newUrl = this.currentParty.current_room;
           if (newUrl && newUrl !== oldUrl && newUrl !== window.location.pathname + window.location.search) {
             this.showToast('follow', 'Following Host', `Joining ${this.currentParty.current_game}...`, []);
@@ -1783,44 +1819,87 @@ class SocialSystem {
         }
         this.lastHostUrl = this.currentParty?.current_room || null;
       })
+      // Member joined
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'party_members',
-        filter: `party_id=eq.${partyId}`
+        table: 'party_members'
       }, async (payload) => {
+        // Client-side filter
+        if (payload.new.party_id !== partyId) return;
+        
         console.log('Member joined:', payload.new.user_id);
-        // Instant update - reload party immediately
+        
+        // Reload party to get updated member list
         await this.loadParty();
         this.playSound('join');
         
-        if (payload.new.user_id !== this.currentUser.id) {
+        if (payload.new.user_id !== myId) {
           const member = this.partyMembers.find(m => m.id === payload.new.user_id);
           const name = member?.name || 'Someone';
           this.showToast('party', 'Member Joined', `${name} joined the party!`, []);
         }
       })
+      // Member left or was kicked
       .on('postgres_changes', { 
         event: 'DELETE', 
         schema: 'public', 
-        table: 'party_members',
-        filter: `party_id=eq.${partyId}`
+        table: 'party_members'
       }, async (payload) => {
-        console.log('Member left:', payload.old.user_id);
-        if (payload.old.user_id === this.currentUser.id) {
-          this.currentParty = null;
-          this.partyMembers = [];
-          this.partyMessages = [];
-          if (this.chatChannel) this.supabase.removeChannel(this.chatChannel);
-          this.renderParty();
-          this.showToast('party', 'Removed', 'You have left the party');
-        } else {
-          await this.loadParty();
+        // Client-side filter
+        if (payload.old.party_id !== partyId) return;
+        
+        console.log('Member removed:', payload.old.user_id, 'Me:', myId);
+        
+        // Check if I was kicked
+        if (payload.old.user_id === myId) {
+          console.log('I was kicked!');
+          this.handleKickedOrDisbanded('You have been removed from the party');
+          return;
         }
+        
+        // Someone else left - reload party
+        const memberName = this.partyMembers.find(m => m.id === payload.old.user_id)?.name || 'Someone';
+        await this.loadParty();
+        this.showToast('party', 'Member Left', `${memberName} left the party`, []);
       })
-      .subscribe((status) => {
-        console.log('Party subscription:', status);
+      .subscribe((status, err) => {
+        console.log('Party subscription:', status, err || '');
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Party channel error, retrying in 2s...');
+          setTimeout(() => this.subscribeToParty(), 2000);
+        }
       });
+  }
+  
+  // Centralized cleanup when kicked or party disbanded
+  handleKickedOrDisbanded(message) {
+    console.log('Cleaning up party state:', message);
+    
+    // Clear state
+    this.currentParty = null;
+    this.partyMembers = [];
+    this.partyMessages = [];
+    
+    // Remove subscriptions
+    if (this.channels.party) {
+      this.supabase.removeChannel(this.channels.party);
+      this.channels.party = null;
+    }
+    if (this.chatChannel) {
+      this.supabase.removeChannel(this.chatChannel);
+      this.chatChannel = null;
+    }
+    
+    // Stop activity ping
+    this.stopActivityPing();
+    
+    // Update UI
+    this.renderParty();
+    this.renderFriends();
+    
+    // Notify user
+    this.showToast('party', 'Party Ended', message);
   }
 
   // ==================== TOAST ====================
@@ -2059,8 +2138,9 @@ class SocialSystem {
         
         this.lastHostUrl = this.currentParty.current_room;
         
-        // Only subscribe if party changed or first time
+        // Only subscribe if party changed or first time (not on regular reloads)
         if (!wasInParty || oldPartyId !== this.currentParty.party_id) {
+          console.log('Party changed, setting up new subscriptions');
           this.subscribeToParty();
           this.subscribeToPartyChat();
         }
@@ -2069,6 +2149,11 @@ class SocialSystem {
         this.startActivityPing();
         
       } else {
+        // No longer in a party - cleanup everything
+        if (wasInParty) {
+          console.log('No longer in party, cleaning up');
+          this.cleanupPartySubscriptions();
+        }
         this.currentParty = null;
         this.partyMembers = [];
         this.partyMessages = [];
@@ -2078,14 +2163,50 @@ class SocialSystem {
     } catch (e) { console.error('Load party exception:', e); }
   }
   
-  // Activity ping to keep party alive
+  // Clean up all party-related subscriptions
+  cleanupPartySubscriptions() {
+    if (this.channels.party) {
+      console.log('Removing party channel');
+      this.supabase.removeChannel(this.channels.party);
+      this.channels.party = null;
+    }
+    if (this.chatChannel) {
+      console.log('Removing chat channel');
+      this.supabase.removeChannel(this.chatChannel);
+      this.chatChannel = null;
+    }
+  }
+  
+  // Activity ping to keep party alive AND sync members as fallback
   startActivityPing() {
     this.stopActivityPing();
-    this.activityInterval = setInterval(() => {
+    
+    // Ping server every minute to keep party alive
+    this.activityInterval = setInterval(async () => {
       if (this.currentParty) {
-        this.supabase.rpc('update_party_activity').catch(() => {});
+        try {
+          await this.supabase.rpc('update_party_activity');
+        } catch (e) { /* ignore */ }
+        
+        // Also reload party as fallback in case realtime missed an event
+        // This ensures host always sees current members within 1 minute
+        const oldCount = this.partyMembers.length;
+        await this.loadParty();
+        const newCount = this.partyMembers.length;
+        
+        // If member count changed and we didn't already show a notification, log it
+        if (oldCount !== newCount) {
+          console.log('Party sync: member count changed', oldCount, '->', newCount);
+        }
       }
-    }, 60000); // Ping every minute
+    }, 60000);
+    
+    // Also do an immediate sync after a short delay (catches missed events on page load)
+    setTimeout(() => {
+      if (this.currentParty) {
+        this.loadParty();
+      }
+    }, 3000);
   }
   
   stopActivityPing() {
@@ -2560,6 +2681,7 @@ class SocialSystem {
     
     // Prevent double subscription
     if (this.chatChannel) {
+      console.log('Removing existing chat subscription');
       this.supabase.removeChannel(this.chatChannel);
       this.chatChannel = null;
     }
@@ -2570,19 +2692,24 @@ class SocialSystem {
     const partyId = this.currentParty.party_id;
     console.log('Subscribing to chat:', partyId);
 
+    // Use unique channel name to prevent conflicts
+    const channelName = `chat-${partyId}-${Date.now()}`;
+
     this.chatChannel = this.supabase
-      .channel(`party-chat-${partyId}`)
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'party_messages',
-        filter: `party_id=eq.${partyId}`
+        table: 'party_messages'
       }, (payload) => {
+        // Client-side filter
+        if (payload.new.party_id !== partyId) return;
+        
         console.log('Chat message:', payload.new.message?.substring(0, 20));
         this.handleNewPartyMessage(payload.new);
       })
-      .subscribe((status) => {
-        console.log('Chat subscription:', status);
+      .subscribe((status, err) => {
+        console.log('Chat subscription:', status, err || '');
       });
   }
 
@@ -3067,8 +3194,15 @@ class SocialSystem {
   async leaveParty() {
     try {
       await this.supabase.rpc('leave_party');
+      
+      // Cleanup everything
+      this.cleanupPartySubscriptions();
+      this.stopActivityPing();
+      
       this.currentParty = null;
       this.partyMembers = [];
+      this.partyMessages = [];
+      
       this.renderParty();
       this.renderFriends(); // Re-render to remove invite buttons
     } catch (e) { console.error(e); }
