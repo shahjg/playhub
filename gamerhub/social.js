@@ -2095,23 +2095,49 @@ class SocialSystem {
         border: 1px solid var(--s-border);
         border-radius: 12px;
         overflow: hidden;
+        background: var(--s-bg-secondary);
+      }
+      .s-club-chat .s-chat-header {
+        background: var(--s-bg-tertiary);
       }
       .s-club-chat .s-chat-body {
         display: flex;
         flex-direction: column;
-        max-height: 180px;
+        background: var(--s-bg-primary);
       }
       .s-club-chat .s-chat-messages {
-        flex: 1;
-        min-height: 100px;
+        height: 120px;
+        min-height: 120px;
         max-height: 120px;
+        overflow-y: auto;
+        padding: 10px 12px;
       }
       .s-club-chat .s-chat-input-wrap {
-        flex-shrink: 0;
+        display: flex;
+        gap: 8px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--s-border);
+        background: var(--s-bg-secondary);
+        align-items: center;
+        position: relative;
       }
       .s-club-chat .s-chat-input {
         flex: 1;
         min-width: 0;
+        padding: 10px 14px;
+        padding-left: 36px;
+        background: var(--s-bg-primary);
+        border: 1px solid var(--s-border);
+        border-radius: 10px;
+        color: var(--s-text);
+        font-size: 0.85rem;
+      }
+      .s-club-chat .s-chat-input:focus {
+        outline: none;
+        border-color: var(--s-accent);
+      }
+      .s-club-chat .s-chat-input::placeholder {
+        color: var(--s-text-muted);
       }
       
       /* ===== V8: LEADERBOARD DROPDOWN ===== */
@@ -5190,11 +5216,11 @@ class SocialSystem {
           <span class="s-chat-badge" id="club-chat-badge" style="display:none;">0</span>
           <span class="s-chat-toggle-icon" style="transform:rotate(180deg);">${this.icons.chevronDown}</span>
         </div>
-        <div class="s-chat-body" id="club-chat-body">
+        <div class="s-chat-body" id="club-chat-body" style="display:flex;flex-direction:column;">
           <div class="s-chat-messages" id="club-messages"></div>
-          <div class="s-chat-input-wrap" style="position:relative;">
-            <button class="s-btn s-btn-ghost s-btn-icon" id="club-emoji-btn" style="position:absolute;left:4px;top:50%;transform:translateY(-50%);z-index:2;">${this.icons.smile}</button>
-            <input type="text" class="s-chat-input" id="club-chat-input" placeholder="Message your club..." maxlength="500" style="padding-left:36px;">
+          <div class="s-chat-input-wrap">
+            <button class="s-btn s-btn-ghost s-btn-icon" id="club-emoji-btn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:2;">${this.icons.smile}</button>
+            <input type="text" class="s-chat-input" id="club-chat-input" placeholder="Message your club..." maxlength="500">
             <button class="s-btn s-btn-primary s-btn-icon" id="send-club-chat-btn">${this.icons.send}</button>
           </div>
         </div>
@@ -5268,7 +5294,8 @@ class SocialSystem {
     const isHidden = body.style.display === 'none';
     
     if (isHidden) {
-      body.style.display = '';  // Reset to CSS default (flex from stylesheet)
+      body.style.display = 'flex';
+      body.style.flexDirection = 'column';
       if (icon) icon.style.transform = 'rotate(180deg)';
     } else {
       body.style.display = 'none';
@@ -5424,53 +5451,86 @@ class SocialSystem {
     content.innerHTML = '<div class="s-loading">Loading...</div>';
     
     try {
-      let allScores = [];
-      
-      if (gameFilter === 'all') {
-        // Query multiple game types
-        const gameTypes = ['reaction-time', 'aim-trainer-15', 'aim-trainer-30', 'typing-test-30s', 'typing-test-60s', 'chimp-test', 'sequence-memory', 'number-memory'];
-        
-        for (const gameId of gameTypes) {
-          try {
-            const { data } = await this.supabase.rpc('get_club_leaderboard', { p_game_id: gameId });
-            if (data && data.length > 0) {
-              // Just take top 3 from each game
-              allScores.push(...data.slice(0, 3).map(s => ({ ...s, game_id: gameId })));
-            }
-          } catch (e) {
-            // Skip games that fail
-          }
-        }
-      } else {
-        // Query specific game
-        const { data, error } = await this.supabase.rpc('get_club_leaderboard', { p_game_id: gameFilter });
-        if (error) throw error;
-        if (data) {
-          allScores = data.map(s => ({ ...s, game_id: gameFilter }));
-        }
-      }
-      
-      if (allScores.length === 0) {
-        content.innerHTML = '<div class="s-empty-mini">No scores yet. Play some games!</div>';
+      // Get club member IDs
+      const memberIds = this.clubMembers.map(m => m.id);
+      if (memberIds.length === 0) {
+        content.innerHTML = '<div class="s-empty-mini">No club members found</div>';
         return;
       }
       
-      // Sort by rank for single game, or interleave for all games
+      // Build query for solo_scores
+      let query = this.supabase
+        .from('solo_scores')
+        .select('user_id, game_id, score, created_at')
+        .in('user_id', memberIds)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      
       if (gameFilter !== 'all') {
-        allScores.sort((a, b) => a.rank - b.rank);
+        query = query.eq('game_id', gameFilter);
       }
       
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Leaderboard query error:', error);
+        content.innerHTML = `<div class="s-empty-mini">
+          <p>No scores yet</p>
+          <p style="font-size:0.75rem;color:var(--s-text-muted);margin-top:8px;">Play games to see your club's rankings!</p>
+        </div>`;
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        content.innerHTML = `<div class="s-empty-mini">
+          <p>No scores yet</p>
+          <p style="font-size:0.75rem;color:var(--s-text-muted);margin-top:8px;">Play games to see your club's rankings!</p>
+        </div>`;
+        return;
+      }
+      
+      // Group by user+game and keep best score per combo
+      const bestScores = {};
+      const lowerIsBetter = ['reaction-time', 'aim-trainer-15', 'aim-trainer-30', 'aim-trainer-50'];
+      
+      data.forEach(score => {
+        const key = `${score.user_id}-${score.game_id}`;
+        const isLowerBetter = lowerIsBetter.some(g => score.game_id.includes(g));
+        
+        if (!bestScores[key]) {
+          bestScores[key] = score;
+        } else {
+          const current = bestScores[key].score;
+          if (isLowerBetter ? score.score < current : score.score > current) {
+            bestScores[key] = score;
+          }
+        }
+      });
+      
+      // Convert to array and sort
+      let scores = Object.values(bestScores);
+      
+      // Sort based on game type
+      scores.sort((a, b) => {
+        const aLower = lowerIsBetter.some(g => a.game_id.includes(g));
+        const bLower = lowerIsBetter.some(g => b.game_id.includes(g));
+        
+        if (aLower && bLower) return a.score - b.score;
+        if (!aLower && !bLower) return b.score - a.score;
+        return 0;
+      });
+      
       // Render leaderboard
-      content.innerHTML = allScores.slice(0, 20).map((score, i) => {
-        const name = score.gamer_tag || score.display_name || 'Unknown';
+      content.innerHTML = scores.slice(0, 20).map((score, i) => {
+        const member = this.clubMembers.find(m => m.id === score.user_id);
+        const name = member?.name || 'Unknown';
         const gameName = this.getGameDisplayName(score.game_id);
-        const displayRank = gameFilter === 'all' ? i + 1 : score.rank;
-        const rankClass = displayRank === 1 ? 'gold' : displayRank === 2 ? 'silver' : displayRank === 3 ? 'bronze' : '';
+        const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
         const scoreDisplay = this.formatScore(score.game_id, score.score);
         
         return `
           <div class="s-lb-row ${rankClass}">
-            <span class="s-lb-rank">${displayRank}</span>
+            <span class="s-lb-rank">${i + 1}</span>
             <span class="s-lb-name">${this.escapeHtml(name)}</span>
             <span class="s-lb-game">${gameName}</span>
             <span class="s-lb-score">${scoreDisplay}</span>
@@ -5482,7 +5542,7 @@ class SocialSystem {
       console.error('Load club leaderboard error:', e);
       content.innerHTML = `<div class="s-empty-mini">
         <p>Could not load leaderboard</p>
-        <p style="font-size:0.7rem;color:var(--s-text-muted);margin-top:8px;">Play some games to see scores here!</p>
+        <p style="font-size:0.75rem;color:var(--s-text-muted);margin-top:8px;">Play games to see your club's rankings!</p>
       </div>`;
     }
   }
@@ -5497,6 +5557,22 @@ class SocialSystem {
     } else {
       return score.toString();
     }
+  }
+
+  getGameDisplayName(gameId) {
+    const names = {
+      'reaction-time': '⚡ Reaction',
+      'aim-trainer-15': '🎯 Aim 15',
+      'aim-trainer-30': '🎯 Aim 30',
+      'aim-trainer-50': '🎯 Aim 50',
+      'typing-test-30s': '⌨️ Typing 30s',
+      'typing-test-60s': '⌨️ Typing 60s',
+      'chimp-test': '🐒 Chimp',
+      'sequence-memory': '📋 Sequence',
+      'number-memory': '🔢 Numbers',
+      'verbal-memory': '📝 Verbal'
+    };
+    return names[gameId] || gameId;
   }
 
   openClubInviteModal() {
