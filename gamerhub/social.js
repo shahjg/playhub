@@ -5379,6 +5379,7 @@ class SocialSystem {
     
     // Remove existing if any
     document.getElementById('club-leaderboard-modal')?.remove();
+    document.querySelector('.s-leaderboard-dropdown')?.remove();
     
     // Create overlay
     const overlay = document.createElement('div');
@@ -5397,12 +5398,12 @@ class SocialSystem {
         <button class="s-lb-close" id="lb-close-btn">✕</button>
       </div>
       <div class="s-leaderboard-tabs">
-        <button class="s-lb-tab active" data-game="all">All</button>
+        <button class="s-lb-tab active" data-game="top-members">👑 Top Members</button>
+        <button class="s-lb-tab" data-game="all">All Games</button>
         <button class="s-lb-tab" data-game="reaction-time">⚡ Reaction</button>
         <button class="s-lb-tab" data-game="aim-trainer-30">🎯 Aim</button>
         <button class="s-lb-tab" data-game="typing-test-60s">⌨️ Typing</button>
         <button class="s-lb-tab" data-game="chimp-test">🐒 Chimp</button>
-        <button class="s-lb-tab" data-game="sequence-memory">📋 Sequence</button>
       </div>
       <div class="s-leaderboard-content" id="club-lb-content">
         <div class="s-loading">Loading...</div>
@@ -5441,10 +5442,10 @@ class SocialSystem {
     document.addEventListener('keydown', handleEsc);
     
     // Load initial data
-    this.loadClubLeaderboard('all');
+    this.loadClubLeaderboard('top-members');
   }
 
-  async loadClubLeaderboard(gameFilter = 'all') {
+  async loadClubLeaderboard(gameFilter = 'top-members') {
     const content = document.getElementById('club-lb-content');
     if (!content) return;
     
@@ -5458,19 +5459,13 @@ class SocialSystem {
         return;
       }
       
-      // Build query for solo_scores
-      let query = this.supabase
+      // Fetch all scores for club members
+      const { data, error } = await this.supabase
         .from('solo_scores')
         .select('user_id, game_id, score, created_at')
         .in('user_id', memberIds)
         .order('created_at', { ascending: false })
-        .limit(200);
-      
-      if (gameFilter !== 'all') {
-        query = query.eq('game_id', gameFilter);
-      }
-      
-      const { data, error } = await query;
+        .limit(500);
       
       if (error) {
         console.error('Leaderboard query error:', error);
@@ -5489,10 +5484,10 @@ class SocialSystem {
         return;
       }
       
-      // Group by user+game and keep best score per combo
-      const bestScores = {};
       const lowerIsBetter = ['reaction-time', 'aim-trainer-15', 'aim-trainer-30', 'aim-trainer-50'];
       
+      // Group by user+game and keep best score per combo
+      const bestScores = {};
       data.forEach(score => {
         const key = `${score.user_id}-${score.game_id}`;
         const isLowerBetter = lowerIsBetter.some(g => score.game_id.includes(g));
@@ -5507,8 +5502,74 @@ class SocialSystem {
         }
       });
       
-      // Convert to array and sort
+      // TOP MEMBERS - Calculate average rank per member
+      if (gameFilter === 'top-members') {
+        // Group scores by game to calculate ranks
+        const gameGroups = {};
+        Object.values(bestScores).forEach(score => {
+          if (!gameGroups[score.game_id]) gameGroups[score.game_id] = [];
+          gameGroups[score.game_id].push(score);
+        });
+        
+        // Sort each game and assign ranks
+        const memberRanks = {}; // { odl9ihj: [1, 2, 3], ... }
+        const memberGamesPlayed = {};
+        
+        Object.entries(gameGroups).forEach(([gameId, scores]) => {
+          const isLowerBetter = lowerIsBetter.some(g => gameId.includes(g));
+          scores.sort((a, b) => isLowerBetter ? a.score - b.score : b.score - a.score);
+          
+          scores.forEach((score, idx) => {
+            const rank = idx + 1;
+            if (!memberRanks[score.user_id]) memberRanks[score.user_id] = [];
+            memberRanks[score.user_id].push(rank);
+            memberGamesPlayed[score.user_id] = (memberGamesPlayed[score.user_id] || 0) + 1;
+          });
+        });
+        
+        // Calculate average rank for each member
+        const memberStats = Object.entries(memberRanks).map(([userId, ranks]) => {
+          const avgRank = ranks.reduce((a, b) => a + b, 0) / ranks.length;
+          const gamesPlayed = memberGamesPlayed[userId] || 0;
+          const totalGames = Object.keys(gameGroups).length;
+          return { userId, avgRank, gamesPlayed, totalGames };
+        });
+        
+        // Sort by average rank (lower is better)
+        memberStats.sort((a, b) => a.avgRank - b.avgRank);
+        
+        // Render top members
+        content.innerHTML = memberStats.slice(0, 15).map((stat, i) => {
+          const member = this.clubMembers.find(m => m.id === stat.userId);
+          const name = member?.name || 'Unknown';
+          const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+          
+          return `
+            <div class="s-lb-row ${rankClass}">
+              <span class="s-lb-rank">${i + 1}</span>
+              <span class="s-lb-name">${this.escapeHtml(name)}</span>
+              <span class="s-lb-game">${stat.gamesPlayed} games</span>
+              <span class="s-lb-score">Avg #${stat.avgRank.toFixed(1)}</span>
+            </div>
+          `;
+        }).join('');
+        
+        return;
+      }
+      
+      // Filter for specific game
       let scores = Object.values(bestScores);
+      if (gameFilter !== 'all') {
+        scores = scores.filter(s => s.game_id === gameFilter);
+      }
+      
+      if (scores.length === 0) {
+        content.innerHTML = `<div class="s-empty-mini">
+          <p>No scores for this game yet</p>
+          <p style="font-size:0.75rem;color:var(--s-text-muted);margin-top:8px;">Be the first to play!</p>
+        </div>`;
+        return;
+      }
       
       // Sort based on game type
       scores.sort((a, b) => {
