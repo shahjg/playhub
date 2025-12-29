@@ -2839,13 +2839,9 @@ class SocialSystem {
 
   async loadFriends() {
     try {
-      // Try new function with clubs, fallback to old one
-      let { data, error } = await this.supabase.rpc('get_friends_with_clubs');
-      if (error) {
-        // Fallback to old function
-        const result = await this.supabase.rpc('get_friends_with_presence');
-        data = result.data;
-      }
+      // Use existing working function
+      const { data } = await this.supabase.rpc('get_friends_with_presence');
+      
       // Map friends with cosmetics format
       this.friends = (data || []).map(f => {
         const cosmetics = f.cosmetics || {};
@@ -2858,10 +2854,39 @@ class SocialSystem {
           border_color: isPremium ? cosmetics.border_color : 'gray',
           name_effect: isPremium ? cosmetics.name_effect : 'none',
           title: isPremium ? cosmetics.title : null,
-          club_tag: f.club_tag || null,
-          club_name: f.club_name || null
+          club_tag: null,
+          club_name: null
         };
       });
+      
+      // Try to fetch club data separately and merge
+      try {
+        const friendIds = this.friends.map(f => f.friend_id);
+        if (friendIds.length > 0) {
+          const { data: clubData } = await this.supabase
+            .from('club_members')
+            .select('user_id, clubs(tag, name)')
+            .in('user_id', friendIds);
+          
+          if (clubData) {
+            const clubMap = {};
+            clubData.forEach(cm => {
+              if (cm.clubs) {
+                clubMap[cm.user_id] = { tag: cm.clubs.tag, name: cm.clubs.name };
+              }
+            });
+            
+            this.friends = this.friends.map(f => ({
+              ...f,
+              club_tag: clubMap[f.friend_id]?.tag || null,
+              club_name: clubMap[f.friend_id]?.name || null
+            }));
+          }
+        }
+      } catch (clubErr) {
+        console.log('Could not load club data for friends:', clubErr);
+      }
+      
       this.renderFriends();
     } catch (e) { console.error(e); this.friends = []; this.renderFriends(); }
   }
