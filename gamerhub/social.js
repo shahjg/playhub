@@ -1738,65 +1738,50 @@ class SocialSystem {
         30% { transform: translateY(-4px); }
       }
 
-      /* ===== V8: DM STYLES ===== */
-      .s-dm-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: var(--s-bg-secondary);
+      /* ===== V8: FLOATING DM POPUP ===== */
+      .s-dm-popup {
+        position: fixed;
+        bottom: 20px;
+        right: 420px;
+        width: 320px;
+        height: 400px;
+        background: var(--s-bg-primary);
         border: 1px solid var(--s-border);
-        border-radius: 12px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: all 0.15s;
-      }
-      .s-dm-item:hover { background: var(--s-bg-tertiary); border-color: var(--s-border-light); }
-      .s-dm-info { flex: 1; min-width: 0; }
-      .s-dm-name { font-weight: 500; font-size: 0.9rem; color: var(--s-text); }
-      .s-dm-preview {
-        font-size: 0.8rem;
-        color: var(--s-text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-top: 2px;
-      }
-      .s-dm-meta {
+        border-radius: 16px;
         display: flex;
         flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        z-index: 10000;
+        animation: popupIn 0.2s ease;
       }
-      .s-dm-time { font-size: 0.7rem; color: var(--s-text-muted); }
-      .s-dm-unread {
-        min-width: 18px;
-        height: 18px;
-        background: var(--s-accent);
-        border-radius: 9px;
-        font-size: 10px;
-        font-weight: 600;
+      @keyframes popupIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .s-dm-popup-header {
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 0 5px;
-        color: white;
-      }
-      
-      .s-dm-chat-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
+        justify-content: space-between;
+        padding: 12px 14px;
         border-bottom: 1px solid var(--s-border);
         background: var(--s-bg-secondary);
-        border-radius: 12px 12px 0 0;
+        border-radius: 16px 16px 0 0;
       }
-      .s-dm-back {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        background: var(--s-bg-tertiary);
+      .s-dm-popup-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .s-dm-popup-user span {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--s-text);
+      }
+      .s-dm-popup-close {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: transparent;
         border: none;
         color: var(--s-text-muted);
         cursor: pointer;
@@ -1804,11 +1789,9 @@ class SocialSystem {
         align-items: center;
         justify-content: center;
       }
-      .s-dm-back:hover { color: var(--s-text); }
-      .s-dm-back svg { width: 16px; height: 16px; }
-      .s-dm-chat-name { font-weight: 600; color: var(--s-text); }
-      
-      .s-dm-messages {
+      .s-dm-popup-close:hover { background: var(--s-bg-tertiary); color: var(--s-text); }
+      .s-dm-popup-close svg { width: 16px; height: 16px; }
+      .s-dm-popup-messages {
         flex: 1;
         overflow-y: auto;
         padding: 12px;
@@ -1816,10 +1799,12 @@ class SocialSystem {
         flex-direction: column;
         gap: 8px;
       }
+      .s-dm-popup-messages::-webkit-scrollbar { width: 4px; }
+      .s-dm-popup-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       .s-dm-msg {
         max-width: 80%;
-        padding: 10px 14px;
-        border-radius: 16px;
+        padding: 8px 12px;
+        border-radius: 14px;
         font-size: 0.85rem;
         word-wrap: break-word;
       }
@@ -1836,12 +1821,43 @@ class SocialSystem {
         border-bottom-left-radius: 4px;
       }
       .s-dm-msg-time {
-        font-size: 0.65rem;
-        color: rgba(255,255,255,0.5);
+        font-size: 0.6rem;
+        opacity: 0.6;
         margin-top: 4px;
-        text-align: right;
       }
-      .s-dm-msg.them .s-dm-msg-time { color: var(--s-text-muted); }
+      .s-dm-popup-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--s-border);
+        background: var(--s-bg-secondary);
+        border-radius: 0 0 16px 16px;
+      }
+      .s-dm-popup-input input {
+        flex: 1;
+        background: var(--s-bg-tertiary);
+        border: 1px solid var(--s-border);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--s-text);
+        font-size: 0.85rem;
+      }
+      .s-dm-popup-input input:focus { outline: none; border-color: var(--s-accent); }
+      .s-dm-popup-input input::placeholder { color: var(--s-text-muted); }
+      .s-dm-popup-input .s-btn-icon { width: 32px; height: 32px; flex-shrink: 0; }
+      
+      /* Mobile: Full screen DM popup */
+      @media (max-width: 768px) {
+        .s-dm-popup {
+          right: 10px;
+          left: 10px;
+          bottom: 10px;
+          width: auto;
+          height: 50vh;
+          max-height: 400px;
+        }
+      }
 
       /* ===== V8: CLUB STYLES ===== */
       .s-club-create {
@@ -2004,25 +2020,6 @@ class SocialSystem {
       }
       
       /* Club Leaderboard */
-      .s-club-leaderboard {
-        margin-bottom: 16px;
-      }
-      .s-club-top-players {
-        background: var(--s-bg-secondary);
-        border-radius: 10px;
-        overflow: hidden;
-      }
-      .s-club-top-player {
-        display: flex;
-        align-items: center;
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--s-border);
-      }
-      .s-club-top-player:last-child { border-bottom: none; }
-      .s-club-top-medal { font-size: 1rem; margin-right: 10px; }
-      .s-club-top-name { flex: 1; font-size: 0.85rem; color: var(--s-text); }
-      .s-club-top-score { font-size: 0.85rem; color: var(--s-accent); font-weight: 600; }
-
       /* ===== V8: CONFIRM MODAL ===== */
       .s-confirm-modal {
         position: absolute;
@@ -2204,7 +2201,6 @@ class SocialSystem {
         <div class="s-tabs">
           <button class="s-tab" data-tab="party">Party <span class="s-tab-count" id="party-invite-count" style="display:none;">0</span></button>
           <button class="s-tab active" data-tab="friends">Friends</button>
-          <button class="s-tab" data-tab="messages">DMs <span class="s-tab-count" id="dm-count" style="display:none;">0</span></button>
           <button class="s-tab" data-tab="club">${this.icons.flag} Club</button>
           <button class="s-tab" data-tab="requests">! <span class="s-tab-count" id="req-count" style="display:none;">0</span></button>
         </div>
@@ -2226,12 +2222,6 @@ class SocialSystem {
             <div id="party-section"></div>
           </div>
           
-          <!-- Messages Tab (DMs) -->
-          <div class="s-tab-panel" id="panel-messages">
-            <div id="dm-list"></div>
-            <div id="dm-chat" style="display:none;"></div>
-          </div>
-          
           <!-- Club Tab -->
           <div class="s-tab-panel" id="panel-club">
             <div id="club-section"></div>
@@ -2243,6 +2233,23 @@ class SocialSystem {
             <div id="sent-requests"></div>
             <div id="blocked-section"></div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Floating DM Popup -->
+      <div id="s-dm-popup" class="s-dm-popup" style="display:none;">
+        <div class="s-dm-popup-header" id="dm-popup-header">
+          <div class="s-dm-popup-user">
+            <div class="s-avatar-sm" id="dm-popup-avatar"></div>
+            <span id="dm-popup-name">User</span>
+          </div>
+          <button class="s-dm-popup-close" id="dm-popup-close">${this.icons.x}</button>
+        </div>
+        <div class="s-dm-popup-messages" id="dm-popup-messages"></div>
+        <div class="s-dm-popup-input">
+          <button class="s-btn s-btn-ghost s-btn-icon" id="dm-popup-emoji">${this.icons.smile}</button>
+          <input type="text" id="dm-popup-input" placeholder="Type a message...">
+          <button class="s-btn s-btn-primary s-btn-icon" id="dm-popup-send">${this.icons.send}</button>
         </div>
       </div>
       
@@ -2319,7 +2326,7 @@ class SocialSystem {
         document.getElementById('status-dropdown')?.classList.remove('open');
       }
       // V8: Close emoji picker when clicking outside
-      if (!e.target.closest('.s-emoji-picker') && !e.target.closest('#dm-emoji-btn') && !e.target.closest('#party-emoji-btn')) {
+      if (!e.target.closest('.s-emoji-picker') && !e.target.closest('#dm-popup-emoji') && !e.target.closest('#party-emoji-btn')) {
         const picker = document.getElementById('s-emoji-picker');
         if (picker) picker.style.display = 'none';
       }
@@ -2352,6 +2359,17 @@ class SocialSystem {
     // V8: Emoji picker buttons
     document.querySelectorAll('.s-emoji-btn').forEach(btn => {
       btn.addEventListener('click', () => this.insertEmoji(btn.dataset.emoji));
+    });
+
+    // V8: DM Popup events
+    document.getElementById('dm-popup-close')?.addEventListener('click', () => this.closeDmChat());
+    document.getElementById('dm-popup-send')?.addEventListener('click', () => this.sendDm());
+    document.getElementById('dm-popup-input')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.sendDm();
+    });
+    document.getElementById('dm-popup-emoji')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleEmojiPicker('dm-popup-input');
     });
   }
 
@@ -3212,9 +3230,9 @@ class SocialSystem {
           <div class="s-chat-header" id="chat-toggle">
             <span>Party Chat</span>
             <span class="s-chat-badge" id="chat-badge" style="display:none;">0</span>
-            <span class="s-chat-toggle-icon">${this.icons.chevronDown}</span>
+            <span class="s-chat-toggle-icon" style="transform:rotate(180deg);">${this.icons.chevronDown}</span>
           </div>
-          <div class="s-chat-body" id="chat-body" style="display:none;">
+          <div class="s-chat-body" id="chat-body">
             <div class="s-chat-messages" id="party-messages"></div>
             <div class="s-typing-indicator" id="party-typing" style="display:none;">
               <div class="s-typing-dots"><span></span><span></span><span></span></div>
@@ -4273,8 +4291,7 @@ class SocialSystem {
       
       document.getElementById('pm-message')?.addEventListener('click', () => {
         this.closeProfileModal();
-        this.switchTab('messages');
-        setTimeout(() => this.openDmChat(userId), 100);
+        this.openDmChat(userId);
       });
       
       document.getElementById('pm-party-invite')?.addEventListener('click', async () => {
@@ -4311,110 +4328,43 @@ class SocialSystem {
   // ==================== V8: DIRECT MESSAGES ====================
 
   async loadDmConversations() {
+    // Load DM conversations in background (for future notifications)
     try {
       const { data } = await this.supabase.rpc('get_dm_conversations');
       this.dmConversations = data || [];
-      this.renderDmList();
-      this.updateDmBadge();
     } catch (e) { console.error('Load DMs error:', e); }
   }
 
   updateDmBadge() {
-    const badge = document.getElementById('dm-count');
-    if (!badge) return;
-    const unread = this.dmConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
-    if (unread > 0) {
-      badge.textContent = unread;
-      badge.style.display = 'inline-flex';
-    } else {
-      badge.style.display = 'none';
-    }
+    // No badge needed since we removed the DMs tab
   }
 
   renderDmList() {
-    const container = document.getElementById('dm-list');
-    const chatContainer = document.getElementById('dm-chat');
-    if (!container) return;
-
-    // If in chat view, don't render list
-    if (chatContainer && chatContainer.style.display !== 'none') return;
-
-    if (!this.dmConversations.length) {
-      container.innerHTML = `
-        <div class="s-empty">
-          <div class="s-empty-icon">${this.icons.inbox}</div>
-          <p class="s-empty-text">No messages yet<br>Click a friend to start chatting</p>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = this.dmConversations.map(c => {
-      const name = c.other_user_name || 'Unknown';
-      const avatarStyle = this.getAvatarStyle({ avatar_url: c.other_user_avatar_url, avatar_icon: c.other_user_avatar_icon });
-      const preview = c.last_message ? (c.last_message.length > 30 ? c.last_message.substring(0, 30) + '...' : c.last_message) : 'No messages';
-      const time = c.last_message_at ? this.formatTimeAgo(c.last_message_at) : '';
-      const statusClass = c.other_user_status === 'online' || c.other_user_status === 'in_game' ? 'online' : '';
-
-      return `
-        <div class="s-dm-item" data-user="${c.other_user_id}">
-          <div class="s-avatar" style="${avatarStyle}">
-            ${c.other_user_avatar_url ? '' : name[0].toUpperCase()}
-            <div class="s-status-dot ${statusClass}"></div>
-          </div>
-          <div class="s-dm-info">
-            <div class="s-dm-name">${this.escapeHtml(name)}</div>
-            <div class="s-dm-preview">${this.escapeHtml(preview)}</div>
-          </div>
-          <div class="s-dm-meta">
-            <span class="s-dm-time">${time}</span>
-            ${c.unread_count > 0 ? `<span class="s-dm-unread">${c.unread_count}</span>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    container.querySelectorAll('.s-dm-item').forEach(item => {
-      item.onclick = () => this.openDmChat(item.dataset.user);
-    });
+    // No longer needed - using popup instead
   }
 
   async openDmChat(userId) {
     this.activeDmUser = userId;
-    const listContainer = document.getElementById('dm-list');
-    const chatContainer = document.getElementById('dm-chat');
-    if (!chatContainer) return;
+    const popup = document.getElementById('s-dm-popup');
+    if (!popup) return;
 
-    // Find conversation info
+    // Find user info
     const conv = this.dmConversations.find(c => c.other_user_id === userId);
     const friend = this.friends.find(f => f.friend_id === userId);
     const name = conv?.other_user_name || friend?.gamer_tag || friend?.display_name || 'User';
     const avatarStyle = this.getAvatarStyle(conv || friend || {});
 
-    if (listContainer) listContainer.style.display = 'none';
-    chatContainer.style.display = 'flex';
-    chatContainer.style.flexDirection = 'column';
-    chatContainer.style.height = '100%';
+    // Update popup header
+    const avatarEl = document.getElementById('dm-popup-avatar');
+    const nameEl = document.getElementById('dm-popup-name');
+    if (avatarEl) {
+      avatarEl.style.cssText = avatarStyle;
+      avatarEl.textContent = (conv?.other_user_avatar_url || friend?.avatar_url) ? '' : name[0].toUpperCase();
+    }
+    if (nameEl) nameEl.textContent = name;
 
-    chatContainer.innerHTML = `
-      <div class="s-dm-chat-header">
-        <button class="s-dm-back" id="dm-back">${this.icons.chevronLeft}</button>
-        <div class="s-avatar-sm" style="${avatarStyle}">${name[0].toUpperCase()}</div>
-        <div class="s-dm-chat-name">${this.escapeHtml(name)}</div>
-        <div style="flex:1;"></div>
-        <button class="s-btn s-btn-ghost s-btn-icon" onclick="socialSystem.openProfileModal('${userId}')">${this.icons.user}</button>
-      </div>
-      <div class="s-dm-messages" id="dm-messages-container"></div>
-      <div class="s-typing-indicator" id="dm-typing" style="display:none;">
-        <div class="s-typing-dots"><span></span><span></span><span></span></div>
-        <span>${this.escapeHtml(name)} is typing...</span>
-      </div>
-      <div class="s-party-chat-input" style="position:relative;">
-        <button class="s-btn s-btn-ghost s-btn-icon" id="dm-emoji-btn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);">${this.icons.smile}</button>
-        <input type="text" id="dm-input" placeholder="Type a message..." style="padding-left:44px;">
-        <button class="s-btn s-btn-primary s-btn-icon" id="dm-send">${this.icons.send}</button>
-      </div>
-    `;
+    // Show popup
+    popup.style.display = 'flex';
 
     // Load messages
     await this.loadDmMessages(userId);
@@ -4422,27 +4372,13 @@ class SocialSystem {
     // Mark as read
     await this.markDmRead(userId);
 
-    // Bind events
-    document.getElementById('dm-back').onclick = () => this.closeDmChat();
-    document.getElementById('dm-send').onclick = () => this.sendDm();
-    document.getElementById('dm-input').onkeypress = (e) => {
-      if (e.key === 'Enter') this.sendDm();
-      this.handleDmTyping();
-    };
-    document.getElementById('dm-emoji-btn').onclick = (e) => {
-      e.stopPropagation();
-      this.toggleEmojiPicker('dm-input');
-    };
-
     // Subscribe to new messages
     this.subscribeToDm(userId);
   }
 
   closeDmChat() {
-    const listContainer = document.getElementById('dm-list');
-    const chatContainer = document.getElementById('dm-chat');
-    if (listContainer) listContainer.style.display = 'block';
-    if (chatContainer) chatContainer.style.display = 'none';
+    const popup = document.getElementById('s-dm-popup');
+    if (popup) popup.style.display = 'none';
     
     if (this.channels.dm) {
       this.supabase.removeChannel(this.channels.dm);
@@ -4450,7 +4386,6 @@ class SocialSystem {
     }
     
     this.activeDmUser = null;
-    this.renderDmList();
   }
 
   async loadDmMessages(userId) {
@@ -4462,7 +4397,7 @@ class SocialSystem {
   }
 
   renderDmMessages() {
-    const container = document.getElementById('dm-messages-container');
+    const container = document.getElementById('dm-popup-messages');
     if (!container) return;
 
     if (!this.dmMessages.length) {
@@ -4485,7 +4420,7 @@ class SocialSystem {
   }
 
   async sendDm() {
-    const input = document.getElementById('dm-input');
+    const input = document.getElementById('dm-popup-input');
     if (!input || !this.activeDmUser) return;
 
     const message = input.value.trim();
@@ -4520,10 +4455,8 @@ class SocialSystem {
   async markDmRead(userId) {
     try {
       await this.supabase.rpc('mark_dm_read', { p_other_user: userId });
-      // Update local unread count
       const conv = this.dmConversations.find(c => c.other_user_id === userId);
       if (conv) conv.unread_count = 0;
-      this.updateDmBadge();
     } catch (e) { console.error('Mark read error:', e); }
   }
 
@@ -4536,10 +4469,8 @@ class SocialSystem {
     this.channels.dm = this.supabase.channel(`dm-${myId}-${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
         const msg = payload.new;
-        // Only messages between us
         if ((msg.from_user === userId && msg.to_user === myId) || 
             (msg.from_user === myId && msg.to_user === userId)) {
-          // Don't duplicate our own messages
           if (msg.from_user !== myId) {
             this.dmMessages.push({
               ...msg,
@@ -4554,8 +4485,7 @@ class SocialSystem {
   }
 
   handleDmTyping() {
-    // Could implement typing indicator broadcast here via Presence
-    // For now, just local state management
+    // Future: typing indicators
   }
 
   // ==================== V8: CLUBS ====================
@@ -4674,19 +4604,6 @@ class SocialSystem {
         </div>
       </div>
       
-      <!-- Top Players Mini Leaderboard -->
-      <div class="s-club-leaderboard">
-        <div class="s-label">${this.icons.trophy} Top Players</div>
-        <div id="club-top-players" class="s-club-top-players">
-          <div style="text-align:center;padding:12px;color:var(--s-text-muted);font-size:0.8rem;">Loading...</div>
-        </div>
-      </div>
-      
-      <div class="s-label">Members (${this.clubMembers.length})</div>
-      <div class="s-club-members-list">
-        ${this.clubMembers.map(m => this.renderClubMember(m, isLeader, isAdmin)).join('')}
-      </div>
-      
       ${isAdmin && invitableFriends.length > 0 ? `
         <div class="s-club-invite-section">
           <div class="s-label">${this.icons.userPlus} Invite Friends</div>
@@ -4698,13 +4615,23 @@ class SocialSystem {
                 <div class="s-club-invite-item">
                   <div class="s-avatar-sm" style="${avatarStyle}">${f.avatar_url ? '' : name[0].toUpperCase()}</div>
                   <span class="s-club-invite-name">${this.escapeHtml(name)}</span>
-                  <button class="s-btn s-btn-primary s-btn-sm club-invite-friend-btn" data-id="${f.friend_id}">${this.icons.plus}</button>
+                  <button class="s-btn s-btn-primary s-btn-sm club-invite-friend-btn" data-id="${f.friend_id}">${this.icons.plus} Invite</button>
                 </div>
               `;
             }).join('')}
           </div>
         </div>
+      ` : isAdmin ? `
+        <div class="s-club-invite-section">
+          <div class="s-label">${this.icons.userPlus} Invite Friends</div>
+          <p style="color:var(--s-text-muted);font-size:0.85rem;text-align:center;padding:12px;">Add friends first to invite them</p>
+        </div>
       ` : ''}
+      
+      <div class="s-label">Members (${this.clubMembers.length})</div>
+      <div class="s-club-members-list">
+        ${this.clubMembers.map(m => this.renderClubMember(m, isLeader, isAdmin)).join('')}
+      </div>
       
       <div style="margin-top:16px;">
         <button class="s-btn s-btn-secondary" id="leave-club-btn" style="width:100%;">${this.icons.logout} Leave Club</button>
@@ -4746,43 +4673,10 @@ class SocialSystem {
     container.querySelectorAll('.club-invite-friend-btn').forEach(b => {
       b.onclick = async () => {
         b.disabled = true;
-        b.innerHTML = this.icons.check;
+        b.innerHTML = 'Sent!';
         await this.inviteToClub(b.dataset.id);
       };
     });
-
-    // Load top players
-    this.loadClubTopPlayers();
-  }
-
-  async loadClubTopPlayers() {
-    const container = document.getElementById('club-top-players');
-    if (!container) return;
-
-    try {
-      // Get best reaction time scores for club members
-      const { data } = await this.supabase.rpc('get_club_leaderboard', { p_game_id: 'reaction-time' });
-      
-      if (!data || data.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--s-text-muted);font-size:0.8rem;">No scores yet</div>';
-        return;
-      }
-
-      const medals = ['🥇', '🥈', '🥉'];
-      container.innerHTML = data.slice(0, 3).map((p, i) => {
-        const name = p.gamer_tag || p.display_name || 'Unknown';
-        return `
-          <div class="s-club-top-player">
-            <span class="s-club-top-medal">${medals[i] || ''}</span>
-            <span class="s-club-top-name">${this.escapeHtml(name)}</span>
-            <span class="s-club-top-score">${p.score}ms</span>
-          </div>
-        `;
-      }).join('');
-    } catch (e) {
-      console.error('Load club leaderboard error:', e);
-      container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--s-text-muted);font-size:0.8rem;">Could not load</div>';
-    }
   }
 
   renderClubMember(m, isLeader, isAdmin) {
@@ -4925,17 +4819,23 @@ class SocialSystem {
     const picker = document.getElementById('s-emoji-picker');
     if (!picker) return;
 
-    if (picker.style.display === 'none') {
+    if (picker.style.display === 'none' || picker.style.display === '') {
       picker.style.display = 'block';
       picker.dataset.targetInput = inputId;
       
       // Position near the button
-      const btn = document.getElementById(inputId === 'dm-input' ? 'dm-emoji-btn' : 'party-emoji-btn');
+      let btnId;
+      if (inputId === 'dm-popup-input') btnId = 'dm-popup-emoji';
+      else if (inputId === 'party-chat-input') btnId = 'party-emoji-btn';
+      else btnId = 'party-emoji-btn';
+      
+      const btn = document.getElementById(btnId);
       if (btn) {
         const rect = btn.getBoundingClientRect();
+        picker.style.position = 'fixed';
         picker.style.bottom = 'auto';
-        picker.style.top = (rect.top - picker.offsetHeight - 8) + 'px';
-        picker.style.left = rect.left + 'px';
+        picker.style.top = Math.max(10, rect.top - picker.offsetHeight - 8) + 'px';
+        picker.style.left = Math.max(10, rect.left) + 'px';
       }
     } else {
       picker.style.display = 'none';
