@@ -147,8 +147,16 @@ class SocialSystem {
     this.subscribeToRealtime();
     this.updateNotificationBadge();
     
+    // Cleanup inactive parties (runs server-side)
+    this.supabase.rpc('cleanup_inactive_parties').catch(() => {});
+    
     // Check for party join code in URL
     this.checkPartyJoinCode();
+    
+    // Handle window close - update presence
+    window.addEventListener('beforeunload', () => {
+      this.stopActivityPing();
+    });
   }
 
   async checkPartyJoinCode() {
@@ -197,7 +205,7 @@ class SocialSystem {
     const handle = this.generateHandle();
     const avatarStyle = this.getAvatarStyle(this.userProfile);
     const nameStyle = this.getPremiumNameStyle(this.userProfile);
-    const nameEffect = this.userProfile?.name_effect || '';
+    const nameEffectClass = this.getNameEffectClass(this.userProfile);
     
     const avatarEl = document.querySelector('.s-profile-avatar');
     const nameEl = document.querySelector('.s-profile-name');
@@ -211,13 +219,12 @@ class SocialSystem {
       }
     }
     if (nameEl) {
-      // Apply premium styling
-      nameEl.innerHTML = `<span class="s-name ${nameEffect}" style="${nameStyle}">${this.escapeHtml(displayName)}</span>`;
+      // Badge icon
+      const badge = this.userProfile?.badge_icon || this.userProfile?.cosmetics?.badge_icon;
+      const badgeHtml = badge && this.userProfile?.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
       
-      // Add badge if premium
-      if (this.userProfile?.badge) {
-        nameEl.innerHTML += `<span class="s-badge" style="margin-left: 8px;">${this.escapeHtml(this.userProfile.badge)}</span>`;
-      }
+      // Apply premium styling
+      nameEl.innerHTML = `${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(displayName)}</span>`;
     }
     if (handleEl) handleEl.textContent = handle;
     
@@ -1038,10 +1045,30 @@ class SocialSystem {
         border-color: var(--s-accent);
       }
 
-      /* Premium Name Styles */
+      /* Premium Name Styles (matching cosmetics.js) */
       .s-name {
         display: inline;
       }
+      
+      /* Name Effects */
+      .tgco-effect-glow { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor !important; }
+      .tgco-effect-shadow { text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.9), 6px 6px 10px rgba(0, 0, 0, 0.5) !important; }
+      .tgco-effect-shimmer { 
+        background: linear-gradient(90deg, currentColor, white, currentColor) !important;
+        background-size: 200% 100% !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        animation: tgcoShimmer 2s linear infinite !important;
+      }
+      .tgco-effect-neon { 
+        text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor !important; 
+      }
+      @keyframes tgcoShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      
+      /* Legacy effects (keep for compatibility) */
       .s-name.glow {
         text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
       }
@@ -1053,40 +1080,27 @@ class SocialSystem {
         background-clip: text;
         animation: rainbow 3s linear infinite;
       }
-      .s-name.gold {
-        background: linear-gradient(135deg, #f5d742, #ffeb3b, #ffc107, #f5d742);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: rainbow 4s linear infinite;
-        text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
-      }
-      .s-name.fire {
-        background: linear-gradient(135deg, #ff4500, #ff6b35, #ff8c00, #ff4500);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: rainbow 2s linear infinite;
-      }
-      .s-name.ice {
-        background: linear-gradient(135deg, #00d4ff, #7fdbff, #39cccc, #00d4ff);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: rainbow 3s linear infinite;
-      }
       @keyframes rainbow {
         to { background-position: 200% center; }
       }
+      
+      /* Premium title */
       .s-premium-title {
         font-size: 0.7rem;
         color: var(--s-text-muted);
         margin-top: 2px;
         display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
+      
+      /* Badge icon (emoji style) */
+      .s-badge-icon {
+        font-size: 1rem;
+        margin-right: 4px;
+      }
+      
+      /* Legacy badge (text style) */
       .s-badge {
         font-size: 0.65rem;
         padding: 2px 6px;
@@ -1095,6 +1109,35 @@ class SocialSystem {
         border-radius: 4px;
         margin-left: 6px;
         font-weight: 600;
+      }
+      
+      /* Border Colors (matching cosmetics.js) */
+      .gray-border { border-color: #6b7280 !important; }
+      .gold-border { border-color: #fbbf24 !important; background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), transparent) !important; }
+      .diamond-border { border-color: #67e8f9 !important; background: linear-gradient(135deg, rgba(103, 232, 249, 0.1), transparent) !important; }
+      .ruby-border { border-color: #f87171 !important; background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), transparent) !important; }
+      .emerald-border { border-color: #34d399 !important; background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), transparent) !important; }
+      .amethyst-border { border-color: #c084fc !important; background: linear-gradient(135deg, rgba(192, 132, 252, 0.1), transparent) !important; }
+      .platinum-border { border-color: #e2e8f0 !important; background: linear-gradient(135deg, rgba(226, 232, 240, 0.1), transparent) !important; }
+      .obsidian-border { border-color: #1e1b4b !important; background: linear-gradient(135deg, rgba(30, 27, 75, 0.2), transparent) !important; }
+      .rose-border { border-color: #fb7185 !important; background: linear-gradient(135deg, rgba(251, 113, 133, 0.1), transparent) !important; }
+      .rainbow-border {
+        border-color: transparent !important;
+        background: 
+          linear-gradient(var(--s-bg-secondary), var(--s-bg-secondary)) padding-box,
+          linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box !important;
+        background-size: 100% 100%, 300% 100% !important;
+        animation: tgcoRainbow 3s linear infinite !important;
+      }
+      @keyframes tgcoRainbow {
+        0% { background-position: 0 0, 0% 0; }
+        100% { background-position: 0 0, 300% 0; }
+      }
+      
+      /* Apply borders to user cards and party members */
+      .s-user[class*="-border"], .s-party-member[class*="-border"] {
+        border: 2px solid;
+        border-radius: 12px;
       }
 
       /* Status Selector */
@@ -1600,16 +1643,24 @@ class SocialSystem {
 
     this.channels.partyInvites = this.supabase.channel('partyinv_ch')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'party_invites', filter: `to_user=eq.${this.currentUser.id}` }, async (payload) => {
+        console.log('🎉 Party invite received:', payload);
         await this.loadPartyInvites();
         this.updateNotificationBadge();
         this.playSound('invite');
+        this.flashTitle('Party Invite!');
         const { data: sender } = await this.supabase.from('profiles').select('display_name, gamer_tag').eq('id', payload.new.from_user).single();
         const name = sender?.gamer_tag || sender?.display_name || 'Someone';
-        this.showToast('party', 'Party Invite', `${name} invited you to their party`, [
+        this.showToast('party', 'Party Invite', `${name} invited you to their party!`, [
           { label: 'Join', style: 'primary', action: `acceptPartyInvite:${payload.new.id}` },
           { label: 'Decline', action: `declinePartyInvite:${payload.new.id}` }
         ]);
-      }).subscribe();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'party_invites', filter: `to_user=eq.${this.currentUser.id}` }, async () => {
+        await this.loadPartyInvites();
+      })
+      .subscribe((status) => {
+        console.log('Party invites subscription:', status);
+      });
 
     this.subscribeToParty();
   }
@@ -1790,10 +1841,22 @@ class SocialSystem {
   async loadUserProfile() {
     try {
       const { data } = await this.supabase.from('profiles')
-        .select('id, display_name, gamer_tag, discriminator, avatar_url, avatar_icon, is_premium, name_color, name_effect, title, title_color, badge, user_status')
+        .select('id, display_name, gamer_tag, discriminator, avatar_url, avatar_icon, account_type, cosmetics, user_status')
         .eq('id', this.currentUser.id)
         .single();
-      this.userProfile = data || { display_name: 'Player', id: this.currentUser.id };
+      
+      const cosmetics = data?.cosmetics || {};
+      const isPremium = data?.account_type === 'premium';
+      
+      this.userProfile = {
+        ...data,
+        isPremium: isPremium,
+        cosmetics: cosmetics,
+        badge_icon: isPremium ? cosmetics.badge_icon : null,
+        border_color: isPremium ? cosmetics.border_color : 'gray',
+        name_effect: isPremium ? cosmetics.name_effect : 'none',
+        title: isPremium ? cosmetics.title : null
+      };
       this.userStatus = data?.user_status || 'online';
     } catch (e) { console.error(e); }
   }
@@ -1808,7 +1871,20 @@ class SocialSystem {
   async loadFriends() {
     try {
       const { data } = await this.supabase.rpc('get_friends_with_presence');
-      this.friends = data || [];
+      // Map friends with cosmetics format
+      this.friends = (data || []).map(f => {
+        const cosmetics = f.cosmetics || {};
+        const isPremium = f.account_type === 'premium';
+        return {
+          ...f,
+          isPremium: isPremium,
+          cosmetics: cosmetics,
+          badge_icon: isPremium ? cosmetics.badge_icon : null,
+          border_color: isPremium ? cosmetics.border_color : 'gray',
+          name_effect: isPremium ? cosmetics.name_effect : 'none',
+          title: isPremium ? cosmetics.title : null
+        };
+      });
       this.renderFriends();
     } catch (e) { console.error(e); this.friends = []; this.renderFriends(); }
   }
@@ -1836,6 +1912,20 @@ class SocialSystem {
     } catch (e) { console.error(e); }
   }
 
+  // Cosmetic colors map (matches cosmetics.js)
+  COSMETIC_COLORS = {
+    gray: '#6b7280',
+    gold: '#fbbf24',
+    diamond: '#67e8f9',
+    ruby: '#f87171',
+    emerald: '#34d399',
+    amethyst: '#c084fc',
+    platinum: '#e2e8f0',
+    obsidian: '#1e1b4b',
+    rose: '#fb7185',
+    rainbow: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc)'
+  };
+
   async loadParty() {
     try {
       const { data, error } = await this.supabase.rpc('get_my_party');
@@ -1857,30 +1947,37 @@ class SocialSystem {
           current_room: data[0].current_room,
           status: data[0].status,
           max_size: data[0].max_size || 20,
-          invite_code: data[0].invite_code
+          invite_code: data[0].invite_code,
+          last_activity: data[0].last_activity
         };
-        this.partyMembers = data.map(m => ({
-          id: m.member_id, 
-          name: m.member_gamer_tag || m.member_name,
-          discriminator: m.member_discriminator, 
-          role: m.member_role, 
-          status: m.member_status,
-          avatar_url: m.member_avatar_url,
-          avatar_icon: m.member_avatar_icon,
-          is_premium: m.member_is_premium,
-          name_color: m.member_name_color,
-          name_effect: m.member_name_effect,
-          title: m.member_title,
-          title_color: m.member_title_color,
-          badge: m.member_badge
-        }));
         
-        // Debug premium
-        console.log('Party members with premium:', this.partyMembers.map(m => ({ 
+        // Map members with cosmetics JSON format
+        this.partyMembers = data.map(m => {
+          const cosmetics = m.member_cosmetics || {};
+          const isPremium = m.member_account_type === 'premium';
+          return {
+            id: m.member_id, 
+            name: m.member_gamer_tag || m.member_name,
+            discriminator: m.member_discriminator, 
+            role: m.member_role, 
+            status: m.member_status,
+            avatar_url: m.member_avatar_url,
+            avatar_icon: m.member_avatar_icon,
+            // Cosmetics (matching cosmetics.js format)
+            isPremium: isPremium,
+            cosmetics: cosmetics,
+            badge_icon: isPremium ? cosmetics.badge_icon : null,
+            border_color: isPremium ? cosmetics.border_color : 'gray',
+            name_effect: isPremium ? cosmetics.name_effect : 'none',
+            title: isPremium ? cosmetics.title : null,
+            border_style: isPremium ? cosmetics.border_style : 'solid'
+          };
+        });
+        
+        console.log('Party members:', this.partyMembers.map(m => ({ 
           name: m.name, 
-          is_premium: m.is_premium, 
-          name_color: m.name_color,
-          badge: m.badge 
+          isPremium: m.isPremium,
+          cosmetics: m.cosmetics
         })));
         
         this.lastHostUrl = this.currentParty.current_room;
@@ -1890,13 +1987,35 @@ class SocialSystem {
           this.subscribeToParty();
           this.subscribeToPartyChat();
         }
+        
+        // Start activity ping
+        this.startActivityPing();
+        
       } else {
         this.currentParty = null;
         this.partyMembers = [];
         this.partyMessages = [];
+        this.stopActivityPing();
       }
       this.renderParty();
     } catch (e) { console.error('Load party exception:', e); }
+  }
+  
+  // Activity ping to keep party alive
+  startActivityPing() {
+    this.stopActivityPing();
+    this.activityInterval = setInterval(() => {
+      if (this.currentParty) {
+        this.supabase.rpc('update_party_activity').catch(() => {});
+      }
+    }, 60000); // Ping every minute
+  }
+  
+  stopActivityPing() {
+    if (this.activityInterval) {
+      clearInterval(this.activityInterval);
+      this.activityInterval = null;
+    }
   }
 
   async loadPartyInvites() {
@@ -1949,6 +2068,8 @@ class SocialSystem {
     const statusText = f.status === 'in_game' ? `Playing ${f.current_game || 'a game'}` : f.status === 'online' ? 'Online' : f.last_seen ? `${this.timeAgo(new Date(f.last_seen))}` : 'Offline';
     const avatarStyle = this.getAvatarStyle(f);
     const nameStyle = this.getPremiumNameStyle(f);
+    const nameEffectClass = this.getNameEffectClass(f);
+    const borderClass = this.getBorderColorClass(f);
     
     const isOnline = f.status === 'online' || f.status === 'in_game';
     const canInviteToGame = isOnline && this.isInLobby();
@@ -1969,15 +2090,20 @@ class SocialSystem {
       actions += `<button class="s-btn s-btn-secondary invite-btn" data-id="${f.friend_id}">Invite</button>`;
     }
 
-    // Premium badges and titles
-    let badgeHtml = f.badge ? `<span class="s-badge">${this.escapeHtml(f.badge)}</span>` : '';
-    let titleHtml = f.title ? `<div class="s-premium-title" style="${f.title_color ? 'color:' + f.title_color : ''}">${this.escapeHtml(f.title)}</div>` : '';
+    // Cosmetics format - badge_icon and title
+    const badge = f.badge_icon || f.cosmetics?.badge_icon;
+    const title = f.title || f.cosmetics?.title;
+    let badgeHtml = badge && f.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
+    let titleHtml = title && f.isPremium ? `<div class="s-premium-title">${this.escapeHtml(title)}</div>` : '';
+
+    // Add border class for premium users
+    const userClass = f.isPremium && borderClass ? `s-user ${borderClass}` : 's-user';
 
     return `
-      <div class="s-user" data-id="${f.friend_id}">
+      <div class="${userClass}" data-id="${f.friend_id}">
         <div class="s-avatar ${avatarClass}" style="${avatarStyle}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
         <div class="s-user-info">
-          <div class="s-user-name"><span class="s-name ${f.name_effect || ''}" style="${nameStyle}">${this.escapeHtml(name)}</span>${badgeHtml}<span class="disc">${tag}</span></div>
+          <div class="s-user-name">${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
           ${titleHtml}
           <div class="s-user-status ${f.status === 'in_game' ? 'playing' : ''}">${statusText}</div>
         </div>
@@ -2114,6 +2240,8 @@ class SocialSystem {
       const initial = (m.name || '?')[0].toUpperCase();
       const avatarStyle = this.getAvatarStyle(m);
       const nameStyle = this.getPremiumNameStyle(m);
+      const nameEffectClass = this.getNameEffectClass(m);
+      const borderClass = this.getBorderColorClass(m);
       
       let actions = '';
       if (isLeader && !isMe) {
@@ -2122,24 +2250,29 @@ class SocialSystem {
           <button class="s-btn s-btn-ghost s-btn-icon kick-btn" data-id="${m.id}" title="Kick">${this.icons.x}</button>`;
       }
 
+      // Use cosmetics format
       let titleHtml = '';
-      if (m.title) {
-        const titleStyle = m.title_color ? `color: ${m.title_color}` : '';
-        titleHtml = `<span class="s-premium-title" style="${titleStyle}">${this.escapeHtml(m.title)}</span>`;
+      const title = m.title || m.cosmetics?.title;
+      if (title && m.isPremium) {
+        titleHtml = `<span class="s-premium-title">${this.escapeHtml(title)}</span>`;
       }
 
       let badgeHtml = '';
-      if (m.badge) {
-        badgeHtml = `<span class="s-badge">${this.escapeHtml(m.badge)}</span>`;
+      const badge = m.badge_icon || m.cosmetics?.badge_icon;
+      if (badge && m.isPremium) {
+        badgeHtml = `<span class="s-badge-icon">${badge}</span>`;
       }
       
+      // Add premium border class
+      const memberClass = m.isPremium && borderClass ? `s-party-member ${borderClass}` : 's-party-member';
+      
       return `
-        <div class="s-party-member">
+        <div class="${memberClass}">
           <div class="s-party-member-avatar" style="${avatarStyle}">${m.avatar_url ? '' : initial}${isMemberLeader ? `<span class="s-crown">${this.icons.crown}</span>` : ''}</div>
           <div class="s-party-member-info">
             <div class="s-party-member-name">
-              <span class="s-name ${m.name_effect || ''}" style="${nameStyle}">${this.escapeHtml(m.name)}</span>
               ${badgeHtml}
+              <span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(m.name)}</span>
               ${isMemberLeader ? '<span class="s-host-tag">Host</span>' : ''}
               ${isMe ? '<span class="s-you-tag">(You)</span>' : ''}
             </div>
@@ -2205,8 +2338,24 @@ class SocialSystem {
   }
 
   getPremiumNameStyle(user) {
-    if (!user.is_premium || !user.name_color) return '';
-    return `color: ${user.name_color};`;
+    if (!user.isPremium) return '';
+    const borderColor = user.border_color || user.cosmetics?.border_color || 'gray';
+    if (borderColor === 'rainbow') return 'color: #c084fc;'; // Default purple for rainbow
+    const color = this.COSMETIC_COLORS[borderColor] || this.COSMETIC_COLORS.gray;
+    return `color: ${color};`;
+  }
+  
+  getNameEffectClass(user) {
+    if (!user.isPremium) return '';
+    const effect = user.name_effect || user.cosmetics?.name_effect || 'none';
+    if (effect === 'none') return '';
+    return `tgco-effect-${effect}`;
+  }
+  
+  getBorderColorClass(user) {
+    if (!user.isPremium) return '';
+    const borderColor = user.border_color || user.cosmetics?.border_color || 'gray';
+    return `${borderColor}-border`;
   }
 
   openInviteModal() {
@@ -2766,6 +2915,10 @@ class SocialSystem {
   async inviteToParty(userId) {
     console.log('Inviting to party:', userId, 'Party:', this.currentParty?.party_id);
     
+    // Get friend name for toast
+    const friend = this.friends.find(f => f.friend_id === userId);
+    const friendName = friend?.gamer_tag || friend?.display_name || 'Player';
+    
     // Update button immediately
     const btn = document.querySelector(`.party-invite-btn[data-id="${userId}"]`);
     if (btn) {
@@ -2792,7 +2945,7 @@ class SocialSystem {
       }
       
       this.playSound('invite');
-      this.showToast('party', 'Invite Sent', 'Party invite sent!', []);
+      this.showToast('party', 'Invite Sent!', `Invited ${friendName} to the party`, []);
       
       // Reset button after 3 seconds
       setTimeout(() => {
