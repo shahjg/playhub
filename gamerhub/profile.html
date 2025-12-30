@@ -380,6 +380,18 @@
 
     .xp-rewards { display: flex; gap: 8px; flex-wrap: wrap; }
 
+    .xp-meta { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+    
+    .xp-streak { 
+      font-size: 0.85rem; 
+      font-weight: 600; 
+      color: var(--gold); 
+      padding: 6px 12px;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 6px;
+    }
+
     .xp-reward {
       padding: 5px 10px;
       background: rgba(255, 255, 255, 0.05);
@@ -997,14 +1009,18 @@
             </div>
             <div class="xp-numbers">
               <div class="xp-current-text"><span id="xp-current">0</span> XP</div>
-              <div class="xp-needed-text"><span id="xp-needed">100</span> XP to next level</div>
+              <div class="xp-needed-text" id="xp-needed-text"><span id="xp-needed">100</span> XP to next level</div>
             </div>
           </div>
           <div class="xp-bar"><div class="xp-bar-fill" id="xp-bar-fill" style="width: 0%;"></div></div>
-          <div class="xp-rewards">
-            <div class="xp-reward">Game completion: +10 XP</div>
-            <div class="xp-reward">Personal best: +25 XP</div>
-            <div class="xp-reward">Top 10 rank: +50 XP</div>
+          <div class="xp-meta">
+            <div class="xp-streak" id="xp-streak">🔥 0 day streak</div>
+            <div class="xp-rewards">
+              <div class="xp-reward">Game: 3-25 XP</div>
+              <div class="xp-reward">Personal best: +25 XP</div>
+              <div class="xp-reward">First play: +20 XP</div>
+              <div class="xp-reward">Daily streak: up to +2000 XP</div>
+            </div>
           </div>
         </div>
 
@@ -1330,7 +1346,19 @@
     let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎';
     let cosmetics = { border_style: 'solid', border_color: 'gold', badge_icon: '👑', name_effect: 'none', title: null, entrance_animation: 'fade', avatar: '😎' };
 
-    const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500, 10000, 13000, 16500, 20500, 25000, 30000, 36000, 43000, 51000, 60000];
+    // Level thresholds (1-100) - matches database
+    const LEVEL_THRESHOLDS = [
+      0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200,           // 1-10
+      4000, 5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000, // 11-20
+      26000, 30500, 35500, 41000, 47000, 54000, 62000, 71000, 81000, 92000, // 21-30
+      104000, 117000, 131000, 146000, 162000, 180000, 199000, 220000, 242000, 266000, // 31-40
+      292000, 320000, 350000, 382000, 416000, 452000, 490000, 530000, 572000, 616000, // 41-50
+      665000, 718000, 775000, 836000, 901000, 970000, 1043000, 1120000, 1201000, 1286000, // 51-60
+      1375000, 1468000, 1565000, 1666000, 1771000, 1880000, 1993000, 2110000, 2231000, 2356000, // 61-70
+      2485000, 2618000, 2755000, 2896000, 3041000, 3190000, 3343000, 3500000, 3661000, 3826000, // 71-80
+      3995000, 4168000, 4345000, 4526000, 4711000, 4900000, 5093000, 5290000, 5491000, 5696000, // 81-90
+      5905000, 6118000, 6335000, 6556000, 6781000, 7010000, 7243000, 7480000, 7721000, 7966000  // 91-100
+    ];
 
     // Solo games config - matches leaderboards.html exactly
     const SOLO_GAMES = {
@@ -1349,8 +1377,24 @@
     const colorMap = { gray: '#6b7280', gold: '#fbbf24', diamond: '#67e8f9', ruby: '#f87171', emerald: '#34d399', amethyst: '#c084fc', platinum: '#e2e8f0', obsidian: '#312e81', rose: '#fb7185', rainbow: '#c084fc' };
 
     function containsProfanity(text) { return blockedWords.some(word => text.toLowerCase().includes(word)); }
-    function getLevelFromXP(xp) { for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) { if (xp >= LEVEL_THRESHOLDS[i]) return i + 1; } return 1; }
-    function getXPProgress(xp) { const level = getLevelFromXP(xp); const curr = LEVEL_THRESHOLDS[level - 1] || 0; const next = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1]; return { progress: xp - curr, needed: next - curr, percentage: Math.min(((xp - curr) / (next - curr)) * 100, 100) }; }
+    function getLevelFromXP(xp) { 
+      for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) { 
+        if (xp >= LEVEL_THRESHOLDS[i]) return i + 1; 
+      } 
+      return 1; 
+    }
+    
+    function getXPProgress(xp) { 
+      const level = getLevelFromXP(xp); 
+      const curr = LEVEL_THRESHOLDS[level - 1] || 0; 
+      const next = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1]; 
+      const isMaxLevel = level >= 100;
+      return { 
+        progress: xp - curr, 
+        needed: isMaxLevel ? 0 : next - curr, 
+        percentage: isMaxLevel ? 100 : Math.min(((xp - curr) / (next - curr)) * 100, 100) 
+      }; 
+    }
     function formatPlaytime(m) { if (!m || m < 1) return '0m'; const h = Math.floor(m / 60); const mins = m % 60; return h > 0 ? (mins > 0 ? `${h}h ${mins}m` : `${h}h`) : `${mins}m`; }
     function showStatus(msg, type = 'success') { const s = document.getElementById('status-bar'); s.className = `status-bar visible ${type}`; document.getElementById('status-message').textContent = msg; setTimeout(() => s.classList.remove('visible'), 4000); }
 
@@ -1530,11 +1574,32 @@
       const xp = profile.xp || 0;
       const level = getLevelFromXP(xp);
       const { needed, percentage } = getXPProgress(xp);
+      const isMaxLevel = level >= 100;
+      
       document.getElementById('xp-level-number').textContent = level;
       document.getElementById('sidebar-level-badge').textContent = `LVL ${level}`;
       document.getElementById('xp-current').textContent = xp.toLocaleString();
-      document.getElementById('xp-needed').textContent = needed.toLocaleString();
+      
+      if (isMaxLevel) {
+        document.getElementById('xp-needed-text').textContent = 'MAX LEVEL';
+      } else {
+        document.getElementById('xp-needed').textContent = needed.toLocaleString();
+      }
+      
       document.getElementById('xp-bar-fill').style.width = `${percentage}%`;
+      
+      // Streak display
+      const streak = profile.current_streak || 0;
+      const streakEl = document.getElementById('xp-streak');
+      if (streak > 0) {
+        streakEl.textContent = `🔥 ${streak} day streak`;
+        streakEl.style.display = 'block';
+      } else {
+        streakEl.textContent = 'Play today to start a streak!';
+        streakEl.style.color = 'var(--text-muted)';
+        streakEl.style.background = 'rgba(255, 255, 255, 0.03)';
+        streakEl.style.borderColor = 'var(--border)';
+      }
 
       // Compute stats from actual data
       const stats = await computeStatsFromData();
