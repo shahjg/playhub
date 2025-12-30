@@ -416,19 +416,7 @@
     }
 
     .favorite-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 10px; }
-    .favorite-game { display: flex; align-items: center; gap: 12px; }
-
-    .favorite-game-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
-      flex-shrink: 0;
-    }
+    .favorite-game { display: flex; align-items: center; }
 
     .favorite-game-info h4 { font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 2px; }
     .favorite-game-info p { font-size: 0.75rem; color: var(--text-muted); }
@@ -439,6 +427,7 @@
     .rank-card {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
       padding: 12px 14px;
       background: rgba(255, 255, 255, 0.03);
@@ -448,7 +437,6 @@
     }
 
     .rank-card:hover { background: rgba(255, 255, 255, 0.06); border-color: var(--border-hover); }
-    .rank-game-icon { font-size: 1.3rem; flex-shrink: 0; }
     .rank-info { flex: 1; min-width: 0; }
     .rank-game-name { font-size: 0.85rem; font-weight: 600; margin-bottom: 2px; }
     .rank-score { font-size: 0.7rem; color: var(--text-muted); }
@@ -1031,14 +1019,12 @@
           <div class="favorite-card">
             <div class="favorite-label">Most Played</div>
             <div class="favorite-game" id="favorite-game">
-              <div class="favorite-game-icon" id="fav-icon">--</div>
               <div class="favorite-game-info"><h4 id="fav-name">--</h4><p id="fav-plays">No games yet</p></div>
             </div>
           </div>
           <div class="favorite-card">
             <div class="favorite-label">Try Something New</div>
             <div class="favorite-game" id="least-played-game">
-              <div class="favorite-game-icon" id="least-icon">--</div>
               <div class="favorite-game-info"><h4 id="least-name">--</h4><p>Play more to unlock</p></div>
             </div>
           </div>
@@ -1346,39 +1332,18 @@
 
     const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500, 10000, 13000, 16500, 20500, 25000, 30000, 36000, 43000, 51000, 60000];
 
-    // All TheGaming.co games with icons
-    const GAME_ICONS = {
-      // Solo Games
-      'aim-trainer': '🎯', 'typing-test': '⌨️', 'reaction-time': '⚡', 'chimp-test': '🐵', 'number-memory': '🔢',
-      'sequence-memory': '🧠', 'verbal-memory': '📝', 'visual-memory': '👁️', 'stroop-test': '🎨', 'perfect-pitch': '🎵',
-      // Duos Games
-      'tic-tac-toe': '⭕', 'connect-four': '🔴', 'battleship': '🚢', 'memory-match': '🃏', 'word-chain': '🔗',
-      'quick-math': '➕', 'spot-difference': '🔍', 'reaction-duel': '⚔️',
-      // Squad Games
-      'trivia': '❓', 'drawing-guess': '✏️', 'word-bomb': '💣', 'categories': '📂', 'emoji-charades': '😃',
-      'most-likely': '👆', 'never-have-i-ever': '🙅', 'two-truths': '🤥',
-      // Party Games
-      'spyfall': '🕵️', 'werewolf': '🐺', 'mafia': '🔫', 'codenames': '🔑', 'fishbowl': '🐟',
-      'jackbox-style': '📺', 'drawing-telephone': '📞'
+    // Solo games config - matches leaderboards.html exactly
+    const SOLO_GAMES = {
+      'reaction-time': { name: 'Reaction Time', unit: 'ms', ascending: true },
+      'typing-test-60': { name: 'Typing Test', unit: 'WPM', ascending: false },
+      'aim-trainer-30': { name: 'Aim Trainer', unit: 'ms', ascending: true },
+      'chimp-test': { name: 'Chimp Test', unit: 'Level', ascending: false },
+      'number-memory': { name: 'Number Memory', unit: 'Digits', ascending: false },
+      'sequence-memory': { name: 'Sequence Memory', unit: 'Level', ascending: false },
+      'visual-memory': { name: 'Visual Memory', unit: 'Level', ascending: false },
+      'verbal-memory': { name: 'Verbal Memory', unit: 'words', ascending: false },
+      'math-speed-add': { name: 'Math Speed', unit: 'solved', ascending: false }
     };
-
-    const GAME_NAMES = {
-      // Solo
-      'aim-trainer': 'Aim Trainer', 'typing-test': 'Typing Test', 'reaction-time': 'Reaction Time', 'chimp-test': 'Chimp Test', 'number-memory': 'Number Memory',
-      'sequence-memory': 'Sequence Memory', 'verbal-memory': 'Verbal Memory', 'visual-memory': 'Visual Memory', 'stroop-test': 'Stroop Test', 'perfect-pitch': 'Perfect Pitch',
-      // Duos
-      'tic-tac-toe': 'Tic Tac Toe', 'connect-four': 'Connect Four', 'battleship': 'Battleship', 'memory-match': 'Memory Match', 'word-chain': 'Word Chain',
-      'quick-math': 'Quick Math', 'spot-difference': 'Spot Difference', 'reaction-duel': 'Reaction Duel',
-      // Squad
-      'trivia': 'Trivia', 'drawing-guess': 'Drawing Guess', 'word-bomb': 'Word Bomb', 'categories': 'Categories', 'emoji-charades': 'Emoji Charades',
-      'most-likely': 'Most Likely To', 'never-have-i-ever': 'Never Have I Ever', 'two-truths': 'Two Truths',
-      // Party
-      'spyfall': 'Spyfall', 'werewolf': 'Werewolf', 'mafia': 'Mafia', 'codenames': 'Codenames', 'fishbowl': 'Fishbowl',
-      'jackbox-style': 'Jackbox Style', 'drawing-telephone': 'Drawing Telephone'
-    };
-
-    // Solo games that have leaderboards
-    const SOLO_GAMES = ['aim-trainer', 'typing-test', 'reaction-time', 'chimp-test', 'number-memory', 'sequence-memory', 'verbal-memory', 'visual-memory', 'stroop-test', 'perfect-pitch'];
 
     const blockedWords = ['fuck', 'shit', 'ass', 'bitch', 'dick', 'pussy', 'cock', 'cunt', 'nigger', 'faggot', 'retard'];
     const colorMap = { gray: '#6b7280', gold: '#fbbf24', diamond: '#67e8f9', ruby: '#f87171', emerald: '#34d399', amethyst: '#c084fc', platinum: '#e2e8f0', obsidian: '#312e81', rose: '#fb7185', rainbow: '#c084fc' };
@@ -1455,18 +1420,20 @@
     }
 
     // =====================================
-    // COMPUTE STATS FROM ACTUAL DATA
+    // COMPUTE STATS FROM ACTUAL DATA (solo_scores table)
     // =====================================
     async function computeStatsFromData() {
       if (!currentUser) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
 
-      // Get all leaderboard entries for this user
+      // Get all solo_scores entries for this user
       const { data: entries, error } = await supabaseClient
-        .from('leaderboard_entries')
+        .from('solo_scores')
         .select('game_id, score, created_at')
         .eq('user_id', currentUser.id);
 
-      if (error || !entries) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
+      if (error || !entries || entries.length === 0) {
+        return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
+      }
 
       // Count games played (total entries)
       const gamesPlayed = entries.length;
@@ -1484,39 +1451,40 @@
 
       // Find a game they haven't tried yet
       const playedGames = new Set(Object.keys(gameCounts));
-      const unplayedGame = SOLO_GAMES.find(g => !playedGames.has(g));
+      const allGameIds = Object.keys(SOLO_GAMES);
+      const unplayedGame = allGameIds.find(g => !playedGames.has(g));
       if (unplayedGame) leastPlayedGame = unplayedGame;
 
       // Playtime estimation (assume ~30 seconds per game on average)
       const playtime = Math.round(gamesPlayed * 0.5); // in minutes
 
-      // Personal bests - count unique game personal bests (one per game)
+      // Personal bests - count unique games played
       const personalBests = Object.keys(gameCounts).length;
 
       // Best rank - find best ranking across all games
       let bestRank = null;
-      for (const game of Object.keys(gameCounts)) {
-        const isLowerBetter = game === 'reaction-time';
+      for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
+        if (!gameCounts[gameId]) continue;
         
         // Get user's best score for this game
         const { data: userBest } = await supabaseClient
-          .from('leaderboard_entries')
+          .from('solo_scores')
           .select('score')
           .eq('user_id', currentUser.id)
-          .eq('game_id', game)
-          .order('score', { ascending: isLowerBetter })
+          .eq('game_id', gameId)
+          .order('score', { ascending: config.ascending })
           .limit(1)
           .maybeSingle();
 
         if (userBest) {
           // Count how many are better
           let countQuery = supabaseClient
-            .from('leaderboard_entries')
+            .from('solo_scores')
             .select('user_id', { count: 'exact', head: true })
-            .eq('game_id', game)
+            .eq('game_id', gameId)
             .neq('user_id', currentUser.id);
           
-          if (isLowerBetter) { countQuery = countQuery.lt('score', userBest.score); }
+          if (config.ascending) { countQuery = countQuery.lt('score', userBest.score); }
           else { countQuery = countQuery.gt('score', userBest.score); }
           
           const { count } = await countQuery;
@@ -1583,14 +1551,12 @@
       document.getElementById('stat-best-rank-2').textContent = bestRankDisplay;
 
       // Favorite games
-      if (stats.favoriteGame) {
-        document.getElementById('fav-icon').textContent = GAME_ICONS[stats.favoriteGame] || '🎮';
-        document.getElementById('fav-name').textContent = GAME_NAMES[stats.favoriteGame] || stats.favoriteGame;
+      if (stats.favoriteGame && SOLO_GAMES[stats.favoriteGame]) {
+        document.getElementById('fav-name').textContent = SOLO_GAMES[stats.favoriteGame].name;
         document.getElementById('fav-plays').textContent = `${stats.favoriteGamePlays || 0} plays`;
       }
-      if (stats.leastPlayedGame) {
-        document.getElementById('least-icon').textContent = GAME_ICONS[stats.leastPlayedGame] || '❓';
-        document.getElementById('least-name').textContent = GAME_NAMES[stats.leastPlayedGame] || stats.leastPlayedGame;
+      if (stats.leastPlayedGame && SOLO_GAMES[stats.leastPlayedGame]) {
+        document.getElementById('least-name').textContent = SOLO_GAMES[stats.leastPlayedGame].name;
       }
 
       document.getElementById('email-newsletter').checked = profile.email_newsletter || false;
@@ -1620,34 +1586,40 @@
 
       let html = '';
       
-      for (const game of SOLO_GAMES) {
-        const isLowerBetter = game === 'reaction-time';
+      for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
         let rank = '--', score = '--', rankClass = 'unranked';
 
         try {
           const { data: userEntry } = await supabaseClient
-            .from('leaderboard_entries')
+            .from('solo_scores')
             .select('score')
             .eq('user_id', currentUser.id)
-            .eq('game_id', game)
-            .order('score', { ascending: isLowerBetter })
+            .eq('game_id', gameId)
+            .order('score', { ascending: config.ascending })
             .limit(1)
             .maybeSingle();
 
           if (userEntry && userEntry.score != null) {
             const userScore = userEntry.score;
-            score = game === 'reaction-time' ? userScore + 'ms' : game === 'typing-test' ? userScore + ' WPM' : userScore.toLocaleString();
+            score = `${userScore} ${config.unit}`;
 
-            let countQuery = supabaseClient.from('leaderboard_entries').select('user_id', { count: 'exact', head: true }).eq('game_id', game).neq('user_id', currentUser.id);
-            if (isLowerBetter) { countQuery = countQuery.lt('score', userScore); } else { countQuery = countQuery.gt('score', userScore); }
+            let countQuery = supabaseClient
+              .from('solo_scores')
+              .select('user_id', { count: 'exact', head: true })
+              .eq('game_id', gameId)
+              .neq('user_id', currentUser.id);
+            
+            if (config.ascending) { countQuery = countQuery.lt('score', userScore); }
+            else { countQuery = countQuery.gt('score', userScore); }
+            
             const { count } = await countQuery;
             const r = (count || 0) + 1;
             rank = `#${r}`;
             rankClass = r <= 10 ? 'top-10' : r <= 100 ? 'top-100' : '';
           }
-        } catch (e) { console.error('Error loading rank for', game, e); }
+        } catch (e) { console.error('Error loading rank for', gameId, e); }
 
-        html += `<div class="rank-card"><span class="rank-game-icon">${GAME_ICONS[game]}</span><div class="rank-info"><div class="rank-game-name">${GAME_NAMES[game]}</div><div class="rank-score">${score}</div></div><span class="rank-position ${rankClass}">${rank}</span></div>`;
+        html += `<div class="rank-card"><div class="rank-info"><div class="rank-game-name">${config.name}</div><div class="rank-score">${score}</div></div><span class="rank-position ${rankClass}">${rank}</span></div>`;
       }
       
       container.innerHTML = html || '<p style="color: var(--text-muted); text-align: center;">No rankings yet</p>';
