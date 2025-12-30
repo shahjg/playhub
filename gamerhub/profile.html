@@ -60,7 +60,7 @@
     h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
     a { color: inherit; text-decoration: none; }
 
-    /* ========== HEADER (matching index.html - centered logo only) ========== */
+    /* ========== HEADER ========== */
     header {
       position: fixed;
       top: 0;
@@ -107,6 +107,35 @@
       align-items: center;
       gap: 16px;
     }
+
+    /* Friends button (injected by social.js) */
+    .friends-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      color: var(--text-dim);
+    }
+    .friends-btn:hover { background: rgba(255, 255, 255, 0.12); color: white; border-color: var(--border-hover); }
+    .friends-btn svg { width: 18px; height: 18px; }
+    .friends-btn .notification-dot {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      background: var(--pink);
+      border-radius: 50%;
+      display: none;
+    }
+    .friends-btn .notification-dot.visible { display: block; }
 
     .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
 
@@ -807,7 +836,7 @@
     .status-bar.success { background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #6ee7b7; }
     .status-bar.error { background: rgba(255, 107, 157, 0.15); border: 1px solid rgba(255, 107, 157, 0.4); color: #ffb3c9; }
 
-    /* ========== MOBILE (Tablets and phones) ========== */
+    /* ========== MOBILE ========== */
     @media (max-width: 900px) {
       :root { --sidebar-width: 0px; }
 
@@ -896,20 +925,18 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* iOS notch support */
     @supports (padding: max(0px)) {
-      .main-content {
-        padding-bottom: max(calc(100px + env(safe-area-inset-bottom)), 100px);
-      }
+      .main-content { padding-bottom: max(calc(100px + env(safe-area-inset-bottom)), 100px); }
     }
   </style>
 </head>
 
 <body>
-  <!-- HEADER (matching index.html - centered logo only) -->
+  <!-- HEADER -->
   <header>
     <a href="/" class="header-logo">THEGAMING.CO</a>
     <div class="header-actions">
+      <!-- Friends button will be injected here by social.js -->
       <div class="user-pill-skeleton" id="auth-skeleton"></div>
       <div class="nav-right-logged-out"><a href="/login">Sign In</a></div>
       <div class="nav-right-logged-in">
@@ -1306,6 +1333,7 @@
     </div>
   </div>
 
+  <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
@@ -1317,8 +1345,41 @@
     let cosmetics = { border_style: 'solid', border_color: 'gold', badge_icon: '👑', name_effect: 'none', title: null, entrance_animation: 'fade', avatar: '😎' };
 
     const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500, 10000, 13000, 16500, 20500, 25000, 30000, 36000, 43000, 51000, 60000];
-    const GAME_ICONS = { 'aim-trainer': '🎯', 'typing-test': '⌨️', 'reaction-time': '⚡', 'chimp-test': '🐵', 'number-memory': '🔢' };
-    const GAME_NAMES = { 'aim-trainer': 'Aim Trainer', 'typing-test': 'Typing Test', 'reaction-time': 'Reaction Time', 'chimp-test': 'Chimp Test', 'number-memory': 'Number Memory' };
+
+    // All TheGaming.co games with icons
+    const GAME_ICONS = {
+      // Solo Games
+      'aim-trainer': '🎯', 'typing-test': '⌨️', 'reaction-time': '⚡', 'chimp-test': '🐵', 'number-memory': '🔢',
+      'sequence-memory': '🧠', 'verbal-memory': '📝', 'visual-memory': '👁️', 'stroop-test': '🎨', 'perfect-pitch': '🎵',
+      // Duos Games
+      'tic-tac-toe': '⭕', 'connect-four': '🔴', 'battleship': '🚢', 'memory-match': '🃏', 'word-chain': '🔗',
+      'quick-math': '➕', 'spot-difference': '🔍', 'reaction-duel': '⚔️',
+      // Squad Games
+      'trivia': '❓', 'drawing-guess': '✏️', 'word-bomb': '💣', 'categories': '📂', 'emoji-charades': '😃',
+      'most-likely': '👆', 'never-have-i-ever': '🙅', 'two-truths': '🤥',
+      // Party Games
+      'spyfall': '🕵️', 'werewolf': '🐺', 'mafia': '🔫', 'codenames': '🔑', 'fishbowl': '🐟',
+      'jackbox-style': '📺', 'drawing-telephone': '📞'
+    };
+
+    const GAME_NAMES = {
+      // Solo
+      'aim-trainer': 'Aim Trainer', 'typing-test': 'Typing Test', 'reaction-time': 'Reaction Time', 'chimp-test': 'Chimp Test', 'number-memory': 'Number Memory',
+      'sequence-memory': 'Sequence Memory', 'verbal-memory': 'Verbal Memory', 'visual-memory': 'Visual Memory', 'stroop-test': 'Stroop Test', 'perfect-pitch': 'Perfect Pitch',
+      // Duos
+      'tic-tac-toe': 'Tic Tac Toe', 'connect-four': 'Connect Four', 'battleship': 'Battleship', 'memory-match': 'Memory Match', 'word-chain': 'Word Chain',
+      'quick-math': 'Quick Math', 'spot-difference': 'Spot Difference', 'reaction-duel': 'Reaction Duel',
+      // Squad
+      'trivia': 'Trivia', 'drawing-guess': 'Drawing Guess', 'word-bomb': 'Word Bomb', 'categories': 'Categories', 'emoji-charades': 'Emoji Charades',
+      'most-likely': 'Most Likely To', 'never-have-i-ever': 'Never Have I Ever', 'two-truths': 'Two Truths',
+      // Party
+      'spyfall': 'Spyfall', 'werewolf': 'Werewolf', 'mafia': 'Mafia', 'codenames': 'Codenames', 'fishbowl': 'Fishbowl',
+      'jackbox-style': 'Jackbox Style', 'drawing-telephone': 'Drawing Telephone'
+    };
+
+    // Solo games that have leaderboards
+    const SOLO_GAMES = ['aim-trainer', 'typing-test', 'reaction-time', 'chimp-test', 'number-memory', 'sequence-memory', 'verbal-memory', 'visual-memory', 'stroop-test', 'perfect-pitch'];
+
     const blockedWords = ['fuck', 'shit', 'ass', 'bitch', 'dick', 'pussy', 'cock', 'cunt', 'nigger', 'faggot', 'retard'];
     const colorMap = { gray: '#6b7280', gold: '#fbbf24', diamond: '#67e8f9', ruby: '#f87171', emerald: '#34d399', amethyst: '#c084fc', platinum: '#e2e8f0', obsidian: '#312e81', rose: '#fb7185', rainbow: '#c084fc' };
 
@@ -1353,7 +1414,7 @@
       });
     });
 
-    // Avatar modal - store in cosmetics jsonb
+    // Avatar modal
     function openAvatarModal() { 
       document.getElementById('avatar-modal').classList.add('open'); 
       document.querySelectorAll('.avatar-option').forEach(o => o.classList.toggle('selected', o.dataset.value === selectedAvatar)); 
@@ -1393,6 +1454,80 @@
       document.getElementById('save-cosmetics').textContent = 'Save Cosmetics'; document.getElementById('save-cosmetics').disabled = false;
     }
 
+    // =====================================
+    // COMPUTE STATS FROM ACTUAL DATA
+    // =====================================
+    async function computeStatsFromData() {
+      if (!currentUser) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
+
+      // Get all leaderboard entries for this user
+      const { data: entries, error } = await supabaseClient
+        .from('leaderboard_entries')
+        .select('game_id, score, created_at')
+        .eq('user_id', currentUser.id);
+
+      if (error || !entries) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
+
+      // Count games played (total entries)
+      const gamesPlayed = entries.length;
+
+      // Count plays per game
+      const gameCounts = {};
+      entries.forEach(e => { gameCounts[e.game_id] = (gameCounts[e.game_id] || 0) + 1; });
+
+      // Find favorite (most played) and least played
+      let favoriteGame = null, favoriteGamePlays = 0, leastPlayedGame = null, leastPlays = Infinity;
+      Object.entries(gameCounts).forEach(([game, count]) => {
+        if (count > favoriteGamePlays) { favoriteGame = game; favoriteGamePlays = count; }
+        if (count < leastPlays) { leastPlayedGame = game; leastPlays = count; }
+      });
+
+      // Find a game they haven't tried yet
+      const playedGames = new Set(Object.keys(gameCounts));
+      const unplayedGame = SOLO_GAMES.find(g => !playedGames.has(g));
+      if (unplayedGame) leastPlayedGame = unplayedGame;
+
+      // Playtime estimation (assume ~30 seconds per game on average)
+      const playtime = Math.round(gamesPlayed * 0.5); // in minutes
+
+      // Personal bests - count unique game personal bests (one per game)
+      const personalBests = Object.keys(gameCounts).length;
+
+      // Best rank - find best ranking across all games
+      let bestRank = null;
+      for (const game of Object.keys(gameCounts)) {
+        const isLowerBetter = game === 'reaction-time';
+        
+        // Get user's best score for this game
+        const { data: userBest } = await supabaseClient
+          .from('leaderboard_entries')
+          .select('score')
+          .eq('user_id', currentUser.id)
+          .eq('game_id', game)
+          .order('score', { ascending: isLowerBetter })
+          .limit(1)
+          .maybeSingle();
+
+        if (userBest) {
+          // Count how many are better
+          let countQuery = supabaseClient
+            .from('leaderboard_entries')
+            .select('user_id', { count: 'exact', head: true })
+            .eq('game_id', game)
+            .neq('user_id', currentUser.id);
+          
+          if (isLowerBetter) { countQuery = countQuery.lt('score', userBest.score); }
+          else { countQuery = countQuery.gt('score', userBest.score); }
+          
+          const { count } = await countQuery;
+          const rank = (count || 0) + 1;
+          if (bestRank === null || rank < bestRank) bestRank = rank;
+        }
+      }
+
+      return { gamesPlayed, playtime, personalBests, bestRank, favoriteGame, favoriteGamePlays, leastPlayedGame };
+    }
+
     async function loadProfile() {
       const user = await checkSession();
       if (!user) { window.location.href = '/login'; return; }
@@ -1423,36 +1558,39 @@
       document.getElementById('sidebar-avatar').textContent = selectedAvatar;
       if (cosmetics.title) document.getElementById('sidebar-title').textContent = cosmetics.title;
 
-      const xp = profile.xp || 0, level = getLevelFromXP(xp), { needed, percentage } = getXPProgress(xp);
+      // XP from profile (or default to 0)
+      const xp = profile.xp || 0;
+      const level = getLevelFromXP(xp);
+      const { needed, percentage } = getXPProgress(xp);
       document.getElementById('xp-level-number').textContent = level;
       document.getElementById('sidebar-level-badge').textContent = `LVL ${level}`;
       document.getElementById('xp-current').textContent = xp.toLocaleString();
       document.getElementById('xp-needed').textContent = needed.toLocaleString();
       document.getElementById('xp-bar-fill').style.width = `${percentage}%`;
 
-      // Stats
-      const gamesPlayed = profile.games_played || 0;
-      const playtime = formatPlaytime(profile.playtime_minutes || 0);
-      const personalBests = profile.personal_bests || 0;
-      const bestRank = profile.best_rank ? `#${profile.best_rank}` : '#--';
+      // Compute stats from actual data
+      const stats = await computeStatsFromData();
+      const playtime = formatPlaytime(stats.playtime);
+      const bestRankDisplay = stats.bestRank ? `#${stats.bestRank}` : '#--';
 
-      document.getElementById('stat-games-played').textContent = gamesPlayed.toLocaleString();
+      document.getElementById('stat-games-played').textContent = stats.gamesPlayed.toLocaleString();
       document.getElementById('stat-playtime').textContent = playtime;
-      document.getElementById('stat-personal-bests').textContent = personalBests;
-      document.getElementById('stat-best-rank').textContent = bestRank;
-      document.getElementById('stat-games-played-2').textContent = gamesPlayed.toLocaleString();
+      document.getElementById('stat-personal-bests').textContent = stats.personalBests;
+      document.getElementById('stat-best-rank').textContent = bestRankDisplay;
+      document.getElementById('stat-games-played-2').textContent = stats.gamesPlayed.toLocaleString();
       document.getElementById('stat-playtime-2').textContent = playtime;
-      document.getElementById('stat-personal-bests-2').textContent = personalBests;
-      document.getElementById('stat-best-rank-2').textContent = bestRank;
+      document.getElementById('stat-personal-bests-2').textContent = stats.personalBests;
+      document.getElementById('stat-best-rank-2').textContent = bestRankDisplay;
 
-      if (profile.favorite_game) {
-        document.getElementById('fav-icon').textContent = GAME_ICONS[profile.favorite_game] || '🎮';
-        document.getElementById('fav-name').textContent = GAME_NAMES[profile.favorite_game] || profile.favorite_game;
-        document.getElementById('fav-plays').textContent = `${profile.favorite_game_plays || 0} plays`;
+      // Favorite games
+      if (stats.favoriteGame) {
+        document.getElementById('fav-icon').textContent = GAME_ICONS[stats.favoriteGame] || '🎮';
+        document.getElementById('fav-name').textContent = GAME_NAMES[stats.favoriteGame] || stats.favoriteGame;
+        document.getElementById('fav-plays').textContent = `${stats.favoriteGamePlays || 0} plays`;
       }
-      if (profile.least_played_game) {
-        document.getElementById('least-icon').textContent = GAME_ICONS[profile.least_played_game] || '❓';
-        document.getElementById('least-name').textContent = GAME_NAMES[profile.least_played_game] || profile.least_played_game;
+      if (stats.leastPlayedGame) {
+        document.getElementById('least-icon').textContent = GAME_ICONS[stats.leastPlayedGame] || '❓';
+        document.getElementById('least-name').textContent = GAME_NAMES[stats.leastPlayedGame] || stats.leastPlayedGame;
       }
 
       document.getElementById('email-newsletter').checked = profile.email_newsletter || false;
@@ -1477,13 +1615,12 @@
     }
 
     async function loadLeaderboardRanks() {
-      const games = ['aim-trainer', 'typing-test', 'reaction-time', 'chimp-test', 'number-memory'];
       const container = document.getElementById('leaderboard-ranks');
       container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Loading rankings...</p>';
 
       let html = '';
       
-      for (const game of games) {
+      for (const game of SOLO_GAMES) {
         const isLowerBetter = game === 'reaction-time';
         let rank = '--', score = '--', rankClass = 'unranked';
 
@@ -1627,5 +1764,8 @@
 
     loadProfile();
   </script>
+
+  <!-- SOCIAL.JS - Friends sidebar, parties, DMs etc -->
+  <script src="/social.js"></script>
 </body>
 </html>
