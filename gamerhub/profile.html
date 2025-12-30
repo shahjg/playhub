@@ -257,7 +257,7 @@
     .sidebar-name { font-size: 1rem; font-weight: 700; margin-bottom: 4px; text-align: center; }
     .sidebar-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
-    .sidebar-badges { display: flex; gap: 6px; margin-top: 10px; }
+    .sidebar-badges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
 
     .sidebar-badge {
       padding: 3px 8px;
@@ -269,6 +269,16 @@
     }
 
     .badge-level { background: rgba(79, 172, 254, 0.2); border: 1px solid rgba(79, 172, 254, 0.4); color: var(--blue); }
+    .badge-prestige { 
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.3)); 
+      border: 1px solid rgba(251, 191, 36, 0.5); 
+      color: #fbbf24; 
+      animation: prestigeGlow 2s ease-in-out infinite; 
+    }
+    @keyframes prestigeGlow { 
+      0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.3); } 
+      50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); } 
+    }
     .badge-premium { background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.4); color: var(--gold); }
 
     .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
@@ -390,6 +400,59 @@
       background: rgba(251, 191, 36, 0.1);
       border: 1px solid rgba(251, 191, 36, 0.2);
       border-radius: 6px;
+    }
+
+    .prestige-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.1));
+      border: 2px solid rgba(251, 191, 36, 0.5);
+      border-radius: 12px;
+      color: var(--gold);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .prestige-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.2), transparent);
+      animation: prestigeShine 3s infinite;
+    }
+
+    @keyframes prestigeShine {
+      0% { left: -100%; }
+      50%, 100% { left: 100%; }
+    }
+
+    .prestige-btn:hover {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.2));
+      border-color: var(--gold);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3);
+    }
+
+    .prestige-icon { font-size: 1.3rem; }
+    .prestige-desc { 
+      font-size: 0.65rem; 
+      font-weight: 500; 
+      opacity: 0.7; 
+      text-transform: none; 
+      letter-spacing: 0; 
     }
 
     .xp-reward {
@@ -964,6 +1027,7 @@
         <div class="sidebar-name" id="sidebar-name">Player</div>
         <div class="sidebar-title" id="sidebar-title"></div>
         <div class="sidebar-badges">
+          <span class="sidebar-badge badge-prestige" id="sidebar-prestige-badge" style="display: none;">P1</span>
           <span class="sidebar-badge badge-level" id="sidebar-level-badge">LVL 1</span>
           <span class="sidebar-badge badge-premium" id="sidebar-premium-badge" style="display: none;">PREMIUM</span>
         </div>
@@ -1022,6 +1086,11 @@
               <div class="xp-reward">Daily streak: up to +2000 XP</div>
             </div>
           </div>
+          <button class="prestige-btn" id="prestige-btn" style="display: none;" onclick="handlePrestige()">
+            <span class="prestige-icon">⭐</span>
+            <span>PRESTIGE</span>
+            <span class="prestige-desc">Reset to LVL 1 for exclusive rewards</span>
+          </button>
         </div>
 
         <div class="stats-grid">
@@ -1429,6 +1498,36 @@
       document.querySelectorAll('.avatar-option').forEach(o => o.classList.toggle('selected', o.dataset.value === selectedAvatar)); 
     }
     function closeAvatarModal() { document.getElementById('avatar-modal').classList.remove('open'); }
+
+    async function handlePrestige() {
+      const confirmed = confirm(
+        '⭐ PRESTIGE ⭐\n\n' +
+        'Are you sure you want to prestige?\n\n' +
+        '• Your level will reset to 1\n' +
+        '• Your XP will reset to 0\n' +
+        '• You will unlock exclusive Prestige rewards\n' +
+        '• Your stats and unlocked cosmetics are kept\n\n' +
+        'This action cannot be undone!'
+      );
+      
+      if (!confirmed) return;
+      
+      try {
+        const { data, error } = await supabaseClient.rpc('prestige_user', { p_user_id: currentUser.id });
+        
+        if (error) throw error;
+        
+        if (data && data[0]?.success) {
+          alert(`🎉 ${data[0].message}\n\nYou've unlocked new exclusive cosmetics!`);
+          window.location.reload();
+        } else {
+          alert(data?.[0]?.message || 'Unable to prestige at this time.');
+        }
+      } catch (e) {
+        console.error('Prestige error:', e);
+        alert('Error during prestige. Please try again.');
+      }
+    }
     
     document.querySelectorAll('.avatar-option').forEach(o => { 
       o.addEventListener('click', () => { 
@@ -1575,10 +1674,20 @@
       const level = getLevelFromXP(xp);
       const { needed, percentage } = getXPProgress(xp);
       const isMaxLevel = level >= 100;
+      const prestige = profile.prestige || 0;
       
       document.getElementById('xp-level-number').textContent = level;
       document.getElementById('sidebar-level-badge').textContent = `LVL ${level}`;
       document.getElementById('xp-current').textContent = xp.toLocaleString();
+      
+      // Prestige badge
+      const prestigeBadge = document.getElementById('sidebar-prestige-badge');
+      if (prestige > 0) {
+        prestigeBadge.textContent = prestige >= 10 ? 'P★' : `P${prestige}`;
+        prestigeBadge.style.display = 'inline-block';
+      } else {
+        prestigeBadge.style.display = 'none';
+      }
       
       if (isMaxLevel) {
         document.getElementById('xp-needed-text').textContent = 'MAX LEVEL';
@@ -1599,6 +1708,14 @@
         streakEl.style.color = 'var(--text-muted)';
         streakEl.style.background = 'rgba(255, 255, 255, 0.03)';
         streakEl.style.borderColor = 'var(--border)';
+      }
+
+      // Show prestige button if max level and not max prestige
+      const prestigeBtn = document.getElementById('prestige-btn');
+      if (isMaxLevel && prestige < 10) {
+        prestigeBtn.style.display = 'flex';
+      } else {
+        prestigeBtn.style.display = 'none';
       }
 
       // Compute stats from actual data
