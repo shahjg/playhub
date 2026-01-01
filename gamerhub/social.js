@@ -1,7 +1,8 @@
 /* =============================================
-   SOCIAL SYSTEM v8 - TheGaming.co
+   SOCIAL SYSTEM v9 - TheGaming.co
    Features: Clubs, DMs, Profile Cards, Emoji, 
-             Typing Indicator, Unblock UI, Leaderboards
+             Typing Indicator, Unblock UI, Leaderboards,
+             XP/Prestige Level Badges
    ============================================= */
 
 class SocialSystem {
@@ -34,10 +35,24 @@ class SocialSystem {
     this.dmConversations = [];
     this.activeDmUser = null;
     this.dmMessages = [];
-    this.typingUsers = {}; // { oduserId: timestamp }
+    this.typingUsers = {};
     this.isTyping = false;
     this.typingTimeout = null;
     this.profileModalUser = null;
+    
+    // V9: XP thresholds for levels 1-100 (matches database)
+    this.XP_THRESHOLDS = [
+      0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
+      3250, 3850, 4500, 5200, 5950, 6750, 7600, 8500, 9450, 10450,
+      11500, 12600, 13750, 14950, 16200, 17500, 18850, 20250, 21700, 23200,
+      24750, 26350, 28000, 29700, 31450, 33250, 35100, 37000, 38950, 40950,
+      43000, 45100, 47250, 49450, 51700, 54000, 56350, 58750, 61200, 63700,
+      66250, 68850, 71500, 74200, 76950, 79750, 82600, 85500, 88450, 91450,
+      94500, 97600, 100750, 103950, 107200, 110500, 113850, 117250, 120700, 124200,
+      127750, 131350, 135000, 138700, 142450, 146250, 150100, 154000, 157950, 161950,
+      166000, 170100, 174250, 178450, 182700, 187000, 191350, 195750, 200200, 204700,
+      209250, 213850, 218500, 223200, 227950, 232750, 237600, 242500, 247450, 252450
+    ];
     
     // SVG Icons
     this.icons = {
@@ -122,7 +137,29 @@ class SocialSystem {
     
     this.init();
   }
+// V9: Get level from XP
+  getLevelFromXP(xp) {
+    if (!xp || xp <= 0) return 1;
+    let level = 1;
+    for (let i = this.XP_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (xp >= this.XP_THRESHOLDS[i]) {
+        level = i + 1;
+        break;
+      }
+    }
+    return Math.min(level, 100);
+  }
 
+  // V9: Render level badge HTML
+  renderLevelBadge(xp = 0, prestige = 0) {
+    const level = this.getLevelFromXP(xp);
+    let html = '';
+    if (prestige > 0) {
+      html += `<span class="s-prestige-badge">P${prestige}</span>`;
+    }
+    html += `<span class="s-level-badge">LV${level}</span>`;
+    return html;
+  }
   // Initialize sound effects
   initSounds() {
     // Create audio context on first user interaction
@@ -241,7 +278,7 @@ class SocialSystem {
     }
   }
 
-  updateNameplate() {
+ updateNameplate() {
     const displayName = this.userProfile?.gamer_tag || this.userProfile?.display_name || 'Player';
     const initial = displayName[0].toUpperCase();
     const handle = this.generateHandle();
@@ -250,7 +287,6 @@ class SocialSystem {
     const nameEffectClass = this.getNameEffectClass(this.userProfile);
     const borderClass = this.getBorderColorClass(this.userProfile);
     
-    // Get border color for title
     const borderColor = this.userProfile?.border_color || this.userProfile?.cosmetics?.border_color || 'gray';
     const titleColor = this.COSMETIC_COLORS[borderColor] || this.COSMETIC_COLORS.gray;
     
@@ -262,41 +298,31 @@ class SocialSystem {
     
     if (avatarEl) {
       avatarEl.style.cssText = avatarStyle;
-      if (!this.userProfile?.avatar_url) {
-        avatarEl.textContent = initial;
-      } else {
-        avatarEl.textContent = '';
-      }
+      if (!this.userProfile?.avatar_url) avatarEl.textContent = initial;
+      else avatarEl.textContent = '';
     }
     
-    // Apply border color to profile section
     if (profileInner) {
-      if (this.userProfile?.isPremium && borderClass) {
-        profileInner.className = `s-profile-inner ${borderClass}`;
-      } else {
-        profileInner.className = 's-profile-inner';
-      }
+      profileInner.className = this.userProfile?.isPremium && borderClass ? `s-profile-inner ${borderClass}` : 's-profile-inner';
     }
     
     if (nameEl) {
-      // Badge icon
       const badge = this.userProfile?.badge_icon || this.userProfile?.cosmetics?.badge_icon;
       const badgeHtml = badge && this.userProfile?.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
-      
-      // Title with matching color
       const title = this.userProfile?.title || this.userProfile?.cosmetics?.title;
       const titleStyle = this.userProfile?.isPremium ? `color: ${titleColor};` : '';
       const titleHtml = title && this.userProfile?.isPremium ? `<div class="s-premium-title" style="${titleStyle}">${this.escapeHtml(title)}</div>` : '';
       
-      // Apply premium styling
+      // V9: Level badge
+      const levelBadgeHtml = this.renderLevelBadge(this.userProfile?.xp || 0, this.userProfile?.prestige || 0);
+      
       nameEl.innerHTML = `
-        <div class="s-profile-name-row">${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(displayName)}</span></div>
+        <div class="s-profile-name-row">${levelBadgeHtml}${badgeHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(displayName)}</span></div>
         ${titleHtml}
       `;
     }
     if (handleEl) handleEl.textContent = handle;
     
-    // Update status indicator
     if (statusIndicator) {
       const statusOpt = this.statusOptions.find(s => s.id === this.userStatus);
       if (statusOpt) statusIndicator.style.background = statusOpt.color;
@@ -341,7 +367,37 @@ class SocialSystem {
         --s-warning: #f59e0b;
         --s-danger: #ef4444;
       }
+      /* V9: Level Badge Styles */
+      .s-level-badge {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        margin-right: 4px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        display: inline-block;
+        vertical-align: middle;
+      }
 
+      .s-prestige-badge {
+        background: linear-gradient(135deg, #fbbf24, #d97706);
+        color: #1a1a2e;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        margin-right: 4px;
+        animation: prestigeGlow 2s ease-in-out infinite;
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      @keyframes prestigeGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
+        50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.8); }
+      }
       /* ===== HEADER BUTTON ===== */
       .friends-header-btn {
         position: relative;
@@ -3043,7 +3099,7 @@ class SocialSystem {
   async loadUserProfile() {
     try {
       const { data } = await this.supabase.from('profiles')
-        .select('id, display_name, gamer_tag, discriminator, avatar_url, avatar_icon, account_type, cosmetics, user_status')
+        .select('id, display_name, gamer_tag, discriminator, avatar_url, avatar_icon, account_type, cosmetics, user_status, xp, prestige')
         .eq('id', this.currentUser.id)
         .single();
       
@@ -3057,7 +3113,9 @@ class SocialSystem {
         badge_icon: isPremium ? cosmetics.badge_icon : null,
         border_color: isPremium ? cosmetics.border_color : 'gray',
         name_effect: isPremium ? cosmetics.name_effect : 'none',
-        title: isPremium ? cosmetics.title : null
+        title: isPremium ? cosmetics.title : null,
+        xp: data?.xp || 0,
+        prestige: data?.prestige || 0
       };
       this.userStatus = data?.user_status || 'online';
     } catch (e) { console.error(e); }
@@ -3070,12 +3128,10 @@ class SocialSystem {
     return this.currentUser?.id?.substring(0, 8).toUpperCase() || 'USER';
   }
 
-  async loadFriends() {
+async loadFriends() {
     try {
-      // Use existing working function
       const { data } = await this.supabase.rpc('get_friends_with_presence');
       
-      // Map friends with cosmetics format
       this.friends = (data || []).map(f => {
         const cosmetics = f.cosmetics || {};
         const isPremium = f.account_type === 'premium';
@@ -3088,11 +3144,13 @@ class SocialSystem {
           name_effect: isPremium ? cosmetics.name_effect : 'none',
           title: isPremium ? cosmetics.title : null,
           club_tag: null,
-          club_name: null
+          club_name: null,
+          xp: f.xp || 0,
+          prestige: f.prestige || 0
         };
       });
       
-      // Try to fetch club data separately and merge
+      // Load club data for friends
       try {
         const friendIds = this.friends.map(f => f.friend_id);
         if (friendIds.length > 0) {
@@ -3104,11 +3162,8 @@ class SocialSystem {
           if (clubData) {
             const clubMap = {};
             clubData.forEach(cm => {
-              if (cm.clubs) {
-                clubMap[cm.user_id] = { tag: cm.clubs.tag, name: cm.clubs.name };
-              }
+              if (cm.clubs) clubMap[cm.user_id] = { tag: cm.clubs.tag, name: cm.clubs.name };
             });
-            
             this.friends = this.friends.map(f => ({
               ...f,
               club_tag: clubMap[f.friend_id]?.tag || null,
@@ -3123,7 +3178,6 @@ class SocialSystem {
       this.renderFriends();
     } catch (e) { console.error(e); this.friends = []; this.renderFriends(); }
   }
-
   async loadRequests() {
     try {
       const [incoming, sent] = await Promise.all([
@@ -3187,7 +3241,7 @@ class SocialSystem {
         };
         
         // Map members with cosmetics JSON format
-        this.partyMembers = data.map(m => {
+ this.partyMembers = data.map(m => {
           const cosmetics = m.member_cosmetics || {};
           const isPremium = m.member_account_type === 'premium';
           return {
@@ -3198,14 +3252,15 @@ class SocialSystem {
             status: m.member_status,
             avatar_url: m.member_avatar_url,
             avatar_icon: m.member_avatar_icon,
-            // Cosmetics (matching cosmetics.js format)
             isPremium: isPremium,
             cosmetics: cosmetics,
             badge_icon: isPremium ? cosmetics.badge_icon : null,
             border_color: isPremium ? cosmetics.border_color : 'gray',
             name_effect: isPremium ? cosmetics.name_effect : 'none',
             title: isPremium ? cosmetics.title : null,
-            border_style: isPremium ? cosmetics.border_style : 'solid'
+            border_style: isPremium ? cosmetics.border_style : 'solid',
+            xp: m.member_xp || 0,
+            prestige: m.member_prestige || 0
           };
         });
         
@@ -3336,7 +3391,7 @@ class SocialSystem {
     this.bindFriendActions();
   }
 
-  renderFriendCard(f) {
+renderFriendCard(f) {
     const name = f.gamer_tag || f.display_name || 'Unknown';
     const initial = name[0].toUpperCase();
     const tag = f.discriminator ? `#${f.discriminator}` : '';
@@ -3354,20 +3409,10 @@ class SocialSystem {
     const canPartyInvite = this.isPartyLeader();
 
     let actions = '';
-    
-    // Party invite button - show for party leaders
-    if (canPartyInvite) {
-      actions += `<button class="s-btn s-btn-primary s-btn-icon party-invite-btn" data-id="${f.friend_id}" title="Invite to Party">${this.icons.userPlus}</button>`;
-    }
-    
-    // Join/Invite to game buttons
-    if (canJoin) {
-      actions += `<button class="s-btn s-btn-success join-btn" data-id="${f.friend_id}" data-game="${f.current_game}" data-room="${f.current_room}">Join</button>`;
-    } else if (canInviteToGame) {
-      actions += `<button class="s-btn s-btn-secondary invite-btn" data-id="${f.friend_id}">Invite</button>`;
-    }
+    if (canPartyInvite) actions += `<button class="s-btn s-btn-primary s-btn-icon party-invite-btn" data-id="${f.friend_id}" title="Invite to Party">${this.icons.userPlus}</button>`;
+    if (canJoin) actions += `<button class="s-btn s-btn-success join-btn" data-id="${f.friend_id}" data-game="${f.current_game}" data-room="${f.current_room}">Join</button>`;
+    else if (canInviteToGame) actions += `<button class="s-btn s-btn-secondary invite-btn" data-id="${f.friend_id}">Invite</button>`;
 
-    // Cosmetics format - badge_icon and title
     const badge = f.badge_icon || f.cosmetics?.badge_icon;
     const title = f.title || f.cosmetics?.title;
     const borderColor = f.border_color || f.cosmetics?.border_color || 'gray';
@@ -3375,18 +3420,18 @@ class SocialSystem {
     
     let badgeHtml = badge && f.isPremium ? `<span class="s-badge-icon">${badge}</span>` : '';
     let titleHtml = title && f.isPremium ? `<div class="s-premium-title" style="color: ${titleColor};">${this.escapeHtml(title)}</div>` : '';
-    
-    // Club tag display
     let clubTagHtml = f.club_tag ? `<span class="s-club-tag-inline">[${this.escapeHtml(f.club_tag)}]</span> ` : '';
+    
+    // V9: Level badge
+    const levelBadgeHtml = this.renderLevelBadge(f.xp || 0, f.prestige || 0);
 
-    // Add border class for premium users
     const userClass = f.isPremium && borderClass ? `s-user ${borderClass}` : 's-user';
 
     return `
       <div class="${userClass}" data-id="${f.friend_id}">
         <div class="s-avatar ${avatarClass} clickable-profile" style="${avatarStyle};cursor:pointer;" data-uid="${f.friend_id}">${f.avatar_url ? '' : initial}<div class="s-status-dot ${statusClass}"></div></div>
         <div class="s-user-info clickable-profile" style="cursor:pointer;" data-uid="${f.friend_id}">
-          <div class="s-user-name">${badgeHtml}${clubTagHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
+          <div class="s-user-name">${levelBadgeHtml}${badgeHtml}${clubTagHtml}<span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(name)}</span><span class="disc">${tag}</span></div>
           ${titleHtml}
           <div class="s-user-status ${f.status === 'in_game' ? 'playing' : ''}">${statusText}</div>
         </div>
@@ -3402,7 +3447,6 @@ class SocialSystem {
         </div>
       </div>`;
   }
-
   renderRequests() {
     const incoming = document.getElementById('incoming-requests');
     const sent = document.getElementById('sent-requests');
@@ -3517,7 +3561,7 @@ class SocialSystem {
         </div>`;
     }
 
-    const members = this.partyMembers.map(m => {
+   const members = this.partyMembers.map(m => {
       const isMe = m.id === this.currentUser.id;
       const isMemberLeader = m.role === 'leader';
       const initial = (m.name || '?')[0].toUpperCase();
@@ -3551,11 +3595,15 @@ class SocialSystem {
       // Add premium border class
       const memberClass = m.isPremium && borderClass ? `s-party-member ${borderClass}` : 's-party-member';
       
+      // V9: Level badge
+      const levelBadgeHtml = this.renderLevelBadge(m.xp || 0, m.prestige || 0);
+      
       return `
         <div class="${memberClass}" data-id="${m.id}">
           <div class="s-party-member-avatar clickable-profile" style="${avatarStyle};cursor:pointer;" data-uid="${m.id}">${m.avatar_url ? '' : initial}${isMemberLeader ? `<span class="s-crown">${this.icons.crown}</span>` : ''}</div>
           <div class="s-party-member-info clickable-profile" style="cursor:pointer;" data-uid="${m.id}">
             <div class="s-party-member-name">
+              ${levelBadgeHtml}
               ${badgeHtml}
               <span class="s-name ${nameEffectClass}" style="${nameStyle}">${this.escapeHtml(m.name)}</span>
               ${isMemberLeader ? '<span class="s-host-tag">Host</span>' : ''}
