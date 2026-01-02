@@ -865,13 +865,10 @@
     </div>
 </footer>
 
+<script src="/header.js"></script>
 <script>
     // ========== CONFIG ==========
     const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-    
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Game configs - ALL GAMES
     const GAMES = {
@@ -1207,15 +1204,12 @@
     const gameId = urlParams.get('game') || 'spyfall';
     const joinCode = urlParams.get('join');
     const currentGame = GAMES[gameId] || GAMES['spyfall'];
-    
-    // Set back button URL based on game type
     const isPartyGame = currentGame.isPartyGame || false;
-    document.getElementById('back-btn').href = isPartyGame ? '/party-games.html' : '/squad-games.html';
     
     // Apply theme
     document.body.className = currentGame.theme;
 
-    // Update page
+    // Update page content
     document.getElementById('game-title').textContent = currentGame.displayName;
     document.getElementById('game-tagline').textContent = currentGame.tagline;
     document.getElementById('game-players').textContent = currentGame.players;
@@ -1235,43 +1229,49 @@
     let isPremium = false;
 
     // Elements
-    const authSkeleton = document.getElementById('auth-skeleton');
-    const loggedOutNav = document.querySelector('.nav-right-logged-out');
-    const loggedInNav = document.querySelector('.nav-right-logged-in');
-    const headerUsernameLabel = document.getElementById('header-username-label');
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userMenu = document.getElementById('user-menu');
-    const userMenuSignOut = document.getElementById('user-menu-signout');
     const nameInput = document.getElementById('player-name');
     const nameHint = document.getElementById('name-hint');
+    const roomCodeInput = document.getElementById('room-code');
 
-    function updateAuthUI(user) {
-        if (authSkeleton) authSkeleton.style.display = 'none';
-        if (user) {
-            loggedOutNav?.style.setProperty('display', 'none', 'important');
-            loggedInNav?.style.setProperty('display', 'flex', 'important');
-        } else {
-            loggedOutNav?.style.setProperty('display', 'flex', 'important');
-            loggedInNav?.style.setProperty('display', 'none', 'important');
+    // Wait for header.js to initialize, then set back button
+    function initBackButton() {
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) {
+            backBtn.href = isPartyGame ? '/party-games.html' : '/squad-games.html';
         }
     }
 
+    // Initialize auth - wait for window.supabaseClient from header.js
     async function initAuth() {
-        const { data } = await supabaseClient.auth.getSession();
+        // Wait for header.js to create supabaseClient
+        let attempts = 0;
+        while (!window.supabaseClient && attempts < 50) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+        
+        if (!window.supabaseClient) {
+            console.error('supabaseClient not available');
+            showGuestName();
+            return;
+        }
+
+        const { data } = await window.supabaseClient.auth.getSession();
         if (data?.session?.user) {
             currentUser = data.session.user;
             await loadProfile();
-            updateAuthUI(currentUser);
             showLoggedInName();
         } else {
-            updateAuthUI(null);
             showGuestName();
         }
+        
+        // Set back button after header is ready
+        initBackButton();
     }
 
     async function loadProfile() {
-        if (!currentUser) return;
-        const { data: profile } = await supabaseClient
+        if (!currentUser || !window.supabaseClient) return;
+        const { data: profile } = await window.supabaseClient
             .from('profiles')
             .select('display_name, gamer_tag, account_type, cosmetics')
             .eq('id', currentUser.id)
@@ -1280,8 +1280,6 @@
         if (profile) {
             userProfile = profile;
             isPremium = profile.account_type === 'premium';
-            const displayName = profile.display_name || profile.gamer_tag || currentUser.email.split('@')[0];
-            headerUsernameLabel.textContent = displayName.length > 12 ? displayName.slice(0, 11) + '…' : displayName;
         }
     }
 
@@ -1310,29 +1308,15 @@
         const preview = document.getElementById('name-preview');
         const value = document.getElementById('name-preview-value');
         preview.style.display = 'block';
-        value.textContent = formatPremiumName(name);
+        value.textContent = name;
         value.className = 'name-preview-value' + (isPremium ? ' premium' : '');
     }
 
-    function formatPremiumName(name) {
-        return name;
-    }
-
-    // User menu
-    let userMenuOpen = false;
-    userMenuButton?.addEventListener('click', (e) => { 
-        e.stopPropagation(); 
-        userMenuOpen = !userMenuOpen; 
-        userMenu.classList.toggle('open', userMenuOpen); 
-    });
-    document.addEventListener('click', () => { userMenuOpen = false; userMenu?.classList.remove('open'); });
-    userMenuSignOut?.addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.reload(); });
-
+    // Input handlers
     nameInput.addEventListener('input', () => {
         if (isPremium && nameInput.value.trim()) showNamePreview(nameInput.value.trim());
     });
 
-    const roomCodeInput = document.getElementById('room-code');
     roomCodeInput.addEventListener('input', (e) => {
         e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     });
@@ -1342,7 +1326,7 @@
     function closeModal() { document.getElementById('rules-modal').classList.remove('visible'); }
     document.getElementById('rules-modal').addEventListener('click', (e) => { if (e.target.id === 'rules-modal') closeModal(); });
 
-    // Create/Join
+    // Create Room
     function createRoom() {
         const name = nameInput.value.trim();
         if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
@@ -1350,11 +1334,10 @@
         hideMessages();
         setLoading('btn-create', true);
         
-        const formattedName = formatPremiumName(name);
         const cosmetics = userProfile?.cosmetics || null;
         const userId = currentUser?.id || null;
         
-        localStorage.setItem('tempPlayerName', formattedName);
+        localStorage.setItem('tempPlayerName', name);
         localStorage.setItem('tempGameType', currentGame.backendType);
         localStorage.setItem('tempGameId', gameId);
         localStorage.setItem('tempIsPremium', isPremium.toString());
@@ -1362,7 +1345,7 @@
         localStorage.setItem('tempUserId', userId || '');
         
         socket.emit('create-room', { 
-            playerName: formattedName, 
+            playerName: name, 
             gameType: currentGame.backendType,
             isPremium: isPremium,
             cosmetics: cosmetics,
@@ -1370,6 +1353,7 @@
         });
     }
 
+    // Join Room
     function joinRoom() {
         const name = nameInput.value.trim();
         const code = roomCodeInput.value.trim();
@@ -1380,11 +1364,10 @@
         hideMessages();
         setLoading('btn-join', true);
         
-        const formattedName = formatPremiumName(name);
         const cosmetics = userProfile?.cosmetics || null;
         const userId = currentUser?.id || null;
         
-        localStorage.setItem('tempPlayerName', formattedName);
+        localStorage.setItem('tempPlayerName', name);
         localStorage.setItem('tempRoomCode', code);
         localStorage.setItem('tempIsPremium', isPremium.toString());
         localStorage.setItem('tempCosmetics', JSON.stringify(cosmetics));
@@ -1392,7 +1375,7 @@
         
         socket.emit('join-room', { 
             roomCode: code, 
-            playerName: formattedName,
+            playerName: name,
             isPremium: isPremium,
             cosmetics: cosmetics,
             userId: userId
@@ -1400,10 +1383,10 @@
     }
 
     // Socket events
-    socket.on('connect', () => console.log('Connected'));
+    socket.on('connect', () => console.log('Connected to server'));
 
     socket.on('room-created', (data) => {
-        showSuccess(`Room created!`);
+        showSuccess('Room created!');
         localStorage.setItem('tempRoomCode', data.roomCode);
         localStorage.setItem('tempIsHost', 'true');
         setTimeout(() => { window.location.href = `waiting-room.html?room=${data.roomCode}`; }, 300);
@@ -1419,21 +1402,55 @@
         setTimeout(() => { window.location.href = `waiting-room.html?room=${data.roomCode}`; }, 300);
     });
 
-    socket.on('error', (data) => { showError(data.message || 'Something went wrong'); setLoading('btn-create', false); setLoading('btn-join', false); });
-    socket.on('join-error', (data) => { showError(data.message || 'Could not join room'); setLoading('btn-join', false); });
+    socket.on('error', (data) => { 
+        showError(data.message || 'Something went wrong'); 
+        setLoading('btn-create', false); 
+        setLoading('btn-join', false); 
+    });
+    
+    socket.on('join-error', (data) => { 
+        showError(data.message || 'Could not join room'); 
+        setLoading('btn-join', false); 
+    });
 
     // Helpers
-    function showError(msg) { const el = document.getElementById('error-message'); el.textContent = msg; el.classList.add('visible'); }
-    function showSuccess(msg) { const el = document.getElementById('success-message'); el.textContent = msg; el.classList.add('visible'); }
-    function hideMessages() { document.getElementById('error-message').classList.remove('visible'); document.getElementById('success-message').classList.remove('visible'); }
-    function setLoading(btnId, loading) { const btn = document.getElementById(btnId); btn.classList.toggle('btn-loading', loading); btn.disabled = loading; }
+    function showError(msg) { 
+        const el = document.getElementById('error-message'); 
+        el.textContent = msg; 
+        el.classList.add('visible'); 
+    }
+    
+    function showSuccess(msg) { 
+        const el = document.getElementById('success-message'); 
+        el.textContent = msg; 
+        el.classList.add('visible'); 
+    }
+    
+    function hideMessages() { 
+        document.getElementById('error-message').classList.remove('visible'); 
+        document.getElementById('success-message').classList.remove('visible'); 
+    }
+    
+    function setLoading(btnId, loading) { 
+        const btn = document.getElementById(btnId); 
+        btn.classList.toggle('btn-loading', loading); 
+        btn.disabled = loading; 
+    }
 
-    nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { roomCodeInput.value.trim() ? joinRoom() : createRoom(); } });
-    roomCodeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') joinRoom(); });
+    // Enter key handlers
+    nameInput.addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') { 
+            roomCodeInput.value.trim() ? joinRoom() : createRoom(); 
+        } 
+    });
+    
+    roomCodeInput.addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') joinRoom(); 
+    });
 
+    // Initialize
     initAuth();
 </script>
 
-    <script src="/header.js"></script>
 </body>
 </html>
