@@ -4515,14 +4515,52 @@ renderFriendCard(f) {
   }
 
   getGameLobbyUrl(game, room) {
-    const urls = {
-      'Spyhunt': '/spyhunt/lobby.html', 'Codenames': '/codenames/lobby.html',
-      'Werewolf': '/werewolf/lobby.html', 'Imposter': '/imposter/lobby.html',
-      'Herd Mentality': '/herd-mentality/lobby.html', 'Kiss Marry Kill': '/kiss-marry-kill/lobby.html',
-      'This or That': '/this-or-that/lobby.html', '21 Questions': '/21-questions/lobby.html',
-      'Sketch & Guess': '/sketch/lobby.html', 'Trivia': '/trivia/lobby.html'
+    // Map game names to their backend game types
+    const gameTypes = {
+      'Spyhunt': 'spyfall', 'Spy Hunt': 'spyfall', 'spyfall': 'spyfall',
+      'Codenames': 'codenames', 'Codewords': 'codenames',
+      'Werewolf': 'werewolf', 'Mafia': 'werewolf',
+      'Imposter': 'imposter',
+      'Herd Mentality': 'herd-mentality', 'Think Alike': 'herd-mentality',
+      'Kiss Marry Kill': 'game-kmk',
+      'This or That': 'this-or-that-party',
+      '21 Questions': 'game-21-questions',
+      'Sketch & Guess': 'sketch-guess',
+      'Trivia': 'trivia-royale', 'Trivia Royale': 'trivia-royale',
+      'Categories': 'categories',
+      'Word Bomb': 'word-bomb',
+      'NPAT': 'npat',
+      'Fools Gold': 'fools-gold',
+      'Hot Takes': 'hot-takes-party',
+      'Never Ever': 'never-ever-party',
+      'Bet or Bluff': 'bet-or-bluff'
     };
-    return `${urls[game] || '/lobby.html'}?join=${room}`;
+    
+    // Set localStorage for waiting-room
+    const playerName = this.userProfile?.display_name || this.userProfile?.gamer_tag || 'Player';
+    const gameType = gameTypes[game] || 'spyfall';
+    
+    localStorage.setItem('tempPlayerName', playerName);
+    localStorage.setItem('tempGameType', gameType);
+    localStorage.setItem('tempRoomCode', room);
+    localStorage.setItem('tempIsHost', 'false');
+    localStorage.setItem('tempIsPremium', this.userProfile?.is_premium ? 'true' : 'false');
+    localStorage.setItem('tempUserId', this.currentUser?.id || '');
+    
+    // Set cosmetics if available
+    if (this.userProfile) {
+      const cosmetics = {
+        badge_id: this.userProfile.badge_id,
+        name_color: this.userProfile.name_color,
+        name_effect: this.userProfile.name_effect,
+        avatar_frame: this.userProfile.avatar_frame,
+        entrance_effect: this.userProfile.entrance_effect
+      };
+      localStorage.setItem('tempCosmetics', JSON.stringify(cosmetics));
+    }
+    
+    // Go directly to waiting room
+    return `/waiting-room.html?room=${room}`;
   }
 
   timeAgo(date) {
