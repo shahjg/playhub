@@ -8,7 +8,6 @@
     <meta name="description" content="Waiting room - invite friends with your room code!">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0a0a0f">
-    <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -290,7 +289,32 @@
     <div class="grid-overlay"></div>
 </div>
 
-<div id="site-header"></div>
+<header>
+    <nav class="nav-inner">
+        <div class="nav-left">
+            <a href="/squad-games.html" class="back-btn" id="leave-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Leave</span>
+            </a>
+        </div>
+        <a href="/" class="header-logo">THEGAMING.CO</a>
+        <div class="nav-right-wrapper">
+            <div class="header-actions">
+                <div class="user-pill-skeleton" id="auth-skeleton"></div>
+                <div class="nav-right-logged-out"><a href="login.html" class="auth-link">Sign In</a></div>
+                <div class="nav-right-logged-in">
+                    <div class="user-menu-wrapper">
+                        <button class="user-pill" type="button" id="user-menu-button"><span class="user-pill-label" id="header-username-label">Player</span></button>
+                        <div class="user-menu" id="user-menu" role="menu">
+                            <a href="profile.html" class="user-menu-item" role="menuitem"><span>Profile</span></a>
+                            <button type="button" class="user-menu-item" id="user-menu-signout" role="menuitem"><span>Sign Out</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
 
 <main>
     <div class="game-header">
@@ -402,12 +426,53 @@
     </div>
 </footer>
 
-<script src="/header.js"></script>
 <script>
     const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
     const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Auth handled by header.js - use window.supabaseClient when needed
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    (function primeHeaderFromCache() {
+        try {
+            const cachedLabel = localStorage.getItem('tgco_header_label');
+            if (cachedLabel) { headerUsernameLabel.textContent = cachedLabel; if (authSkeleton) authSkeleton.style.display = 'none'; if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important'); }
+            else { if (authSkeleton) authSkeleton.style.display = 'none'; if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); }
+        } catch (e) { if (authSkeleton) authSkeleton.style.display = 'none'; if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); }
+    })();
+
+    function updateAuthUI(user) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (user) { if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important'); if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important'); }
+        else { if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important'); }
+    }
+
+    async function loadSessionAndProfile() {
+        const { data } = await supabaseClient.auth.getSession();
+        const user = data?.session?.user ?? null;
+        updateAuthUI(user);
+        if (user) {
+            const { data: profile } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
+            if (profile) { const name = profile.display_name || profile.gamer_tag || user.email.split('@')[0]; headerUsernameLabel.textContent = name.length > 16 ? name.slice(0,15)+'…' : name; localStorage.setItem('tgco_header_label', headerUsernameLabel.textContent); }
+        }
+    }
+    loadSessionAndProfile();
+    supabaseClient.auth.onAuthStateChange((_event, session) => { updateAuthUI(session?.user); if (session?.user) loadSessionAndProfile(); });
+
+    let userMenuOpen = false;
+    if (userMenuButton && userMenu) {
+        userMenuButton.addEventListener('click', (e) => { e.stopPropagation(); userMenuOpen = !userMenuOpen; userMenu.classList.toggle('open', userMenuOpen); });
+        document.addEventListener('click', () => { userMenuOpen = false; userMenu.classList.remove('open'); });
+    }
+    if (userMenuSignOut) { userMenuSignOut.addEventListener('click', async () => { localStorage.removeItem('tgco_header_label'); await supabaseClient.auth.signOut(); window.location.href = '/'; }); }
 
     const GAMES = {
         'spyfall': { displayName: 'SPY HUNT', backendType: 'spyfall', theme: 'theme-spyfall', minPlayers: 4, maxPlayers: 20, categoryLabel: 'Location Pack', categories: [{value:'random',text:'🎲 Random'},{value:'classic',text:'🏛️ Classic'},{value:'modern',text:'🏙️ Modern'},{value:'adult',text:'🔞 Adult'},{value:'marvel',text:'🦸 Marvel'},{value:'dc',text:'🦇 DC'},{value:'movies',text:'🎬 Movies'},{value:'medieval',text:'⚔️ Medieval'},{value:'websites',text:'🌐 Websites'},{value:'popculture',text:'📺 Pop Culture'},{value:'anime',text:'🎌 Anime'},{value:'horror',text:'🔪 Horror'},{value:'realitytv',text:'📺 Reality TV'},{value:'videogames',text:'🎮 Video Games'},{value:'bollywood',text:'🇮🇳 Bollywood'}], showTwoSpies: true, showLocationPreview: true, howToPlay: '<h3>Setup</h3><p>One player is the <strong>Spy</strong>. Everyone else sees a location.</p><h3>Play</h3><p>Ask questions to find the Spy without revealing the location!</p><h3>Win</h3><ul><li>Players win by voting out the Spy</li><li>Spy wins by guessing location or surviving</li></ul>', gameFile: '/spyfall.html' },
@@ -451,10 +516,15 @@
     let currentRoom = null;
     let myPlayerId = null;
     let confirmCallback = null;
+    
+    // ========== FIX: Increased retries and added delay ==========
     let joinAttempts = 0;
-    const maxJoinAttempts = 3;
+    const maxJoinAttempts = 8;
 
-    if (!roomCode || !playerName) { window.location.href = `/lobby.html?game=${gameType}`; }
+    if (!roomCode || !playerName) { 
+        console.error('[Init] Missing roomCode or playerName, redirecting to lobby');
+        window.location.href = `/lobby.html?game=${gameType}`; 
+    }
 
     document.body.className = gameConfig.theme;
     document.getElementById('room-code').textContent = roomCode || '------';
@@ -463,14 +533,33 @@
     document.getElementById('leave-btn').href = (gameConfig.isPartyGame || false) ? '/party-games.html' : '/squad-games.html';
 
     function attemptJoinRoom() {
-        if (!roomCode || !playerName) return;
+        if (!roomCode || !playerName) {
+            console.error('[Join] Cannot join - missing data:', { roomCode, playerName });
+            return;
+        }
         joinAttempts++;
+        console.log(`[Join] Attempt ${joinAttempts}/${maxJoinAttempts} for room ${roomCode} as "${playerName}"`);
         socket.emit('rejoin-room', { roomCode, playerName, isPremium, cosmetics: myCosmetics, userId: myUserId });
     }
 
-    socket.on('connect', () => { joinAttempts = 0; attemptJoinRoom(); });
-    socket.on('reconnect', () => { joinAttempts = 0; attemptJoinRoom(); });
-    socket.on('room-joined', (data) => { joinAttempts = 0; handleRoomUpdate(data.room); });
+    socket.on('connect', () => { 
+        console.log('[Socket] Connected to server');
+        joinAttempts = 0; 
+        // Small delay to ensure connection is stable
+        setTimeout(attemptJoinRoom, 300);
+    });
+    
+    socket.on('reconnect', () => { 
+        console.log('[Socket] Reconnected');
+        joinAttempts = 0; 
+        setTimeout(attemptJoinRoom, 300);
+    });
+    
+    socket.on('room-joined', (data) => { 
+        console.log('[Join] Successfully joined room:', data.roomCode);
+        joinAttempts = 0; 
+        handleRoomUpdate(data.room); 
+    });
     socket.on('room-state', (data) => { if (data.success) handleRoomUpdate(data.room); });
     socket.on('player-joined', (data) => handleRoomUpdate(data.room));
     socket.on('player-disconnected', (data) => handleRoomUpdate(data.room));
@@ -485,10 +574,26 @@
         else { window.location.href = `/game-room-error.html?reason=UnknownGame&game=${gameTypeFromData}`; }
     });
 
+    // ========== FIX: Exponential backoff on retries ==========
     socket.on('error', (data) => {
-        if (data.message === 'Room not found' && joinAttempts < maxJoinAttempts) { setTimeout(attemptJoinRoom, 500); }
-        else if (data.message === 'Room not found') { showConfirm('Room Expired', 'This room no longer exists.', () => { localStorage.removeItem('tempRoomCode'); window.location.href = `/lobby.html?game=${gameType}`; }, false); }
-        else { showConfirm('Error', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false); }
+        console.log(`[Socket] Error: "${data.message}" (attempt ${joinAttempts}/${maxJoinAttempts})`);
+        
+        if (data.message === 'Room not found' && joinAttempts < maxJoinAttempts) { 
+            // Exponential backoff: 500ms, 1000ms, 1500ms, 2000ms, etc (max 4s)
+            const delay = Math.min(500 * joinAttempts, 4000);
+            console.log(`[Join] Room not found, retrying in ${delay}ms...`);
+            setTimeout(attemptJoinRoom, delay); 
+        }
+        else if (data.message === 'Room not found') { 
+            console.error('[Join] Room not found after all attempts');
+            showConfirm('Room Not Found', 'This room doesn\'t exist or has expired.', () => { 
+                localStorage.removeItem('tempRoomCode'); 
+                window.location.href = `/lobby.html?game=${gameType}`; 
+            }, false); 
+        }
+        else { 
+            showConfirm('Error', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false); 
+        }
     });
     socket.on('join-error', (data) => { showConfirm('Cannot Join', data.message, () => window.location.href = `/lobby.html?game=${gameType}`, false); });
 
