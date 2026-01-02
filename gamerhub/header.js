@@ -11,74 +11,38 @@
     const CACHE_LABEL = 'tgco_header_label';
     const CACHE_FULL = 'tgco_header_full';
 
-    // ========================================
-    // LOAD DEPENDENCIES
-    // ========================================
-    
+    // Load social system (friends button, sidebar)
     function loadSocialSystem() {
-        // Load social.css if not already loaded
         if (!document.querySelector('link[href="/social.css"]')) {
-            const socialCSS = document.createElement('link');
-            socialCSS.rel = 'stylesheet';
-            socialCSS.href = '/social.css';
-            document.head.appendChild(socialCSS);
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = '/social.css';
+            document.head.appendChild(css);
         }
-        
-        // Load social.js if not already loaded  
         if (!document.querySelector('script[src="/social.js"]')) {
-            const socialJS = document.createElement('script');
-            socialJS.src = '/social.js';
-            socialJS.defer = true;
-            document.body.appendChild(socialJS);
+            const js = document.createElement('script');
+            js.src = '/social.js';
+            js.defer = true;
+            document.body.appendChild(js);
         }
     }
 
-    // ========================================
-    // AUTO-DETECT PAGE TYPE FOR BACK BUTTON
-    // ========================================
-    
-    function getPageInfo() {
+    // Check if this is a game page that needs a back button
+    function needsBackButton() {
         const path = window.location.pathname;
-        const container = document.getElementById('site-header');
-        
-        if (container) {
-            if (container.hasAttribute('data-no-back')) {
-                return { showBack: false };
-            }
-            const customUrl = container.getAttribute('data-back-url');
-            const customText = container.getAttribute('data-back-text');
-            if (customUrl) {
-                return { showBack: true, backUrl: customUrl, backText: customText || 'Back' };
-            }
-        }
-        
-        if (path.includes('/games/solo/')) {
-            return { showBack: true, backUrl: '/solo', backText: 'Solo' };
-        }
-        if (path.includes('/games/duos/')) {
-            return { showBack: true, backUrl: '/duos', backText: 'Duos' };
-        }
-        if (path.includes('/games/squad/')) {
-            return { showBack: true, backUrl: '/squad-games', backText: 'Squad' };
-        }
-        if (path.includes('/games/party/')) {
-            return { showBack: true, backUrl: '/party-games', backText: 'Party' };
-        }
-        
-        return { showBack: false };
+        return path.includes('/games/');
     }
 
-    // ========================================
-    // GENERATE HEADER HTML
-    // ========================================
-    
-    function generateHeaderHTML(pageInfo) {
-        const backButtonHTML = pageInfo.showBack ? `
-            <a href="${pageInfo.backUrl}" class="back-btn">
+    // Generate header HTML
+    function generateHeaderHTML() {
+        const showBack = needsBackButton();
+        
+        const backButtonHTML = showBack ? `
+            <a href="javascript:history.back()" class="back-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>
-                <span>${pageInfo.backText}</span>
+                <span>Back</span>
             </a>
         ` : '';
 
@@ -100,15 +64,6 @@
                             </div>
                             
                             <div class="nav-right-logged-in">
-                                <!-- Friends Button -->
-                                <button class="friends-btn" id="friends-btn" type="button" aria-label="Friends">
-                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                                    </svg>
-                                    <span class="notification-dot" id="friends-notification-dot"></span>
-                                </button>
-                                
-                                <!-- User Menu -->
                                 <div class="user-menu-wrapper">
                                     <button class="user-pill" type="button" id="user-menu-button" aria-haspopup="true" aria-expanded="false">
                                         <span class="user-pill-label" id="header-username-label">P</span>
@@ -128,26 +83,13 @@
         `;
     }
 
-    // ========================================
-    // INJECT HEADER
-    // ========================================
-    
     function injectHeader() {
         const container = document.getElementById('site-header');
-        if (!container) {
-            console.warn('Header: #site-header container not found');
-            return false;
-        }
-        
-        const pageInfo = getPageInfo();
-        container.innerHTML = generateHeaderHTML(pageInfo);
+        if (!container) return false;
+        container.innerHTML = generateHeaderHTML();
         return true;
     }
 
-    // ========================================
-    // AUTH UI MANAGEMENT
-    // ========================================
-    
     let elements = {};
     
     function cacheElements() {
@@ -201,10 +143,6 @@
         } catch (e) {}
     }
 
-    // ========================================
-    // PRIME FROM CACHE (Instant UI)
-    // ========================================
-    
     function primeFromCache() {
         try {
             const cachedLabel = localStorage.getItem(CACHE_LABEL);
@@ -220,63 +158,54 @@
                 return true;
             }
         } catch (e) {}
-        
-        // Not cached - show skeleton until auth loads
-        if (elements.skeleton) elements.skeleton.style.display = 'block';
         return false;
     }
 
-    // ========================================
-    // DROPDOWN MENU
-    // ========================================
-    
     let menuOpen = false;
     
     function setupMenu() {
         if (!elements.menuButton || !elements.menu) return;
         
-        function setMenuOpen(open) {
-            menuOpen = open;
-            if (open) {
-                elements.menu.classList.add('open');
-                elements.menuButton.setAttribute('aria-expanded', 'true');
-            } else {
-                elements.menu.classList.remove('open');
-                elements.menuButton.setAttribute('aria-expanded', 'false');
-            }
-        }
-        
         elements.menuButton.addEventListener('click', (e) => {
             e.stopPropagation();
-            setMenuOpen(!menuOpen);
+            menuOpen = !menuOpen;
+            elements.menu.classList.toggle('open', menuOpen);
+            elements.menuButton.setAttribute('aria-expanded', menuOpen);
         });
         
         document.addEventListener('click', () => {
-            if (menuOpen) setMenuOpen(false);
+            if (menuOpen) {
+                menuOpen = false;
+                elements.menu.classList.remove('open');
+                elements.menuButton.setAttribute('aria-expanded', 'false');
+            }
         });
         
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && menuOpen) setMenuOpen(false);
+            if (e.key === 'Escape' && menuOpen) {
+                menuOpen = false;
+                elements.menu.classList.remove('open');
+                elements.menuButton.setAttribute('aria-expanded', 'false');
+            }
         });
     }
 
-    // ========================================
-    // SUPABASE AUTH
-    // ========================================
-    
     async function initSupabaseAuth() {
-        // Wait for Supabase if not loaded
         if (typeof supabase === 'undefined') {
-            await loadSupabase();
+            await new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@supabase/supabase-js@2';
+                script.onload = resolve;
+                script.onerror = resolve;
+                document.head.appendChild(script);
+            });
         }
         
         if (typeof supabase === 'undefined') {
-            console.warn('Header: Supabase not available');
             updateAuthUI(false);
             return;
         }
         
-        // Create or reuse client
         if (!window.supabaseClient) {
             window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
@@ -284,15 +213,11 @@
         const client = window.supabaseClient;
         
         try {
-            const { data, error } = await client.auth.getSession();
-            if (error) throw error;
-            
+            const { data } = await client.auth.getSession();
             const user = data?.session?.user;
             
             if (user) {
                 updateAuthUI(true);
-                
-                // Fetch profile for display name
                 const { data: profile } = await client.from('profiles')
                     .select('display_name, gamer_tag')
                     .eq('id', user.id)
@@ -304,79 +229,37 @@
                 updateAuthUI(false);
             }
         } catch (err) {
-            console.warn('Header auth error:', err);
             updateAuthUI(false);
         }
         
-        // Listen for auth changes
-        client.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_OUT') {
-                updateAuthUI(false);
-            } else if (event === 'SIGNED_IN' && session?.user) {
-                updateAuthUI(true);
-                // Re-fetch profile
-                initSupabaseAuth();
-            }
+        client.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') updateAuthUI(false);
+            if (event === 'SIGNED_IN') initSupabaseAuth();
         });
         
-        // Setup sign out
         if (elements.signoutBtn) {
             elements.signoutBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                try {
-                    localStorage.removeItem(CACHE_LABEL);
-                    localStorage.removeItem(CACHE_FULL);
-                } catch (e) {}
+                localStorage.removeItem(CACHE_LABEL);
+                localStorage.removeItem(CACHE_FULL);
                 await client.auth.signOut();
                 window.location.href = '/';
             });
         }
     }
-    
-    function loadSupabase() {
-        return new Promise((resolve) => {
-            if (typeof supabase !== 'undefined') {
-                resolve();
-                return;
-            }
-            
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@supabase/supabase-js@2';
-            script.onload = () => resolve();
-            script.onerror = () => resolve();
-            document.head.appendChild(script);
-        });
-    }
 
-    // ========================================
-    // INITIALIZE
-    // ========================================
-    
     function init() {
-        // Inject header HTML
         if (!injectHeader()) return;
-        
-        // Cache DOM elements
         cacheElements();
-        
-        // Prime from localStorage for instant UI
         primeFromCache();
-        
-        // Setup dropdown menu
         setupMenu();
-        
-        // Initialize auth
         initSupabaseAuth();
-        
-        // Load social system (friends panel)
         loadSocialSystem();
     }
     
-    // Run when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
-    
 })();
