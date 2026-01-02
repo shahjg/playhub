@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sudoku – Free Daily Puzzles | TheGaming.co</title>
+    <meta name="description" content="Play free Sudoku puzzles. Easy to Expert difficulty with daily challenges and global leaderboards.">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#6366f1;--accent-dark:#4f46e5;--accent-light:#e0e7ff;
+            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;
+            --gold:#ffd700;--dark:#0a0a0f;--text-dark:#1a1a2e;--text-muted:#6b7280;
+        }
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 50%,#eef2ff 100%);color:var(--text-dark);min-height:100vh;display:flex;flex-direction:column}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        a{color:inherit;text-decoration:none}
+
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;padding:0 18px;background:rgba(10,10,15,0.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,0.06)}
+        .nav-inner{width:100%;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px}
+        .nav-left{justify-self:flex-start}
+        .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;text-transform:uppercase;transition:all 0.2s}
+        .back-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+        .back-btn svg{width:16px;height:16px}
+        .header-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;color:#fff;position:relative;justify-self:center}
+        .header-logo::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--blue),var(--purple))}
+        .nav-right-wrapper{justify-self:flex-end}
+        .header-actions{display:flex;align-items:center;gap:16px}
+        .nav-right-logged-out,.nav-right-logged-in{display:none!important}
+        .auth-link{font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.75);text-transform:uppercase;height:36px;display:inline-flex;align-items:center}
+        .user-menu-wrapper{position:relative}
+        .user-pill{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.04);cursor:pointer;color:#fff;font-family:inherit}
+        .user-pill-label{font-size:0.85rem;font-weight:600}
+        .user-pill-skeleton{width:100px;height:36px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,0.04),rgba(255,255,255,0.08),rgba(255,255,255,0.04));background-size:200%;animation:shimmer 1.5s infinite}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        .user-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:170px;padding:6px;border-radius:14px;background:rgba(10,10,15,0.97);border:1px solid rgba(255,255,255,0.14);box-shadow:0 18px 55px rgba(0,0,0,0.8);opacity:0;transform:translateY(-4px);pointer-events:none;transition:all 0.15s;z-index:120}
+        .user-menu.open{opacity:1;transform:translateY(0);pointer-events:auto}
+        .user-menu-item{width:100%;display:flex;align-items:center;padding:8px 10px;border-radius:9px;font-size:0.85rem;color:rgba(255,255,255,0.9);background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
+        .user-menu-item:hover{background:rgba(255,255,255,0.08)}
+
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
+        .game-hero{background:radial-gradient(circle at 10% 0%,#312e81 0%,#1e1b4b 50%,#0f0d24 100%);padding:50px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(99,102,241,0.3) 0%,transparent 55%),radial-gradient(circle at 75% 75%,rgba(79,70,229,0.2) 0%,transparent 55%)}
+        .game-hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .game-icon{width:70px;height:70px;margin:0 auto 20px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        .game-hero-title{font-size:clamp(3rem,8vw,4.5rem);line-height:0.95;margin-bottom:10px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .game-hero-desc{font-size:1rem;color:rgba(255,255,255,0.7);line-height:1.6}
+
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px 60px}
+        .game-container{width:100%;max-width:500px;display:flex;flex-direction:column;gap:20px}
+
+        .difficulty-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        .diff-btn{padding:10px 18px;border-radius:50px;background:#fff;border:2px solid rgba(99,102,241,0.2);font-size:0.8rem;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all 0.2s;text-transform:uppercase}
+        .diff-btn:hover{color:var(--accent);border-color:var(--accent)}
+        .diff-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .diff-btn.daily{background:linear-gradient(135deg,var(--gold),#fbbf24);color:#000;border-color:var(--gold)}
+
+        .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        .stat-card{background:#fff;border:2px solid rgba(99,102,241,0.15);border-radius:16px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(99,102,241,0.08)}
+        .stat-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--accent)}
+        .stat-value.errors{color:#ef4444}
+
+        .game-board{background:#fff;border-radius:24px;border:3px solid rgba(99,102,241,0.2);padding:24px;box-shadow:0 8px 30px rgba(99,102,241,0.12)}
+        .sudoku-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;background:rgba(99,102,241,0.2);padding:3px;border-radius:12px;max-width:360px;margin:0 auto}
+        .sudoku-cell{aspect-ratio:1;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;transition:all 0.1s;user-select:none;position:relative}
+        .sudoku-cell:nth-child(3n){border-right:3px solid rgba(99,102,241,0.4)}
+        .sudoku-cell:nth-child(9n){border-right:none}
+        .sudoku-cell:nth-child(n+19):nth-child(-n+27),.sudoku-cell:nth-child(n+46):nth-child(-n+54){border-bottom:3px solid rgba(99,102,241,0.4)}
+        .sudoku-cell.given{color:var(--text-dark);font-weight:700}
+        .sudoku-cell.user{color:var(--accent)}
+        .sudoku-cell.selected{background:rgba(99,102,241,0.15);box-shadow:inset 0 0 0 2px var(--accent)}
+        .sudoku-cell.highlighted{background:rgba(99,102,241,0.08)}
+        .sudoku-cell.same-number{background:rgba(99,102,241,0.12)}
+        .sudoku-cell.error{background:rgba(239,68,68,0.2);color:#ef4444}
+        .sudoku-cell .notes{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);font-size:0.45rem;color:var(--text-muted);font-family:'Inter',sans-serif}
+        .sudoku-cell .notes span{display:flex;align-items:center;justify-content:center}
+
+        .number-pad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:360px;margin:16px auto 0}
+        .num-btn{aspect-ratio:1.2;border-radius:12px;background:#fff;border:2px solid rgba(99,102,241,0.15);font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--text-dark);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+        .num-btn:hover{background:rgba(99,102,241,0.1);border-color:var(--accent)}
+        .num-btn:active{transform:scale(0.95)}
+        .num-btn.action{font-size:0.7rem;font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase}
+        .num-btn.action svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+        .num-btn.notes-active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+        .complete-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .complete-overlay.show{display:flex}
+        .complete-modal{background:#fff;border-radius:24px;padding:40px;text-align:center;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+        .complete-icon{font-size:4rem;margin-bottom:16px}
+        .complete-title{font-size:2rem;letter-spacing:3px;color:var(--accent);margin-bottom:8px}
+        .complete-time{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--accent);margin:16px 0}
+        .complete-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+        .complete-stat{background:rgba(99,102,241,0.08);border-radius:12px;padding:14px}
+        .complete-stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--accent-dark)}
+        .complete-stat-label{font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+        .new-best{color:var(--gold);font-weight:700;margin-bottom:12px}
+        .btn{padding:14px 28px;border-radius:50px;border:none;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.3s;text-transform:uppercase;letter-spacing:1px;width:100%;margin-bottom:10px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 6px 20px rgba(99,102,241,0.3)}
+        .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(99,102,241,0.3)}
+
+        .leaderboard-section{background:#fff;border:2px solid rgba(99,102,241,0.2);border-radius:20px;padding:24px;box-shadow:0 8px 30px rgba(99,102,241,0.12)}
+        .lb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid rgba(99,102,241,0.15);flex-wrap:wrap;gap:12px}
+        .lb-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px}
+        .lb-tabs{display:flex;gap:8px;background:rgba(99,102,241,0.08);padding:4px;border-radius:12px}
+        .lb-tab{padding:8px 16px;border-radius:8px;font-size:0.8rem;font-weight:600;text-transform:uppercase;cursor:pointer;color:var(--text-muted);background:transparent;border:none;transition:all 0.2s}
+        .lb-tab:hover{color:var(--accent)}
+        .lb-tab.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(99,102,241,0.15)}
+        .lb-list{display:flex;flex-direction:column;gap:8px}
+        .lb-row{display:flex;align-items:center;gap:15px;padding:12px 16px;background:rgba(99,102,241,0.05);border-radius:12px;transition:all 0.2s}
+        .lb-row:hover{background:rgba(99,102,241,0.1)}
+        .lb-row.top-1{background:linear-gradient(90deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05));border:2px solid rgba(255,215,0,0.4)}
+        .lb-row.top-2{background:linear-gradient(90deg,rgba(192,192,192,0.12),rgba(192,192,192,0.04));border:2px solid rgba(192,192,192,0.3)}
+        .lb-row.top-3{background:linear-gradient(90deg,rgba(205,127,50,0.12),rgba(205,127,50,0.04));border:2px solid rgba(205,127,50,0.3)}
+        .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;width:35px;text-align:center;color:var(--text-muted)}
+        .lb-row.top-1 .lb-rank{color:#ffd700}
+        .lb-row.top-2 .lb-rank{color:#c0c0c0}
+        .lb-row.top-3 .lb-rank{color:#cd7f32}
+        .lb-name{flex:1;font-weight:600;font-size:0.9rem}
+        .lb-score{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--accent)}
+        .lb-empty{text-align:center;padding:30px;color:var(--text-muted);font-size:0.9rem}
+
+        @media(max-width:500px){
+            .sudoku-cell{font-size:1.1rem}
+            .sudoku-cell .notes{font-size:0.35rem}
+            .num-btn{font-size:1.2rem}
+            .difficulty-selector{gap:6px}
+            .diff-btn{padding:8px 14px;font-size:0.75rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main>
+        <section class="game-hero">
+            <div class="game-hero-content">
+                <div class="game-icon">
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="8" width="48" height="48" rx="6" fill="none" stroke="#6366f1" stroke-width="3"/>
+                        <line x1="24" y1="8" x2="24" y2="56" stroke="#6366f1" stroke-width="2"/>
+                        <line x1="40" y1="8" x2="40" y2="56" stroke="#6366f1" stroke-width="2"/>
+                        <line x1="8" y1="24" x2="56" y2="24" stroke="#6366f1" stroke-width="2"/>
+                        <line x1="8" y1="40" x2="56" y2="40" stroke="#6366f1" stroke-width="2"/>
+                        <text x="16" y="20" fill="#e0e7ff" font-family="sans-serif" font-size="10" font-weight="bold">5</text>
+                        <text x="32" y="36" fill="#e0e7ff" font-family="sans-serif" font-size="10" font-weight="bold">9</text>
+                        <text x="48" y="52" fill="#e0e7ff" font-family="sans-serif" font-size="10" font-weight="bold">1</text>
+                    </svg>
+                </div>
+                <h1 class="game-hero-title">SUDOKU</h1>
+                <p class="game-hero-desc">Fill the grid so every row, column, and 3×3 box contains 1-9</p>
+            </div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="difficulty-selector">
+                    <button class="diff-btn daily active" data-diff="daily">Daily</button>
+                    <button class="diff-btn" data-diff="easy">Easy</button>
+                    <button class="diff-btn" data-diff="medium">Medium</button>
+                    <button class="diff-btn" data-diff="hard">Hard</button>
+                    <button class="diff-btn" data-diff="expert">Expert</button>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-card"><div class="stat-label">Time</div><div class="stat-value" id="timer">0:00</div></div>
+                    <div class="stat-card"><div class="stat-label">Errors</div><div class="stat-value errors" id="errors">0</div></div>
+                    <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value" id="best">--:--</div></div>
+                </div>
+
+                <div class="game-board">
+                    <div class="sudoku-grid" id="sudoku-grid"></div>
+                    <div class="number-pad">
+                        <button class="num-btn" data-num="1">1</button>
+                        <button class="num-btn" data-num="2">2</button>
+                        <button class="num-btn" data-num="3">3</button>
+                        <button class="num-btn" data-num="4">4</button>
+                        <button class="num-btn" data-num="5">5</button>
+                        <button class="num-btn" data-num="6">6</button>
+                        <button class="num-btn" data-num="7">7</button>
+                        <button class="num-btn" data-num="8">8</button>
+                        <button class="num-btn" data-num="9">9</button>
+                        <button class="num-btn action" id="notes-btn"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="num-btn action" id="erase-btn"><svg viewBox="0 0 24 24"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg></button>
+                        <button class="num-btn action" id="undo-btn"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+                        <button class="num-btn action" id="hint-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+                        <button class="num-btn action" id="new-btn">NEW</button>
+                    </div>
+                </div>
+
+                <div class="leaderboard-section">
+                    <div class="lb-header">
+                        <h3 class="lb-title">🏆 Leaderboard</h3>
+                        <div class="lb-tabs">
+                            <button class="lb-tab active" data-tab="global">Global</button>
+                            <button class="lb-tab" data-tab="today">Today</button>
+                            <button class="lb-tab" data-tab="friends">Friends</button>
+                        </div>
+                    </div>
+                    <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="complete-overlay" id="complete-overlay">
+        <div class="complete-modal">
+            <div class="complete-icon">🎉</div>
+            <h2 class="complete-title">PUZZLE COMPLETE!</h2>
+            <div class="new-best" id="new-best" style="display:none">🏆 NEW PERSONAL BEST!</div>
+            <div class="complete-time" id="complete-time">0:00</div>
+            <div class="complete-stats">
+                <div class="complete-stat"><div class="complete-stat-value" id="complete-errors">0</div><div class="complete-stat-label">Errors</div></div>
+                <div class="complete-stat"><div class="complete-stat-value" id="complete-difficulty">Easy</div><div class="complete-stat-label">Difficulty</div></div>
+            </div>
+            <button class="btn btn-primary" id="next-puzzle-btn">NEXT PUZZLE</button>
+            <button class="btn btn-secondary" id="share-btn">SHARE RESULT</button>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const DIFFICULTY={easy:35,medium:45,hard:52,expert:58,daily:45};
+let currentDifficulty='daily',solution=[],puzzle=[],userBoard=[],notes=[],selectedCell=null,notesMode=false,errors=0,timerInterval=null,seconds=0,gameComplete=false,history=[];
+let currentUserId=null,personalBest={},friendIds=[],currentTab='global';
+const grid=document.getElementById('sudoku-grid'),timerEl=document.getElementById('timer'),errorsEl=document.getElementById('errors'),bestEl=document.getElementById('best'),notesBtn=document.getElementById('notes-btn'),completeOverlay=document.getElementById('complete-overlay');
+
+async function loadAuth(){const{data}=await supabaseClient.auth.getSession();const user=data?.session?.user;document.getElementById('auth-skeleton').style.display='none';if(user){currentUserId=user.id;document.querySelector('.nav-right-logged-out').style.setProperty('display','none','important');document.querySelector('.nav-right-logged-in').style.setProperty('display','flex','important');const{data:p}=await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id',user.id).single();if(p)document.getElementById('header-username-label').textContent=(p.display_name||p.gamer_tag||'Player').slice(0,16);loadPersonalBests();loadFriends()}else{document.querySelector('.nav-right-logged-out').style.setProperty('display','flex','important');document.querySelector('.nav-right-logged-in').style.setProperty('display','none','important')}fetchLeaderboard('global')}
+loadAuth();
+async function loadPersonalBests(){if(!currentUserId)return;const{data}=await supabaseClient.from('solo_scores').select('game_id,score').eq('user_id',currentUserId).like('game_id','sudoku-%').order('score',{ascending:true});if(data)data.forEach(d=>{const diff=d.game_id.replace('sudoku-','');if(!personalBest[diff]||d.score<personalBest[diff])personalBest[diff]=d.score});updateBest()}
+function updateBest(){const b=personalBest[currentDifficulty];bestEl.textContent=b?formatTime(b):'--:--'}
+async function loadFriends(){if(!currentUserId)return;try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}}
+let userMenuOpen=false;document.getElementById('user-menu-button')?.addEventListener('click',e=>{e.stopPropagation();userMenuOpen=!userMenuOpen;document.getElementById('user-menu').classList.toggle('open',userMenuOpen)});document.addEventListener('click',()=>{userMenuOpen=false;document.getElementById('user-menu')?.classList.remove('open')});document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
+
+function generateSudoku(){solution=Array(9).fill(null).map(()=>Array(9).fill(0));fillGrid(solution);puzzle=solution.map(r=>[...r]);removeNumbers(puzzle,DIFFICULTY[currentDifficulty]);userBoard=puzzle.map(r=>[...r]);notes=Array(81).fill(null).map(()=>new Set());history=[]}
+function fillGrid(g){const nums=[1,2,3,4,5,6,7,8,9];for(let i=0;i<81;i++){const r=Math.floor(i/9),c=i%9;if(g[r][c]===0){shuffle(nums);for(const n of nums){if(isValid(g,r,c,n)){g[r][c]=n;if(fillGrid(g))return true;g[r][c]=0}}return false}}return true}
+function removeNumbers(g,count){let removed=0;const pos=[];for(let i=0;i<81;i++)pos.push(i);shuffle(pos);for(const p of pos){if(removed>=count)break;const r=Math.floor(p/9),c=p%9;if(g[r][c]!==0){g[r][c]=0;removed++}}}
+function isValid(g,r,c,n){for(let i=0;i<9;i++)if(g[r][i]===n||g[i][c]===n)return false;const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;for(let i=0;i<3;i++)for(let j=0;j<3;j++)if(g[br+i][bc+j]===n)return false;return true}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function generateDailyPuzzle(){const today=new Date().toISOString().split('T')[0],seed=hashCode(today),rng=seededRandom(seed);solution=Array(9).fill(null).map(()=>Array(9).fill(0));fillGridSeeded(solution,rng);puzzle=solution.map(r=>[...r]);removeNumbersSeeded(puzzle,DIFFICULTY.daily,rng);userBoard=puzzle.map(r=>[...r]);notes=Array(81).fill(null).map(()=>new Set());history=[]}
+function hashCode(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
+function seededRandom(s){return()=>{s=(s*9301+49297)%233280;return s/233280}}
+function fillGridSeeded(g,rng){const nums=[1,2,3,4,5,6,7,8,9];for(let i=0;i<81;i++){const r=Math.floor(i/9),c=i%9;if(g[r][c]===0){shuffleSeeded(nums,rng);for(const n of nums){if(isValid(g,r,c,n)){g[r][c]=n;if(fillGridSeeded(g,rng))return true;g[r][c]=0}}return false}}return true}
+function removeNumbersSeeded(g,count,rng){let removed=0;const pos=[];for(let i=0;i<81;i++)pos.push(i);shuffleSeeded(pos,rng);for(const p of pos){if(removed>=count)break;const r=Math.floor(p/9),c=p%9;if(g[r][c]!==0){g[r][c]=0;removed++}}}
+function shuffleSeeded(a,rng){for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+
+function renderGrid(){grid.innerHTML='';for(let i=0;i<81;i++){const r=Math.floor(i/9),c=i%9,cell=document.createElement('div');cell.className='sudoku-cell';cell.dataset.index=i;const v=userBoard[r][c],isGiven=puzzle[r][c]!==0;if(v!==0){cell.textContent=v;cell.classList.add(isGiven?'given':'user');if(!isGiven&&v!==solution[r][c])cell.classList.add('error')}else if(notes[i].size>0){const nd=document.createElement('div');nd.className='notes';for(let n=1;n<=9;n++){const s=document.createElement('span');s.textContent=notes[i].has(n)?n:'';nd.appendChild(s)}cell.appendChild(nd)}cell.addEventListener('click',()=>selectCell(i));grid.appendChild(cell)}highlightCells()}
+function selectCell(i){selectedCell=i;highlightCells()}
+function highlightCells(){const cells=grid.querySelectorAll('.sudoku-cell');cells.forEach((cell,i)=>{cell.classList.remove('selected','highlighted','same-number');if(selectedCell===null)return;const sr=Math.floor(selectedCell/9),sc=selectedCell%9,r=Math.floor(i/9),c=i%9;if(i===selectedCell)cell.classList.add('selected');else if(r===sr||c===sc||(Math.floor(r/3)===Math.floor(sr/3)&&Math.floor(c/3)===Math.floor(sc/3)))cell.classList.add('highlighted');const sv=userBoard[sr][sc],cv=userBoard[r][c];if(sv!==0&&cv===sv&&i!==selectedCell)cell.classList.add('same-number')})}
+function inputNumber(n){if(selectedCell===null||gameComplete)return;const r=Math.floor(selectedCell/9),c=selectedCell%9;if(puzzle[r][c]!==0)return;history.push({index:selectedCell,value:userBoard[r][c],notes:new Set(notes[selectedCell])});if(notesMode){if(notes[selectedCell].has(n))notes[selectedCell].delete(n);else notes[selectedCell].add(n);userBoard[r][c]=0}else{userBoard[r][c]=n;notes[selectedCell].clear();if(n!==solution[r][c]){errors++;errorsEl.textContent=errors}for(let i=0;i<81;i++){const ir=Math.floor(i/9),ic=i%9;if(ir===r||ic===c||(Math.floor(ir/3)===Math.floor(r/3)&&Math.floor(ic/3)===Math.floor(c/3)))notes[i].delete(n)}checkComplete()}renderGrid()}
+function eraseCell(){if(selectedCell===null||gameComplete)return;const r=Math.floor(selectedCell/9),c=selectedCell%9;if(puzzle[r][c]!==0)return;history.push({index:selectedCell,value:userBoard[r][c],notes:new Set(notes[selectedCell])});userBoard[r][c]=0;notes[selectedCell].clear();renderGrid()}
+function undo(){if(history.length===0||gameComplete)return;const l=history.pop(),r=Math.floor(l.index/9),c=l.index%9;userBoard[r][c]=l.value;notes[l.index]=l.notes;renderGrid()}
+function giveHint(){if(gameComplete)return;const empty=[];for(let i=0;i<81;i++){const r=Math.floor(i/9),c=i%9;if(userBoard[r][c]===0||userBoard[r][c]!==solution[r][c])empty.push(i)}if(empty.length===0)return;const hi=empty[Math.floor(Math.random()*empty.length)],r=Math.floor(hi/9),c=hi%9;userBoard[r][c]=solution[r][c];notes[hi].clear();renderGrid();checkComplete()}
+function checkComplete(){for(let i=0;i<81;i++){const r=Math.floor(i/9),c=i%9;if(userBoard[r][c]!==solution[r][c])return}gameComplete=true;clearInterval(timerInterval);showComplete()}
+function showComplete(){document.getElementById('complete-time').textContent=formatTime(seconds);document.getElementById('complete-errors').textContent=errors;document.getElementById('complete-difficulty').textContent=currentDifficulty.charAt(0).toUpperCase()+currentDifficulty.slice(1);const isNew=!personalBest[currentDifficulty]||seconds<personalBest[currentDifficulty];document.getElementById('new-best').style.display=isNew?'block':'none';if(isNew){personalBest[currentDifficulty]=seconds;updateBest()}completeOverlay.classList.add('show');saveScore()}
+async function saveScore(){if(!currentUserId)return;await supabaseClient.from('solo_scores').insert({user_id:currentUserId,game_id:`sudoku-${currentDifficulty}`,score:seconds});fetchLeaderboard(currentTab)}
+function startTimer(){clearInterval(timerInterval);seconds=0;errors=0;errorsEl.textContent='0';timerEl.textContent='0:00';timerInterval=setInterval(()=>{if(!gameComplete){seconds++;timerEl.textContent=formatTime(seconds)}},1000)}
+function formatTime(s){return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`}
+function newGame(){gameComplete=false;completeOverlay.classList.remove('show');currentDifficulty==='daily'?generateDailyPuzzle():generateSudoku();renderGrid();startTimer();updateBest()}
+
+document.querySelectorAll('.diff-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentDifficulty=btn.dataset.diff;newGame();fetchLeaderboard(currentTab)})});
+document.querySelectorAll('.num-btn[data-num]').forEach(btn=>{btn.addEventListener('click',()=>inputNumber(parseInt(btn.dataset.num)))});
+notesBtn.addEventListener('click',()=>{notesMode=!notesMode;notesBtn.classList.toggle('notes-active',notesMode)});
+document.getElementById('erase-btn').addEventListener('click',eraseCell);
+document.getElementById('undo-btn').addEventListener('click',undo);
+document.getElementById('hint-btn').addEventListener('click',giveHint);
+document.getElementById('new-btn').addEventListener('click',newGame);
+document.getElementById('next-puzzle-btn').addEventListener('click',()=>{completeOverlay.classList.remove('show');newGame()});
+document.getElementById('share-btn').addEventListener('click',()=>{const t=`🧩 Sudoku - TheGaming.co\n⏱️ ${formatTime(seconds)}\n❌ ${errors} errors\n📊 ${currentDifficulty.charAt(0).toUpperCase()+currentDifficulty.slice(1)}\n\nthegaming.co/games/solo/sudoku.html`;navigator.share?navigator.share({text:t}):navigator.clipboard.writeText(t)});
+document.addEventListener('keydown',e=>{if(e.key>='1'&&e.key<='9')inputNumber(parseInt(e.key));else if(e.key==='Backspace'||e.key==='Delete')eraseCell();else if(e.key==='n')notesBtn.click();else if(e.key==='z'&&(e.ctrlKey||e.metaKey))undo();else if(e.key==='ArrowUp'&&selectedCell!==null&&selectedCell>=9)selectCell(selectedCell-9);else if(e.key==='ArrowDown'&&selectedCell!==null&&selectedCell<72)selectCell(selectedCell+9);else if(e.key==='ArrowLeft'&&selectedCell!==null&&selectedCell%9>0)selectCell(selectedCell-1);else if(e.key==='ArrowRight'&&selectedCell!==null&&selectedCell%9<8)selectCell(selectedCell+1)});
+
+document.querySelectorAll('.lb-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentTab=tab.dataset.tab;fetchLeaderboard(currentTab)})});
+async function fetchLeaderboard(tab){const lbList=document.getElementById('lb-list');lbList.innerHTML='<div class="lb-empty">Loading...</div>';let query=supabaseClient.from('solo_scores').select('score,user_id,created_at').eq('game_id',`sudoku-${currentDifficulty}`).order('score',{ascending:true}).limit(50);if(tab==='today'){const t=new Date();t.setHours(0,0,0,0);query=query.gte('created_at',t.toISOString())}else if(tab==='friends'){if(!friendIds.length){lbList.innerHTML='<div class="lb-empty">Add friends to see scores</div>';return}query=query.in('user_id',[...friendIds,currentUserId])}const{data,error}=await query;if(error||!data?.length){lbList.innerHTML='<div class="lb-empty">No scores yet</div>';return}const best=new Map();data.forEach(e=>{if(!best.has(e.user_id)||e.score<best.get(e.user_id).score)best.set(e.user_id,e)});const deduped=Array.from(best.values()).sort((a,b)=>a.score-b.score);const userIds=[...new Set(deduped.map(e=>e.user_id))];const{data:profiles}=await supabaseClient.from('profiles').select('id,display_name,gamer_tag').in('id',userIds);const pm={};profiles?.forEach(p=>pm[p.id]=p);lbList.innerHTML='';deduped.slice(0,10).forEach((e,i)=>{const p=pm[e.user_id];const name=p?.display_name||p?.gamer_tag||'Anonymous';const topClass=i===0?'top-1':i===1?'top-2':i===2?'top-3':'';const row=document.createElement('div');row.className=`lb-row ${topClass}`;row.innerHTML=`<div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-score">${formatTime(e.score)}</div>`;lbList.appendChild(row)})}
+
+newGame();
+</script>
+    <script src="/header.js"></script>
+</body>
+</html>

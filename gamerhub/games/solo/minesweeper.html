@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Minesweeper – Free Classic Puzzle | TheGaming.co</title>
+    <meta name="description" content="Play the classic Minesweeper puzzle game. Clear the board without hitting mines. Compete for fastest times.">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#64748b;--accent-dark:#475569;--accent-light:#e2e8f0;
+            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;
+            --gold:#ffd700;--dark:#0a0a0f;--text-dark:#1a1a2e;--text-muted:#6b7280;
+            --red:#ef4444;--green:#22c55e;
+        }
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#e2e8f0 0%,#cbd5e1 50%,#f1f5f9 100%);color:var(--text-dark);min-height:100vh;display:flex;flex-direction:column}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        a{color:inherit;text-decoration:none}
+
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;padding:0 18px;background:rgba(10,10,15,0.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,0.06)}
+        .nav-inner{width:100%;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px}
+        .nav-left{justify-self:flex-start}
+        .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;text-transform:uppercase;transition:all 0.2s}
+        .back-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+        .back-btn svg{width:16px;height:16px}
+        .header-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;color:#fff;position:relative;justify-self:center}
+        .header-logo::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--blue),var(--purple))}
+        .nav-right-wrapper{justify-self:flex-end}
+        .header-actions{display:flex;align-items:center;gap:16px}
+        .nav-right-logged-out,.nav-right-logged-in{display:none!important}
+        .auth-link{font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.75);text-transform:uppercase;height:36px;display:inline-flex;align-items:center}
+        .user-menu-wrapper{position:relative}
+        .user-pill{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.04);cursor:pointer;color:#fff;font-family:inherit}
+        .user-pill-label{font-size:0.85rem;font-weight:600}
+        .user-pill-skeleton{width:100px;height:36px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,0.04),rgba(255,255,255,0.08),rgba(255,255,255,0.04));background-size:200%;animation:shimmer 1.5s infinite}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        .user-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:170px;padding:6px;border-radius:14px;background:rgba(10,10,15,0.97);border:1px solid rgba(255,255,255,0.14);box-shadow:0 18px 55px rgba(0,0,0,0.8);opacity:0;transform:translateY(-4px);pointer-events:none;transition:all 0.15s;z-index:120}
+        .user-menu.open{opacity:1;transform:translateY(0);pointer-events:auto}
+        .user-menu-item{width:100%;display:flex;align-items:center;padding:8px 10px;border-radius:9px;font-size:0.85rem;color:rgba(255,255,255,0.9);background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
+        .user-menu-item:hover{background:rgba(255,255,255,0.08)}
+
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
+        .game-hero{background:radial-gradient(circle at 10% 0%,#334155 0%,#1e293b 50%,#0f172a 100%);padding:50px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(100,116,139,0.3) 0%,transparent 55%),radial-gradient(circle at 75% 75%,rgba(71,85,105,0.2) 0%,transparent 55%)}
+        .game-hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .game-icon{width:70px;height:70px;margin:0 auto 20px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        .game-hero-title{font-size:clamp(3rem,8vw,4.5rem);line-height:0.95;margin-bottom:10px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .game-hero-desc{font-size:1rem;color:rgba(255,255,255,0.7);line-height:1.6}
+
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px 60px}
+        .game-container{width:100%;max-width:600px;display:flex;flex-direction:column;gap:20px}
+
+        .difficulty-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        .diff-btn{padding:10px 18px;border-radius:50px;background:#fff;border:2px solid rgba(100,116,139,0.2);font-size:0.8rem;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all 0.2s;text-transform:uppercase}
+        .diff-btn:hover{color:var(--accent);border-color:var(--accent)}
+        .diff-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+        .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        .stat-card{background:#fff;border:2px solid rgba(100,116,139,0.15);border-radius:16px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(100,116,139,0.08)}
+        .stat-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--accent)}
+        .stat-value.mines{color:var(--red)}
+
+        .game-board{background:#fff;border-radius:24px;border:3px solid rgba(100,116,139,0.2);padding:24px;box-shadow:0 8px 30px rgba(100,116,139,0.12)}
+        .mine-grid{display:grid;gap:2px;background:#94a3b8;padding:4px;border-radius:8px;margin:0 auto;user-select:none}
+        .mine-cell{aspect-ratio:1;background:linear-gradient(135deg,#c0c0c0,#a0a0a0);border:2px outset #e0e0e0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;font-weight:700;cursor:pointer;transition:all 0.1s}
+        .mine-cell:active:not(.revealed):not(.flagged){border-style:inset}
+        .mine-cell.revealed{background:#d4d4d4;border:1px solid #b0b0b0;cursor:default}
+        .mine-cell.flagged{background:linear-gradient(135deg,#fef3c7,#fde68a)}
+        .mine-cell.mine{background:#ef4444}
+        .mine-cell.exploded{background:#dc2626;animation:explode 0.3s ease}
+        @keyframes explode{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+        .mine-cell[data-num="1"]{color:#2563eb}
+        .mine-cell[data-num="2"]{color:#16a34a}
+        .mine-cell[data-num="3"]{color:#dc2626}
+        .mine-cell[data-num="4"]{color:#7c3aed}
+        .mine-cell[data-num="5"]{color:#b91c1c}
+        .mine-cell[data-num="6"]{color:#0891b2}
+        .mine-cell[data-num="7"]{color:#1f2937}
+        .mine-cell[data-num="8"]{color:#6b7280}
+
+        .controls{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+        .ctrl-btn{padding:12px 24px;border-radius:12px;background:#fff;border:2px solid rgba(100,116,139,0.2);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--text-dark);cursor:pointer;transition:all 0.2s}
+        .ctrl-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .ctrl-btn.flag-mode{background:var(--gold);color:#000;border-color:var(--gold)}
+
+        .result-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .result-overlay.show{display:flex}
+        .result-modal{background:#fff;border-radius:24px;padding:40px;text-align:center;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+        .result-icon{font-size:4rem;margin-bottom:16px}
+        .result-title{font-size:2rem;letter-spacing:3px;margin-bottom:8px}
+        .result-title.win{color:var(--green)}
+        .result-title.lose{color:var(--red)}
+        .result-time{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--accent);margin:16px 0}
+        .result-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+        .result-stat{background:rgba(100,116,139,0.08);border-radius:12px;padding:14px}
+        .result-stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--accent-dark)}
+        .result-stat-label{font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+        .btn{padding:14px 28px;border-radius:50px;border:none;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.3s;text-transform:uppercase;letter-spacing:1px;width:100%;margin-bottom:10px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 6px 20px rgba(100,116,139,0.3)}
+
+        .leaderboard-section{background:#fff;border:2px solid rgba(100,116,139,0.2);border-radius:20px;padding:24px;box-shadow:0 8px 30px rgba(100,116,139,0.12)}
+        .lb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid rgba(100,116,139,0.15);flex-wrap:wrap;gap:12px}
+        .lb-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px}
+        .lb-tabs{display:flex;gap:8px;background:rgba(100,116,139,0.08);padding:4px;border-radius:12px}
+        .lb-tab{padding:8px 16px;border-radius:8px;font-size:0.8rem;font-weight:600;text-transform:uppercase;cursor:pointer;color:var(--text-muted);background:transparent;border:none;transition:all 0.2s}
+        .lb-tab:hover{color:var(--accent)}
+        .lb-tab.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(100,116,139,0.15)}
+        .lb-list{display:flex;flex-direction:column;gap:8px}
+        .lb-row{display:flex;align-items:center;gap:15px;padding:12px 16px;background:rgba(100,116,139,0.05);border-radius:12px;transition:all 0.2s}
+        .lb-row:hover{background:rgba(100,116,139,0.1)}
+        .lb-row.top-1{background:linear-gradient(90deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05));border:2px solid rgba(255,215,0,0.4)}
+        .lb-row.top-2{background:linear-gradient(90deg,rgba(192,192,192,0.12),rgba(192,192,192,0.04));border:2px solid rgba(192,192,192,0.3)}
+        .lb-row.top-3{background:linear-gradient(90deg,rgba(205,127,50,0.12),rgba(205,127,50,0.04));border:2px solid rgba(205,127,50,0.3)}
+        .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;width:35px;text-align:center;color:var(--text-muted)}
+        .lb-row.top-1 .lb-rank{color:#ffd700}
+        .lb-row.top-2 .lb-rank{color:#c0c0c0}
+        .lb-row.top-3 .lb-rank{color:#cd7f32}
+        .lb-name{flex:1;font-weight:600;font-size:0.9rem}
+        .lb-score{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--accent)}
+        .lb-empty{text-align:center;padding:30px;color:var(--text-muted);font-size:0.9rem}
+
+        @media(max-width:500px){
+            .mine-cell{font-size:0.9rem}
+            .difficulty-selector{gap:6px}
+            .diff-btn{padding:8px 14px;font-size:0.75rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main>
+        <section class="game-hero">
+            <div class="game-hero-content">
+                <div class="game-icon">
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="56" height="56" rx="8" fill="#94a3b8"/>
+                        <rect x="8" y="8" width="14" height="14" rx="2" fill="#d4d4d4"/>
+                        <rect x="25" y="8" width="14" height="14" rx="2" fill="#c0c0c0" stroke="#999" stroke-width="1"/>
+                        <rect x="42" y="8" width="14" height="14" rx="2" fill="#c0c0c0" stroke="#999" stroke-width="1"/>
+                        <rect x="8" y="25" width="14" height="14" rx="2" fill="#d4d4d4"/>
+                        <rect x="25" y="25" width="14" height="14" rx="2" fill="#ef4444"/>
+                        <circle cx="32" cy="32" r="4" fill="#000"/>
+                        <rect x="42" y="25" width="14" height="14" rx="2" fill="#d4d4d4"/>
+                        <text x="49" y="36" fill="#2563eb" font-family="sans-serif" font-size="10" font-weight="bold">1</text>
+                        <rect x="8" y="42" width="14" height="14" rx="2" fill="#fef3c7"/>
+                        <text x="15" y="52" fill="#000" font-family="sans-serif" font-size="10">🚩</text>
+                        <rect x="25" y="42" width="14" height="14" rx="2" fill="#d4d4d4"/>
+                        <text x="32" y="52" fill="#16a34a" font-family="sans-serif" font-size="10" font-weight="bold">2</text>
+                        <rect x="42" y="42" width="14" height="14" rx="2" fill="#c0c0c0" stroke="#999" stroke-width="1"/>
+                    </svg>
+                </div>
+                <h1 class="game-hero-title">MINESWEEPER</h1>
+                <p class="game-hero-desc">Clear the board without hitting any mines. Numbers show adjacent mines.</p>
+            </div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="difficulty-selector">
+                    <button class="diff-btn active" data-diff="easy">Easy (9×9)</button>
+                    <button class="diff-btn" data-diff="medium">Medium (16×16)</button>
+                    <button class="diff-btn" data-diff="hard">Hard (16×30)</button>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-card"><div class="stat-label">Time</div><div class="stat-value" id="timer">0:00</div></div>
+                    <div class="stat-card"><div class="stat-label">Mines</div><div class="stat-value mines" id="mines-left">10</div></div>
+                    <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value" id="best">--:--</div></div>
+                </div>
+
+                <div class="game-board">
+                    <div class="mine-grid" id="mine-grid"></div>
+                    <div class="controls">
+                        <button class="ctrl-btn" id="flag-btn">🚩 Flag Mode</button>
+                        <button class="ctrl-btn" onclick="newGame()">New Game</button>
+                    </div>
+                </div>
+
+                <div class="leaderboard-section">
+                    <div class="lb-header">
+                        <h3 class="lb-title">🏆 Leaderboard</h3>
+                        <div class="lb-tabs">
+                            <button class="lb-tab active" data-tab="global">Global</button>
+                            <button class="lb-tab" data-tab="today">Today</button>
+                            <button class="lb-tab" data-tab="friends">Friends</button>
+                        </div>
+                    </div>
+                    <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="result-overlay" id="result-overlay">
+        <div class="result-modal">
+            <div class="result-icon" id="result-icon">💥</div>
+            <h2 class="result-title" id="result-title">GAME OVER</h2>
+            <div class="result-time" id="result-time">0:00</div>
+            <div class="result-stats">
+                <div class="result-stat"><div class="result-stat-value" id="result-cleared">0</div><div class="result-stat-label">Cells Cleared</div></div>
+                <div class="result-stat"><div class="result-stat-value" id="result-difficulty">Easy</div><div class="result-stat-label">Difficulty</div></div>
+            </div>
+            <button class="btn btn-primary" onclick="newGame();document.getElementById('result-overlay').classList.remove('show')">PLAY AGAIN</button>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const CONFIGS={easy:{rows:9,cols:9,mines:10},medium:{rows:16,cols:16,mines:40},hard:{rows:16,cols:30,mines:99}};
+let currentDiff='easy',grid=[],revealed=[],flagged=[],gameStarted=false,gameOver=false,timerInterval=null,seconds=0,flagMode=false;
+let currentUserId=null,personalBest={},friendIds=[],currentTab='global';
+
+async function loadAuth(){
+    const{data}=await supabaseClient.auth.getSession();
+    const user=data?.session?.user;
+    document.getElementById('auth-skeleton').style.display='none';
+    if(user){
+        currentUserId=user.id;
+        document.querySelector('.nav-right-logged-out').style.setProperty('display','none','important');
+        document.querySelector('.nav-right-logged-in').style.setProperty('display','flex','important');
+        const{data:p}=await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id',user.id).single();
+        if(p)document.getElementById('header-username-label').textContent=(p.display_name||p.gamer_tag||'Player').slice(0,16);
+        loadPersonalBests();loadFriends();
+    }else{
+        document.querySelector('.nav-right-logged-out').style.setProperty('display','flex','important');
+        document.querySelector('.nav-right-logged-in').style.setProperty('display','none','important');
+    }
+    fetchLeaderboard('global');
+}
+
+async function loadPersonalBests(){
+    if(!currentUserId)return;
+    const{data}=await supabaseClient.from('solo_scores').select('game_id,score').eq('user_id',currentUserId).like('game_id','minesweeper-%').order('score',{ascending:true});
+    if(data)data.forEach(d=>{const diff=d.game_id.replace('minesweeper-','');if(!personalBest[diff]||d.score<personalBest[diff])personalBest[diff]=d.score});
+    updateBest();
+}
+
+function updateBest(){const b=personalBest[currentDiff];document.getElementById('best').textContent=b?formatTime(b):'--:--'}
+
+async function loadFriends(){if(!currentUserId)return;try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}}
+
+let userMenuOpen=false;
+document.getElementById('user-menu-button')?.addEventListener('click',e=>{e.stopPropagation();userMenuOpen=!userMenuOpen;document.getElementById('user-menu').classList.toggle('open',userMenuOpen)});
+document.addEventListener('click',()=>{userMenuOpen=false;document.getElementById('user-menu')?.classList.remove('open')});
+document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
+
+function initGame(){
+    const cfg=CONFIGS[currentDiff];
+    grid=[];revealed=[];flagged=[];gameStarted=false;gameOver=false;
+    clearInterval(timerInterval);seconds=0;
+    document.getElementById('timer').textContent='0:00';
+    document.getElementById('mines-left').textContent=cfg.mines;
+    
+    for(let r=0;r<cfg.rows;r++){
+        grid[r]=[];revealed[r]=[];flagged[r]=[];
+        for(let c=0;c<cfg.cols;c++){grid[r][c]=0;revealed[r][c]=false;flagged[r][c]=false}
+    }
+    renderGrid();
+}
+
+function placeMines(firstR,firstC){
+    const cfg=CONFIGS[currentDiff];
+    let placed=0;
+    while(placed<cfg.mines){
+        const r=Math.floor(Math.random()*cfg.rows),c=Math.floor(Math.random()*cfg.cols);
+        if(grid[r][c]===-1)continue;
+        if(Math.abs(r-firstR)<=1&&Math.abs(c-firstC)<=1)continue;
+        grid[r][c]=-1;placed++;
+    }
+    for(let r=0;r<cfg.rows;r++){
+        for(let c=0;c<cfg.cols;c++){
+            if(grid[r][c]===-1)continue;
+            let count=0;
+            for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+                const nr=r+dr,nc=c+dc;
+                if(nr>=0&&nr<cfg.rows&&nc>=0&&nc<cfg.cols&&grid[nr][nc]===-1)count++;
+            }
+            grid[r][c]=count;
+        }
+    }
+}
+
+function renderGrid(){
+    const cfg=CONFIGS[currentDiff];
+    const gridEl=document.getElementById('mine-grid');
+    const cellSize=currentDiff==='hard'?22:currentDiff==='medium'?26:32;
+    gridEl.style.gridTemplateColumns=`repeat(${cfg.cols},${cellSize}px)`;
+    gridEl.innerHTML='';
+    for(let r=0;r<cfg.rows;r++){
+        for(let c=0;c<cfg.cols;c++){
+            const cell=document.createElement('div');
+            cell.className='mine-cell';
+            cell.style.width=`${cellSize}px`;cell.style.height=`${cellSize}px`;
+            cell.dataset.row=r;cell.dataset.col=c;
+            if(revealed[r][c]){
+                cell.classList.add('revealed');
+                if(grid[r][c]===-1){cell.classList.add('mine');cell.textContent='💣'}
+                else if(grid[r][c]>0){cell.textContent=grid[r][c];cell.dataset.num=grid[r][c]}
+            }else if(flagged[r][c]){cell.classList.add('flagged');cell.textContent='🚩'}
+            cell.addEventListener('click',()=>handleClick(r,c));
+            cell.addEventListener('contextmenu',e=>{e.preventDefault();toggleFlag(r,c)});
+            gridEl.appendChild(cell);
+        }
+    }
+}
+
+function handleClick(r,c){
+    if(gameOver||flagged[r][c])return;
+    if(flagMode){toggleFlag(r,c);return}
+    if(!gameStarted){gameStarted=true;placeMines(r,c);startTimer()}
+    if(grid[r][c]===-1){revealAll(r,c);endGame(false);return}
+    reveal(r,c);
+    if(checkWin())endGame(true);
+}
+
+function toggleFlag(r,c){
+    if(gameOver||revealed[r][c])return;
+    flagged[r][c]=!flagged[r][c];
+    const cfg=CONFIGS[currentDiff];
+    let flagCount=0;
+    for(let i=0;i<cfg.rows;i++)for(let j=0;j<cfg.cols;j++)if(flagged[i][j])flagCount++;
+    document.getElementById('mines-left').textContent=cfg.mines-flagCount;
+    renderGrid();
+}
+
+function reveal(r,c){
+    const cfg=CONFIGS[currentDiff];
+    if(r<0||r>=cfg.rows||c<0||c>=cfg.cols||revealed[r][c]||flagged[r][c])return;
+    revealed[r][c]=true;
+    if(grid[r][c]===0){
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)reveal(r+dr,c+dc);
+    }
+    renderGrid();
+}
+
+function revealAll(clickedR,clickedC){
+    const cfg=CONFIGS[currentDiff];
+    for(let r=0;r<cfg.rows;r++)for(let c=0;c<cfg.cols;c++)revealed[r][c]=true;
+    renderGrid();
+    const cells=document.querySelectorAll('.mine-cell');
+    cells.forEach(cell=>{
+        if(parseInt(cell.dataset.row)===clickedR&&parseInt(cell.dataset.col)===clickedC)cell.classList.add('exploded');
+    });
+}
+
+function checkWin(){
+    const cfg=CONFIGS[currentDiff];
+    for(let r=0;r<cfg.rows;r++)for(let c=0;c<cfg.cols;c++){
+        if(grid[r][c]!==-1&&!revealed[r][c])return false;
+    }
+    return true;
+}
+
+function startTimer(){
+    timerInterval=setInterval(()=>{seconds++;document.getElementById('timer').textContent=formatTime(seconds)},1000);
+}
+
+function formatTime(s){return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`}
+
+function endGame(won){
+    gameOver=true;clearInterval(timerInterval);
+    const cfg=CONFIGS[currentDiff];
+    let cleared=0;
+    for(let r=0;r<cfg.rows;r++)for(let c=0;c<cfg.cols;c++)if(revealed[r][c]&&grid[r][c]!==-1)cleared++;
+    
+    document.getElementById('result-icon').textContent=won?'🎉':'💥';
+    document.getElementById('result-title').textContent=won?'YOU WIN!':'GAME OVER';
+    document.getElementById('result-title').className=`result-title ${won?'win':'lose'}`;
+    document.getElementById('result-time').textContent=formatTime(seconds);
+    document.getElementById('result-cleared').textContent=cleared;
+    document.getElementById('result-difficulty').textContent=currentDiff.charAt(0).toUpperCase()+currentDiff.slice(1);
+    document.getElementById('result-overlay').classList.add('show');
+    
+    if(won)saveScore();
+}
+
+async function saveScore(){
+    if(!currentUserId)return;
+    await supabaseClient.from('solo_scores').insert({user_id:currentUserId,game_id:`minesweeper-${currentDiff}`,score:seconds});
+    if(!personalBest[currentDiff]||seconds<personalBest[currentDiff]){personalBest[currentDiff]=seconds;updateBest()}
+    fetchLeaderboard(currentTab);
+}
+
+function newGame(){initGame()}
+
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        currentDiff=btn.dataset.diff;
+        newGame();updateBest();fetchLeaderboard(currentTab);
+    });
+});
+
+document.getElementById('flag-btn').addEventListener('click',()=>{
+    flagMode=!flagMode;
+    document.getElementById('flag-btn').classList.toggle('flag-mode',flagMode);
+});
+
+document.querySelectorAll('.lb-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+        document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab=tab.dataset.tab;
+        fetchLeaderboard(currentTab);
+    });
+});
+
+async function fetchLeaderboard(tab){
+    const lbList=document.getElementById('lb-list');
+    lbList.innerHTML='<div class="lb-empty">Loading...</div>';
+    let query=supabaseClient.from('solo_scores').select('score,user_id,created_at').eq('game_id',`minesweeper-${currentDiff}`).order('score',{ascending:true}).limit(50);
+    if(tab==='today'){const t=new Date();t.setHours(0,0,0,0);query=query.gte('created_at',t.toISOString())}
+    else if(tab==='friends'){
+        if(!friendIds.length){lbList.innerHTML='<div class="lb-empty">Add friends to see scores</div>';return}
+        query=query.in('user_id',[...friendIds,currentUserId]);
+    }
+    const{data,error}=await query;
+    if(error||!data?.length){lbList.innerHTML='<div class="lb-empty">No scores yet</div>';return}
+    const best=new Map();data.forEach(e=>{if(!best.has(e.user_id)||e.score<best.get(e.user_id).score)best.set(e.user_id,e)});
+    const deduped=Array.from(best.values()).sort((a,b)=>a.score-b.score);
+    const userIds=[...new Set(deduped.map(e=>e.user_id))];
+    const{data:profiles}=await supabaseClient.from('profiles').select('id,display_name,gamer_tag').in('id',userIds);
+    const pm={};profiles?.forEach(p=>pm[p.id]=p);
+    lbList.innerHTML='';
+    deduped.slice(0,10).forEach((e,i)=>{
+        const p=pm[e.user_id];const name=p?.display_name||p?.gamer_tag||'Anonymous';
+        const topClass=i===0?'top-1':i===1?'top-2':i===2?'top-3':'';
+        const row=document.createElement('div');row.className=`lb-row ${topClass}`;
+        row.innerHTML=`<div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-score">${formatTime(e.score)}</div>`;
+        lbList.appendChild(row);
+    });
+}
+
+loadAuth();
+newGame();
+</script>
+<script src="/social.js" defer></script>
+    <script src="/header.js"></script>
+</body>
+</html>

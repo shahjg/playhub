@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Word Search – Free Puzzle Game | TheGaming.co</title>
+    <meta name="description" content="Play free word search puzzles with themed categories. Find hidden words in the grid.">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#10b981;--accent-dark:#059669;--accent-light:#d1fae5;
+            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;
+            --gold:#ffd700;--dark:#0a0a0f;--text-dark:#1a1a2e;--text-muted:#6b7280;
+        }
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 50%,#ecfdf5 100%);color:var(--text-dark);min-height:100vh;display:flex;flex-direction:column}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        a{color:inherit;text-decoration:none}
+
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;padding:0 18px;background:rgba(10,10,15,0.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,0.06)}
+        .nav-inner{width:100%;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px}
+        .nav-left{justify-self:flex-start}
+        .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;text-transform:uppercase;transition:all 0.2s}
+        .back-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+        .back-btn svg{width:16px;height:16px}
+        .header-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;color:#fff;position:relative;justify-self:center}
+        .header-logo::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--blue),var(--purple))}
+        .nav-right-wrapper{justify-self:flex-end}
+        .header-actions{display:flex;align-items:center;gap:16px}
+        .nav-right-logged-out,.nav-right-logged-in{display:none!important}
+        .auth-link{font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.75);text-transform:uppercase;height:36px;display:inline-flex;align-items:center}
+        .user-menu-wrapper{position:relative}
+        .user-pill{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.04);cursor:pointer;color:#fff;font-family:inherit}
+        .user-pill-label{font-size:0.85rem;font-weight:600}
+        .user-pill-skeleton{width:100px;height:36px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,0.04),rgba(255,255,255,0.08),rgba(255,255,255,0.04));background-size:200%;animation:shimmer 1.5s infinite}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        .user-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:170px;padding:6px;border-radius:14px;background:rgba(10,10,15,0.97);border:1px solid rgba(255,255,255,0.14);box-shadow:0 18px 55px rgba(0,0,0,0.8);opacity:0;transform:translateY(-4px);pointer-events:none;transition:all 0.15s;z-index:120}
+        .user-menu.open{opacity:1;transform:translateY(0);pointer-events:auto}
+        .user-menu-item{width:100%;display:flex;align-items:center;padding:8px 10px;border-radius:9px;font-size:0.85rem;color:rgba(255,255,255,0.9);background:none;border:none;cursor:pointer;font-family:inherit;text-align:left}
+        .user-menu-item:hover{background:rgba(255,255,255,0.08)}
+
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
+        .game-hero{background:radial-gradient(circle at 10% 0%,#065f46 0%,#064e3b 50%,#022c22 100%);padding:50px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(16,185,129,0.3) 0%,transparent 55%),radial-gradient(circle at 75% 75%,rgba(5,150,105,0.2) 0%,transparent 55%)}
+        .game-hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .game-icon{width:70px;height:70px;margin:0 auto 20px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        .game-hero-title{font-size:clamp(3rem,8vw,4.5rem);line-height:0.95;margin-bottom:10px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .game-hero-desc{font-size:1rem;color:rgba(255,255,255,0.7);line-height:1.6}
+
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px 60px}
+        .game-container{width:100%;max-width:600px;display:flex;flex-direction:column;gap:20px}
+
+        .theme-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        .theme-btn{padding:10px 18px;border-radius:50px;background:#fff;border:2px solid rgba(16,185,129,0.2);font-size:0.8rem;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all 0.2s;text-transform:uppercase}
+        .theme-btn:hover{color:var(--accent);border-color:var(--accent)}
+        .theme-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+        .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        .stat-card{background:#fff;border:2px solid rgba(16,185,129,0.15);border-radius:16px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(16,185,129,0.08)}
+        .stat-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--accent)}
+
+        .game-board{background:#fff;border-radius:24px;border:3px solid rgba(16,185,129,0.2);padding:24px;box-shadow:0 8px 30px rgba(16,185,129,0.12)}
+        .ws-grid{display:grid;gap:4px;margin:0 auto;user-select:none}
+        .ws-cell{aspect-ratio:1;background:#f0fdf4;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;cursor:pointer;transition:all 0.15s;border:2px solid transparent}
+        .ws-cell:hover{background:rgba(16,185,129,0.15)}
+        .ws-cell.selecting{background:rgba(16,185,129,0.3);border-color:var(--accent)}
+        .ws-cell.found{background:var(--accent);color:#fff;animation:foundPop 0.3s ease}
+        @keyframes foundPop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+        .word-list{margin-top:20px;padding:16px;background:rgba(16,185,129,0.08);border-radius:12px}
+        .word-list-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px;margin-bottom:12px;color:var(--accent-dark)}
+        .words-container{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+        .word-item{padding:6px 14px;background:#fff;border-radius:50px;font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;transition:all 0.2s}
+        .word-item.found{background:var(--accent);color:#fff;text-decoration:line-through}
+
+        .controls{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+        .ctrl-btn{padding:12px 24px;border-radius:12px;background:#fff;border:2px solid rgba(16,185,129,0.2);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--text-dark);cursor:pointer;transition:all 0.2s}
+        .ctrl-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+        .complete-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .complete-overlay.show{display:flex}
+        .complete-modal{background:#fff;border-radius:24px;padding:40px;text-align:center;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+        .complete-icon{font-size:4rem;margin-bottom:16px}
+        .complete-title{font-size:2rem;letter-spacing:3px;color:var(--accent);margin-bottom:8px}
+        .complete-time{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--accent-dark);margin:16px 0}
+        .complete-message{color:var(--text-muted);margin-bottom:24px}
+        .btn{padding:14px 28px;border-radius:50px;border:none;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.3s;text-transform:uppercase;letter-spacing:1px;width:100%;margin-bottom:10px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 6px 20px rgba(16,185,129,0.3)}
+        .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(16,185,129,0.3)}
+
+        .no-leaderboard-notice{background:rgba(16,185,129,0.08);border:2px solid rgba(16,185,129,0.15);border-radius:16px;padding:20px;text-align:center}
+        .no-leaderboard-notice p{color:var(--text-muted);font-size:0.9rem}
+        .no-leaderboard-notice strong{color:var(--accent)}
+
+        @media(max-width:500px){
+            .ws-cell{font-size:1rem}
+            .theme-selector{gap:6px}
+            .theme-btn{padding:8px 12px;font-size:0.7rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main>
+        <section class="game-hero">
+            <div class="game-hero-content">
+                <div class="game-icon">
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="4" width="56" height="56" rx="6" fill="#10b981"/>
+                        <rect x="8" y="8" width="10" height="10" rx="2" fill="#fff"/>
+                        <rect x="20" y="8" width="10" height="10" rx="2" fill="#d1fae5"/>
+                        <rect x="32" y="8" width="10" height="10" rx="2" fill="#fff"/>
+                        <rect x="44" y="8" width="10" height="10" rx="2" fill="#d1fae5"/>
+                        <rect x="8" y="20" width="10" height="10" rx="2" fill="#d1fae5"/>
+                        <rect x="20" y="20" width="10" height="10" rx="2" fill="#fff"/>
+                        <rect x="32" y="20" width="10" height="10" rx="2" fill="#d1fae5"/>
+                        <rect x="44" y="20" width="10" height="10" rx="2" fill="#fff"/>
+                        <text x="13" y="16" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="bold">W</text>
+                        <text x="25" y="16" fill="#059669" font-family="sans-serif" font-size="8" font-weight="bold">O</text>
+                        <text x="37" y="16" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="bold">R</text>
+                        <text x="49" y="16" fill="#059669" font-family="sans-serif" font-size="8" font-weight="bold">D</text>
+                    </svg>
+                </div>
+                <h1 class="game-hero-title">WORD SEARCH</h1>
+                <p class="game-hero-desc">Find all the hidden words in the grid. Words can go in any direction!</p>
+            </div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="theme-selector">
+                    <button class="theme-btn active" data-theme="animals">🐾 Animals</button>
+                    <button class="theme-btn" data-theme="food">🍕 Food</button>
+                    <button class="theme-btn" data-theme="sports">⚽ Sports</button>
+                    <button class="theme-btn" data-theme="colors">🎨 Colors</button>
+                    <button class="theme-btn" data-theme="nature">🌿 Nature</button>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-card"><div class="stat-label">Time</div><div class="stat-value" id="timer">0:00</div></div>
+                    <div class="stat-card"><div class="stat-label">Found</div><div class="stat-value" id="found-count">0/8</div></div>
+                    <div class="stat-card"><div class="stat-label">Theme</div><div class="stat-value" id="current-theme">Animals</div></div>
+                </div>
+
+                <div class="game-board">
+                    <div class="ws-grid" id="ws-grid"></div>
+                    <div class="word-list">
+                        <div class="word-list-title">Find These Words:</div>
+                        <div class="words-container" id="words-container"></div>
+                    </div>
+                    <div class="controls">
+                        <button class="ctrl-btn" onclick="newGame()">New Puzzle</button>
+                    </div>
+                </div>
+
+                <div class="no-leaderboard-notice">
+                    <p>🔍 <strong>Casual Mode</strong> — No leaderboard for word search. Relax and find words at your own pace!</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="complete-overlay" id="complete-overlay">
+        <div class="complete-modal">
+            <div class="complete-icon">🎉</div>
+            <h2 class="complete-title">ALL WORDS FOUND!</h2>
+            <div class="complete-time" id="complete-time">0:00</div>
+            <p class="complete-message">Great job! Try another theme or play again.</p>
+            <button class="btn btn-primary" onclick="newGame();document.getElementById('complete-overlay').classList.remove('show')">PLAY AGAIN</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('complete-overlay').classList.remove('show')">CLOSE</button>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const THEMES={
+    animals:['DOG','CAT','LION','TIGER','BEAR','WOLF','DEER','BIRD','FISH','FROG','HORSE','SNAKE','MOUSE','RABBIT'],
+    food:['PIZZA','BURGER','PASTA','SALAD','BREAD','CHEESE','APPLE','BANANA','GRAPE','RICE','SOUP','CAKE','PIE','TACO'],
+    sports:['SOCCER','TENNIS','GOLF','SWIM','RUN','JUMP','HOCKEY','RUGBY','SURF','SKATE','CLIMB','BIKE','BOX','DIVE'],
+    colors:['RED','BLUE','GREEN','YELLOW','ORANGE','PURPLE','PINK','BLACK','WHITE','BROWN','GRAY','GOLD','SILVER','TEAL'],
+    nature:['TREE','FLOWER','RIVER','MOUNTAIN','OCEAN','FOREST','DESERT','RAIN','SNOW','SUN','MOON','STAR','CLOUD','WIND']
+};
+
+const GRID_SIZE=10;
+let grid=[],words=[],foundWords=new Set(),selectedCells=[],isSelecting=false,timerInterval=null,seconds=0,currentTheme='animals';
+
+async function loadAuth(){
+    const{data}=await supabaseClient.auth.getSession();
+    const user=data?.session?.user;
+    document.getElementById('auth-skeleton').style.display='none';
+    if(user){
+        document.querySelector('.nav-right-logged-out').style.setProperty('display','none','important');
+        document.querySelector('.nav-right-logged-in').style.setProperty('display','flex','important');
+        const{data:p}=await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id',user.id).single();
+        if(p)document.getElementById('header-username-label').textContent=(p.display_name||p.gamer_tag||'Player').slice(0,16);
+    }else{
+        document.querySelector('.nav-right-logged-out').style.setProperty('display','flex','important');
+        document.querySelector('.nav-right-logged-in').style.setProperty('display','none','important');
+    }
+}
+
+let userMenuOpen=false;
+document.getElementById('user-menu-button')?.addEventListener('click',e=>{e.stopPropagation();userMenuOpen=!userMenuOpen;document.getElementById('user-menu').classList.toggle('open',userMenuOpen)});
+document.addEventListener('click',()=>{userMenuOpen=false;document.getElementById('user-menu')?.classList.remove('open')});
+document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+
+function initGame(){
+    grid=Array(GRID_SIZE).fill(null).map(()=>Array(GRID_SIZE).fill(''));
+    foundWords=new Set();selectedCells=[];seconds=0;
+    clearInterval(timerInterval);
+    
+    words=shuffle([...THEMES[currentTheme]]).slice(0,8);
+    document.getElementById('current-theme').textContent=currentTheme.charAt(0).toUpperCase()+currentTheme.slice(1);
+    
+    // Place words
+    const directions=[[0,1],[1,0],[1,1],[0,-1],[-1,0],[-1,-1],[1,-1],[-1,1]];
+    words.forEach(word=>{
+        let placed=false,attempts=0;
+        while(!placed&&attempts<100){
+            attempts++;
+            const dir=directions[Math.floor(Math.random()*directions.length)];
+            const r=Math.floor(Math.random()*GRID_SIZE),c=Math.floor(Math.random()*GRID_SIZE);
+            if(canPlace(word,r,c,dir[0],dir[1])){
+                placeWord(word,r,c,dir[0],dir[1]);
+                placed=true;
+            }
+        }
+    });
+    
+    // Fill empty cells
+    const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++)if(!grid[r][c])grid[r][c]=letters[Math.floor(Math.random()*26)];
+    
+    renderGrid();
+    renderWordList();
+    startTimer();
+}
+
+function canPlace(word,r,c,dr,dc){
+    for(let i=0;i<word.length;i++){
+        const nr=r+i*dr,nc=c+i*dc;
+        if(nr<0||nr>=GRID_SIZE||nc<0||nc>=GRID_SIZE)return false;
+        if(grid[nr][nc]&&grid[nr][nc]!==word[i])return false;
+    }
+    return true;
+}
+
+function placeWord(word,r,c,dr,dc){
+    for(let i=0;i<word.length;i++){
+        grid[r+i*dr][c+i*dc]=word[i];
+    }
+}
+
+function renderGrid(){
+    const gridEl=document.getElementById('ws-grid');
+    gridEl.style.gridTemplateColumns=`repeat(${GRID_SIZE},1fr)`;
+    gridEl.innerHTML='';
+    
+    for(let r=0;r<GRID_SIZE;r++){
+        for(let c=0;c<GRID_SIZE;c++){
+            const cell=document.createElement('div');
+            cell.className='ws-cell';
+            cell.textContent=grid[r][c];
+            cell.dataset.row=r;cell.dataset.col=c;
+            cell.addEventListener('mousedown',()=>startSelect(r,c));
+            cell.addEventListener('mouseenter',()=>continueSelect(r,c));
+            cell.addEventListener('touchstart',e=>{e.preventDefault();startSelect(r,c)},{passive:false});
+            cell.addEventListener('touchmove',e=>{
+                e.preventDefault();
+                const touch=e.touches[0];
+                const el=document.elementFromPoint(touch.clientX,touch.clientY);
+                if(el&&el.classList.contains('ws-cell'))continueSelect(parseInt(el.dataset.row),parseInt(el.dataset.col));
+            },{passive:false});
+            gridEl.appendChild(cell);
+        }
+    }
+}
+
+function renderWordList(){
+    const container=document.getElementById('words-container');
+    container.innerHTML='';
+    words.forEach(word=>{
+        const item=document.createElement('span');
+        item.className='word-item';
+        item.textContent=word;
+        item.id=`word-${word}`;
+        container.appendChild(item);
+    });
+    document.getElementById('found-count').textContent=`0/${words.length}`;
+}
+
+function startSelect(r,c){
+    isSelecting=true;
+    selectedCells=[{r,c}];
+    highlightSelection();
+}
+
+function continueSelect(r,c){
+    if(!isSelecting)return;
+    if(selectedCells.length===0){selectedCells.push({r,c});highlightSelection();return}
+    
+    const first=selectedCells[0],last=selectedCells[selectedCells.length-1];
+    if(r===last.r&&c===last.c)return;
+    
+    // Check if in valid direction from first cell
+    const dr=Math.sign(r-first.r),dc=Math.sign(c-first.c);
+    if(selectedCells.length>1){
+        const prevDr=Math.sign(selectedCells[1].r-first.r),prevDc=Math.sign(selectedCells[1].c-first.c);
+        if(dr!==prevDr||dc!==prevDc)return;
+    }
+    
+    // Rebuild selection from first to current
+    selectedCells=[first];
+    let cr=first.r,cc=first.c;
+    while(cr!==r||cc!==c){
+        cr+=dr;cc+=dc;
+        if(cr<0||cr>=GRID_SIZE||cc<0||cc>=GRID_SIZE)break;
+        selectedCells.push({r:cr,c:cc});
+    }
+    highlightSelection();
+}
+
+function endSelect(){
+    if(!isSelecting)return;
+    isSelecting=false;
+    checkWord();
+    selectedCells=[];
+    highlightSelection();
+}
+
+function highlightSelection(){
+    document.querySelectorAll('.ws-cell').forEach(cell=>cell.classList.remove('selecting'));
+    selectedCells.forEach(({r,c})=>{
+        document.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`)?.classList.add('selecting');
+    });
+}
+
+function checkWord(){
+    const selected=selectedCells.map(({r,c})=>grid[r][c]).join('');
+    const reversed=[...selected].reverse().join('');
+    
+    let foundWord=null;
+    if(words.includes(selected)&&!foundWords.has(selected))foundWord=selected;
+    else if(words.includes(reversed)&&!foundWords.has(reversed))foundWord=reversed;
+    
+    if(foundWord){
+        foundWords.add(foundWord);
+        selectedCells.forEach(({r,c})=>{
+            document.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`)?.classList.add('found');
+        });
+        document.getElementById(`word-${foundWord}`)?.classList.add('found');
+        document.getElementById('found-count').textContent=`${foundWords.size}/${words.length}`;
+        
+        if(foundWords.size===words.length){
+            clearInterval(timerInterval);
+            document.getElementById('complete-time').textContent=formatTime(seconds);
+            document.getElementById('complete-overlay').classList.add('show');
+        }
+    }
+}
+
+document.addEventListener('mouseup',endSelect);
+document.addEventListener('touchend',endSelect);
+
+function startTimer(){
+    timerInterval=setInterval(()=>{seconds++;document.getElementById('timer').textContent=formatTime(seconds)},1000);
+}
+
+function formatTime(s){return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`}
+
+function newGame(){initGame()}
+
+document.querySelectorAll('.theme-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTheme=btn.dataset.theme;
+        newGame();
+    });
+});
+
+loadAuth();
+initGame();
+</script>
+<script src="/social.js" defer></script>
+    <script src="/header.js"></script>
+</body>
+</html>

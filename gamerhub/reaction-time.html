@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time Test | TheGaming.co</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* INHERITING YOUR CORE STYLES */
+        :root {
+            --teal: #00d9a5;
+            --red: #ff4757;
+            --dark: #0a0a0f;
+            --text-light: #ffffff;
+            --game-bg: #1a1a2e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* SIMPLE NAV FOR GAME PAGE */
+        .game-nav {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .back-link { color: rgba(255,255,255,0.6); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+
+        /* GAME AREA */
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .click-area {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            background: #2a2a3d;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* STATES */
+        .click-area.waiting { background: var(--red); }
+        .click-area.go { background: var(--teal); }
+        
+        .click-icon { font-size: 4rem; margin-bottom: 10px; }
+        .click-text { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 2px; }
+        .click-sub { font-size: 1rem; opacity: 0.8; margin-top: 10px; }
+
+        /* RESULTS & SAVE */
+        .result-panel {
+            margin-top: 30px;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+
+        .score-display { font-size: 2rem; font-weight: 800; color: var(--teal); margin-bottom: 15px; }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+        .btn-primary { background: white; color: var(--dark); }
+        .btn-primary:hover { transform: scale(1.05); }
+
+        /* LEADERBOARD SECTION */
+        .leaderboard-section {
+            width: 100%;
+            max-width: 600px;
+            margin: 40px auto;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .lb-header { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; margin-bottom: 15px; color: var(--teal); }
+        
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+        }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-rank { width: 30px; color: rgba(255,255,255,0.5); }
+        .lb-name { flex: 1; font-weight: 600; }
+        .lb-score { color: var(--teal); font-family: 'monospace'; }
+
+    </style>
+    <link rel="stylesheet" href="/header.css">
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <nav class="game-nav">
+        <a href="/solo.html" class="back-link">← BACK TO SOLO</a>
+        <div style="font-weight:700;">REACTION TIME</div>
+    </nav>
+
+    <div class="game-container">
+        
+        <div id="game-board" class="click-area" onmousedown="handleGameClick()">
+            <div class="click-icon">⚡</div>
+            <div class="click-text" id="status-text">CLICK TO START</div>
+            <div class="click-sub" id="sub-text">When red turns green, click as fast as you can.</div>
+        </div>
+
+        <div class="result-panel" id="result-panel">
+            <div class="score-display" id="final-score">0 ms</div>
+            <button class="btn btn-primary" id="save-btn" onclick="saveScore()">SAVE SCORE TO LEADERBOARD</button>
+            <p id="login-warning" style="font-size:0.8rem; color:#aaa; margin-top:10px; display:none;">Sign in to save scores</p>
+        </div>
+
+        <div class="leaderboard-section">
+            <div class="lb-header">GLOBAL TOP 5 (Low Score is Better)</div>
+            <div id="lb-list">
+                <div class="lb-row"><span style="opacity:0.5;">Loading scores...</span></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- 1. CONFIG & SUPABASE ---
+    const GAME_ID = 'reaction-time';
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // --- 2. GAME VARIABLES ---
+    let state = 'idle'; // idle, waiting, green, result
+    let startTime = 0;
+    let timerId = null;
+    let currentScore = 0;
+    let currentUser = null;
+
+    const board = document.getElementById('game-board');
+    const statusText = document.getElementById('status-text');
+    const subText = document.getElementById('sub-text');
+    const resultPanel = document.getElementById('result-panel');
+    const scoreDisplay = document.getElementById('final-score');
+    const saveBtn = document.getElementById('save-btn');
+    const loginWarning = document.getElementById('login-warning');
+
+    // --- 3. GAME LOGIC ---
+    function handleGameClick() {
+        if (state === 'idle' || state === 'result') {
+            startGame();
+        } else if (state === 'waiting') {
+            tooEarly();
+        } else if (state === 'green') {
+            endGame();
+        }
+    }
+
+    function startGame() {
+        state = 'waiting';
+        resultPanel.style.display = 'none';
+        board.className = 'click-area waiting';
+        board.style.backgroundColor = '#ff4757'; // Red
+        statusText.textContent = "WAIT FOR GREEN...";
+        subText.textContent = "";
+        
+        // Random time between 2s and 5s
+        const randomTime = Math.floor(Math.random() * 3000) + 2000;
+        
+        timerId = setTimeout(() => {
+            state = 'green';
+            board.className = 'click-area go';
+            board.style.backgroundColor = '#00d9a5'; // Green
+            statusText.textContent = "CLICK!";
+            startTime = Date.now();
+        }, randomTime);
+    }
+
+    function tooEarly() {
+        clearTimeout(timerId);
+        state = 'result';
+        board.style.backgroundColor = '#2a2a3d'; // Reset
+        statusText.textContent = "TOO SOON!";
+        subText.textContent = "Click to try again";
+    }
+
+    function endGame() {
+        const endTime = Date.now();
+        currentScore = endTime - startTime;
+        state = 'result';
+        
+        board.className = 'click-area';
+        board.style.backgroundColor = '#2a2a3d'; // Reset
+        statusText.textContent = `${currentScore} ms`;
+        subText.textContent = "Click to try again";
+        
+        // Show Save UI
+        resultPanel.style.display = 'block';
+        scoreDisplay.textContent = `${currentScore} ms`;
+        
+        checkAuthForButton();
+    }
+
+    // --- 4. SUPABASE LOGIC ---
+
+    async function checkAuthForButton() {
+        const { data } = await supabase.auth.getSession();
+        currentUser = data.session?.user;
+
+        if (currentUser) {
+            saveBtn.style.display = 'inline-block';
+            loginWarning.style.display = 'none';
+            saveBtn.textContent = 'SAVE SCORE TO LEADERBOARD';
+            saveBtn.disabled = false;
+        } else {
+            saveBtn.style.display = 'none';
+            loginWarning.style.display = 'block';
+        }
+    }
+
+    async function saveScore() {
+        if (!currentUser) return;
+        saveBtn.textContent = 'SAVING...';
+        saveBtn.disabled = true;
+
+        const { error } = await supabase
+            .from('solo_scores')
+            .insert({
+                user_id: currentUser.id,
+                game_id: GAME_ID,
+                score: currentScore
+            });
+
+        if (error) {
+            console.error(error);
+            alert('Error saving score');
+            saveBtn.textContent = 'ERROR';
+        } else {
+            saveBtn.textContent = 'SAVED!';
+            fetchLeaderboard(); // Refresh list
+        }
+    }
+
+    async function fetchLeaderboard() {
+        const lbList = document.getElementById('lb-list');
+        
+        // Fetch top 5 scores, joined with profile data
+        // Note: For Reaction Time, LOWER score is better (ascending)
+        const { data, error } = await supabase
+            .from('solo_scores')
+            .select(`
+                score,
+                profiles (display_name)
+            `)
+            .eq('game_id', GAME_ID)
+            .order('score', { ascending: true }) 
+            .limit(5);
+
+        if (error) {
+            console.error('Leaderboard error:', error);
+            return;
+        }
+
+        lbList.innerHTML = '';
+        if (data.length === 0) {
+            lbList.innerHTML = '<div class="lb-row">No scores yet. Be the first!</div>';
+            return;
+        }
+
+        data.forEach((entry, index) => {
+            const name = entry.profiles?.display_name || 'Anonymous';
+            const html = `
+                <div class="lb-row">
+                    <span class="lb-rank">#${index + 1}</span>
+                    <span class="lb-name">${name}</span>
+                    <span class="lb-score">${entry.score} ms</span>
+                </div>
+            `;
+            lbList.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    // Init
+    checkAuthForButton();
+    fetchLeaderboard();
+
+</script>
+    <script src="/header.js"></script>
+</body>
+</html>

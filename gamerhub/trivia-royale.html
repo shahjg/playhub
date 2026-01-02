@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trivia Royale - TheGaming.co</title>
+    
+    <meta name="description" content="Trivia Royale - Kahoot-style trivia! Answer fast, build streaks, climb the leaderboard. Free multiplayer game for 10-100 players.">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="stylesheet" href="/header.css">
+    
+    <link rel="canonical" href="https://thegaming.co/trivia-royale.html">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/cosmetics.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-elevated: #252542;
+            --purple: #6366f1;
+            --purple-glow: rgba(99, 102, 241, 0.5);
+            --pink: #ec4899;
+            --cyan: #22d3ee;
+            --green: #10b981;
+            --red: #ef4444;
+            --gold: #fbbf24;
+            --orange: #f97316;
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.6);
+            --border: rgba(255,255,255,0.1);
+            --ans-red: #ef4444;
+            --ans-blue: #3b82f6;
+            --ans-green: #22c55e;
+            --ans-orange: #f97316;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+        
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .bg-effects::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%);
+            animation: bgRotate 30s linear infinite;
+        }
+        
+        @keyframes bgRotate { to { transform: rotate(360deg); } }
+        
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            background: rgba(10, 10, 15, 0.88);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .nav-inner {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .nav-left { justify-self: flex-start; }
+        .nav-right-wrapper { justify-self: flex-end; display: flex; justify-content: flex-end; }
+        
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 4px;
+            color: white;
+            text-decoration: none;
+            position: relative;
+            white-space: nowrap;
+            justify-self: center;
+        }
+        
+        .header-logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7);
+        }
+        
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
+        
+        .auth-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            white-space: nowrap;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .auth-link:hover { color: #ffffff; }
+        
+        .user-menu-wrapper { position: relative; }
+        
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            height: 36px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease;
+            color: inherit;
+            font-family: inherit;
+        }
+        
+        .user-pill:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-1px); }
+        
+        .user-pill-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .user-pill-skeleton {
+            width: 100px;
+            height: 36px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        
+        .user-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 170px;
+            padding: 6px;
+            border-radius: 14px;
+            background: rgba(10, 10, 15, 0.97);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 18px 55px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transform: translateY(-4px);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            backdrop-filter: blur(10px);
+            z-index: 120;
+        }
+        
+        .user-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        
+        .user-menu-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+        }
+        
+        .user-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
+        
+        main {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding: 80px 20px 30px;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .countdown-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(15, 15, 26, 0.97);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .countdown-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+        
+        .countdown-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(12rem, 35vw, 20rem);
+            line-height: 1;
+            background: linear-gradient(135deg, var(--purple), var(--pink), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 60px var(--purple-glow));
+            animation: countPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes countPop {
+            0% { transform: scale(0.3); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .game-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .round-badge { display: flex; align-items: center; gap: 12px; }
+        .round-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .round-numbers { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 2px; }
+        .round-numbers .current { color: var(--cyan); }
+        .round-numbers .divider { color: var(--text-dim); margin: 0 2px; }
+        
+        .timer-container { display: flex; align-items: center; gap: 12px; }
+        .timer-ring { position: relative; width: 60px; height: 60px; }
+        .timer-ring svg { transform: rotate(-90deg); width: 60px; height: 60px; }
+        .timer-ring-bg { fill: none; stroke: var(--bg-elevated); stroke-width: 4; }
+        .timer-ring-progress { fill: none; stroke: var(--cyan); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 157; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+        .timer-ring-progress.urgent { stroke: var(--red); }
+        .timer-value { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--cyan); }
+        .timer-value.urgent { color: var(--red); animation: timerPulse 0.5s ease-in-out infinite; }
+        @keyframes timerPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        .question-phase { flex: 1; display: flex; flex-direction: column; gap: 28px; }
+        
+        .question-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+            border: 2px solid var(--purple);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.1), 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 0 80px -20px var(--purple-glow);
+        }
+        
+        .question-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--purple), var(--pink), var(--cyan), var(--purple));
+            background-size: 300% 100%;
+            animation: shimmerBg 3s linear infinite;
+        }
+        
+        @keyframes shimmerBg { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+        
+        .question-text { font-family: 'Inter', sans-serif; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; line-height: 1.4; color: white; }
+        
+        .options-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        
+        .option-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 20px;
+            background: var(--bg-card);
+            border: 3px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            text-align: left;
+        }
+        
+        .option-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.25s; }
+        .option-btn:nth-child(1) { border-color: var(--ans-red); }
+        .option-btn:nth-child(1)::before { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), transparent); }
+        .option-btn:nth-child(2) { border-color: var(--ans-blue); }
+        .option-btn:nth-child(2)::before { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), transparent); }
+        .option-btn:nth-child(3) { border-color: var(--ans-green); }
+        .option-btn:nth-child(3)::before { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), transparent); }
+        .option-btn:nth-child(4) { border-color: var(--ans-orange); }
+        .option-btn:nth-child(4)::before { background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), transparent); }
+        .option-btn:hover:not(:disabled)::before { opacity: 1; }
+        .option-btn:hover:not(:disabled) { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px -10px rgba(0,0,0,0.5); }
+        
+        .option-letter { position: relative; z-index: 1; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: white; flex-shrink: 0; }
+        .option-btn:nth-child(1) .option-letter { background: var(--ans-red); }
+        .option-btn:nth-child(2) .option-letter { background: var(--ans-blue); }
+        .option-btn:nth-child(3) .option-letter { background: var(--ans-green); }
+        .option-btn:nth-child(4) .option-letter { background: var(--ans-orange); }
+        
+        .option-text { position: relative; z-index: 1; font-size: clamp(1.1rem, 2.5vw, 1.4rem); font-weight: 600; color: white; line-height: 1.3; }
+        .option-btn.selected { transform: scale(1.02); }
+        .option-btn.selected::after { content: '✓'; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: var(--purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: white; animation: checkPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes checkPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        .option-btn.correct { border-color: var(--green) !important; background: rgba(16, 185, 129, 0.2) !important; box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); }
+        .option-btn.correct::before { opacity: 0 !important; }
+        .option-btn.correct .option-letter { background: var(--green) !important; }
+        .option-btn.incorrect { border-color: var(--red) !important; background: rgba(239, 68, 68, 0.15) !important; opacity: 0.6; }
+        .option-btn:disabled { cursor: not-allowed; }
+        
+        .waiting-phase { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 24px; }
+        .locked-badge { display: flex; align-items: center; gap: 12px; padding: 16px 32px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05)); border: 2px solid var(--green); border-radius: 100px; animation: lockedPulse 2s ease-in-out infinite; }
+        @keyframes lockedPulse { 0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); } 50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); } }
+        .locked-badge .icon { font-size: 1.5rem; }
+        .locked-badge .text { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 3px; color: var(--green); }
+        .waiting-spinner { width: 50px; height: 50px; border: 3px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .waiting-subtext { font-size: 1rem; color: var(--text-dim); }
+        .answer-count { padding: 10px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 100px; font-size: 0.9rem; color: var(--text-dim); }
+        .answer-count span { color: var(--cyan); font-weight: 700; }
+        
+        .results-phase { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .result-banner { text-align: center; padding: 32px 24px; border-radius: 24px; position: relative; overflow: hidden; }
+        .result-banner.correct { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05)); border: 2px solid var(--green); }
+        .result-banner.incorrect { background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05)); border: 2px solid var(--red); }
+        .result-icon { font-size: 4rem; margin-bottom: 12px; }
+        .result-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 4px; }
+        .result-banner.correct .result-title { color: var(--green); }
+        .result-banner.incorrect .result-title { color: var(--red); }
+        .result-answer { margin-top: 12px; font-size: 1.1rem; color: var(--text-dim); }
+        .result-answer span { color: var(--green); font-weight: 700; }
+        
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .points-card { background: linear-gradient(135deg, var(--bg-card), var(--bg-elevated)); border: 1px solid var(--border); border-radius: 20px; padding: 24px; text-align: center; }
+        .points-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .points-value { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; color: var(--gold); line-height: 1; }
+        .points-breakdown { margin-top: 8px; font-size: 0.8rem; color: var(--text-dim); }
+        .streak-card { background: linear-gradient(135deg, var(--bg-card), var(--bg-elevated)); border: 1px solid var(--border); border-radius: 20px; padding: 24px; text-align: center; transition: all 0.3s; }
+        .streak-card.active { border-color: var(--orange); background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.05)); box-shadow: 0 0 40px rgba(249, 115, 22, 0.2); }
+        .streak-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .streak-value { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; color: var(--orange); line-height: 1; }
+        .streak-card.active .streak-value { animation: fireGlow 1s ease-in-out infinite alternate; }
+        @keyframes fireGlow { 0% { text-shadow: 0 0 10px rgba(249, 115, 22, 0.5); } 100% { text-shadow: 0 0 30px rgba(249, 115, 22, 0.8); } }
+        
+        .leaderboard-card { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; min-height: 0; }
+        .leaderboard-header { display: flex; align-items: center; justify-content: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+        .leaderboard-header .icon { font-size: 1.3rem; }
+        .leaderboard-header .title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 2px; color: var(--gold); }
+        .leaderboard-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
+        
+        .next-btn { padding: 18px 40px; background: linear-gradient(135deg, var(--purple), var(--pink)); border: none; border-radius: 16px; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 3px; color: white; cursor: pointer; transition: all 0.3s; margin-top: auto; }
+        .next-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px -10px var(--purple-glow); }
+        
+        .gameover-phase { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 24px; }
+        .winner-trophy { font-size: 6rem; animation: trophyBounce 1s ease infinite; }
+        @keyframes trophyBounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-15px) rotate(5deg); } }
+        .winner-label { font-size: 1rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; }
+        .winner-name { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 4rem); letter-spacing: 4px; background: linear-gradient(135deg, var(--gold), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 30px rgba(251, 191, 36, 0.5)); }
+        .winner-name.premium { background: linear-gradient(90deg, var(--gold), #fff5cc, var(--gold), #f59e0b, var(--gold)); background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: premiumWinnerShimmer 2s linear infinite; filter: drop-shadow(0 0 40px rgba(251, 191, 36, 0.7)); }
+        @keyframes premiumWinnerShimmer { 0% { background-position: 0% center; } 100% { background-position: 300% center; } }
+        .winner-score-badge { padding: 12px 28px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05)); border: 2px solid var(--gold); border-radius: 100px; }
+        .winner-score-badge .label { font-size: 0.8rem; color: var(--text-dim); margin-right: 8px; }
+        .winner-score-badge .score { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--gold); }
+        .final-leaderboard { width: 100%; max-width: 450px; }
+        .play-again-btn { padding: 18px 50px; background: linear-gradient(135deg, var(--purple), var(--pink)); border: none; border-radius: 16px; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 3px; color: white; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
+        .play-again-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px -10px var(--purple-glow); }
+        
+        .hidden { display: none !important; }
+        
+        .result-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(15, 15, 26, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; animation: overlayIn 0.2s ease; }
+        @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+        .result-popup { text-align: center; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .result-emoji { font-size: 5rem; margin-bottom: 12px; }
+        .result-text { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 6px; margin-bottom: 8px; }
+        .result-overlay.correct .result-text { color: var(--green); }
+        .result-overlay.correct .result-emoji { animation: bounceIn 0.5s ease; }
+        .result-overlay.incorrect .result-text { color: var(--red); }
+        @keyframes bounceIn { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .result-points { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--gold); margin-bottom: 8px; }
+        .result-streak { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--orange); margin-bottom: 12px; animation: fireGlow 0.5s ease-in-out infinite alternate; }
+        .result-answer-text { font-size: 1rem; color: var(--text-dim); }
+        .result-answer-text span { color: var(--green); font-weight: 700; }
+        
+        .mini-leaderboard { position: fixed; top: 80px; right: 20px; background: rgba(26, 26, 46, 0.95); border: 1px solid var(--border); border-radius: 14px; padding: 12px; min-width: 160px; z-index: 50; backdrop-filter: blur(10px); }
+        .mini-lb-header { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 2px; color: var(--gold); text-align: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .mini-lb-list { display: flex; flex-direction: column; gap: 6px; }
+        
+        @media (max-width: 700px) {
+            header { height: 56px; padding: 0 14px; }
+            .nav-inner { gap: 12px; }
+            .header-logo { font-size: 1.4rem; letter-spacing: 3px; }
+            main { padding: 70px 16px 24px; }
+            .game-bar { padding: 14px 18px; margin-bottom: 20px; }
+            .round-numbers { font-size: 1.6rem; }
+            .timer-ring { width: 50px; height: 50px; }
+            .timer-ring svg { width: 50px; height: 50px; }
+            .timer-value { font-size: 1.5rem; }
+            .question-card { padding: 28px 20px; border-radius: 20px; }
+            .question-text { font-size: 1.4rem; }
+            .options-grid { grid-template-columns: 1fr; gap: 12px; }
+            .option-btn { padding: 20px 16px; border-radius: 16px; }
+            .option-letter { width: 44px; height: 44px; font-size: 1.5rem; }
+            .option-text { font-size: 1.1rem; }
+            .result-banner { padding: 24px 20px; }
+            .result-icon { font-size: 3rem; }
+            .result-title { font-size: 2.2rem; }
+            .stats-row { grid-template-columns: 1fr; gap: 12px; }
+            .points-card, .streak-card { padding: 20px; }
+            .points-value, .streak-value { font-size: 2.8rem; }
+            .winner-trophy { font-size: 4rem; }
+            .winner-name { font-size: 2.2rem; }
+            .mini-leaderboard { top: auto; bottom: 20px; right: 10px; left: 10px; min-width: auto; }
+            .mini-lb-list { flex-direction: row; justify-content: space-around; }
+            .result-text { font-size: 2.5rem; }
+            .result-emoji { font-size: 4rem; }
+            .result-points { font-size: 2rem; }
+        }
+        
+        @media (max-width: 400px) {
+            .question-text { font-size: 1.2rem; }
+            .option-text { font-size: 1rem; }
+            .countdown-number { font-size: 10rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects"></div>
+
+<div id="site-header"></div>
+
+<main>
+    <div class="countdown-overlay" id="countdown-overlay">
+        <div class="countdown-label">Get Ready</div>
+        <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+    
+    <div class="result-overlay hidden" id="result-overlay">
+        <div class="result-popup">
+            <div class="result-emoji" id="result-emoji">✓</div>
+            <div class="result-text" id="result-text">CORRECT!</div>
+            <div class="result-points" id="result-points">+150</div>
+            <div class="result-streak hidden" id="result-streak">🔥 3 STREAK</div>
+            <div class="result-answer-text">Answer: <span id="result-correct-answer">...</span></div>
+        </div>
+    </div>
+    
+    <div class="mini-leaderboard" id="mini-leaderboard">
+        <div class="mini-lb-header">🏆 Top 3</div>
+        <div class="mini-lb-list" id="mini-lb-list"></div>
+    </div>
+    
+    <div class="game-bar" id="game-bar">
+        <div class="round-badge">
+            <div>
+                <div class="round-label">Question</div>
+                <div class="round-numbers">
+                    <span class="current" id="current-round">1</span>
+                    <span class="divider">/</span>
+                    <span id="total-rounds">10</span>
+                </div>
+            </div>
+        </div>
+        <div class="timer-container">
+            <div class="timer-ring">
+                <svg viewBox="0 0 54 54">
+                    <circle class="timer-ring-bg" cx="27" cy="27" r="25"/>
+                    <circle class="timer-ring-progress" id="timer-progress" cx="27" cy="27" r="25"/>
+                </svg>
+                <div class="timer-value" id="timer">15</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="question-phase" id="question-phase">
+        <div class="question-card">
+            <div class="question-text" id="question-text">Loading question...</div>
+        </div>
+        <div class="options-grid" id="options-grid">
+            <button class="option-btn" onclick="submitAnswer(0)"><span class="option-letter">A</span><span class="option-text">Option 1</span></button>
+            <button class="option-btn" onclick="submitAnswer(1)"><span class="option-letter">B</span><span class="option-text">Option 2</span></button>
+            <button class="option-btn" onclick="submitAnswer(2)"><span class="option-letter">C</span><span class="option-text">Option 3</span></button>
+            <button class="option-btn" onclick="submitAnswer(3)"><span class="option-letter">D</span><span class="option-text">Option 4</span></button>
+        </div>
+    </div>
+    
+    <div class="waiting-phase hidden" id="waiting-phase">
+        <div class="locked-badge"><span class="icon">✓</span><span class="text">Answer Locked</span></div>
+        <div class="waiting-spinner"></div>
+        <div class="waiting-subtext">Waiting for other players...</div>
+        <div class="answer-count"><span id="answered-count">1</span> / <span id="total-players">3</span> answered</div>
+    </div>
+    
+    <div class="results-phase hidden" id="results-phase">
+        <div class="result-banner" id="result-banner">
+            <div class="result-icon" id="result-icon">✓</div>
+            <div class="result-title" id="result-title">CORRECT!</div>
+            <div class="result-answer">The answer was: <span id="correct-answer">...</span></div>
+        </div>
+        <div class="stats-row">
+            <div class="points-card">
+                <div class="points-label">Points Earned</div>
+                <div class="points-value">+<span id="points-earned">0</span></div>
+                <div class="points-breakdown" id="points-breakdown">Base + Speed Bonus</div>
+            </div>
+            <div class="streak-card" id="streak-card">
+                <div class="streak-label">🔥 Streak</div>
+                <div class="streak-value" id="streak-value">0</div>
+            </div>
+        </div>
+        <div class="leaderboard-card">
+            <div class="leaderboard-header"><span class="icon">🏆</span><span class="title">Leaderboard</span></div>
+            <div class="leaderboard-list" id="leaderboard-list"></div>
+        </div>
+        <button class="next-btn hidden" id="next-btn">NEXT QUESTION</button>
+    </div>
+    
+    <div class="gameover-phase hidden" id="gameover-phase">
+        <div class="winner-trophy">👑</div>
+        <div class="winner-label">Winner</div>
+        <div class="winner-name" id="winner-name">CHAMPION</div>
+        <div class="winner-score-badge"><span class="label">Final Score:</span><span class="score" id="winner-score">0</span></div>
+        <div class="leaderboard-card final-leaderboard">
+            <div class="leaderboard-header"><span class="icon">🏆</span><span class="title">Final Standings</span></div>
+            <div class="leaderboard-list" id="final-leaderboard"></div>
+        </div>
+        <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
+    </div>
+</main>
+
+<script>
+    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
+    const playerName = localStorage.getItem('tempPlayerName');
+    const isHost = localStorage.getItem('tempIsHost') === 'true';
+    const gameCategory = urlParams.get('category') || localStorage.getItem('tempCategory') || 'general';
+    
+    let hasAnswered = false;
+    let selectedAnswer = -1;
+    let timerInterval = null;
+    let timeLeft = 15;
+    let maxTime = 15;
+    let totalPlayers = 1;
+    let playersData = {};
+    
+    if (!roomCode) window.location.href = '/party-games.html';
+    
+    socket.on('connect', async () => {
+        let isPremium = false;
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user) {
+                const { data: profile } = await supabaseClient.from('profiles').select('account_type').eq('id', session.user.id).single();
+                isPremium = profile?.account_type === 'premium';
+            }
+        } catch (e) {}
+        socket.emit('rejoin-room', { roomCode, playerName, isPremium });
+    });
+    
+    socket.on('room-joined', (data) => {
+        const players = data.room?.players || data.players || [];
+        totalPlayers = players.length || 1;
+        document.getElementById('total-players').textContent = totalPlayers;
+        players.forEach(p => { playersData[p.name] = { isPremium: p.isPremium || false, cosmetics: p.cosmetics || {} }; });
+        document.getElementById('mini-leaderboard').classList.add('hidden');
+        startCountdown();
+    });
+    
+    socket.on('player-joined', (data) => {
+        const players = data.room?.players || [];
+        players.forEach(p => { playersData[p.name] = { isPremium: p.isPremium || false, cosmetics: p.cosmetics || {} }; });
+        totalPlayers = players.length;
+        document.getElementById('total-players').textContent = totalPlayers;
+    });
+    
+    socket.on('trivia-question', (data) => {
+        hasAnswered = false;
+        selectedAnswer = -1;
+        maxTime = data.timeLimit || 15;
+        timeLeft = maxTime;
+        
+        document.getElementById('current-round').textContent = data.questionIndex + 1 || data.roundNumber || 1;
+        document.getElementById('total-rounds').textContent = data.totalQuestions || data.totalRounds || 10;
+        document.getElementById('question-text').textContent = data.question;
+        document.getElementById('timer').textContent = timeLeft;
+        document.getElementById('timer').classList.remove('urgent');
+        document.getElementById('timer-progress').classList.remove('urgent');
+        document.getElementById('timer-progress').style.strokeDashoffset = '0';
+        
+        const optionBtns = document.querySelectorAll('.option-btn');
+        data.options.forEach((opt, i) => {
+            if (optionBtns[i]) {
+                optionBtns[i].querySelector('.option-text').textContent = opt;
+                optionBtns[i].disabled = false;
+                optionBtns[i].classList.remove('selected', 'correct', 'incorrect');
+            }
+        });
+        
+        showPhase('question');
+        startTimer();
+    });
+    
+    socket.on('trivia-answer-received', (data) => { showPhase('waiting'); });
+    
+    socket.on('trivia-answer-count', (data) => {
+        document.getElementById('answered-count').textContent = data.answeredCount || 0;
+        document.getElementById('total-players').textContent = data.totalPlayers || totalPlayers;
+    });
+    
+    socket.on('trivia-results', (data) => {
+        clearInterval(timerInterval);
+        
+        const optionBtns = document.querySelectorAll('.option-btn');
+        const correctIndex = data.correctAnswer;
+        
+        optionBtns.forEach((btn, i) => {
+            btn.disabled = true;
+            if (i === correctIndex) btn.classList.add('correct');
+            else if (i === selectedAnswer && selectedAnswer !== correctIndex) btn.classList.add('incorrect');
+        });
+        
+        const myResult = data.roundResults?.find(r => r.playerName === playerName) || data.results?.find(r => r.playerName === playerName);
+        const wasCorrect = myResult?.isCorrect || myResult?.correct || false;
+        const points = myResult?.points || 0;
+        const streak = myResult?.streak || 0;
+        
+        showResultOverlay(wasCorrect, points, streak, data.correctText || data.correctOption || data.options?.[correctIndex]);
+        
+        const leaderboard = data.leaderboard || Object.entries(data.scores || {}).map(([name, score]) => ({ name, score })).sort((a, b) => b.score - a.score);
+        updateMiniLeaderboard(leaderboard);
+        
+        setTimeout(() => { hideResultOverlay(); }, 2000);
+    });
+    
+    socket.on('trivia-game-over', (data) => {
+        const finalScores = data.finalLeaderboard || Object.entries(data.finalScores || data.scores || {}).map(([name, score]) => ({ name, score })).sort((a, b) => b.score - a.score);
+        
+        const winner = data.winner || finalScores[0]?.name || 'No one';
+        const winnerScore = finalScores[0]?.score || 0;
+        const winnerIsPremium = playersData[winner]?.isPremium || false;
+        
+        const winnerNameEl = document.getElementById('winner-name');
+        winnerNameEl.textContent = winner.toUpperCase();
+        winnerNameEl.classList.toggle('premium', winnerIsPremium);
+        
+        document.getElementById('winner-score').textContent = winnerScore;
+        renderLeaderboard(finalScores, 'final-leaderboard');
+        showPhase('gameover');
+    });
+    
+    function startCountdown() {
+        let count = 3;
+        const overlay = document.getElementById('countdown-overlay');
+        const number = document.getElementById('countdown-number');
+        number.textContent = count;
+        overlay.classList.remove('hidden');
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                number.textContent = count;
+                number.style.animation = 'none';
+                void number.offsetWidth;
+                number.style.animation = 'countPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            } else {
+                clearInterval(interval);
+                overlay.classList.add('hidden');
+                document.getElementById('mini-leaderboard').classList.remove('hidden');
+                if (isHost) socket.emit('trivia-start-round', { roomCode, category: gameCategory });
+            }
+        }, 600);
+    }
+    
+    function startTimer() {
+        clearInterval(timerInterval);
+        const timerEl = document.getElementById('timer');
+        const progressEl = document.getElementById('timer-progress');
+        const circumference = 157;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerEl.textContent = timeLeft;
+            const progress = (maxTime - timeLeft) / maxTime;
+            progressEl.style.strokeDashoffset = circumference * progress;
+            if (timeLeft <= 5) { timerEl.classList.add('urgent'); progressEl.classList.add('urgent'); }
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (!hasAnswered) {
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                    if (isHost) socket.emit('trivia-time-up', { roomCode });
+                }
+            }
+        }, 1000);
+    }
+    
+    function submitAnswer(answerIndex) {
+        if (hasAnswered) return;
+        hasAnswered = true;
+        selectedAnswer = answerIndex;
+        document.querySelectorAll('.option-btn').forEach((btn, i) => { btn.disabled = true; if (i === answerIndex) btn.classList.add('selected'); });
+        socket.emit('trivia-answer', { roomCode, answerIndex: answerIndex });
+    }
+    
+    function renderLeaderboard(leaderboard, elementId) {
+        const list = document.getElementById(elementId);
+        if (!list || !leaderboard) return;
+        
+        list.innerHTML = leaderboard.slice(0, 10).map((player, i) => {
+            return window.TGCOCosmetics.renderLeaderboardItem({
+                name: player.name || player.playerName,
+                score: player.score || player.points || 0,
+                rank: i + 1,
+                cosmetics: player.cosmetics || playersData[player.name]?.cosmetics || {},
+                isPremium: player.isPremium || playersData[player.name]?.isPremium || false,
+                isMe: (player.name || player.playerName) === playerName
+            });
+        }).join('');
+    }
+    
+    function updateMiniLeaderboard(leaderboard) {
+        const list = document.getElementById('mini-lb-list');
+        if (!list || !leaderboard) return;
+        const sorted = [...leaderboard].sort((a, b) => (b.score || 0) - (a.score || 0));
+        list.innerHTML = sorted.slice(0, 3).map((player, i) => {
+            return window.TGCOCosmetics.renderMiniLeaderboardItem({
+                name: player.name || player.playerName,
+                score: player.score || player.points || 0,
+                rank: i + 1,
+                cosmetics: player.cosmetics || playersData[player.name]?.cosmetics || {},
+                isPremium: player.isPremium || playersData[player.name]?.isPremium || false,
+                isMe: (player.name || player.playerName) === playerName
+            });
+        }).join('');
+    }
+    
+    function showPhase(phase) {
+        document.getElementById('question-phase').classList.add('hidden');
+        document.getElementById('waiting-phase').classList.add('hidden');
+        document.getElementById('results-phase').classList.add('hidden');
+        document.getElementById('gameover-phase').classList.add('hidden');
+        document.getElementById(phase + '-phase').classList.remove('hidden');
+        
+        const gameBar = document.getElementById('game-bar');
+        const miniLb = document.getElementById('mini-leaderboard');
+        if (phase === 'gameover') { gameBar.classList.add('hidden'); miniLb.classList.add('hidden'); }
+        else { gameBar.classList.remove('hidden'); miniLb.classList.remove('hidden'); }
+    }
+    
+    function showResultOverlay(wasCorrect, points, streak, correctAnswer) {
+        const overlay = document.getElementById('result-overlay');
+        overlay.classList.remove('hidden', 'correct', 'incorrect');
+        overlay.classList.add(wasCorrect ? 'correct' : 'incorrect');
+        document.getElementById('result-emoji').textContent = wasCorrect ? '✓' : '✗';
+        document.getElementById('result-text').textContent = wasCorrect ? 'CORRECT!' : 'WRONG!';
+        document.getElementById('result-points').textContent = wasCorrect ? '+' + points : '+0';
+        document.getElementById('result-correct-answer').textContent = correctAnswer || '...';
+        const streakEl = document.getElementById('result-streak');
+        if (streak >= 2) { streakEl.textContent = '🔥 ' + streak + ' STREAK'; streakEl.classList.remove('hidden'); }
+        else { streakEl.classList.add('hidden'); }
+    }
+    
+    function hideResultOverlay() { document.getElementById('result-overlay').classList.add('hidden'); }
+    
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        if (isHost) socket.emit('host-return-lobby', { roomCode });
+        else window.location.href = '/waiting-room.html?room=' + roomCode;
+    });
+    
+    socket.on('force-return-lobby', () => { window.location.href = '/waiting-room.html?room=' + roomCode; });
+    
+    const authSkeleton = document.getElementById('auth-skeleton');
+    const loggedOutNav = document.querySelector('.nav-right-logged-out');
+    const loggedInNav = document.querySelector('.nav-right-logged-in');
+    const headerUsernameLabel = document.getElementById('header-username-label');
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+    const userMenuSignOut = document.getElementById('user-menu-signout');
+
+    (function primeHeaderFromCache() {
+        try {
+            const cachedLabel = localStorage.getItem('tgco_header_label');
+            const cachedFull = localStorage.getItem('tgco_header_full');
+            if (cachedLabel && cachedFull) {
+                headerUsernameLabel.textContent = cachedLabel;
+                headerUsernameLabel.title = cachedFull;
+                if (authSkeleton) authSkeleton.style.display = 'none';
+                if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+            } else {
+                if (authSkeleton) authSkeleton.style.display = 'none';
+                if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+            }
+        } catch (e) {
+            if (authSkeleton) authSkeleton.style.display = 'none';
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+        }
+    })();
+
+    function updateAuthUI(user) {
+        if (authSkeleton) authSkeleton.style.display = 'none';
+        if (user) {
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
+            if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
+        } else {
+            if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
+            if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
+            try { localStorage.removeItem('tgco_header_label'); localStorage.removeItem('tgco_header_full'); } catch (e) {}
+        }
+    }
+
+    function applyHeaderNameFromProfile(display_name, gamer_tag, user) {
+        const base = (display_name && display_name.trim()) || (gamer_tag && gamer_tag.trim()) || (user && user.email && user.email.split('@')[0]) || '';
+        const trimmed = base.trim();
+        if (!trimmed) { headerUsernameLabel.textContent = 'Player'; headerUsernameLabel.title = ''; return; }
+        const maxLen = 16;
+        let label = trimmed;
+        if (label.length > maxLen) label = label.slice(0, maxLen - 1) + '…';
+        headerUsernameLabel.textContent = label;
+        headerUsernameLabel.title = trimmed;
+        try { localStorage.setItem('tgco_header_full', trimmed); localStorage.setItem('tgco_header_label', label); } catch (e) {}
+    }
+
+    async function loadSessionAndProfile() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) { updateAuthUI(null); return; }
+        const user = data?.session?.user ?? null;
+        updateAuthUI(user);
+        if (!user) return;
+        try {
+            const { data: profile, error: profErr, status } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
+            if (profErr && status !== 406) { applyHeaderNameFromProfile(null, null, user); return; }
+            if (profile) applyHeaderNameFromProfile(profile.display_name, profile.gamer_tag, user);
+            else applyHeaderNameFromProfile(null, null, user);
+        } catch (err) { applyHeaderNameFromProfile(null, null, user); }
+    }
+
+    loadSessionAndProfile();
+    supabaseClient.auth.onAuthStateChange((_event, session) => { const user = session?.user ?? null; updateAuthUI(user); if (user) loadSessionAndProfile(); });
+
+    let userMenuOpen = false;
+    function setUserMenuOpen(open) {
+        userMenuOpen = open;
+        if (!userMenuButton || !userMenu) return;
+        if (open) { userMenu.classList.add('open'); userMenuButton.setAttribute('aria-expanded', 'true'); }
+        else { userMenu.classList.remove('open'); userMenuButton.setAttribute('aria-expanded', 'false'); }
+    }
+    if (userMenuButton && userMenu) {
+        userMenuButton.addEventListener('click', (event) => { event.stopPropagation(); setUserMenuOpen(!userMenuOpen); });
+        document.addEventListener('click', () => { if (userMenuOpen) setUserMenuOpen(false); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setUserMenuOpen(false); });
+    }
+    async function signOut() {
+        try { localStorage.removeItem('tgco_header_label'); localStorage.removeItem('tgco_header_full'); } catch (e) {}
+        await supabaseClient.auth.signOut();
+        window.location.href = '/';
+    }
+    if (userMenuSignOut) userMenuSignOut.addEventListener('click', (event) => { event.preventDefault(); setUserMenuOpen(false); signOut(); });
+</script>
+    <script src="/header.js"></script>
+</body>
+</html>
