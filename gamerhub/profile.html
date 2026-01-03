@@ -1507,27 +1507,6 @@
     function formatPlaytime(m) { if (!m || m < 1) return '0m'; const h = Math.floor(m / 60); const mins = m % 60; return h > 0 ? (mins > 0 ? `${h}h ${mins}m` : `${h}h`) : `${mins}m`; }
     function showStatus(msg, type = 'success') { const s = document.getElementById('status-bar'); s.className = `status-bar visible ${type}`; document.getElementById('status-message').textContent = msg; setTimeout(() => s.classList.remove('visible'), 4000); }
 
-    const authSkeleton = document.getElementById('auth-skeleton'), headerUsernameLabel = document.getElementById('header-username-label');
-    const loggedOutNav = document.querySelector('.nav-right-logged-out'), loggedInNav = document.querySelector('.nav-right-logged-in');
-    const userMenuButton = document.getElementById('user-menu-button'), userMenu = document.getElementById('user-menu');
-
-    function primeHeaderFromCache() { 
-      try { 
-        const c = localStorage.getItem('tgco_header_label'); 
-        if (c) { 
-          if (headerUsernameLabel) headerUsernameLabel.textContent = c; 
-          if (authSkeleton) authSkeleton.style.display = 'none'; 
-          if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important'); 
-        } else { 
-          if (authSkeleton) authSkeleton.style.display = 'none'; 
-          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); 
-        } 
-      } catch (e) { 
-        if (authSkeleton) authSkeleton.style.display = 'none'; 
-        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); 
-      } 
-    }
-
     // Auth check function
     async function checkSession() {
       const { data } = await supabaseClient.auth.getSession();
@@ -1685,8 +1664,8 @@
       if (error) { console.error('Profile error:', error); showStatus('Error loading profile', 'error'); return; }
       currentProfile = profile;
 
+      // Cache for header.js
       const initial = (profile.display_name || profile.email || 'U').charAt(0).toUpperCase();
-      headerUsernameLabel.textContent = initial;
       localStorage.setItem('tgco_header_label', initial);
 
       const displayName = profile.display_name || 'Player';
@@ -1919,7 +1898,7 @@
       if (error) { showStatus('Error: ' + error.message, 'error'); return; }
       document.getElementById('preview-name').textContent = dn || 'YourName';
       document.getElementById('sidebar-name').textContent = dn || 'Player';
-      try { const i = (dn || 'P').charAt(0).toUpperCase(); localStorage.setItem('tgco_header_label', i); headerUsernameLabel.textContent = i; } catch (e) {}
+      try { const i = (dn || 'P').charAt(0).toUpperCase(); localStorage.setItem('tgco_header_label', i); } catch (e) {}
       showStatus('Profile updated!', 'success');
     });
 
