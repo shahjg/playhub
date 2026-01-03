@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This or That - PlayHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #fafbff;
+            color: #1a1a1a;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* Animated background blobs */
+        .bg-shape {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .shape-1 {
+            top: -80px;
+            right: -80px;
+            width: 350px;
+            height: 350px;
+            background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: morph 10s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            top: 50%;
+            left: -120px;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%);
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            animation: morph 12s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+            bottom: -80px;
+            right: 15%;
+            width: 280px;
+            height: 280px;
+            background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%);
+            border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%;
+            animation: morph 14s ease-in-out infinite;
+        }
+
+        @keyframes morph {
+            0%, 100% {
+                border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+                transform: rotate(0deg);
+            }
+            50% {
+                border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+                transform: rotate(5deg);
+            }
+        }
+
+        h1, h2, h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 40px;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation */
+        nav {
+            padding: 30px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo-nav {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.1rem;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: #1a1a1a;
+        }
+
+        /* Game Container */
+        .game-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 60px;
+        }
+
+        /* Category Selection Screen */
+        .category-selection-screen {
+            display: none;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .category-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .category-header h2 {
+            font-size: 4.5rem;
+            line-height: 1;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2);
+        }
+
+        .category-header p {
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .category-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 5px 5px 0 #e0e0e0;
+            text-align: center;
+        }
+
+        .category-card:hover {
+            transform: translate(2px, -2px);
+            box-shadow: 3px 3px 0 #e0e0e0;
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .category-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .category-description {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .category-count {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            color: #ff6b9d;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        /* Pack Selection Screen */
+        .pack-selection-screen {
+            display: none;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .pack-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .pack-header h2 {
+            font-size: 4.5rem;
+            line-height: 1;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2);
+        }
+
+        .pack-header p {
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .back-to-categories-btn {
+            background: white;
+            border: 2px solid #1a1a1a;
+            padding: 10px 20px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-to-categories-btn:hover {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .packs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .pack-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 5px 5px 0 #e0e0e0;
+            text-align: center;
+        }
+
+        .pack-card:hover {
+            transform: translate(2px, -2px);
+            box-shadow: 3px 3px 0 #e0e0e0;
+        }
+
+        .pack-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: #ff6b9d;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .pack-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .pack-questions {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            color: #666;
+            letter-spacing: 1px;
+        }
+
+        /* Game Screen */
+        .game-screen {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .game-header {
+            margin-bottom: 40px;
+        }
+
+        .game-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .game-title-row h2 {
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .quit-btn {
+            background: none;
+            border: 2px solid #1a1a1a;
+            padding: 10px 20px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quit-btn:hover {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border: 2px solid #1a1a1a;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b9d 0%, #c44569 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .question-counter {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* Question Card */
+        .question-card {
+            background: white;
+            border: 4px solid #1a1a1a;
+            padding: 60px 50px;
+            margin: 40px 0;
+            box-shadow: 8px 8px 0 #e0e0e0;
+            text-align: center;
+        }
+
+        .question-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: #ff6b9d;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: center;
+            margin: 40px 0;
+        }
+
+        .option-btn {
+            flex: 1;
+            max-width: 250px;
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 40px 30px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 5px 5px 0 #e0e0e0;
+        }
+
+        .option-btn:hover {
+            transform: translate(2px, -2px);
+            box-shadow: 3px 3px 0 #e0e0e0;
+            background: #fafbff;
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border-color: #8b2e47;
+            transform: translate(2px, -2px);
+            box-shadow: 3px 3px 0 #8b2e47;
+        }
+
+        .vs-divider {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #ff6b9d;
+            font-weight: 700;
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .nav-btn {
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 15px 40px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 0 #e0e0e0;
+            font-weight: 700;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translate(2px, -2px);
+            box-shadow: 2px 2px 0 #e0e0e0;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #e0e0e0;
+            color: #999;
+        }
+
+        .nav-btn.primary:disabled {
+            background: #e0e0e0;
+            color: #999;
+            border-color: #ccc;
+        }
+
+        .nav-btn.primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border-color: #8b2e47;
+        }
+
+        .nav-btn.primary:hover {
+            box-shadow: 2px 2px 0 #8b2e47;
+        }
+
+        /* End Screen */
+        .end-screen {
+            display: none;
+            max-width: 700px;
+            margin: 80px auto;
+            text-align: center;
+        }
+
+        .end-card {
+            background: white;
+            border: 4px solid #1a1a1a;
+            padding: 80px 60px;
+            box-shadow: 8px 8px 0 #e0e0e0;
+        }
+
+        .end-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .end-card h2 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .end-message {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 40px;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .end-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .end-btn {
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 15px 35px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 0 #e0e0e0;
+            text-decoration: none;
+            color: #1a1a1a;
+            display: inline-block;
+        }
+
+        .end-btn:hover {
+            transform: translate(2px, -2px);
+            box-shadow: 2px 2px 0 #e0e0e0;
+        }
+
+        .end-btn.primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border-color: #8b2e47;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+
+            .category-header h2,
+            .pack-header h2,
+            .game-title-row h2 {
+                font-size: 3rem;
+            }
+
+            .categories-grid,
+            .packs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .options-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .option-btn {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .vs-divider {
+                transform: rotate(90deg);
+            }
+
+            .question-card {
+                padding: 40px 30px;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/header.css">
+</head>
+<body>
+    <div id="site-header"></div>
+    <!-- Animated Background -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <a href="date-night.html" class="logo-nav">PLAYHUB</a>
+            <a href="date-night.html" class="back-btn">← Back to Games</a>
+        </nav>
+
+        <!-- Game Content -->
+        <div class="game-content">
+            <!-- Category Selection Screen -->
+            <div class="category-selection-screen" id="categorySelection">
+                <div class="category-header">
+                    <h2>THIS OR THAT</h2>
+                    <p>Choose a category, then pick your pack!</p>
+                </div>
+
+                <div class="categories-grid">
+                    <div class="category-card" onclick="showPacks('day-to-day')">
+                        <div class="category-icon">☀️</div>
+                        <h3>DAY TO DAY</h3>
+                        <p class="category-description">Daily preferences and lifestyle choices</p>
+                        <div class="category-count">3 PACKS • 36 QUESTIONS</div>
+                    </div>
+
+                    <div class="category-card" onclick="showPacks('food')">
+                        <div class="category-icon">🍕</div>
+                        <h3>FOOD</h3>
+                        <p class="category-description">All about your taste buds and cravings</p>
+                        <div class="category-count">3 PACKS • 36 QUESTIONS</div>
+                    </div>
+
+                    <div class="category-card" onclick="showPacks('activities')">
+                        <div class="category-icon">🎯</div>
+                        <h3>ACTIVITIES</h3>
+                        <p class="category-description">How you like to spend your time</p>
+                        <div class="category-count">3 PACKS • 36 QUESTIONS</div>
+                    </div>
+
+                    <div class="category-card" onclick="showPacks('travel')">
+                        <div class="category-icon">✈️</div>
+                        <h3>TRAVEL</h3>
+                        <p class="category-description">Vacation styles and destination dreams</p>
+                        <div class="category-count">3 PACKS • 36 QUESTIONS</div>
+                    </div>
+
+                    <div class="category-card" onclick="showPacks('dates')">
+                        <div class="category-icon">💕</div>
+                        <h3>DATES</h3>
+                        <p class="category-description">Perfect date preferences and romance</p>
+                        <div class="category-count">3 PACKS • 36 QUESTIONS</div>
+                    </div>
+
+                    <div class="category-card" onclick="showPacks('spicy')">
+                        <div class="category-icon">🔥</div>
+                        <h3>SPICY</h3>
+                        <p class="category-description">Flirty and intimate preferences</p>
+                        <div class="category-count">3 PACKS • 36 QUESTIONS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pack Selection Screen -->
+            <div class="pack-selection-screen" id="packSelection">
+                <div class="pack-header">
+                    <h2 id="packCategoryTitle"></h2>
+                    <p>Choose a pack to start!</p>
+                    <button class="back-to-categories-btn" onclick="backToCategories()">← Back to Categories</button>
+                </div>
+
+                <div class="packs-grid" id="packsGrid">
+                    <!-- Pack cards will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Intro Screen -->
+            <div class="end-screen" id="introScreen" style="display: none;">
+                <div class="end-card">
+                    <div class="end-icon">🎮</div>
+                    <h2>HOW TO PLAY</h2>
+                    <p class="end-message">
+                        <strong>Player 1</strong> answers all 12 questions first.<br><br>
+                        Then <strong>Player 2</strong> answers the same questions.<br><br>
+                        At the end, see where you match and where you differ!
+                    </p>
+                    <div class="end-actions">
+                        <button class="end-btn primary" onclick="startGame()">GOT IT - START! →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Screen -->
+            <div class="game-screen" id="gameScreen">
+                <div class="game-header">
+                    <div class="game-title-row">
+                        <h2 id="categoryTitle">THIS OR THAT</h2>
+                        <button class="quit-btn" onclick="quitToPacks()">QUIT</button>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="question-counter" id="questionCounter"></div>
+                </div>
+
+                <div class="question-card">
+                    <div class="question-label">WHICH DO YOU PREFER?</div>
+                    <div class="options-container">
+                        <button class="option-btn" id="option1" onclick="selectOption(1)"></button>
+                        <div class="vs-divider">OR</div>
+                        <button class="option-btn" id="option2" onclick="selectOption(2)"></button>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="prevBtn" onclick="previousQuestion()">← PREVIOUS</button>
+                    <button class="nav-btn primary" id="nextBtn" onclick="nextQuestion()">NEXT →</button>
+                </div>
+            </div>
+
+            <!-- End Screen -->
+            <div class="end-screen" id="endScreen">
+                <div class="end-card">
+                    <div class="end-icon">🎉</div>
+                    <h2>AMAZING!</h2>
+                    <p class="end-message">You've completed this pack! Now you know each other's preferences even better.</p>
+                    <div class="end-actions">
+                        <button class="end-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
+                        <button class="end-btn" onclick="backToGames()">BACK TO GAMES</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pass to Partner Screen -->
+            <div class="end-screen" id="passScreen" style="display: none;">
+                <div class="end-card">
+                    <div class="end-icon">✨</div>
+                    <h2>PLAYER 1 DONE!</h2>
+                    <p class="end-message">Great choices! Now it's your partner's turn to answer the same questions. Pass the device to them!</p>
+                    <div class="end-actions">
+                        <button class="end-btn primary" onclick="startPlayer2()">START PLAYER 2 →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div class="end-screen" id="resultsScreen" style="display: none;">
+                <div class="end-card">
+                    <div class="end-icon">💕</div>
+                    <h2 id="matchScore">YOU MATCHED!</h2>
+                    <p class="end-message" id="matchMessage"></p>
+                    
+                    <div style="text-align: left; margin: 30px 0;">
+                        <h3 style="font-size: 1.8rem; margin-bottom: 20px; text-align: center;">✅ YOU BOTH CHOSE</h3>
+                        <div id="agreementsList" style="font-size: 1rem; line-height: 2;"></div>
+                        
+                        <h3 style="font-size: 1.8rem; margin: 30px 0 20px; text-align: center;">💭 YOU DIFFERED ON</h3>
+                        <div id="disagreementsList" style="font-size: 1rem; line-height: 2;"></div>
+                    </div>
+
+                    <div class="end-actions">
+                        <button class="end-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
+                        <button class="end-btn" onclick="backToGames()">BACK TO GAMES</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCategory = null;
+        let currentPack = null;
+        let currentQuestions = [];
+        let currentQuestion = 0;
+        let currentPlayer = 1;
+        let player1Choices = [];
+        let player2Choices = [];
+
+        const categoryTitles = {
+            'day-to-day': 'DAY TO DAY',
+            'food': 'FOOD',
+            'activities': 'ACTIVITIES',
+            'travel': 'TRAVEL',
+            'dates': 'DATES',
+            'spicy': 'SPICY'
+        };
+
+        const questionPacks = {
+            'day-to-day': {
+                pack1: [
+                    { option1: "Morning Person", option2: "Night Owl" },
+                    { option1: "Coffee", option2: "Tea" },
+                    { option1: "Shower in AM", option2: "Shower in PM" },
+                    { option1: "Work from Home", option2: "Office" },
+                    { option1: "Early Bird", option2: "Sleep In" },
+                    { option1: "Breakfast", option2: "Skip Breakfast" },
+                    { option1: "Plan Your Day", option2: "Go with Flow" },
+                    { option1: "Dress Up", option2: "Dress Casual" },
+                    { option1: "Music in Car", option2: "Silence" },
+                    { option1: "Organized", option2: "Spontaneous" },
+                    { option1: "Multitask", option2: "Focus on One" },
+                    { option1: "To-Do Lists", option2: "Wing It" }
+                ],
+                pack2: [
+                    { option1: "Clean as You Go", option2: "Clean Later" },
+                    { option1: "Minimalist", option2: "Collector" },
+                    { option1: "Save Money", option2: "Spend Money" },
+                    { option1: "Cook at Home", option2: "Order Takeout" },
+                    { option1: "Phone Calls", option2: "Texting" },
+                    { option1: "Social Media", option2: "No Social Media" },
+                    { option1: "News Junkie", option2: "Avoid News" },
+                    { option1: "Make Bed Daily", option2: "Who Cares" },
+                    { option1: "Meal Prep", option2: "Cook Fresh" },
+                    { option1: "Morning Workout", option2: "Evening Workout" },
+                    { option1: "Hot Drinks", option2: "Cold Drinks" },
+                    { option1: "Windows Open", option2: "AC On" }
+                ],
+                pack3: [
+                    { option1: "Loud Music", option2: "Soft Music" },
+                    { option1: "Bright Lights", option2: "Dim Lights" },
+                    { option1: "Busy Schedule", option2: "Free Time" },
+                    { option1: "Walk", option2: "Drive" },
+                    { option1: "Hot Shower", option2: "Cold Shower" },
+                    { option1: "Read Book", option2: "Watch TV" },
+                    { option1: "Podcast", option2: "Audiobook" },
+                    { option1: "Take Notes", option2: "Remember It" },
+                    { option1: "Paper Books", option2: "E-Books" },
+                    { option1: "Write by Hand", option2: "Type" },
+                    { option1: "Solo Activities", option2: "Group Activities" },
+                    { option1: "Routine", option2: "Variety" }
+                ]
+            },
+            'food': {
+                pack1: [
+                    { option1: "Sweet", option2: "Salty" },
+                    { option1: "Pizza", option2: "Burgers" },
+                    { option1: "Pasta", option2: "Rice" },
+                    { option1: "Chocolate", option2: "Vanilla" },
+                    { option1: "Ice Cream", option2: "Cake" },
+                    { option1: "Mexican", option2: "Italian" },
+                    { option1: "Chinese", option2: "Japanese" },
+                    { option1: "Breakfast Food", option2: "Dinner Food" },
+                    { option1: "Appetizers", option2: "Dessert" },
+                    { option1: "Buffet", option2: "À la Carte" },
+                    { option1: "Food Truck", option2: "Restaurant" },
+                    { option1: "Homemade", option2: "Takeout" }
+                ],
+                pack2: [
+                    { option1: "Spicy", option2: "Mild" },
+                    { option1: "Fried", option2: "Grilled" },
+                    { option1: "Fruits", option2: "Vegetables" },
+                    { option1: "Soup", option2: "Salad" },
+                    { option1: "Tacos", option2: "Sushi" },
+                    { option1: "BBQ", option2: "Seafood" },
+                    { option1: "Sandwiches", option2: "Wraps" },
+                    { option1: "Smoothies", option2: "Milkshakes" },
+                    { option1: "Chips", option2: "Popcorn" },
+                    { option1: "Candy", option2: "Cookies" },
+                    { option1: "Wine", option2: "Beer" },
+                    { option1: "Soda", option2: "Juice" }
+                ],
+                pack3: [
+                    { option1: "Brunch", option2: "Late Dinner" },
+                    { option1: "Cheese", option2: "Chocolate" },
+                    { option1: "Steak", option2: "Chicken" },
+                    { option1: "Pancakes", option2: "Waffles" },
+                    { option1: "Dine In", option2: "Takeout" },
+                    { option1: "Food Adventure", option2: "Safe Choices" },
+                    { option1: "Fancy Dinner", option2: "Casual Eats" },
+                    { option1: "Big Portions", option2: "Small Plates" },
+                    { option1: "Eat Slow", option2: "Eat Fast" },
+                    { option1: "Cook Together", option2: "Order In" },
+                    { option1: "Try New Foods", option2: "Stick to Favorites" },
+                    { option1: "Messy Foods", option2: "Clean Foods" }
+                ]
+            },
+            'activities': {
+                pack1: [
+                    { option1: "Sports", option2: "Arts" },
+                    { option1: "Going Out", option2: "Staying In" },
+                    { option1: "Big Party", option2: "Small Gathering" },
+                    { option1: "Dancing", option2: "Singing" },
+                    { option1: "Board Games", option2: "Video Games" },
+                    { option1: "Gym", option2: "Outdoor Exercise" },
+                    { option1: "Swimming", option2: "Running" },
+                    { option1: "Hiking", option2: "Biking" },
+                    { option1: "Concert", option2: "Festival" },
+                    { option1: "Movies", option2: "Theater" },
+                    { option1: "Art Museum", option2: "Science Museum" },
+                    { option1: "Zoo", option2: "Aquarium" }
+                ],
+                pack2: [
+                    { option1: "Comedy Show", option2: "Magic Show" },
+                    { option1: "Karaoke", option2: "Open Mic" },
+                    { option1: "Theme Park", option2: "Water Park" },
+                    { option1: "Roller Coaster", option2: "Ferris Wheel" },
+                    { option1: "Bowling", option2: "Mini Golf" },
+                    { option1: "Arcade", option2: "Escape Room" },
+                    { option1: "Shopping", option2: "Window Shopping" },
+                    { option1: "Cooking Class", option2: "Paint & Sip" },
+                    { option1: "Workout Class", option2: "Yoga" },
+                    { option1: "Skydiving", option2: "Bungee Jumping" },
+                    { option1: "Rock Climbing", option2: "Zip Lining" },
+                    { option1: "Camping", option2: "Glamping" }
+                ],
+                pack3: [
+                    { option1: "Book Club", option2: "Movie Club" },
+                    { option1: "Photography", option2: "Videography" },
+                    { option1: "Gardening", option2: "DIY Projects" },
+                    { option1: "Binge Watch", option2: "One Episode" },
+                    { option1: "Action Movies", option2: "Rom-Coms" },
+                    { option1: "Horror Movies", option2: "Happy Movies" },
+                    { option1: "Live Sports", option2: "TV Sports" },
+                    { option1: "Play Sport", option2: "Watch Sport" },
+                    { option1: "Solo Hobbies", option2: "Group Hobbies" },
+                    { option1: "Creative Arts", option2: "Physical Activities" },
+                    { option1: "Learn New Skill", option2: "Master One Skill" },
+                    { option1: "Compete", option2: "Cooperate" }
+                ]
+            },
+            'travel': {
+                pack1: [
+                    { option1: "Beach", option2: "Mountains" },
+                    { option1: "City", option2: "Countryside" },
+                    { option1: "Hot Weather", option2: "Cold Weather" },
+                    { option1: "Road Trip", option2: "Flying" },
+                    { option1: "Hotel", option2: "Airbnb" },
+                    { option1: "Camping", option2: "Resort" },
+                    { option1: "Adventure", option2: "Relaxation" },
+                    { option1: "Planned Trip", option2: "Spontaneous Trip" },
+                    { option1: "Solo Travel", option2: "Group Travel" },
+                    { option1: "Tourist Spots", option2: "Hidden Gems" },
+                    { option1: "Take Photos", option2: "Live in Moment" },
+                    { option1: "Pack Light", option2: "Pack Everything" }
+                ],
+                pack2: [
+                    { option1: "Europe", option2: "Asia" },
+                    { option1: "Tropical", option2: "Arctic" },
+                    { option1: "Big City", option2: "Small Town" },
+                    { option1: "Backpacking", option2: "Luxury Travel" },
+                    { option1: "Cultural Sites", option2: "Nature" },
+                    { option1: "Food Tours", option2: "Adventure Tours" },
+                    { option1: "Museums", option2: "Beaches" },
+                    { option1: "Nightlife", option2: "Early Mornings" },
+                    { option1: "Guided Tours", option2: "Explore Alone" },
+                    { option1: "Stay Busy", option2: "Rest & Relax" },
+                    { option1: "Try Local Food", option2: "Safe Choices" },
+                    { option1: "Short Trips", option2: "Long Vacations" }
+                ],
+                pack3: [
+                    { option1: "Island Hopping", option2: "One Destination" },
+                    { option1: "Safari", option2: "Cruise" },
+                    { option1: "Ski Trip", option2: "Beach Trip" },
+                    { option1: "Road Trip Music", option2: "Road Trip Silence" },
+                    { option1: "Window Seat", option2: "Aisle Seat" },
+                    { option1: "Rent Car", option2: "Public Transit" },
+                    { option1: "All Inclusive", option2: "À la Carte" },
+                    { option1: "Tourist", option2: "Live Like Local" },
+                    { option1: "Fast Paced", option2: "Slow Travel" },
+                    { option1: "Travel Blog", option2: "Keep Private" },
+                    { option1: "Budget Travel", option2: "Splurge" },
+                    { option1: "Same Place", option2: "New Places" }
+                ]
+            },
+            'dates': {
+                pack1: [
+                    { option1: "Fancy Dinner", option2: "Casual Date" },
+                    { option1: "Movie Date", option2: "Dinner Date" },
+                    { option1: "Indoor Date", option2: "Outdoor Date" },
+                    { option1: "Active Date", option2: "Chill Date" },
+                    { option1: "Day Date", option2: "Night Date" },
+                    { option1: "Coffee Date", option2: "Drinks Date" },
+                    { option1: "Cook Together", option2: "Go Out" },
+                    { option1: "Double Date", option2: "Just Us Two" },
+                    { option1: "Surprise Date", option2: "Planned Date" },
+                    { option1: "Dress Up", option2: "Keep Casual" },
+                    { option1: "Long Date", option2: "Quick Date" },
+                    { option1: "Talk Heavy", option2: "Keep Light" }
+                ],
+                pack2: [
+                    { option1: "Concert Date", option2: "Museum Date" },
+                    { option1: "Picnic", option2: "Restaurant" },
+                    { option1: "Hiking Date", option2: "Movie Date" },
+                    { option1: "Game Night", option2: "Dancing" },
+                    { option1: "Wine Tasting", option2: "Brewery Tour" },
+                    { option1: "Beach Sunset", option2: "City Lights" },
+                    { option1: "Brunch Date", option2: "Dinner Date" },
+                    { option1: "Adventure Date", option2: "Cozy Date" },
+                    { option1: "Try New Things", option2: "Favorite Spots" },
+                    { option1: "Public Date", option2: "Private Date" },
+                    { option1: "Group Activity", option2: "Intimate Setting" },
+                    { option1: "Splurge", option2: "Budget Friendly" }
+                ],
+                pack3: [
+                    { option1: "Sunrise Date", option2: "Sunset Date" },
+                    { option1: "Stay Home Date", option2: "Go Out Date" },
+                    { option1: "Spa Day", option2: "Gym Together" },
+                    { option1: "Road Trip", option2: "Staycation" },
+                    { option1: "Festival Date", option2: "Quiet Date" },
+                    { option1: "Competitive Date", option2: "Team Up Date" },
+                    { option1: "Fancy Car", option2: "Walk Together" },
+                    { option1: "Photos Together", option2: "No Photos" },
+                    { option1: "Share Food", option2: "Own Meals" },
+                    { option1: "Plan Together", option2: "Surprise Me" },
+                    { option1: "Weekend Date", option2: "Weeknight Date" },
+                    { option1: "Date Often", option2: "Special Occasions" }
+                ]
+            },
+            'spicy': {
+                pack1: [
+                    { option1: "Sweet Talk", option2: "Dirty Talk" },
+                    { option1: "Lights On", option2: "Lights Off" },
+                    { option1: "Morning", option2: "Night" },
+                    { option1: "Slow", option2: "Fast" },
+                    { option1: "Romantic", option2: "Passionate" },
+                    { option1: "Your Place", option2: "My Place" },
+                    { option1: "Spontaneous", option2: "Planned" },
+                    { option1: "Quiet", option2: "Vocal" },
+                    { option1: "Shower", option2: "Bed" },
+                    { option1: "Lead", option2: "Follow" },
+                    { option1: "Eye Contact", option2: "No Eye Contact" },
+                    { option1: "Clothed Tease", option2: "Naked" }
+                ],
+                pack2: [
+                    { option1: "Massage First", option2: "Skip Foreplay" },
+                    { option1: "Music On", option2: "Music Off" },
+                    { option1: "Talk After", option2: "Sleep After" },
+                    { option1: "Gentle", option2: "Rough" },
+                    { option1: "Surprise Me", option2: "Tell Me" },
+                    { option1: "Hot Tub", option2: "Bedroom" },
+                    { option1: "Role Play", option2: "Be Ourselves" },
+                    { option1: "Lingerie", option2: "Nothing" },
+                    { option1: "Blindfold", option2: "See Everything" },
+                    { option1: "Bite", option2: "Kiss" },
+                    { option1: "Hands Tied", option2: "Hands Free" },
+                    { option1: "Tease Long", option2: "Get to It" }
+                ],
+                pack3: [
+                    { option1: "Dessert First", option2: "Main Course" },
+                    { option1: "Multiple Rounds", option2: "One & Done" },
+                    { option1: "Try New Things", option2: "Stick to Favorites" },
+                    { option1: "Toys", option2: "Just Us" },
+                    { option1: "Hotel Room", option2: "Home" },
+                    { option1: "Risky Place", option2: "Safe Space" },
+                    { option1: "Send Photos", option2: "In Person Only" },
+                    { option1: "Sexting", option2: "Phone Calls" },
+                    { option1: "Morning Quickie", option2: "Night Session" },
+                    { option1: "Cuddle After", option2: "Space After" },
+                    { option1: "Make Noise", option2: "Stay Quiet" },
+                    { option1: "Be Dominant", option2: "Be Submissive" }
+                ]
+            }
+        };
+
+        function init() {
+            document.getElementById('categorySelection').style.display = 'block';
+        }
+
+        function showPacks(categoryId) {
+            currentCategory = categoryId;
+            document.getElementById('categorySelection').style.display = 'none';
+            document.getElementById('packSelection').style.display = 'block';
+            
+            document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
+            
+            // Generate pack cards
+            const packsGrid = document.getElementById('packsGrid');
+            packsGrid.innerHTML = '';
+            
+            const packs = Object.keys(questionPacks[categoryId]);
+            packs.forEach((pack, index) => {
+                const packCard = `
+                    <div class="pack-card" onclick="selectPack('${pack}')">
+                        <div class="pack-number">${index + 1}</div>
+                        <h3>PACK ${index + 1}</h3>
+                        <p class="pack-questions">12 QUESTIONS</p>
+                    </div>
+                `;
+                packsGrid.innerHTML += packCard;
+            });
+        }
+
+        function selectPack(packId) {
+            currentPack = packId;
+            currentQuestions = questionPacks[currentCategory][packId];
+            currentQuestion = 0;
+            currentPlayer = 1;
+            player1Choices = [];
+            player2Choices = [];
+            
+            document.getElementById('packSelection').style.display = 'none';
+            document.getElementById('introScreen').style.display = 'block';
+        }
+
+        function startGame() {
+            document.getElementById('introScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('categoryTitle').textContent = categoryTitles[currentCategory] + ' - PLAYER 1';
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const totalQuestions = currentQuestions.length;
+            const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('questionCounter').textContent = `QUESTION ${currentQuestion + 1} OF ${totalQuestions}`;
+            
+            const question = currentQuestions[currentQuestion];
+            document.getElementById('option1').textContent = question.option1;
+            document.getElementById('option2').textContent = question.option2;
+            
+            // Remove selected class from both options
+            document.getElementById('option1').classList.remove('selected');
+            document.getElementById('option2').classList.remove('selected');
+            
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            
+            // Disable NEXT button until an option is selected
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('nextBtn').textContent = currentQuestion === totalQuestions - 1 ? 'FINISH' : 'NEXT →';
+        }
+
+        function selectOption(optionNumber) {
+            // Add selected class to clicked option
+            const selectedBtn = document.getElementById(`option${optionNumber}`);
+            selectedBtn.classList.add('selected');
+            
+            // Remove selected class from the other option
+            const otherBtn = document.getElementById(`option${optionNumber === 1 ? 2 : 1}`);
+            otherBtn.classList.remove('selected');
+            
+            // Enable the NEXT button now that a choice is made
+            document.getElementById('nextBtn').disabled = false;
+            
+            // Store the choice for current player
+            const choice = {
+                question: currentQuestions[currentQuestion],
+                selected: optionNumber
+            };
+            
+            // Replace the choice if they already selected for this question
+            if (currentPlayer === 1) {
+                if (player1Choices.length > currentQuestion) {
+                    player1Choices[currentQuestion] = choice;
+                } else {
+                    player1Choices.push(choice);
+                }
+            } else {
+                if (player2Choices.length > currentQuestion) {
+                    player2Choices[currentQuestion] = choice;
+                } else {
+                    player2Choices.push(choice);
+                }
+            }
+        }
+
+        function nextQuestion() {
+            // Safety check - only proceed if a choice was made
+            const expectedChoices = currentPlayer === 1 ? player1Choices.length : player2Choices.length;
+            if (expectedChoices <= currentQuestion) {
+                return; // No choice made yet, don't advance
+            }
+            
+            if (currentQuestion === currentQuestions.length - 1) {
+                // Finished all questions
+                if (currentPlayer === 1) {
+                    showPassScreen();
+                } else {
+                    showResultsScreen();
+                }
+            } else {
+                currentQuestion++;
+                updateDisplay();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                updateDisplay();
+                
+                // Show previously selected option if there was one
+                const choices = currentPlayer === 1 ? player1Choices : player2Choices;
+                if (choices[currentQuestion]) {
+                    const selectedOption = choices[currentQuestion].selected;
+                    document.getElementById(`option${selectedOption}`).classList.add('selected');
+                    document.getElementById('nextBtn').disabled = false;
+                }
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'block';
+        }
+
+        function showPassScreen() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('passScreen').style.display = 'block';
+        }
+
+        function startPlayer2() {
+            currentPlayer = 2;
+            currentQuestion = 0;
+            document.getElementById('passScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('categoryTitle').textContent = categoryTitles[currentCategory] + ' - PLAYER 2';
+            updateDisplay();
+        }
+
+        function showResultsScreen() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'block';
+            
+            // Calculate matches
+            let matches = 0;
+            let agreements = [];
+            let disagreements = [];
+            
+            for (let i = 0; i < player1Choices.length; i++) {
+                const p1 = player1Choices[i];
+                const p2 = player2Choices[i];
+                const question = p1.question;
+                
+                if (p1.selected === p2.selected) {
+                    matches++;
+                    const chosen = p1.selected === 1 ? question.option1 : question.option2;
+                    agreements.push(`<div style="margin: 8px 0;">✅ <strong>${chosen}</strong></div>`);
+                } else {
+                    const p1Choice = p1.selected === 1 ? question.option1 : question.option2;
+                    const p2Choice = p2.selected === 1 ? question.option1 : question.option2;
+                    disagreements.push(`<div style="margin: 8px 0;">💭 <strong>Player 1:</strong> ${p1Choice} vs <strong>Player 2:</strong> ${p2Choice}</div>`);
+                }
+            }
+            
+            // Update results display
+            const total = player1Choices.length;
+            const percentage = Math.round((matches / total) * 100);
+            
+            document.getElementById('matchScore').textContent = `${matches} OUT OF ${total} MATCHED!`;
+            
+            let message = '';
+            if (percentage >= 80) {
+                message = `${percentage}% compatibility! You two are totally in sync! 🎉`;
+            } else if (percentage >= 60) {
+                message = `${percentage}% compatibility! Great balance of similarities and differences! 💕`;
+            } else if (percentage >= 40) {
+                message = `${percentage}% compatibility! Opposites attract, right? Perfect for interesting conversations! 💭`;
+            } else {
+                message = `${percentage}% compatibility! You bring totally different perspectives - that's what makes it fun! 🌟`;
+            }
+            document.getElementById('matchMessage').textContent = message;
+            
+            document.getElementById('agreementsList').innerHTML = agreements.length > 0 ? agreements.join('') : '<div style="text-align: center; color: #666;">No matches on this one!</div>';
+            document.getElementById('disagreementsList').innerHTML = disagreements.length > 0 ? disagreements.join('') : '<div style="text-align: center; color: #666;">You agreed on everything!</div>';
+        }
+
+        function quitToPacks() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('introScreen').style.display = 'none';
+            document.getElementById('packSelection').style.display = 'block';
+            currentQuestion = 0;
+            currentPlayer = 1;
+            player1Choices = [];
+            player2Choices = [];
+        }
+
+        function backToCategories() {
+            document.getElementById('packSelection').style.display = 'none';
+            document.getElementById('categorySelection').style.display = 'block';
+        }
+
+        function backToPackSelection() {
+            document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'none';
+            document.getElementById('packSelection').style.display = 'block';
+            currentQuestion = 0;
+            currentPlayer = 1;
+            player1Choices = [];
+            player2Choices = [];
+        }
+
+        function backToGames() {
+            window.location.href = 'date-night.html';
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('gameScreen').style.display === 'block') {
+                if (e.key === 'ArrowLeft' && currentQuestion > 0) {
+                    previousQuestion();
+                } else if (e.key === 'ArrowRight') {
+                    nextQuestion();
+                }
+            }
+        });
+
+        window.onload = init;
+    </script>
+    <script src="/header.js"></script>
+</body>
+</html>

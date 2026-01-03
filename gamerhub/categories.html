@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Categories – TheGaming.co</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/header.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --pink: #ff6b9d; --pink-dark: #e84a7f;
+            --blue: #4facfe; --blue-dark: #0077cc;
+            --cyan: #00d9ff; --purple: #a855f7;
+            --green: #10b981; --red: #ef4444;
+            --gold: #ffd700; --dark: #0a0a0f;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        /* Header */
+        header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            height: 60px; display: flex; align-items: center; padding: 0 18px;
+            background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .leave-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border-radius: 8px;
+            background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .leave-btn:hover { background: rgba(239, 68, 68, 0.25); }
+        .room-badge {
+            padding: 6px 12px; border-radius: 6px;
+            background: rgba(79, 172, 254, 0.15); border: 1px solid rgba(79, 172, 254, 0.3);
+            font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+            letter-spacing: 2px; color: var(--blue);
+        }
+        .header-center { flex: 1; display: flex; justify-content: center; }
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
+            letter-spacing: 3px; color: white; text-decoration: none; position: relative;
+        }
+        .header-logo::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+            height: 2px; background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
+        }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .game-timer {
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
+            color: var(--cyan); letter-spacing: 2px;
+            padding: 4px 16px; border-radius: 8px;
+            background: rgba(0, 217, 255, 0.1); border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+        .game-timer.warning { color: var(--gold); background: rgba(255, 215, 0, 0.1); border-color: rgba(255, 215, 0, 0.3); }
+        .game-timer.danger { color: var(--red); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* Main Content */
+        main {
+            padding-top: 80px; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* Category Display */
+        .category-display {
+            text-align: center; margin-bottom: 30px; padding: 0 20px;
+        }
+        .category-label {
+            font-size: 1rem; color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px;
+        }
+        .category-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 60px rgba(0, 217, 255, 0.5);
+            animation: categoryPulse 2s ease-in-out infinite;
+        }
+        @keyframes categoryPulse {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.85; }
+        }
+        .round-indicator {
+            margin-top: 10px; font-size: 0.9rem; color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        /* Input Section */
+        .input-section {
+            width: 100%; max-width: 500px; padding: 0 20px; margin-bottom: 30px;
+        }
+        .answer-input-wrapper {
+            position: relative; display: flex; gap: 10px;
+        }
+        .answer-input {
+            flex: 1; padding: 16px 20px;
+            font-size: 1.2rem; font-family: 'Inter', sans-serif;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px; color: white;
+            transition: all 0.2s;
+        }
+        .answer-input:focus {
+            outline: none; border-color: var(--cyan);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+        }
+        .answer-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+        .submit-btn {
+            padding: 16px 28px; font-size: 1rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--green), #059669);
+            border: none; border-radius: 12px; color: white;
+            cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Feedback */
+        .feedback {
+            text-align: center; margin-top: 15px; min-height: 30px;
+            font-size: 1rem; font-weight: 600;
+        }
+        .feedback.success { color: var(--green); }
+        .feedback.error { color: var(--red); }
+
+        /* Recent Answers */
+        .recent-answers {
+            width: 100%; max-width: 600px; padding: 0 20px; margin-bottom: 30px;
+        }
+        .recent-answers h3 {
+            font-size: 1rem; color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px; margin-bottom: 15px; text-align: center;
+        }
+        .answers-list {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        }
+        .answer-chip {
+            padding: 8px 16px; border-radius: 20px;
+            background: rgba(79, 172, 254, 0.15);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+        }
+        .answer-chip .player-name {
+            color: var(--blue); font-weight: 600;
+        }
+        .answer-chip .answer-text { color: white; }
+        .answer-chip.challengeable {
+            cursor: pointer; transition: all 0.2s;
+        }
+        .answer-chip.challengeable:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            width: 100%; max-width: 400px; padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; margin: 0 20px;
+        }
+        .scoreboard h3 {
+            font-size: 1.2rem; text-align: center; margin-bottom: 15px;
+            color: var(--gold); letter-spacing: 2px;
+        }
+        .score-list { display: flex; flex-direction: column; gap: 8px; }
+        .score-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .score-item.leader {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .score-item .name { font-weight: 600; }
+        .score-item .score {
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
+            color: var(--cyan);
+        }
+        .score-item.leader .score { color: var(--gold); }
+
+        /* Challenge Modal */
+        .challenge-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85); z-index: 200;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .challenge-overlay.active { display: flex; }
+        .challenge-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0f 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 30px; max-width: 400px; width: 100%;
+            text-align: center;
+        }
+        .challenge-modal h2 {
+            color: var(--red); font-size: 1.8rem; margin-bottom: 15px;
+        }
+        .challenge-modal .challenged-answer {
+            font-size: 1.5rem; color: var(--cyan); margin: 15px 0;
+            padding: 15px; background: rgba(0, 217, 255, 0.1);
+            border-radius: 10px;
+        }
+        .challenge-modal p { color: rgba(255, 255, 255, 0.7); margin-bottom: 20px; }
+        .vote-buttons { display: flex; gap: 15px; justify-content: center; }
+        .vote-btn {
+            padding: 14px 30px; font-size: 1rem; font-weight: 700;
+            border: none; border-radius: 10px; cursor: pointer;
+            transition: all 0.2s; text-transform: uppercase;
+        }
+        .vote-btn.valid {
+            background: linear-gradient(135deg, var(--green), #059669); color: white;
+        }
+        .vote-btn.invalid {
+            background: linear-gradient(135deg, var(--red), #dc2626); color: white;
+        }
+        .vote-btn:hover { transform: translateY(-2px); }
+
+        /* Game Over */
+        .game-over-screen {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9); z-index: 300;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .game-over-screen.active { display: flex; }
+        .game-over-content {
+            text-align: center; max-width: 500px;
+        }
+        .game-over-content h1 {
+            font-size: 3rem; color: var(--gold); margin-bottom: 10px;
+        }
+        .winner-name {
+            font-size: 2.5rem; color: var(--cyan); margin-bottom: 30px;
+        }
+        .final-scores {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px; padding: 20px; margin-bottom: 30px;
+        }
+        .play-again-btn {
+            padding: 16px 40px; font-size: 1.1rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            border: none; border-radius: 12px; color: white;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .play-again-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255, 107, 157, 0.4); }
+
+        /* Countdown */
+        .countdown-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9); z-index: 250;
+            display: none; align-items: center; justify-content: center;
+        }
+        .countdown-overlay.active { display: flex; }
+        .countdown-number {
+            font-family: 'Bebas Neue', sans-serif; font-size: 15rem;
+            color: var(--cyan); animation: countdownPulse 1s ease-in-out;
+        }
+        @keyframes countdownPulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            header { padding: 0 12px; }
+            .leave-btn span { display: none; }
+            .header-logo { font-size: 1.2rem; }
+            .game-timer { font-size: 1.4rem; padding: 4px 12px; }
+            .category-name { font-size: 2.5rem; }
+            .answer-input { padding: 14px 16px; font-size: 1rem; }
+            .submit-btn { padding: 14px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main>
+        <div class="category-display">
+            <div class="category-label">CATEGORY</div>
+            <div class="category-name" id="category-name">Loading...</div>
+            <div class="round-indicator" id="round-indicator">ROUND 1 OF 10</div>
+        </div>
+
+        <div class="input-section">
+            <div class="answer-input-wrapper">
+                <input type="text" class="answer-input" id="answer-input" placeholder="Type your answer..." autocomplete="off" maxlength="50">
+                <button class="submit-btn" id="submit-btn" onclick="submitAnswer()">GO!</button>
+            </div>
+            <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="recent-answers">
+            <h3>RECENT ANSWERS</h3>
+            <div class="answers-list" id="answers-list">
+                <!-- Answers appear here -->
+            </div>
+        </div>
+
+        <div class="scoreboard">
+            <h3>🏆 SCORES</h3>
+            <div class="score-list" id="score-list">
+                <!-- Scores appear here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Challenge Modal -->
+    <div class="challenge-overlay" id="challenge-overlay">
+        <div class="challenge-modal">
+            <h2>⚠️ CHALLENGED!</h2>
+            <p><span id="challenger-name">Player</span> is challenging:</p>
+            <div class="challenged-answer">
+                "<span id="challenged-answer">Answer</span>"
+            </div>
+            <p>Is this a valid <span id="challenge-category">category</span>?</p>
+            <div class="vote-buttons">
+                <button class="vote-btn valid" onclick="voteChallenge('valid')">✓ Valid</button>
+                <button class="vote-btn invalid" onclick="voteChallenge('invalid')">✗ Invalid</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div class="countdown-overlay" id="countdown-overlay">
+        <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="game-over-screen" id="game-over-screen">
+        <div class="game-over-content">
+            <h1>🎉 GAME OVER!</h1>
+            <div class="winner-name" id="winner-name">Winner Name</div>
+            <div class="final-scores" id="final-scores">
+                <!-- Final scores here -->
+            </div>
+            <button class="play-again-btn" onclick="returnToLobby()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const state = {
+            roomCode: null,
+            playerName: null,
+            socket: null,
+            timeRemaining: 10,
+            timerInterval: null,
+            currentCategory: null,
+            recentAnswers: [],
+            scores: {},
+            canChallenge: true
+        };
+
+        // Get room info from URL/storage
+        const urlParams = new URLSearchParams(window.location.search);
+        state.roomCode = urlParams.get('room') || sessionStorage.getItem('roomCode');
+        state.playerName = sessionStorage.getItem('playerName');
+
+        if (!state.roomCode || !state.playerName) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('room-code').textContent = state.roomCode;
+
+        // Socket Connection
+        const SOCKET_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3001' 
+            : 'https://thegamingco-production.up.railway.app';
+
+        state.socket = io(SOCKET_URL, {
+            transports: ['websocket', 'polling']
+        });
+
+        // Socket Events
+        state.socket.on('connect', () => {
+            console.log('Connected to server');
+            state.socket.emit('rejoin-room', {
+                roomCode: state.roomCode,
+                playerName: state.playerName
+            });
+        });
+
+        state.socket.on('categories-round-start', (data) => {
+            console.log('Round started:', data);
+            hideCountdown();
+            document.getElementById('category-name').textContent = data.displayName;
+            document.getElementById('round-indicator').textContent = `ROUND ${data.roundNumber} OF 10`;
+            state.currentCategory = data.displayName;
+            state.recentAnswers = [];
+            updateAnswersList();
+            updateScores(data.scores);
+            
+            // Start timer
+            state.timeRemaining = data.timeLimit;
+            startTimer();
+            
+            // Focus input
+            document.getElementById('answer-input').focus();
+            document.getElementById('answer-input').value = '';
+            document.getElementById('submit-btn').disabled = false;
+        });
+
+        state.socket.on('categories-valid-answer', (data) => {
+            state.recentAnswers.unshift({
+                playerName: data.playerName,
+                answer: data.answer
+            });
+            if (state.recentAnswers.length > 10) state.recentAnswers.pop();
+            updateAnswersList();
+            updateScores(data.scores);
+        });
+
+        state.socket.on('categories-answer-result', (data) => {
+            const feedback = document.getElementById('feedback');
+            if (data.valid) {
+                feedback.textContent = '✓ ' + data.message;
+                feedback.className = 'feedback success';
+                document.getElementById('answer-input').value = '';
+            } else {
+                feedback.textContent = '✗ ' + data.message;
+                feedback.className = 'feedback error';
+            }
+            
+            // Clear feedback after 2 seconds
+            setTimeout(() => {
+                feedback.textContent = '';
+            }, 2000);
+            
+            document.getElementById('answer-input').focus();
+        });
+
+        state.socket.on('categories-challenge-start', (data) => {
+            document.getElementById('challenger-name').textContent = data.challenger;
+            document.getElementById('challenged-answer').textContent = data.challengedAnswer;
+            document.getElementById('challenge-category').textContent = data.category;
+            document.getElementById('challenge-overlay').classList.add('active');
+            state.canChallenge = false;
+        });
+
+        state.socket.on('categories-challenge-result', (data) => {
+            document.getElementById('challenge-overlay').classList.remove('active');
+            updateScores(data.scores);
+            
+            const feedback = document.getElementById('feedback');
+            if (data.successful) {
+                feedback.textContent = `Challenge successful! "${data.challengedAnswer}" was invalid.`;
+                feedback.className = 'feedback success';
+            } else {
+                feedback.textContent = `Challenge failed! "${data.challengedAnswer}" was valid.`;
+                feedback.className = 'feedback error';
+            }
+            
+            setTimeout(() => { feedback.textContent = ''; state.canChallenge = true; }, 3000);
+        });
+
+        state.socket.on('categories-round-end', (data) => {
+            updateScores(data.scores);
+            stopTimer();
+            showCountdown(data.nextRoundIn);
+        });
+
+        state.socket.on('categories-game-over', (data) => {
+            stopTimer();
+            document.getElementById('winner-name').textContent = data.winner + ' WINS!';
+            
+            // Build final scores
+            const sortedScores = Object.entries(data.finalScores)
+                .sort((a, b) => b[1] - a[1]);
+            
+            let scoresHTML = '<div class="score-list">';
+            sortedScores.forEach(([name, score], index) => {
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                scoresHTML += `
+                    <div class="score-item ${index === 0 ? 'leader' : ''}">
+                        <span class="name">${medal} ${name}</span>
+                        <span class="score">${score}</span>
+                    </div>
+                `;
+            });
+            scoresHTML += '</div>';
+            
+            document.getElementById('final-scores').innerHTML = scoresHTML;
+            document.getElementById('game-over-screen').classList.add('active');
+        });
+
+        state.socket.on('error', (data) => {
+            console.error('Socket error:', data.message);
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = data.message;
+            feedback.className = 'feedback error';
+        });
+
+        // Timer
+        function startTimer() {
+            stopTimer();
+            updateTimerDisplay();
+            
+            state.timerInterval = setInterval(() => {
+                state.timeRemaining--;
+                updateTimerDisplay();
+                
+                if (state.timeRemaining <= 0) {
+                    stopTimer();
+                    state.socket.emit('categories-time-up', { roomCode: state.roomCode });
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('game-timer');
+            timerEl.textContent = state.timeRemaining;
+            
+            timerEl.classList.remove('warning', 'danger');
+            if (state.timeRemaining <= 3) {
+                timerEl.classList.add('danger');
+            } else if (state.timeRemaining <= 5) {
+                timerEl.classList.add('warning');
+            }
+        }
+
+        // UI Functions
+        function submitAnswer() {
+            const input = document.getElementById('answer-input');
+            const answer = input.value.trim();
+            
+            if (!answer) return;
+            
+            state.socket.emit('categories-answer', {
+                roomCode: state.roomCode,
+                answer: answer
+            });
+        }
+
+        function updateAnswersList() {
+            const listEl = document.getElementById('answers-list');
+            
+            if (state.recentAnswers.length === 0) {
+                listEl.innerHTML = '<span style="color: rgba(255,255,255,0.4)">No answers yet...</span>';
+                return;
+            }
+            
+            listEl.innerHTML = state.recentAnswers.map((entry, index) => `
+                <div class="answer-chip ${index === 0 && state.canChallenge ? 'challengeable' : ''}" 
+                     ${index === 0 && state.canChallenge ? 'onclick="challengeAnswer()"' : ''}>
+                    <span class="player-name">${entry.playerName}:</span>
+                    <span class="answer-text">${entry.answer}</span>
+                    ${index === 0 && state.canChallenge ? '<span style="color: var(--red); font-size: 0.7rem;">⚡</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function updateScores(scores) {
+            state.scores = scores;
+            const listEl = document.getElementById('score-list');
+            
+            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            
+            listEl.innerHTML = sorted.map(([name, score], index) => `
+                <div class="score-item ${index === 0 ? 'leader' : ''}">
+                    <span class="name">${name}${name === state.playerName ? ' (You)' : ''}</span>
+                    <span class="score">${score}</span>
+                </div>
+            `).join('');
+        }
+
+        function challengeAnswer() {
+            if (!state.canChallenge || state.recentAnswers.length === 0) return;
+            
+            state.socket.emit('categories-challenge', {
+                roomCode: state.roomCode
+            });
+        }
+
+        function voteChallenge(vote) {
+            state.socket.emit('categories-challenge-vote', {
+                roomCode: state.roomCode,
+                vote: vote
+            });
+            
+            // Disable buttons after voting
+            document.querySelectorAll('.vote-btn').forEach(btn => btn.disabled = true);
+        }
+
+        function showCountdown(seconds) {
+            const overlay = document.getElementById('countdown-overlay');
+            const numberEl = document.getElementById('countdown-number');
+            overlay.classList.add('active');
+            
+            let count = seconds;
+            numberEl.textContent = count;
+            
+            const countInterval = setInterval(() => {
+                count--;
+                if (count <= 0) {
+                    clearInterval(countInterval);
+                    overlay.classList.remove('active');
+                } else {
+                    numberEl.textContent = count;
+                    numberEl.style.animation = 'none';
+                    numberEl.offsetHeight; // Trigger reflow
+                    numberEl.style.animation = 'countdownPulse 1s ease-in-out';
+                }
+            }, 1000);
+        }
+
+        function hideCountdown() {
+            document.getElementById('countdown-overlay').classList.remove('active');
+        }
+
+        function leaveGame() {
+            if (confirm('Are you sure you want to leave?')) {
+                window.location.href = '/';
+            }
+        }
+
+        function returnToLobby() {
+            window.location.href = `/waiting-room.html?room=${state.roomCode}`;
+        }
+
+        // Enter key to submit
+        document.getElementById('answer-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitAnswer();
+            }
+        });
+
+        // Start game on load (for host - normally triggered from waiting room)
+        // The game is started from the waiting room, this page just joins
+    </script>
+    <script src="/header.js"></script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finish My Sentence - PlayHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS STYLES (Copied from the final Q&A template) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        /* Animated background blobs */
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
+        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
+        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
+        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
+        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Navigation */
+        nav { padding: 30px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
+        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        .back-btn:hover { color: #1a1a1a; }
+
+        /* General Content */
+        .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
+        .hidden { display: none !important; }
+
+        /* --- SCREEN STYLES (Category, Pack Selection) --- */
+        .selection-screen { max-width: 800px; margin: 40px auto; }
+        .selection-header { text-align: center; margin-bottom: 50px; }
+        .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
+        .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
+        
+        /* 3x2 Grid for 6 categories */
+        .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; } 
+        
+        .selection-card { background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
+        .selection-card:hover { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
+        .selection-icon { font-size: 3rem; margin-bottom: 15px; }
+        .selection-card h3 { font-size: 2rem; margin-bottom: 10px; line-height: 1; }
+        .selection-description { font-size: 0.95rem; color: #666; margin-bottom: 12px; font-weight: 500; line-height: 1.5; }
+
+        /* Pack Specific Styles */
+        .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
+        .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
+        .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
+        .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-bottom: 30px; }
+        .back-link:hover { color: #1a1a1a; }
+
+        /* --- GAME SCREEN STYLES --- */
+        .game-screen { display: none; }
+        .progress-bar-container { background: white; border: 3px solid #1a1a1a; padding: 8px; margin-bottom: 40px; box-shadow: 4px 4px 0 #e0e0e0; }
+        .progress-bar { height: 12px; background: #f0f0f0; position: relative; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); transition: width 0.3s ease; }
+        .game-header { text-align: center; margin-bottom: 40px; position: relative; }
+        .quit-btn { position: absolute; right: 0; top: 0; background: white; border: 2px solid #1a1a1a; padding: 8px 20px; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; color: #666; }
+        .quit-btn:hover { background: #f0f0f0; color: #1a1a1a; }
+        
+        .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
+        .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
+
+        /* Prompt Card (Always visible when playing) */
+        .prompt-card { 
+            background: white; color: #1a1a1a; border: 4px solid #1a1a1a; padding: 60px 50px; 
+            margin-bottom: 40px; box-shadow: 8px 8px 0 #e0e0e0; min-height: 280px; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        
+        .prompt-text { font-size: 1.8rem; line-height: 1.5; font-weight: 600; color: #1a1a1a; }
+        .answer-prompt { font-size: 1rem; color: #ff6b9d; font-weight: 700; margin-top: 20px; }
+        
+        .navigation { display: flex; gap: 15px; justify-content: center; }
+        .nav-btn { flex: 1; padding: 18px 30px; font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
+        .nav-btn.prev { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; flex-grow: 0.5; }
+        .nav-btn.next { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; flex-grow: 1; }
+        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* End Screen */
+        .end-screen { display: none; text-align: center; max-width: 700px; margin: 80px auto; }
+        .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
+        .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
+        
+        .end-actions { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+
+        .action-btn { padding: 20px 50px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; width: 100%; }
+        .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
+        .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container { padding: 0 20px; }
+            .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
+            .selection-grid { grid-template-columns: 1fr; } 
+            .packs-grid { grid-template-columns: 1fr; }
+            .prompt-text { font-size: 1.4rem; }
+            .prompt-card { padding: 40px 30px; min-height: 240px; }
+            .nav-btn { font-size: 1.1rem; padding: 15px 20px; }
+        }
+    </style>
+    <link rel="stylesheet" href="/header.css">
+</head>
+<body>
+    <div id="site-header"></div>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="container">
+        <nav>
+            <a href="index.html" class="logo-nav">PLAYHUB</a>
+            <a href="date-night.html" class="back-btn">
+                ← Back to Games
+            </a>
+        </nav>
+
+        <div class="game-content">
+            
+            <!-- 1. CATEGORY SELECTION SCREEN (6 VIBES) -->
+            <div class="selection-screen" id="categorySelection">
+                <div class="selection-header">
+                    <h2>FINISH MY SENTENCE</h2>
+                    <p>You know you’re made for each other when you’re completing each other’s sentences.</p>
+                </div>
+
+                <div class="selection-grid">
+                    <div class="selection-card" onclick="showPacks('love')"> <div class="selection-icon">💖</div> <h3>LOVE & APPRECIATION</h3> <p class="selection-description">Focuses on affection, admiration, and why we are together.</p> </div>
+                    <div class="selection-card" onclick="showPacks('intimate')"> <div class="selection-icon">🔥</div> <h3>INTIMATE CONFESSIONS</h3> <p class="selection-description">Thought-starters about passion, desire, and bedroom secrets.</p> </div>
+                    <div class="selection-card" onclick="showPacks('future')"> <div class="selection-icon">✨</div> <h3>FUTURE & GOALS</h3> <p class="selection-description">Finishing thoughts about dreams, plans, and long-term vision.</p> </div>
+                    <div class="selection-card" onclick="showPacks('silly')"> <div class="selection-icon">🤪</div> <h3>SILLY TRUTHS</h3> <p class="selection-description">Lighthearted confessions, bad habits, and funny quirks.</p> </div>
+                    <div class="selection-card" onclick="showPacks('past')"> <div class="selection-icon">🕰️</div> <h3>PAST REFLECTIONS</h3> <p class="selection-description">Completing thoughts on childhood, regrets, and ex-partners.</p> </div>
+                    <div class="selection-card" onclick="showPacks('conflict')"> <div class="selection-icon">⚔️</div> <h3>CONFLICT & RESOLUTION</h3> <p class="selection-description">How we argue, apologize, and deal with relationship stress.</p> </div>
+                </div>
+            </div>
+
+            <!-- 2. PACK SELECTION SCREEN -->
+            <div class="selection-screen hidden" id="packSelection">
+                <span class="back-link" onclick="backToCategories()">← Back to Categories</span>
+                
+                <div class="selection-header">
+                    <h2 id="packCategoryTitle"></h2>
+                    <p>Choose a pack of 20 thought-starters</p>
+                </div>
+
+                <div class="packs-grid" id="packsGrid">
+                    <!-- Packs will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- 3. GAME SCREEN -->
+            <div class="game-screen" id="gameScreen">
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="game-header">
+                    <button class="quit-btn" onclick="quitToPacks()">QUIT</button>
+                    <div class="mode-label" id="modeLabel">FINISH MY SENTENCE</div>
+                    <div class="prompt-counter" id="promptCounter">PROMPT 1 OF 20</div>
+                </div>
+
+                <div class="prompt-card" id="promptCard">
+                    <p class="prompt-text" id="promptText">Finish this thought: I love it when you...</p>
+                    <p class="answer-prompt">Complete the sentence for a revealing answer.</p>
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-btn prev" id="prevBtn" onclick="previousPrompt()">← PREVIOUS</button>
+                    <button class="nav-btn next" id="nextBtn" onclick="nextPrompt()">NEXT →</button>
+                </div>
+            </div>
+
+            <!-- END SCREEN -->
+            <div class="end-screen" id="endScreen">
+                <h2>YOU DID IT! 🎉</h2>
+                <p class="end-message">Great job completing the challenges!</p>
+                <div class="end-actions">
+                    <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
+                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DATE NIGHT</button>
+                </div>
+            </div>
+        </div>
+
+        <footer></footer>
+    </div>
+
+    <script>
+        // --- Core Setup Variables ---
+        const PROMPT_PREAMBLE = "Finish this thought: ";
+        const PROMPT_POSTAMBLE = "Complete the sentence for a revealing answer.";
+        const GAME_NAME = "FINISH MY SENTENCE";
+        
+        let currentPromptIndex = 0;
+        let currentCategory = '';
+        let currentPack = '';
+        let currentPrompts = [];
+        const PROMPT_COUNT = 20; 
+
+        // --- Category Titles ---
+        const categoryTitles = {
+            'love': 'LOVE & APPRECIATION',
+            'intimate': 'INTIMATE CONFESSIONS',
+            'future': 'FUTURE & GOALS',
+            'silly': 'SILLY TRUTHS',
+            'past': 'PAST REFLECTIONS',
+            'conflict': 'CONFLICT & RESOLUTION'
+        };
+
+        // --- Game Prompts (6 Categories x 3 Packs = 18 Packs Total) ---
+        const gamePrompts = {
+            love: {
+                pack1: [
+                    "I knew I loved you when...", "My favorite thing we do together is...", "I feel most cherished when you...", 
+                    "I fall in love with you every time you...", "The thing I admire most about you is...", "I am grateful for...", 
+                    "You make me feel...", "My favorite physical thing about you is...", "I love how you handle...", "The best decision we made was...", 
+                    "I love it when you...", "My favorite quality you possess is...", "You are my best friend because...", "The perfect compliment for you is...", 
+                    "I love that we share...", "I love how you react when...", "The moment I miss you most is...", "You are made for me because...", 
+                    "I love the way you smell when...", "I love our relationship because..."
+                ],
+                pack2: [
+                    "You are the most attractive when you...", "The silliest thing you do that I love is...", "I appreciate the way you...", 
+                    "You make me a better person by...", "My favorite way to spend a quiet evening is...", "I can always count on you to...", 
+                    "The moment I felt closest to you was...", "I love it when you wear...", "Your best quality is...", "I want to celebrate you for...", 
+                    "I love your voice when you...", "I love your sense of style when you...", "The hardest thing about loving you is...", "I love that you never stop...", 
+                    "You deserve the best because...", "I feel safest when...", "You inspire me to...", "I love our secret language which is...", 
+                    "The thing I find most comforting about you is...", "I love how easily we..."
+                ],
+                pack3: [
+                    "The one thing I want to protect about you is...", "I love you more than...", "I love you in spite of...", 
+                    "I love the sound of your...", "I love the way you kiss when...", "The greatest gift you ever gave me was...", 
+                    "I love watching you...", "The way you show me affection is...", "When I see you smile, I...", 
+                    "I love that we can talk about...", "I love that you are so...", "I love our relationship’s rhythm, which is...", 
+                    "You are the only person who...", "The most surprising thing about falling for you was...", "I feel most connected to you when...", 
+                    "I wish I were better at...", "I think you should know that I...", "The best memory we created recently was...", 
+                    "You make the world better by...", "I love how you look when you're..."
+                ]
+            },
+            intimate: {
+                pack1: [
+                    "The most attractive thing about you is...", "I knew I wanted to be intimate with you when...", "When I'm turned on, I usually...", 
+                    "My favorite part of your body is...", "The hottest thing you wear is...", "One thing I love to do to you in bed is...", 
+                    "A place I've fantasized about hooking up with you is...", "My favorite way to be seduced is...", "I feel most sensual when...", 
+                    "The one thing that makes me instantly jealous is...", "I show I want sex by...", "If I could give you a nickname in bed, it would be...", 
+                    "The one thing I wish you did more often in bed is...", "I think we should try... in the bedroom.", "The quickest way to get me in the mood is...", 
+                    "I feel most desired when you...", "A secret desire I haven't told you is...", "I think we should spend more time...", 
+                    "The most surprising thing about our sex life is...", "My biggest fear about intimacy is..."
+                ],
+                pack2: [
+                    "I love it when you touch me...", "I would love to be touched more...", "I think my body is sexiest when...", 
+                    "The fantasy I haven't told you is...", "I feel most comfortable naked when...", "The thing that kills the mood fastest is...", 
+                    "I like to initiate sex by...", "If I could watch you do one intimate thing, it would be...", "The kind of dirty talk I like is...", 
+                    "I think we should experiment with...", "I feel the greatest emotional connection when we...", "I love your voice when you...", 
+                    "I wish I knew more about your fantasies concerning...", "I think we should invest in...", "I feel most confident when I'm wearing...", 
+                    "My favorite memory of us being intimate is...", "I want to be able to talk to you about...", "The thing I want to improve about our sex life is...", 
+                    "I would describe our chemistry as...", "My favorite spot on my body to be kissed is..."
+                ],
+                pack3: [
+                    "I feel most connected to you after...", "The most attractive quality you have in bed is...", "The longest I've gone without intimacy is...", 
+                    "I love it when you whisper...", "I get jealous when...", "The one thing I wish you would criticize me about is...", 
+                    "I feel the best when we...", "The most important thing for me to feel safe in bed is...", "I love it when you initiate sex by...", 
+                    "The thing I love most about your body is...", "I am grateful for your willingness to...", "I am most turned on when I see you...", 
+                    "I would love a date night where we...", "I need you to know that I...", "I think we should be more open about...", 
+                    "The thing I secretly worry about in our sex life is...", "I wish you would ask me about...", "I know I can trust you with...", 
+                    "I'm afraid to tell you that...", "My perfect after-sex routine is..."
+                ]
+            },
+            future: {
+                pack1: [
+                    "One thing I want us to own someday is...", "I want our home to feel...", "In 10 years, I see us...", "I hope we never stop...", 
+                    "The one place I want to travel with you is...", "I want to solve conflicts by...", "Our retirement plans include...", "I hope our friends see us as...", 
+                    "I want to teach our kids...", "I hope my career eventually leads to...", "I think our biggest challenge in the next 5 years will be...", 
+                    "The one thing I need from you to feel supported is...", "I want our legacy to be...", "My ideal pace of life is...", 
+                    "I believe we should splurge on...", "I want us to experience... together.", "I worry about... in our financial future.", 
+                    "I think your biggest ambition is...", "The most romantic thing we could do for our anniversary is...", "I think we should move to..."
+                ],
+                pack2: [
+                    "If money were no object, we would...", "I hope we look back on this time and...", "I want to be able to tell people that we...", 
+                    "I think the key to a lasting relationship is...", "The best tradition we have is...", "I want our relationship to be known for...", 
+                    "I want to change the world by...", "I think we should adopt a...", "I want our home to be full of...", 
+                    "The biggest risk I want us to take is...", "I see us spending our free time...", "I want to retire by...", 
+                    "I want to accomplish... this year.", "I want our life to be defined by...", "The one quality I want to cultivate in myself is...", 
+                    "I think we should invest in...", "I want us to face challenges by...", "I want to celebrate your next achievement by...", 
+                    "I hope we always make time for...", "My ideal partner relationship model is..."
+                ],
+                pack3: [
+                    "I want to save money for...", "I think we should get a pet...", "I want to learn... with you.", 
+                    "The happiest part of my week is when...", "I want us to be better at...", "I think we are weakest when...", 
+                    "I believe your greatest potential is...", "The most romantic trip we could take is...", "I hope we always remain...", 
+                    "The biggest decision we need to make is...", "I want to create a space where...", "I want to travel with you to...", 
+                    "I worry about losing...", "I hope we always remember...", "I'm looking forward to...", 
+                    "The most important thing about our future home is...", "I think we should start volunteering at...", "I want to start a new hobby...", 
+                    "The one thing I envy about other relationships is...", "I think we should buy..."
+                ]
+            },
+            silly: {
+                pack1: [
+                    "The weirdest thing I eat is...", "The one song I sing loudly when alone is...", "The most ridiculous fashion trend I secretly love is...", 
+                    "My favorite cartoon character is...", "I feel smartest when...", "My best fake illness is...", "The one thing I refuse to share is...", 
+                    "I still sleep with...", "The most useless fact I know is...", "I'm addicted to...", "The last stupid thing I bought was...", 
+                    "My signature dance move is...", "I look the worst when...", "The most embarrassing thing in my freezer is...", "I sing in the shower about...", 
+                    "My most childish habit is...", "I spend too much time thinking about...", "The person who tells the best jokes is...", "My biggest weakness when I'm tired is...", 
+                    "I'm secretly afraid of..."
+                ],
+                pack2: [
+                    "I laugh the hardest when...", "My most ridiculous talent is...", "I would win an award for...", "My most embarrassing password is...", 
+                    "The animal I most relate to is...", "I can't believe I wasted time on...", "I get defensive when...", "The movie I can watch over and over is...", 
+                    "I miss the time when...", "I feel happiest when I'm...", "The worst date I've ever been on was...", "The most embarrassing story my parents tell is...", 
+                    "I often trip over...", "My most childish habit is...", "The one thing I pretend to be good at is...", "I think your most annoying habit is...", 
+                    "I think my biggest fashion mistake was...", "I'm easily distracted by...", "I use too much...", "My favorite inside joke is..."
+                ],
+                pack3: [
+                    "I secretly want to wear...", "The last thing I lied about was...", "I feel most awkward when...", "The noise I make when I'm frustrated is...", 
+                    "My favorite comfort food is...", "I think you look ridiculous when...", "I spend my money mostly on...", "The last time I cried was because...", 
+                    "I sometimes wish I were better at...", "I pretend to like... for you.", "The most ridiculous purchase I ever made was...", "The one thing I hope I never catch you doing is...", 
+                    "I only apologize when...", "The most annoying sound is...", "I wish I were invisible when...", "I secretly Google...", 
+                    "My weirdest quirk is...", "I secretly think your best feature is...", "The most embarrassing thing I've posted online is...", "I am always shocked by..."
+                ]
+            },
+            past: {
+                pack1: [
+                    "My biggest regret is...", "A funny story about my past is...", "The worst date I've ever been on was...", "I wish I had been more honest about...", 
+                    "The most daring thing I've ever done is...", "I feel sad when I think about...", "My family always tells the story of when I...", "I wish I had traveled to...", 
+                    "The person I look up to the most is...", "I learned the most from...", "The biggest challenge I've overcome is...", "The one thing I always misrepresent about myself is...", 
+                    "I wish I could go back and tell myself...", "The best mistake I've ever made was...", "My first kiss was...", "The most trouble I got into was...", 
+                    "I feel like I grew up too fast when...", "I regret losing touch with...", "My biggest fashion mistake was...", "I quit... because..."
+                ],
+                pack2: [
+                    "The biggest life change I've ever faced was...", "My favorite memory from high school is...", "The most generous thing I've ever done is...", 
+                    "I wish I had kept the promise I made to...", "The thing I was most afraid of as a child was...", "I feel most nostalgic about...", 
+                    "I was a huge fan of...", "My worst roommate experience was...", "The time I felt most alone was...", "I feel like I got away with...", 
+                    "The person who had the biggest influence on me is...", "The most childish argument I ever had was...", "I feel proud that I managed to...", 
+                    "The happiest day of my childhood was...", "The moment I felt most misunderstood was...", "I learned to appreciate... later in life.", 
+                    "The biggest fight I had with my parents was...", "The one thing I wish I could change about my past is...", "The first time I got drunk, I...", 
+                    "I wish I had pursued..."
+                ],
+                pack3: [
+                    "The best advice I ever got was...", "I’ve never told you that I...", "The most meaningful moment of my life was...", 
+                    "I think my biggest strength is...", "I feel my greatest accomplishment is...", "The one quality I value most in a friendship is...", 
+                    "I feel truly seen when...", "I often worry about...", "I think I am most like my mom/dad when...", 
+                    "The first time I saw you, I...", "I felt truly defeated when...", "I wish I had studied...", 
+                    "My biggest struggle in my 20s was...", "I was obsessed with... as a teen.", "The most surprising discovery I made about myself was...", 
+                    "I think my relationship with my family is...", "My favorite thing about my childhood home was...", "The one thing I learned about myself from an ex is...", 
+                    "I think the worst thing I’ve ever done is...", "The silliest trend I followed was..."
+                ]
+            },
+            conflict: {
+                pack1: [
+                    "I want us to handle arguments by...", "I feel angry when you...", "When I'm stressed, I need you to...", 
+                    "I think my biggest flaw in a conflict is...", "I apologize the most sincerely when I...", "I feel distant from you when...", 
+                    "The way I need to be comforted after a fight is...", "I think we could improve our communication by...", "I feel frustrated when you don't...", 
+                    "The biggest issue we successfully navigated was...", "I think you handle conflict well when you...", 
+                    "I wish I was better at...", "I struggle with... after an argument.", "I worry that you think I...", 
+                    "I feel manipulated when...", "I hate it when we...", "The most important thing for me to feel validated is...", 
+                    "I need a partner who...", "I wish you would ask me...", "The last time I felt unheard was when..."
+                ],
+                pack2: [
+                    "When you raise your voice, I...", "I believe we should never...", "I think the argument we have most often is about...", 
+                    "I need space to cool down when I...", "I believe my apology should always include...", "I feel criticized when you...", 
+                    "The one thing I hate about arguments is...", "I think my partner should forgive...", "I am most likely to shut down when...", 
+                    "I find it hard to forgive...", "I get defensive when...", "I wish I could handle my anger by...", 
+                    "I prefer to resolve conflict...", "I think we should set a boundary around...", "I believe arguments are healthy when...", 
+                    "I get annoyed when you compare me to...", "I feel hurt when you...", "I think our relationship is resilient because...", 
+                    "The one thing I don't want us to argue about is...", "I think we should never go to sleep until..."
+                ],
+                pack3: [
+                    "When I need to apologize, I usually...", "I find it hard to compromise on...", "I think the greatest act of reconciliation is...", 
+                    "I need silence after a conflict because...", "I think we should communicate better about...", "I feel guilty when I...", 
+                    "I would never tolerate...", "I think it's fair to fight about...", "I value your willingness to...", 
+                    "I need time to process when...", "I think a non-negotiable for me is...", "I believe trust can be rebuilt by...", 
+                    "I get annoyed when you overuse the phrase...", "I think my partner is most patient when...", "I want us to work on...", 
+                    "I admire your ability to...", "The one time I almost walked away was when...", "I think arguments should last no longer than...", 
+                    "I know you are truly sorry when you...", "I struggle to share my... during arguments."
+                ]
+            }
+        };
+
+        // --- CORE GAME LOGIC ---
+
+        function init() {
+            // Logic to populate the Category Grid using 'categoryTitles' and 'gamePrompts'
+            const grid = document.getElementById('selectionGrid');
+            grid.innerHTML = '';
+            let icons = ['💖', '🔥', '✨', '🤪', '🕰️', '⚔️'];
+            let i = 0;
+
+            for (const categoryId in categoryTitles) {
+                if (categoryTitles.hasOwnProperty(categoryId)) {
+                    const icon = icons[i % icons.length];
+                    const packs = gamePrompts[categoryId];
+                    const packCount = packs ? Object.keys(packs).length : 0;
+                    const description = packCount > 1 ? `3 packs available.` : `${packCount} pack available.`;
+                    
+                    grid.innerHTML += `
+                        <div class="selection-card" onclick="showPacks('${categoryId}')">
+                            <div class="selection-icon">${icon}</div>
+                            <h3>${categoryTitles[categoryId]}</h3>
+                            <p class="selection-description">${description}</p>
+                        </div>
+                    `;
+                    i++;
+                }
+            }
+            document.getElementById('categorySelection').style.display = 'block';
+        }
+
+        function showPacks(categoryId) {
+            currentCategory = categoryId;
+            document.getElementById('categorySelection').classList.add('hidden');
+            document.getElementById('packSelection').classList.remove('hidden');
+            
+            document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
+            
+            const packsGrid = document.getElementById('packsGrid');
+            packsGrid.innerHTML = '';
+            
+            const categoryPacks = gamePrompts[categoryId];
+            let packIndex = 1;
+
+            for (const packId in categoryPacks) {
+                if (categoryPacks.hasOwnProperty(packId) && categoryPacks[packId].length > 0) {
+                    const promptsCount = categoryPacks[packId].length;
+                    
+                    const packCard = `
+                        <div class="pack-card" onclick="selectPack('${packId}')">
+                            <div class="pack-number">${packIndex}</div>
+                            <h3>PACK ${packIndex}</h3>
+                            <p class="pack-questions">${promptsCount} PROMPTS</p>
+                        </div>
+                    `;
+                    packsGrid.innerHTML += packCard;
+                    packIndex++;
+                }
+            }
+        }
+
+        function selectPack(packId) {
+            currentPack = packId;
+            currentPrompts = gamePrompts[currentCategory][packId];
+            
+            if (currentPrompts.length === 0) {
+                 alert(`Selected pack is empty. Please choose an active pack.`);
+                 return;
+            }
+
+            currentPromptIndex = 0;
+            
+            document.getElementById('packSelection').classList.add('hidden');
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const totalPrompts = currentPrompts.length;
+            const promptsPlayed = currentPromptIndex + 1;
+            const progress = (promptsPlayed / totalPrompts) * 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('promptCounter').textContent = `PROMPT ${promptsPlayed} OF ${totalPrompts}`;
+            
+            // --- Update Prompt Text ---
+            document.getElementById('promptText').textContent = PROMPT_PREAMBLE + currentPrompts[currentPromptIndex] + "...";
+            
+            document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
+            document.getElementById('nextBtn').textContent = currentPromptIndex === totalPrompts - 1 ? 'FINISH' : 'NEXT →';
+        }
+
+        function nextPrompt() {
+            if (currentPromptIndex === currentPrompts.length - 1) {
+                showEndScreen();
+            } else {
+                currentPromptIndex++;
+                updateDisplay();
+            }
+        }
+
+        function previousPrompt() {
+            if (currentPromptIndex > 0) {
+                currentPromptIndex--;
+                updateDisplay();
+            }
+        }
+
+        // --- BACK/QUIT FUNCTIONS ---
+        function backToCategories() {
+            document.getElementById('packSelection').classList.add('hidden');
+            document.getElementById('categorySelection').classList.remove('hidden');
+        }
+        function quitToPacks() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('packSelection').classList.remove('hidden');
+            currentPromptIndex = 0;
+        }
+        function showEndScreen() {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'block';
+        }
+        function backToPackSelection() {
+            document.getElementById('endScreen').style.display = 'none';
+            document.getElementById('packSelection').classList.remove('hidden');
+            currentPromptIndex = 0;
+        }
+        function backToGames() {
+            window.location.href = 'date-night.html';
+        }
+
+        window.onload = init;
+    </script>
+    <script src="/header.js"></script>
+</body>
+</html>
