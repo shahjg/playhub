@@ -1792,10 +1792,21 @@
   <script src="/js/engagement.js"></script>
   <script src="/js/profile-engagement-ui.js"></script>
   <script>
-    // Initialize engagement UI when switching to engagement tabs
+    // Sidebar navigation - switch sections
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
       btn.addEventListener('click', async () => {
         const section = btn.dataset.section;
+        
+        // Update active button
+        document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update active section
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        const targetSection = document.getElementById(section + '-section');
+        if (targetSection) targetSection.classList.add('active');
+        
+        // Load engagement content if needed
         if (section === 'challenges' && window.ProfileEngagementUI) {
           const html = await ProfileEngagementUI.renderChallengesSection();
           document.getElementById('challenges-container').innerHTML = html;
