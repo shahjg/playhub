@@ -109,35 +109,6 @@
       gap: 16px;
     }
 
-    /* Friends button (injected by social.js) */
-    .friends-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-      color: var(--text-dim);
-    }
-    .friends-btn:hover { background: rgba(255, 255, 255, 0.12); color: white; border-color: var(--border-hover); }
-    .friends-btn svg { width: 18px; height: 18px; }
-    .friends-btn .notification-dot {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      width: 8px;
-      height: 8px;
-      background: var(--pink);
-      border-radius: 50%;
-      display: none;
-    }
-    .friends-btn .notification-dot.visible { display: block; }
-
     .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
 
     .user-menu-wrapper { position: relative; }
@@ -1511,7 +1482,35 @@
     const userMenuButton = document.getElementById('user-menu-button'), userMenu = document.getElementById('user-menu');
 
     function primeHeaderFromCache() { try { const c = localStorage.getItem('tgco_header_label'); if (c) { headerUsernameLabel.textContent = c; authSkeleton && (authSkeleton.style.display = 'none'); loggedInNav && loggedInNav.style.setProperty('display', 'flex', 'important'); } else { authSkeleton && (authSkeleton.style.display = 'none'); loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); } } catch (e) { authSkeleton && (authSkeleton.style.display = 'none'); loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); } }
-    // updateAuthUI handled by header.js else {
+
+    async function checkSession() {
+      const { data } = await supabaseClient.auth.getSession();
+      return data?.session?.user || null;
+    }
+
+    function openAvatarModal() {
+      document.getElementById('avatar-modal').classList.add('open');
+      document.querySelectorAll('.avatar-option').forEach(o => o.classList.toggle('selected', o.dataset.value === selectedAvatar));
+    }
+
+    function closeAvatarModal() {
+      document.getElementById('avatar-modal').classList.remove('open');
+    }
+
+    async function handlePrestige() {
+      if (!currentUser) return;
+      if (!confirm('Are you sure you want to prestige? You will reset to Level 1 but gain a prestige badge!')) return;
+      
+      try {
+        const { data, error } = await supabaseClient.rpc('prestige_user', { p_user_id: currentUser.id });
+        if (error) {
+          alert('Unable to prestige: ' + error.message);
+          return;
+        }
+        if (data && data[0]?.success) {
+          showStatus('Prestige successful! Welcome to P' + data[0].new_prestige, 'success');
+          setTimeout(() => location.reload(), 1500);
+        } else {
           alert(data?.[0]?.message || 'Unable to prestige at this time.');
         }
       } catch (e) {
@@ -1916,10 +1915,21 @@
   <script src="/js/engagement.js"></script>
   <script src="/js/profile-engagement-ui.js"></script>
   <script>
-    // Initialize engagement UI when switching to engagement tabs
+    // Section switching AND engagement UI initialization
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
       btn.addEventListener('click', async () => {
         const section = btn.dataset.section;
+        
+        // Update active button
+        document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update active section
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        const targetSection = document.getElementById(section + '-section');
+        if (targetSection) targetSection.classList.add('active');
+        
+        // Load engagement content if needed
         if (section === 'challenges' && window.ProfileEngagementUI) {
           const html = await ProfileEngagementUI.renderChallengesSection();
           document.getElementById('challenges-container').innerHTML = html;
