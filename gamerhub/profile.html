@@ -109,6 +109,35 @@
       gap: 16px;
     }
 
+    /* Friends button (injected by social.js) */
+    .friends-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      color: var(--text-dim);
+    }
+    .friends-btn:hover { background: rgba(255, 255, 255, 0.12); color: white; border-color: var(--border-hover); }
+    .friends-btn svg { width: 18px; height: 18px; }
+    .friends-btn .notification-dot {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      background: var(--pink);
+      border-radius: 50%;
+      display: none;
+    }
+    .friends-btn .notification-dot.visible { display: block; }
+
     .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
 
     .user-menu-wrapper { position: relative; }
@@ -1420,7 +1449,8 @@
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     const RAILWAY_URL = 'https://web-production-519c7.up.railway.app';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
 
     let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎';
     let cosmetics = { border_style: 'solid', border_color: 'gold', badge_icon: '👑', name_effect: 'none', title: null, entrance_animation: 'fade', avatar: '😎' };
@@ -1481,8 +1511,24 @@
     const loggedOutNav = document.querySelector('.nav-right-logged-out'), loggedInNav = document.querySelector('.nav-right-logged-in');
     const userMenuButton = document.getElementById('user-menu-button'), userMenu = document.getElementById('user-menu');
 
-    function primeHeaderFromCache() { try { const c = localStorage.getItem('tgco_header_label'); if (c) { headerUsernameLabel.textContent = c; authSkeleton && (authSkeleton.style.display = 'none'); loggedInNav && loggedInNav.style.setProperty('display', 'flex', 'important'); } else { authSkeleton && (authSkeleton.style.display = 'none'); loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); } } catch (e) { authSkeleton && (authSkeleton.style.display = 'none'); loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); } }
+    function primeHeaderFromCache() { 
+      try { 
+        const c = localStorage.getItem('tgco_header_label'); 
+        if (c) { 
+          if (headerUsernameLabel) headerUsernameLabel.textContent = c; 
+          if (authSkeleton) authSkeleton.style.display = 'none'; 
+          if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important'); 
+        } else { 
+          if (authSkeleton) authSkeleton.style.display = 'none'; 
+          if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); 
+        } 
+      } catch (e) { 
+        if (authSkeleton) authSkeleton.style.display = 'none'; 
+        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); 
+      } 
+    }
 
+    // Auth check function
     async function checkSession() {
       const { data } = await supabaseClient.auth.getSession();
       return data?.session?.user || null;
@@ -1915,21 +1961,10 @@
   <script src="/js/engagement.js"></script>
   <script src="/js/profile-engagement-ui.js"></script>
   <script>
-    // Section switching AND engagement UI initialization
+    // Initialize engagement UI when switching to engagement tabs
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
       btn.addEventListener('click', async () => {
         const section = btn.dataset.section;
-        
-        // Update active button
-        document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        // Update active section
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        const targetSection = document.getElementById(section + '-section');
-        if (targetSection) targetSection.classList.add('active');
-        
-        // Load engagement content if needed
         if (section === 'challenges' && window.ProfileEngagementUI) {
           const html = await ProfileEngagementUI.renderChallengesSection();
           document.getElementById('challenges-container').innerHTML = html;
