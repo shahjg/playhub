@@ -1792,6 +1792,17 @@
   <script src="/js/engagement.js"></script>
   <script src="/js/profile-engagement-ui.js"></script>
   <script>
+    // Initialize engagement UI
+    let profileEngagementUI = null;
+    
+    async function initEngagementUI() {
+      if (!profileEngagementUI && window.ProfileEngagementUI && window.supabaseClient) {
+        profileEngagementUI = new ProfileEngagementUI(window.supabaseClient);
+        await profileEngagementUI.init();
+      }
+      return profileEngagementUI;
+    }
+    
     // Sidebar navigation - switch sections
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -1807,15 +1818,15 @@
         if (targetSection) targetSection.classList.add('active');
         
         // Load engagement content if needed
-        if (section === 'challenges' && window.ProfileEngagementUI) {
-          const html = await ProfileEngagementUI.renderChallengesSection();
-          document.getElementById('challenges-container').innerHTML = html;
-        } else if (section === 'achievements' && window.ProfileEngagementUI) {
-          const html = await ProfileEngagementUI.renderAchievementsSection();
-          document.getElementById('achievements-container').innerHTML = html;
-        } else if (section === 'referrals' && window.ProfileEngagementUI) {
-          const html = await ProfileEngagementUI.renderReferralSection();
-          document.getElementById('referrals-container').innerHTML = html;
+        if (section === 'challenges') {
+          const ui = await initEngagementUI();
+          if (ui) ui.renderChallengesSection();
+        } else if (section === 'achievements') {
+          const ui = await initEngagementUI();
+          if (ui) ui.renderAchievementsSection();
+        } else if (section === 'referrals') {
+          const ui = await initEngagementUI();
+          if (ui) await ui.renderReferralSection();
         }
       });
     });
