@@ -1025,6 +1025,18 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <span>Stats</span>
         </button>
+        <button class="sidebar-nav-item" data-section="challenges">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span>Challenges</span>
+        </button>
+        <button class="sidebar-nav-item" data-section="achievements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          <span>Achievements</span>
+        </button>
+        <button class="sidebar-nav-item" data-section="referrals">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+          <span>Referrals</span>
+        </button>
 
         <span class="sidebar-section-label">Account</span>
         <button class="sidebar-nav-item" data-section="settings">
@@ -1115,6 +1127,51 @@
         <div class="card">
           <h3 class="card-title">Your Leaderboard Rankings</h3>
           <div class="ranks-grid" id="leaderboard-ranks"></div>
+        </div>
+      </section>
+
+      <!-- CHALLENGES SECTION -->
+      <section class="content-section" id="challenges-section">
+        <div class="section-header">
+          <h1 class="section-title">DAILY CHALLENGES</h1>
+          <p class="section-subtitle">Complete challenges to earn XP and rewards</p>
+        </div>
+        <div id="challenges-container">
+          <div class="card">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <p>Loading challenges...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACHIEVEMENTS SECTION -->
+      <section class="content-section" id="achievements-section">
+        <div class="section-header">
+          <h1 class="section-title">ACHIEVEMENTS</h1>
+          <p class="section-subtitle">Unlock achievements by reaching milestones</p>
+        </div>
+        <div id="achievements-container">
+          <div class="card">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <p>Loading achievements...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REFERRALS SECTION -->
+      <section class="content-section" id="referrals-section">
+        <div class="section-header">
+          <h1 class="section-title">INVITE FRIENDS</h1>
+          <p class="section-subtitle">Share your code and earn rewards</p>
+        </div>
+        <div id="referrals-container">
+          <div class="card">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <p>Loading referral info...</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1856,5 +1913,25 @@
   <!-- SOCIAL.JS - Friends sidebar, parties, DMs etc -->
   <script src="/social.js"></script>
     <script src="/header.js"></script>
+  <script src="/js/engagement.js"></script>
+  <script src="/js/profile-engagement-ui.js"></script>
+  <script>
+    // Initialize engagement UI when switching to engagement tabs
+    document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const section = btn.dataset.section;
+        if (section === 'challenges' && window.ProfileEngagementUI) {
+          const html = await ProfileEngagementUI.renderChallengesSection();
+          document.getElementById('challenges-container').innerHTML = html;
+        } else if (section === 'achievements' && window.ProfileEngagementUI) {
+          const html = await ProfileEngagementUI.renderAchievementsSection();
+          document.getElementById('achievements-container').innerHTML = html;
+        } else if (section === 'referrals' && window.ProfileEngagementUI) {
+          const html = await ProfileEngagementUI.renderReferralSection();
+          document.getElementById('referrals-container').innerHTML = html;
+        }
+      });
+    });
+  </script>
 </body>
 </html>

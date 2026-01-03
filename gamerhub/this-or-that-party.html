@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>This or That: Party - TheGaming.co</title>
+    
+    <meta name="description" content="This or That: Party - Vote on your preferences with up to 100 players! Free multiplayer party game.">
+    <meta name="keywords" content="this or that, would you rather, party game, multiplayer, free, online game, large group">
+    <meta name="author" content="TheGaming.co">
+    <meta name="theme-color" content="#06b6d4">
+    <link rel="stylesheet" href="/header.css">
+    
+    <meta property="og:title" content="This or That: Party - TheGaming.co">
+    <meta property="og:description" content="Vote on your preferences with up to 100 players!">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://thegaming.co/this-or-that-party.html">
+    
+    <link rel="canonical" href="https://thegaming.co/this-or-that-party.html">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --accent: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.4);
+            --accent-soft: rgba(6, 182, 212, 0.12);
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(6, 182, 212, 0.3);
+            --text: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --option-a: #3b82f6;
+            --option-b: #f43f5e;
+            --green: #22c55e;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        .bg-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .bg-gradient {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 0%, var(--accent-soft) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 90% 100%, rgba(244, 63, 94, 0.1) 0%, transparent 50%),
+                var(--bg-primary);
+        }
+        
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 18px;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .header-logo::after {
+            content: '';
+            display: block;
+            height: 2px;
+            background: linear-gradient(90deg, var(--option-a), var(--accent), var(--option-b));
+            margin-top: 2px;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 70px 16px 20px;
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .round-info {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+        
+        .player-count {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .player-count span { color: var(--accent); font-weight: 700; }
+        
+        /* Question Display */
+        .question-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .vs-text {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--text-muted);
+            letter-spacing: 4px;
+        }
+        
+        .option-btn {
+            flex: 1;
+            min-height: 120px;
+            padding: 24px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-secondary);
+            color: var(--text);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .option-btn.option-a:hover, .option-btn.option-a.selected {
+            border-color: var(--option-a);
+            background: rgba(59, 130, 246, 0.15);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+        }
+        
+        .option-btn.option-b:hover, .option-btn.option-b.selected {
+            border-color: var(--option-b);
+            background: rgba(244, 63, 94, 0.15);
+            box-shadow: 0 0 40px rgba(244, 63, 94, 0.3);
+        }
+        
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .option-btn .vote-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            border-radius: 0 0 18px 18px;
+            transition: width 0.8s ease;
+        }
+        
+        .option-a .vote-bar { background: var(--option-a); }
+        .option-b .vote-bar { background: var(--option-b); }
+        
+        .option-btn .percent {
+            position: absolute;
+            bottom: 16px;
+            right: 20px;
+            font-size: 1.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .option-btn.show-results .percent { opacity: 1; }
+        
+        .option-btn .voter-count {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .option-btn.show-results .voter-count { opacity: 1; }
+        
+        /* Waiting State */
+        .waiting-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 20px;
+        }
+        
+        .waiting-text {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+        
+        .waiting-votes {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: var(--accent);
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Results */
+        .results-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .result-header {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .result-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .winner-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 3px;
+        }
+        
+        .winner-text.option-a-winner { color: var(--option-a); }
+        .winner-text.option-b-winner { color: var(--option-b); }
+        .winner-text.tie { color: var(--accent); }
+        
+        /* Voters List */
+        .voters-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .voters-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .voters-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .voter-chip {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+        
+        .voter-chip.option-a { border-color: var(--option-a); color: var(--option-a); }
+        .voter-chip.option-b { border-color: var(--option-b); color: var(--option-b); }
+        
+        /* Next Button */
+        .next-btn {
+            padding: 16px 32px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: auto;
+        }
+        
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+        
+        /* Game Over */
+        .game-over-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 24px;
+        }
+        
+        .game-over-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            letter-spacing: 4px;
+            color: var(--accent);
+        }
+        
+        .game-over-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+        
+        .play-again-btn {
+            padding: 16px 40px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+        
+        /* Countdown */
+        .countdown-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 10, 15, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        
+        .countdown-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 15rem;
+            color: var(--accent);
+            text-shadow: 0 0 100px var(--accent-glow);
+            animation: countPulse 1s ease-in-out;
+        }
+        
+        @keyframes countPulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .hidden { display: none !important; }
+        
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            header { height: 56px; }
+            main { padding: 66px 12px 16px; }
+            
+            .option-btn {
+                min-height: 100px;
+                font-size: 1.5rem;
+                padding: 20px;
+            }
+            
+            .vs-text { font-size: 1.5rem; }
+            
+            .countdown-number { font-size: 10rem; }
+            
+            .game-over-title { font-size: 2.5rem; }
+        }
+        
+        /* Large Screens */
+        @media (min-width: 1200px) {
+            .question-container {
+                flex-direction: row;
+                align-items: stretch;
+            }
+            
+            .option-btn {
+                min-height: 250px;
+                font-size: 2.5rem;
+            }
+            
+            .vs-text {
+                writing-mode: vertical-rl;
+                text-orientation: mixed;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-container">
+    <div class="bg-gradient"></div>
+</div>
+
+<div id="site-header"></div>
+
+<main>
+    <!-- Game Info Bar -->
+    <div class="game-info">
+        <div class="round-info">ROUND <span id="current-round">1</span>/<span id="total-rounds">15</span></div>
+        <div class="player-count"><span id="votes-in">0</span>/<span id="total-players">0</span> voted</div>
+    </div>
+    
+    <!-- Countdown Overlay -->
+    <div class="countdown-overlay" id="countdown-overlay">
+        <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+    
+    <!-- Question Phase -->
+    <div class="question-container" id="question-phase">
+        <button class="option-btn option-a" id="option-a-btn" onclick="vote('A')">
+            <span id="option-a-text">Option A</span>
+            <div class="vote-bar" id="bar-a" style="width: 0%"></div>
+            <span class="percent" id="percent-a">50%</span>
+            <span class="voter-count" id="count-a">0 votes</span>
+        </button>
+        
+        <div class="vs-text">VS</div>
+        
+        <button class="option-btn option-b" id="option-b-btn" onclick="vote('B')">
+            <span id="option-b-text">Option B</span>
+            <div class="vote-bar" id="bar-b" style="width: 0%"></div>
+            <span class="percent" id="percent-b">50%</span>
+            <span class="voter-count" id="count-b">0 votes</span>
+        </button>
+    </div>
+    
+    <!-- Waiting Phase -->
+    <div class="waiting-container hidden" id="waiting-phase">
+        <div class="spinner"></div>
+        <div class="waiting-text">Waiting for everyone to vote...</div>
+        <div class="waiting-votes"><span id="waiting-count">0</span>/<span id="waiting-total">0</span></div>
+    </div>
+    
+    <!-- Results Phase -->
+    <div class="results-container hidden" id="results-phase">
+        <div class="result-header">
+            <div class="result-title">THE GROUP CHOSE</div>
+            <div class="winner-text" id="winner-text">TIE!</div>
+        </div>
+        
+        <div class="question-container">
+            <button class="option-btn option-a show-results" id="result-a" disabled>
+                <span id="result-a-text">Option A</span>
+                <div class="vote-bar" id="result-bar-a" style="width: 0%"></div>
+                <span class="percent" id="result-percent-a">50%</span>
+                <span class="voter-count" id="result-count-a">0 votes</span>
+            </button>
+            
+            <div class="vs-text">VS</div>
+            
+            <button class="option-btn option-b show-results" id="result-b" disabled>
+                <span id="result-b-text">Option B</span>
+                <div class="vote-bar" id="result-bar-b" style="width: 0%"></div>
+                <span class="percent" id="result-percent-b">50%</span>
+                <span class="voter-count" id="result-count-b">0 votes</span>
+            </button>
+        </div>
+        
+        <button class="next-btn" id="next-btn" onclick="nextRound()">NEXT QUESTION</button>
+    </div>
+    
+    <!-- Game Over -->
+    <div class="game-over-container hidden" id="gameover-phase">
+        <div class="game-over-title">GAME OVER!</div>
+        <div class="game-over-subtitle">Thanks for playing This or That!</div>
+        <button class="play-again-btn" onclick="window.location.href='/party-games.html'">PLAY AGAIN</button>
+    </div>
+</main>
+
+<script>
+    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    
+    // Supabase
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
+    const playerName = localStorage.getItem('tempPlayerName');
+    const isHost = localStorage.getItem('tempIsHost') === 'true';
+    
+    let hasVoted = false;
+    let currentRound = 0;
+    let totalRounds = 15;
+    let totalPlayers = 0;
+    
+    // Elements
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNumber = document.getElementById('countdown-number');
+    const questionPhase = document.getElementById('question-phase');
+    const waitingPhase = document.getElementById('waiting-phase');
+    const resultsPhase = document.getElementById('results-phase');
+    const gameoverPhase = document.getElementById('gameover-phase');
+    const nextBtn = document.getElementById('next-btn');
+    
+    // Redirect if no room
+    if (!roomCode) {
+        window.location.href = '/party-games.html';
+    }
+    
+    // Socket Events
+    socket.on('connect', () => {
+        console.log('Connected to server');
+        socket.emit('rejoin-room', { roomCode, playerName });
+    });
+    
+    socket.on('room-joined', (data) => {
+        totalPlayers = data.room.players.length;
+        document.getElementById('total-players').textContent = totalPlayers;
+        document.getElementById('waiting-total').textContent = totalPlayers;
+        startCountdown();
+    });
+    
+    socket.on('thisorthat-party-question', (data) => {
+        currentRound = data.questionIndex + 1;
+        totalRounds = data.totalQuestions;
+        hasVoted = false;
+        
+        document.getElementById('current-round').textContent = currentRound;
+        document.getElementById('total-rounds').textContent = totalRounds;
+        document.getElementById('option-a-text').textContent = data.optionA;
+        document.getElementById('option-b-text').textContent = data.optionB;
+        document.getElementById('votes-in').textContent = '0';
+        
+        // Reset buttons
+        const btnA = document.getElementById('option-a-btn');
+        const btnB = document.getElementById('option-b-btn');
+        btnA.disabled = false;
+        btnB.disabled = false;
+        btnA.classList.remove('selected', 'show-results');
+        btnB.classList.remove('selected', 'show-results');
+        document.getElementById('bar-a').style.width = '0%';
+        document.getElementById('bar-b').style.width = '0%';
+        
+        showPhase('question');
+    });
+    
+    socket.on('thisorthat-party-vote-counted', (data) => {
+        document.getElementById('votes-in').textContent = data.totalVotes;
+        document.getElementById('waiting-count').textContent = data.totalVotes;
+        totalPlayers = data.totalPlayers;
+        document.getElementById('total-players').textContent = totalPlayers;
+        document.getElementById('waiting-total').textContent = totalPlayers;
+    });
+    
+    socket.on('thisorthat-party-results', (data) => {
+        // Update result display
+        document.getElementById('result-a-text').textContent = data.optionA;
+        document.getElementById('result-b-text').textContent = data.optionB;
+        document.getElementById('result-percent-a').textContent = data.percentA + '%';
+        document.getElementById('result-percent-b').textContent = data.percentB + '%';
+        document.getElementById('result-count-a').textContent = data.votesA + ' votes';
+        document.getElementById('result-count-b').textContent = data.votesB + ' votes';
+        document.getElementById('result-bar-a').style.width = data.percentA + '%';
+        document.getElementById('result-bar-b').style.width = data.percentB + '%';
+        
+        // Winner text
+        const winnerText = document.getElementById('winner-text');
+        if (data.percentA > data.percentB) {
+            winnerText.textContent = data.optionA;
+            winnerText.className = 'winner-text option-a-winner';
+        } else if (data.percentB > data.percentA) {
+            winnerText.textContent = data.optionB;
+            winnerText.className = 'winner-text option-b-winner';
+        } else {
+            winnerText.textContent = "IT'S A TIE!";
+            winnerText.className = 'winner-text tie';
+        }
+        
+        // Show/hide next button for host
+        nextBtn.style.display = isHost ? 'block' : 'none';
+        if (data.isLastQuestion) {
+            nextBtn.textContent = 'SEE FINAL RESULTS';
+        } else {
+            nextBtn.textContent = 'NEXT QUESTION';
+        }
+        
+        showPhase('results');
+    });
+    
+    socket.on('thisorthat-party-game-over', (data) => {
+        showPhase('gameover');
+    });
+    
+    // Functions
+    function startCountdown() {
+        let count = 3;
+        countdownNumber.textContent = count;
+        countdownOverlay.classList.remove('hidden');
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownNumber.textContent = count;
+                countdownNumber.style.animation = 'none';
+                void countdownNumber.offsetWidth;
+                countdownNumber.style.animation = 'countPulse 1s ease-in-out';
+            } else {
+                clearInterval(interval);
+                countdownOverlay.classList.add('hidden');
+                
+                // Host starts first round
+                if (isHost) {
+                    socket.emit('thisorthat-party-start-round', { roomCode });
+                }
+            }
+        }, 1000);
+    }
+    
+    function vote(option) {
+        if (hasVoted) return;
+        hasVoted = true;
+        
+        const btnA = document.getElementById('option-a-btn');
+        const btnB = document.getElementById('option-b-btn');
+        
+        btnA.disabled = true;
+        btnB.disabled = true;
+        
+        if (option === 'A') {
+            btnA.classList.add('selected');
+        } else {
+            btnB.classList.add('selected');
+        }
+        
+        socket.emit('thisorthat-party-vote', { roomCode, vote: option });
+        showPhase('waiting');
+    }
+    
+    function nextRound() {
+        if (!isHost) return;
+        socket.emit('thisorthat-party-start-round', { roomCode });
+    }
+    
+    function showPhase(phase) {
+        questionPhase.classList.add('hidden');
+        waitingPhase.classList.add('hidden');
+        resultsPhase.classList.add('hidden');
+        gameoverPhase.classList.add('hidden');
+        
+        switch(phase) {
+            case 'question': questionPhase.classList.remove('hidden'); break;
+            case 'waiting': waitingPhase.classList.remove('hidden'); break;
+            case 'results': resultsPhase.classList.remove('hidden'); break;
+            case 'gameover': gameoverPhase.classList.remove('hidden'); break;
+        }
+    }
+</script>
+
+    <script src="/header.js"></script>
+<script src="/js/engagement.js"></script>
+</body>
+</html>
