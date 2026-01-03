@@ -1454,55 +1454,7 @@
     const userMenuButton = document.getElementById('user-menu-button'), userMenu = document.getElementById('user-menu');
 
     function primeHeaderFromCache() { try { const c = localStorage.getItem('tgco_header_label'); if (c) { headerUsernameLabel.textContent = c; authSkeleton && (authSkeleton.style.display = 'none'); loggedInNav && loggedInNav.style.setProperty('display', 'flex', 'important'); } else { authSkeleton && (authSkeleton.style.display = 'none'); loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); } } catch (e) { authSkeleton && (authSkeleton.style.display = 'none'); loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); } }
-    function updateAuthUI(user) { authSkeleton && (authSkeleton.style.display = 'none'); if (user) { loggedOutNav && loggedOutNav.style.setProperty('display', 'none', 'important'); loggedInNav && loggedInNav.style.setProperty('display', 'flex', 'important'); } else { loggedOutNav && loggedOutNav.style.setProperty('display', 'flex', 'important'); loggedInNav && loggedInNav.style.setProperty('display', 'none', 'important'); } }
-    async function checkSession() { const { data } = await supabaseClient.auth.getSession(); return data?.session?.user ?? null; }
-
-    let userMenuOpen = false;
-    userMenuButton?.addEventListener('click', (e) => { e.stopPropagation(); userMenuOpen = !userMenuOpen; userMenu.classList.toggle('open', userMenuOpen); });
-    document.addEventListener('click', () => { if (userMenuOpen) { userMenuOpen = false; userMenu.classList.remove('open'); } });
-    document.getElementById('user-menu-signout')?.addEventListener('click', async () => { await supabaseClient.auth.signOut(); localStorage.removeItem('tgco_header_label'); window.location.href = '/'; });
-    document.getElementById('user-menu-profile')?.addEventListener('click', () => { userMenuOpen = false; userMenu.classList.remove('open'); document.querySelector('[data-section="overview"]').click(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    primeHeaderFromCache();
-
-    // Sidebar nav
-    document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.getElementById(`${btn.dataset.section}-section`).classList.add('active');
-      });
-    });
-
-    // Avatar modal
-    function openAvatarModal() { 
-      document.getElementById('avatar-modal').classList.add('open'); 
-      document.querySelectorAll('.avatar-option').forEach(o => o.classList.toggle('selected', o.dataset.value === selectedAvatar)); 
-    }
-    function closeAvatarModal() { document.getElementById('avatar-modal').classList.remove('open'); }
-
-    async function handlePrestige() {
-      const confirmed = confirm(
-        '⭐ PRESTIGE ⭐\n\n' +
-        'Are you sure you want to prestige?\n\n' +
-        '• Your level will reset to 1\n' +
-        '• Your XP will reset to 0\n' +
-        '• You will unlock exclusive Prestige rewards\n' +
-        '• Your stats and unlocked cosmetics are kept\n\n' +
-        'This action cannot be undone!'
-      );
-      
-      if (!confirmed) return;
-      
-      try {
-        const { data, error } = await supabaseClient.rpc('prestige_user', { p_user_id: currentUser.id });
-        
-        if (error) throw error;
-        
-        if (data && data[0]?.success) {
-          alert(`🎉 ${data[0].message}\n\nYou've unlocked new exclusive cosmetics!`);
-          window.location.reload();
-        } else {
+    // updateAuthUI handled by header.js else {
           alert(data?.[0]?.message || 'Unable to prestige at this time.');
         }
       } catch (e) {
@@ -1625,7 +1577,7 @@
       const user = await checkSession();
       if (!user) { window.location.href = '/login'; return; }
       currentUser = user;
-      updateAuthUI(user);
+      // Auth handled by header.js
 
       const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
       if (error) { console.error('Profile error:', error); showStatus('Error loading profile', 'error'); return; }

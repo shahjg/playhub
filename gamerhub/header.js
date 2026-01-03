@@ -1,47 +1,50 @@
 /* ========================================
    THEGAMING.CO - SHARED HEADER SYSTEM
-   ========================================
-   
-   Usage:
-   1. Add <link rel="stylesheet" href="/header.css"> in <head>
-   2. Add <div id="site-header"></div> at start of <body>
-   3. Add <script src="/header.js"></script> before </body>
-   
-   Options (data attributes on #site-header):
-   - data-back-url="/solo"  → Custom back button URL
-   - data-back-text="Solo"  → Custom back button text
-   - data-no-back           → Force hide back button
-   
-======================================== */
+   ======================================== */
 
 (function() {
     'use strict';
 
-    // ========================================
-    // CONFIGURATION
-    // ========================================
-    
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     
-    // Cache keys
     const CACHE_LABEL = 'tgco_header_label';
     const CACHE_FULL = 'tgco_header_full';
 
     // ========================================
-    // AUTO-DETECT PAGE TYPE
+    // LOAD DEPENDENCIES
+    // ========================================
+    
+    function loadSocialSystem() {
+        // Load social.css if not already loaded
+        if (!document.querySelector('link[href="/social.css"]')) {
+            const socialCSS = document.createElement('link');
+            socialCSS.rel = 'stylesheet';
+            socialCSS.href = '/social.css';
+            document.head.appendChild(socialCSS);
+        }
+        
+        // Load social.js if not already loaded  
+        if (!document.querySelector('script[src="/social.js"]')) {
+            const socialJS = document.createElement('script');
+            socialJS.src = '/social.js';
+            socialJS.defer = true;
+            document.body.appendChild(socialJS);
+        }
+    }
+
+    // ========================================
+    // AUTO-DETECT PAGE TYPE FOR BACK BUTTON
     // ========================================
     
     function getPageInfo() {
         const path = window.location.pathname;
         const container = document.getElementById('site-header');
         
-        // Check for manual overrides
         if (container) {
             if (container.hasAttribute('data-no-back')) {
                 return { showBack: false };
             }
-            
             const customUrl = container.getAttribute('data-back-url');
             const customText = container.getAttribute('data-back-text');
             if (customUrl) {
@@ -49,8 +52,6 @@
             }
         }
         
-        // Auto-detect based on URL path
-        // Game pages: /games/solo/*, /games/duos/*, /games/squad/*, /games/party/*
         if (path.includes('/games/solo/')) {
             return { showBack: true, backUrl: '/solo', backText: 'Solo' };
         }
@@ -64,7 +65,6 @@
             return { showBack: true, backUrl: '/party-games', backText: 'Party' };
         }
         
-        // Default: no back button (category pages, index, etc.)
         return { showBack: false };
     }
 
@@ -83,7 +83,7 @@
         ` : '';
 
         return `
-            <header class="site-header">
+            <header>
                 <nav class="nav-inner">
                     <div class="nav-left">
                         ${backButtonHTML}
@@ -100,6 +100,15 @@
                             </div>
                             
                             <div class="nav-right-logged-in">
+                                <!-- Friends Button -->
+                                <button class="friends-btn" id="friends-btn" type="button" aria-label="Friends">
+                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                    </svg>
+                                    <span class="notification-dot" id="friends-notification-dot"></span>
+                                </button>
+                                
+                                <!-- User Menu -->
                                 <div class="user-menu-wrapper">
                                     <button class="user-pill" type="button" id="user-menu-button" aria-haspopup="true" aria-expanded="false">
                                         <span class="user-pill-label" id="header-username-label">P</span>
@@ -162,8 +171,6 @@
         } else {
             if (elements.loggedOut) elements.loggedOut.style.setProperty('display', 'flex', 'important');
             if (elements.loggedIn) elements.loggedIn.style.setProperty('display', 'none', 'important');
-            
-            // Clear cache on logout
             try {
                 localStorage.removeItem(CACHE_LABEL);
                 localStorage.removeItem(CACHE_FULL);
@@ -188,7 +195,6 @@
             elements.usernameLabel.title = trimmed;
         }
         
-        // Cache for instant load next time
         try {
             localStorage.setItem(CACHE_LABEL, initial);
             localStorage.setItem(CACHE_FULL, trimmed);
@@ -211,11 +217,12 @@
                 }
                 if (elements.skeleton) elements.skeleton.style.display = 'none';
                 if (elements.loggedIn) elements.loggedIn.style.setProperty('display', 'flex', 'important');
-                return true; // Was cached as logged in
+                return true;
             }
         } catch (e) {}
         
-        // No cache or error - show skeleton, wait for auth check
+        // Not cached - show skeleton until auth loads
+        if (elements.skeleton) elements.skeleton.style.display = 'block';
         return false;
     }
 
@@ -258,9 +265,8 @@
     // ========================================
     
     async function initSupabaseAuth() {
-        // Wait for Supabase to be available
+        // Wait for Supabase if not loaded
         if (typeof supabase === 'undefined') {
-            // Try to load it
             await loadSupabase();
         }
         
@@ -270,14 +276,13 @@
             return;
         }
         
-        // Create client if not already exists
+        // Create or reuse client
         if (!window.supabaseClient) {
             window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
         
         const client = window.supabaseClient;
         
-        // Check session
         try {
             const { data, error } = await client.auth.getSession();
             if (error) throw error;
@@ -314,7 +319,7 @@
             }
         });
         
-        // Setup sign out button
+        // Setup sign out
         if (elements.signoutBtn) {
             elements.signoutBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
@@ -338,7 +343,7 @@
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/@supabase/supabase-js@2';
             script.onload = () => resolve();
-            script.onerror = () => resolve(); // Continue even if failed
+            script.onerror = () => resolve();
             document.head.appendChild(script);
         });
     }
@@ -355,18 +360,16 @@
         cacheElements();
         
         // Prime from localStorage for instant UI
-        const wasCached = primeFromCache();
-        
-        // If not cached, show loading state briefly
-        if (!wasCached && elements.skeleton) {
-            elements.skeleton.style.display = 'block';
-        }
+        primeFromCache();
         
         // Setup dropdown menu
         setupMenu();
         
-        // Initialize auth (async)
+        // Initialize auth
         initSupabaseAuth();
+        
+        // Load social system (friends panel)
+        loadSocialSystem();
     }
     
     // Run when DOM is ready

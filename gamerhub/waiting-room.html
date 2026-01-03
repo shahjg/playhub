@@ -409,39 +409,20 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const authSkeleton = document.getElementById('auth-skeleton');
-    const loggedOutNav = document.querySelector('.nav-right-logged-out');
-    const loggedInNav = document.querySelector('.nav-right-logged-in');
-    const headerUsernameLabel = document.getElementById('header-username-label');
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userMenu = document.getElementById('user-menu');
-    const userMenuSignOut = document.getElementById('user-menu-signout');
+    // const authSkeleton = document\.getElementById\('auth-skeleton'\);
+    // const loggedOutNav = document\.querySelector\('\.nav-right-logged-out'\);
+    // const loggedInNav = document\.querySelector\('\.nav-right-logged-in'\);
+    // const headerUsernameLabel = document\.getElementById\('header-username-label'\);
+    // const userMenuButton = document\.getElementById\('user-menu-button'\);
+    // const userMenu = document\.getElementById\('user-menu'\);
+    // const userMenuSignOut = document\.getElementById\('user-menu-signout'\);
 
-    (function primeHeaderFromCache() {
-        try {
-            const cachedLabel = localStorage.getItem('tgco_header_label');
-            if (cachedLabel) { headerUsernameLabel.textContent = cachedLabel; if (authSkeleton) authSkeleton.style.display = 'none'; if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important'); }
-            else { if (authSkeleton) authSkeleton.style.display = 'none'; if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); }
-        } catch (e) { if (authSkeleton) authSkeleton.style.display = 'none'; if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); }
-    })();
+    // Header priming handled by header.js
 
-    function updateAuthUI(user) {
-        if (authSkeleton) authSkeleton.style.display = 'none';
-        if (user) { if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important'); if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important'); }
-        else { if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important'); if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important'); }
+    // updateAuthUI handled by header.js
     }
-
-    async function loadSessionAndProfile() {
-        const { data } = await supabaseClient.auth.getSession();
-        const user = data?.session?.user ?? null;
-        updateAuthUI(user);
-        if (user) {
-            const { data: profile } = await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id', user.id).single();
-            if (profile) { const name = profile.display_name || profile.gamer_tag || user.email.split('@')[0]; headerUsernameLabel.textContent = name.length > 16 ? name.slice(0,15)+'…' : name; localStorage.setItem('tgco_header_label', headerUsernameLabel.textContent); }
-        }
-    }
-    loadSessionAndProfile();
-    supabaseClient.auth.onAuthStateChange((_event, session) => { updateAuthUI(session?.user); if (session?.user) loadSessionAndProfile(); });
+    // Profile handled by header.js
+// Auth handled by header.js
 
     let userMenuOpen = false;
     if (userMenuButton && userMenu) {
