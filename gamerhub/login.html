@@ -599,13 +599,13 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const authSkeleton = document.getElementById('auth-skeleton');
-    const headerUsernameLabel = document.getElementById('header-username-label');
-    const loggedOutNav = document.querySelector('.nav-right-logged-out');
-    const loggedInNav = document.querySelector('.nav-right-logged-in');
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userMenu = document.getElementById('user-menu');
-    const userMenuSignOut = document.getElementById('user-menu-signout');
+    // const authSkeleton = document\.getElementById\('auth-skeleton'\);
+    // const headerUsernameLabel = document\.getElementById\('header-username-label'\);
+    // const loggedOutNav = document\.querySelector\('\.nav-right-logged-out'\);
+    // const loggedInNav = document\.querySelector\('\.nav-right-logged-in'\);
+    // const userMenuButton = document\.getElementById\('user-menu-button'\);
+    // const userMenu = document\.getElementById\('user-menu'\);
+    // const userMenuSignOut = document\.getElementById\('user-menu-signout'\);
 
     // Prime header from cache
     function primeHeaderFromCache() {
@@ -629,106 +629,7 @@
       }
     }
 
-    function updateAuthUI(user) {
-      if (authSkeleton) authSkeleton.style.display = 'none';
-
-      if (user) {
-        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'none', 'important');
-        if (loggedInNav) loggedInNav.style.setProperty('display', 'flex', 'important');
-      } else {
-        if (loggedOutNav) loggedOutNav.style.setProperty('display', 'flex', 'important');
-        if (loggedInNav) loggedInNav.style.setProperty('display', 'none', 'important');
-      }
-    }
-
-    // Check session on load
-    async function checkSession() {
-      const { data } = await supabaseClient.auth.getSession();
-      const user = data?.session?.user ?? null;
-      updateAuthUI(user);
-    }
-
-    // User menu dropdown
-    let userMenuOpen = false;
-
-    function setUserMenuOpen(open) {
-      userMenuOpen = open;
-      if (!userMenuButton || !userMenu) return;
-      if (open) {
-        userMenu.classList.add('open');
-        userMenuButton.setAttribute('aria-expanded', 'true');
-      } else {
-        userMenu.classList.remove('open');
-        userMenuButton.setAttribute('aria-expanded', 'false');
-      }
-    }
-
-    if (userMenuButton && userMenu) {
-      userMenuButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        setUserMenuOpen(!userMenuOpen);
-      });
-
-      document.addEventListener('click', () => {
-        if (userMenuOpen) setUserMenuOpen(false);
-      });
-
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') setUserMenuOpen(false);
-      });
-    }
-
-    async function signOut() {
-      await supabaseClient.auth.signOut();
-      try {
-        localStorage.removeItem('tgco_header_label');
-        localStorage.removeItem('tgco_header_full');
-      } catch (e) {}
-      window.location.href = '/';
-    }
-
-    if (userMenuSignOut) {
-      userMenuSignOut.addEventListener('click', (event) => {
-        event.preventDefault();
-        setUserMenuOpen(false);
-        signOut();
-      });
-    }
-
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
-      const user = session ? session.user : null;
-      updateAuthUI(user);
-    });
-
-    primeHeaderFromCache();
-    checkSession();
-
-    // Password toggle
-    const passwordInput = document.getElementById('login-password');
-    const togglePasswordBtn = document.getElementById('toggle-password');
-
-    if (togglePasswordBtn && passwordInput) {
-      togglePasswordBtn.addEventListener('click', () => {
-        const isPassword = passwordInput.type === 'password';
-        passwordInput.type = isPassword ? 'text' : 'password';
-        togglePasswordBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-      });
-    }
-
-    // Message helper
-    function showMessage(text, type) {
-      const msgEl = document.getElementById('login-message');
-      msgEl.textContent = text;
-      msgEl.className = 'auth-message visible ' + type;
-    }
-
-    // Google sign-in
-    document.getElementById('google-signin').addEventListener('click', async () => {
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/index.html'
-        }
+    // updateAuthUI handled by header.js
       });
       if (error) {
         showMessage('Google sign-in failed: ' + error.message, 'error');
