@@ -296,10 +296,19 @@ class ProfileEngagementUI {
 
   async init() {
     try {
+      console.log('[ProfileUI] Initializing...');
+      
       const { data: { session } } = await this.supabase.auth.getSession();
-      if (!session?.user) return;
+      
+      if (!session?.user) {
+        console.log('[ProfileUI] No user session, using defaults');
+        // Generate a default referral code
+        this.referralCode = 'TGCO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        return;
+      }
       
       this.currentUser = session.user;
+      console.log('[ProfileUI] User:', this.currentUser.id);
       
       // Load profile
       const { data: profile } = await this.supabase
@@ -317,6 +326,7 @@ class ProfileEngagementUI {
         try {
           this.engagement = new EngagementSystem(this.supabase);
           await this.engagement.init();
+          console.log('[ProfileUI] Engagement system initialized');
         } catch (e) {
           console.log('[ProfileUI] Engagement system unavailable:', e.message);
         }
@@ -325,8 +335,11 @@ class ProfileEngagementUI {
       // Generate referral code
       await this.loadReferralData();
       
+      console.log('[ProfileUI] Init complete');
     } catch (e) {
       console.error('[ProfileUI] Init error:', e);
+      // Still set a default referral code
+      this.referralCode = 'TGCO' + Math.random().toString(36).substring(2, 6).toUpperCase();
     }
   }
   
@@ -395,10 +408,15 @@ class ProfileEngagementUI {
   
   renderChallengesSection() {
     const container = document.getElementById('challenges-container');
-    if (!container) return;
+    if (!container) {
+      console.log('[ProfileUI] challenges-container not found');
+      return;
+    }
     
     const dailyChallenges = this.engagement?.getDailyChallenges?.() || this.defaultDailyChallenges;
     const weeklyChallenges = this.engagement?.getWeeklyChallenges?.() || this.defaultWeeklyChallenges;
+    
+    console.log('[ProfileUI] Rendering challenges:', dailyChallenges.length, 'daily,', weeklyChallenges.length, 'weekly');
     
     container.innerHTML = `
       <div class="engagement-section">
@@ -740,6 +758,11 @@ class ProfileEngagementUI {
   async renderReferralSection() {
     const container = document.getElementById('referrals-container');
     if (!container) return;
+    
+    // Ensure we have a referral code
+    if (!this.referralCode) {
+      this.referralCode = 'TGCO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
     
     const shareUrl = `${window.location.origin}?ref=${this.referralCode}`;
     
