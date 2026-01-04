@@ -968,17 +968,13 @@
           <h1 class="section-title">STATS & RANKINGS</h1>
           <p class="section-subtitle">Your performance across all games</p>
         </div>
-
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-value" id="stat-games-played-2">0</div><div class="stat-label">Games Played</div></div>
-          <div class="stat-card"><div class="stat-value" id="stat-playtime-2">0m</div><div class="stat-label">Playtime</div></div>
-          <div class="stat-card"><div class="stat-value" id="stat-personal-bests-2">0</div><div class="stat-label">Personal Bests</div></div>
-          <div class="stat-card"><div class="stat-value" id="stat-best-rank-2">#--</div><div class="stat-label">Best Rank</div></div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">Your Leaderboard Rankings</h3>
-          <div class="ranks-grid" id="leaderboard-ranks"></div>
+        <div id="stats-container">
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="stat-games-played-2">0</div><div class="stat-label">Games Played</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-playtime-2">0m</div><div class="stat-label">Playtime</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-personal-bests-2">0</div><div class="stat-label">Personal Bests</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-best-rank-2">#--</div><div class="stat-label">Best Rank</div></div>
+          </div>
         </div>
       </section>
 
@@ -1792,16 +1788,64 @@
   <script src="/js/engagement.js"></script>
   <script src="/js/profile-engagement-ui.js"></script>
   <script>
-    // Initialize engagement UI
-    let profileEngagementUI = null;
+    // Initialize engagement UI on page load
+    window.profileEngagementUI = null;
     
     async function initEngagementUI() {
-      if (!profileEngagementUI && window.ProfileEngagementUI && window.supabaseClient) {
-        profileEngagementUI = new ProfileEngagementUI(window.supabaseClient);
-        await profileEngagementUI.init();
+      console.log('[Profile] initEngagementUI called');
+      console.log('[Profile] ProfileEngagementUI:', !!window.ProfileEngagementUI);
+      console.log('[Profile] supabaseClient:', !!window.supabaseClient);
+      
+      if (!window.profileEngagementUI && window.ProfileEngagementUI && window.supabaseClient) {
+        try {
+          window.profileEngagementUI = new ProfileEngagementUI(window.supabaseClient);
+          await window.profileEngagementUI.init();
+          console.log('[Profile] ProfileEngagementUI initialized successfully');
+        } catch (e) {
+          console.error('[Profile] Error initializing ProfileEngagementUI:', e);
+        }
       }
-      return profileEngagementUI;
+      return window.profileEngagementUI;
     }
+    
+    // Initialize when supabase is ready
+    async function startEngagement() {
+      console.log('[Profile] startEngagement called');
+      
+      // Wait for supabase
+      let tries = 0;
+      while (!window.supabaseClient && tries < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        tries++;
+      }
+      
+      console.log('[Profile] supabaseClient ready after', tries, 'tries:', !!window.supabaseClient);
+      
+      if (window.supabaseClient) {
+        const ui = await initEngagementUI();
+        if (ui) {
+          console.log('[Profile] Rendering engagement sections...');
+          try {
+            ui.renderChallengesSection();
+            ui.renderAchievementsSection();
+            await ui.renderReferralSection();
+            if (typeof ui.renderStatsSection === 'function') {
+              ui.renderStatsSection();
+            }
+            console.log('[Profile] All sections rendered');
+          } catch (e) {
+            console.error('[Profile] Error rendering sections:', e);
+          }
+        } else {
+          console.log('[Profile] UI not initialized, cannot render');
+        }
+      } else {
+        console.error('[Profile] supabaseClient not available');
+      }
+    }
+    
+    // Start engagement UI
+    startEngagement();
     
     // Sidebar navigation - switch sections
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
@@ -1817,16 +1861,18 @@
         const targetSection = document.getElementById(section + '-section');
         if (targetSection) targetSection.classList.add('active');
         
-        // Load engagement content if needed
-        if (section === 'challenges') {
-          const ui = await initEngagementUI();
-          if (ui) ui.renderChallengesSection();
-        } else if (section === 'achievements') {
-          const ui = await initEngagementUI();
-          if (ui) ui.renderAchievementsSection();
-        } else if (section === 'referrals') {
-          const ui = await initEngagementUI();
-          if (ui) await ui.renderReferralSection();
+        // Render engagement content if needed (in case not yet loaded)
+        const ui = window.profileEngagementUI;
+        if (ui) {
+          if (section === 'challenges') {
+            ui.renderChallengesSection();
+          } else if (section === 'achievements') {
+            ui.renderAchievementsSection();
+          } else if (section === 'referrals') {
+            await ui.renderReferralSection();
+          } else if (section === 'stats' && typeof ui.renderStatsSection === 'function') {
+            ui.renderStatsSection();
+          }
         }
       });
     });
