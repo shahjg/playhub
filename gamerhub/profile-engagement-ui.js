@@ -1,309 +1,160 @@
 /**
- * TheGaming.co Profile Engagement UI v2
- * Renders challenges, achievements, referrals, and stats on profile page
- * Includes built-in fallback data when database tables aren't available
+ * TheGaming.co Profile Engagement UI v3
+ * Fixed to use actual database structure (solo_scores table)
  */
 
 class ProfileEngagementUI {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
-    this.engagement = null;
     this.currentUser = null;
     this.userProfile = null;
-    this.userStats = null;
+    this.gameStats = {}; // { gameId: { plays: X, best: Y } }
+    this.totalGamesPlayed = 0;
     this.referralCode = null;
     this.referralStats = { total: 0, successful: 0, xpEarned: 0 };
     
-    // Built-in challenges (used when DB not available)
-    this.defaultDailyChallenges = [
-      { id: 'd1', title: 'First Game', description: 'Play any game today', icon: '🎮', xp_reward: 50, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd2', title: 'Triple Play', description: 'Play 3 games today', icon: '🎯', xp_reward: 100, requirement_target: 3, progress: 0, completed: false },
-      { id: 'd3', title: 'High Five', description: 'Play 5 games today', icon: '✋', xp_reward: 150, requirement_target: 5, progress: 0, completed: false },
-      { id: 'd4', title: 'Victory Lap', description: 'Win any game', icon: '🏆', xp_reward: 75, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd5', title: 'Double Win', description: 'Win 2 games today', icon: '🥇', xp_reward: 125, requirement_target: 2, progress: 0, completed: false },
-      { id: 'd6', title: 'Brain Trainer', description: 'Play a memory or cognitive game', icon: '🧠', xp_reward: 75, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd7', title: 'Speed Demon', description: 'Play Reaction Time or Typing Test', icon: '⚡', xp_reward: 75, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd8', title: 'Solo Session', description: 'Play 3 solo games', icon: '🕹️', xp_reward: 100, requirement_target: 3, progress: 0, completed: false },
-      { id: 'd9', title: 'Puzzle Time', description: 'Complete any puzzle game', icon: '🧩', xp_reward: 100, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd10', title: 'Social Gamer', description: 'Play a multiplayer game', icon: '👥', xp_reward: 100, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd11', title: 'Snake Charmer', description: 'Score 50+ in Snake', icon: '🐍', xp_reward: 100, requirement_target: 50, progress: 0, completed: false },
-      { id: 'd12', title: '2048 Addict', description: 'Play 2048 twice', icon: '🔢', xp_reward: 75, requirement_target: 2, progress: 0, completed: false },
-      { id: 'd13', title: 'Sky High', description: 'Score 25+ in Sky Hop', icon: '☁️', xp_reward: 100, requirement_target: 25, progress: 0, completed: false },
-      { id: 'd14', title: 'Quick Fingers', description: 'Get 50+ WPM in Typing Test', icon: '⌨️', xp_reward: 100, requirement_target: 50, progress: 0, completed: false },
-      { id: 'd15', title: 'Sharp Shooter', description: 'Play Aim Trainer', icon: '🎯', xp_reward: 75, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd16', title: 'Party Starter', description: 'Host a game room', icon: '🎉', xp_reward: 100, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd17', title: 'Trivia Time', description: 'Play Trivia Royale', icon: '❓', xp_reward: 100, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd18', title: 'Detective Work', description: 'Play Spyfall/Spyhunt', icon: '🕵️', xp_reward: 100, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd19', title: 'Team Player', description: 'Play with a friend', icon: '🤝', xp_reward: 125, requirement_target: 1, progress: 0, completed: false },
-      { id: 'd20', title: 'Memory Lane', description: 'Play any memory game', icon: '🧠', xp_reward: 75, requirement_target: 1, progress: 0, completed: false },
+    // Solo games config (matches profile.html)
+    this.SOLO_GAMES = {
+      '2048': { name: '2048', icon: '🔢', ascending: false },
+      'snake': { name: 'Snake', icon: '🐍', ascending: false },
+      'sky-hop': { name: 'Sky Hop', icon: '☁️', ascending: false },
+      'typing-test': { name: 'Typing Test', icon: '⌨️', ascending: false, suffix: ' WPM' },
+      'reaction-time': { name: 'Reaction Time', icon: '⚡', ascending: true, suffix: 'ms' },
+      'aim-trainer': { name: 'Aim Trainer', icon: '🎯', ascending: false },
+      'chimp-test': { name: 'Chimp Test', icon: '🐵', ascending: false },
+      'sequence-memory': { name: 'Sequence Memory', icon: '🔵', ascending: false },
+      'number-memory': { name: 'Number Memory', icon: '🔢', ascending: false },
+      'visual-memory': { name: 'Visual Memory', icon: '👁️', ascending: false },
+      'verbal-memory': { name: 'Verbal Memory', icon: '📝', ascending: false },
+      'stroop-test': { name: 'Stroop Test', icon: '🌈', ascending: false },
+      'math-speed': { name: 'Math Speed', icon: '➕', ascending: false },
+      'minesweeper': { name: 'Minesweeper', icon: '💣', ascending: true },
+      'sudoku': { name: 'Sudoku', icon: '🔢', ascending: true },
+      'crossword': { name: 'Crossword', icon: '📝', ascending: false },
+      'wordsearch': { name: 'Word Search', icon: '🔍', ascending: true },
+      'nonogram': { name: 'Nonogram', icon: '🖼️', ascending: true },
+      'block-stack': { name: 'Block Stack', icon: '🧱', ascending: false }
+    };
+    
+    // Daily challenges
+    this.dailyChallenges = [
+      { id: 'd1', title: 'First Game', description: 'Play any game today', icon: '🎮', xp_reward: 50, requirement_target: 1 },
+      { id: 'd2', title: 'Triple Play', description: 'Play 3 games today', icon: '🎯', xp_reward: 100, requirement_target: 3 },
+      { id: 'd3', title: 'High Five', description: 'Play 5 games today', icon: '✋', xp_reward: 150, requirement_target: 5 },
+      { id: 'd4', title: 'Brain Trainer', description: 'Play a memory game', icon: '🧠', xp_reward: 75, requirement_target: 1 },
+      { id: 'd5', title: 'Speed Demon', description: 'Play Reaction Time', icon: '⚡', xp_reward: 75, requirement_target: 1 },
     ];
     
-    this.defaultWeeklyChallenges = [
-      { id: 'w1', title: 'Dedicated Player', description: 'Play 20 games this week', icon: '🎮', xp_reward: 500, requirement_target: 20, progress: 0, completed: false },
-      { id: 'w2', title: 'Marathon Runner', description: 'Play 50 games this week', icon: '🏃', xp_reward: 1000, requirement_target: 50, progress: 0, completed: false },
-      { id: 'w3', title: 'Champion', description: 'Win 10 games this week', icon: '🏆', xp_reward: 750, requirement_target: 10, progress: 0, completed: false },
-      { id: 'w4', title: 'Dominant Force', description: 'Win 25 games this week', icon: '💪', xp_reward: 1500, requirement_target: 25, progress: 0, completed: false },
-      { id: 'w5', title: 'Variety Pack', description: 'Play 5 different game types', icon: '🎲', xp_reward: 400, requirement_target: 5, progress: 0, completed: false },
-      { id: 'w6', title: 'Jack of All Trades', description: 'Play 10 different games', icon: '🃏', xp_reward: 750, requirement_target: 10, progress: 0, completed: false },
-      { id: 'w7', title: 'Solo Grinder', description: 'Play 15 solo games', icon: '🕹️', xp_reward: 400, requirement_target: 15, progress: 0, completed: false },
-      { id: 'w8', title: 'Solo Master', description: 'Play 30 solo games', icon: '⭐', xp_reward: 800, requirement_target: 30, progress: 0, completed: false },
-      { id: 'w9', title: 'Puzzle Week', description: 'Complete 10 puzzle games', icon: '🧩', xp_reward: 500, requirement_target: 10, progress: 0, completed: false },
-      { id: 'w10', title: 'Brain Week', description: 'Play 10 memory/cognitive games', icon: '🧠', xp_reward: 500, requirement_target: 10, progress: 0, completed: false },
-      { id: 'w11', title: 'Social Butterfly', description: 'Play with 5 different friends', icon: '🦋', xp_reward: 400, requirement_target: 5, progress: 0, completed: false },
-      { id: 'w12', title: 'Party Animal', description: 'Play 10 party games', icon: '🎉', xp_reward: 600, requirement_target: 10, progress: 0, completed: false },
-      { id: 'w13', title: '2048 Expert', description: 'Reach 2048 tile in 2048', icon: '🔢', xp_reward: 750, requirement_target: 2048, progress: 0, completed: false },
-      { id: 'w14', title: 'Snake Legend', description: 'Score 100+ in Snake', icon: '🐍', xp_reward: 750, requirement_target: 100, progress: 0, completed: false },
-      { id: 'w15', title: 'Typing Champion', description: 'Get 70+ WPM in Typing Test', icon: '⌨️', xp_reward: 500, requirement_target: 70, progress: 0, completed: false },
-      { id: 'w16', title: 'Lightning Reflexes', description: 'Get under 200ms in Reaction Time', icon: '⚡', xp_reward: 750, requirement_target: 200, progress: 0, completed: false },
-      { id: 'w17', title: 'Memory Master', description: 'Level 10+ in any memory game', icon: '📸', xp_reward: 500, requirement_target: 10, progress: 0, completed: false },
-      { id: 'w18', title: 'Sky Hopper', description: 'Score 50+ in Sky Hop', icon: '☁️', xp_reward: 750, requirement_target: 50, progress: 0, completed: false },
-      { id: 'w19', title: 'Trivia King', description: 'Win 5 Trivia Royale games', icon: '👑', xp_reward: 750, requirement_target: 5, progress: 0, completed: false },
-      { id: 'w20', title: 'Master Spy', description: 'Win 3 Spyfall games as spy', icon: '🕵️', xp_reward: 750, requirement_target: 3, progress: 0, completed: false },
-      { id: 'w21', title: 'Word Master', description: 'Play 5 word games', icon: '📝', xp_reward: 400, requirement_target: 5, progress: 0, completed: false },
-      { id: 'w22', title: 'Game Host', description: 'Host 5 game rooms', icon: '🏠', xp_reward: 500, requirement_target: 5, progress: 0, completed: false },
-      { id: 'w23', title: 'Daily Devotee', description: 'Complete all daily challenges for 5 days', icon: '📅', xp_reward: 1000, requirement_target: 5, progress: 0, completed: false },
-      { id: 'w24', title: 'Achievement Hunter', description: 'Unlock 3 achievements', icon: '🏆', xp_reward: 750, requirement_target: 3, progress: 0, completed: false },
-      { id: 'w25', title: 'Referral Master', description: 'Refer a friend who plays', icon: '📣', xp_reward: 1000, requirement_target: 1, progress: 0, completed: false },
+    // Weekly challenges
+    this.weeklyChallenges = [
+      { id: 'w1', title: 'Dedicated Player', description: 'Play 20 games this week', icon: '🎮', xp_reward: 500, requirement_target: 20 },
+      { id: 'w2', title: 'Variety Pack', description: 'Play 5 different games', icon: '🎲', xp_reward: 400, requirement_target: 5 },
+      { id: 'w3', title: 'Solo Grinder', description: 'Play 15 solo games', icon: '🕹️', xp_reward: 400, requirement_target: 15 },
+      { id: 'w4', title: 'Marathon', description: 'Play 50 games this week', icon: '🏃', xp_reward: 1000, requirement_target: 50 },
+      { id: 'w5', title: '2048 Expert', description: 'Reach 2048 tile', icon: '🔢', xp_reward: 750, requirement_target: 2048 },
+      { id: 'w6', title: 'Snake Legend', description: 'Score 100+ in Snake', icon: '🐍', xp_reward: 750, requirement_target: 100 },
     ];
     
-    // Built-in achievements (used when DB not available)
-    this.defaultAchievements = [
+    // Achievements
+    this.achievements = [
       // Games Played
-      { id: 'first_game', title: 'First Steps', description: 'Play your first game', icon: '🎮', category: 'games', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'games_10', title: 'Getting Started', description: 'Play 10 games', icon: '🎯', category: 'games', rarity: 'common', xp_reward: 100, requirement_value: 10, unlocked: false },
-      { id: 'games_50', title: 'Regular', description: 'Play 50 games', icon: '⭐', category: 'games', rarity: 'uncommon', xp_reward: 250, requirement_value: 50, unlocked: false },
-      { id: 'games_100', title: 'Dedicated', description: 'Play 100 games', icon: '💫', category: 'games', rarity: 'uncommon', xp_reward: 500, requirement_value: 100, unlocked: false },
-      { id: 'games_500', title: 'Veteran', description: 'Play 500 games', icon: '🏅', category: 'games', rarity: 'rare', xp_reward: 1000, requirement_value: 500, unlocked: false },
-      { id: 'games_1000', title: 'Legend', description: 'Play 1000 games', icon: '👑', category: 'games', rarity: 'epic', xp_reward: 2500, requirement_value: 1000, unlocked: false },
+      { id: 'first_game', title: 'First Steps', description: 'Play your first game', icon: '🎮', category: 'games', rarity: 'common', xp_reward: 50, check: () => this.totalGamesPlayed >= 1 },
+      { id: 'games_10', title: 'Getting Started', description: 'Play 10 games', icon: '🎯', category: 'games', rarity: 'common', xp_reward: 100, check: () => this.totalGamesPlayed >= 10 },
+      { id: 'games_25', title: 'Casual Gamer', description: 'Play 25 games', icon: '🕹️', category: 'games', rarity: 'common', xp_reward: 150, check: () => this.totalGamesPlayed >= 25 },
+      { id: 'games_50', title: 'Regular', description: 'Play 50 games', icon: '⭐', category: 'games', rarity: 'uncommon', xp_reward: 250, check: () => this.totalGamesPlayed >= 50 },
+      { id: 'games_100', title: 'Dedicated', description: 'Play 100 games', icon: '💫', category: 'games', rarity: 'uncommon', xp_reward: 500, check: () => this.totalGamesPlayed >= 100 },
+      { id: 'games_250', title: 'Committed', description: 'Play 250 games', icon: '🌟', category: 'games', rarity: 'rare', xp_reward: 750, check: () => this.totalGamesPlayed >= 250 },
+      { id: 'games_500', title: 'Veteran', description: 'Play 500 games', icon: '🏅', category: 'games', rarity: 'rare', xp_reward: 1000, check: () => this.totalGamesPlayed >= 500 },
+      { id: 'games_1000', title: 'Legend', description: 'Play 1000 games', icon: '👑', category: 'games', rarity: 'epic', xp_reward: 2500, check: () => this.totalGamesPlayed >= 1000 },
       
-      // Wins
-      { id: 'first_win', title: 'First Victory', description: 'Win your first game', icon: '🏆', category: 'wins', rarity: 'common', xp_reward: 75, requirement_value: 1, unlocked: false },
-      { id: 'wins_10', title: 'Winner', description: 'Win 10 games', icon: '🥇', category: 'wins', rarity: 'common', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'wins_50', title: 'Champion', description: 'Win 50 games', icon: '🏆', category: 'wins', rarity: 'uncommon', xp_reward: 500, requirement_value: 50, unlocked: false },
-      { id: 'wins_100', title: 'Master', description: 'Win 100 games', icon: '💎', category: 'wins', rarity: 'rare', xp_reward: 1000, requirement_value: 100, unlocked: false },
+      // Variety
+      { id: 'variety_3', title: 'Explorer', description: 'Play 3 different games', icon: '🗺️', category: 'variety', rarity: 'common', xp_reward: 75, check: () => Object.keys(this.gameStats).length >= 3 },
+      { id: 'variety_5', title: 'Adventurer', description: 'Play 5 different games', icon: '🧭', category: 'variety', rarity: 'common', xp_reward: 150, check: () => Object.keys(this.gameStats).length >= 5 },
+      { id: 'variety_10', title: 'Versatile', description: 'Play 10 different games', icon: '🎪', category: 'variety', rarity: 'uncommon', xp_reward: 300, check: () => Object.keys(this.gameStats).length >= 10 },
+      { id: 'variety_all', title: 'Completionist', description: 'Play all solo games', icon: '🏆', category: 'variety', rarity: 'epic', xp_reward: 1000, check: () => Object.keys(this.gameStats).length >= Object.keys(this.SOLO_GAMES).length },
       
-      // Streaks
-      { id: 'streak_3', title: 'Hot Streak', description: 'Win 3 games in a row', icon: '🔥', category: 'streaks', rarity: 'common', xp_reward: 150, requirement_value: 3, unlocked: false },
-      { id: 'streak_5', title: 'On Fire', description: 'Win 5 games in a row', icon: '🔥', category: 'streaks', rarity: 'uncommon', xp_reward: 300, requirement_value: 5, unlocked: false },
-      { id: 'streak_10', title: 'Unstoppable', description: 'Win 10 games in a row', icon: '⚡', category: 'streaks', rarity: 'epic', xp_reward: 1000, requirement_value: 10, unlocked: false },
+      // 2048
+      { id: '2048_first', title: '2048 Beginner', description: 'Play 2048', icon: '🔢', category: '2048', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['2048']?.plays || 0) >= 1 },
+      { id: '2048_256', title: '2048: 256 Tile', description: 'Reach 256 tile', icon: '🟨', category: '2048', rarity: 'common', xp_reward: 50, check: () => (this.gameStats['2048']?.best || 0) >= 256 },
+      { id: '2048_512', title: '2048: 512 Tile', description: 'Reach 512 tile', icon: '🟧', category: '2048', rarity: 'common', xp_reward: 100, check: () => (this.gameStats['2048']?.best || 0) >= 512 },
+      { id: '2048_1024', title: '2048: 1024 Tile', description: 'Reach 1024 tile', icon: '🟥', category: '2048', rarity: 'uncommon', xp_reward: 200, check: () => (this.gameStats['2048']?.best || 0) >= 1024 },
+      { id: '2048_2048', title: '2048: Victory!', description: 'Reach 2048 tile', icon: '🏆', category: '2048', rarity: 'rare', xp_reward: 500, check: () => (this.gameStats['2048']?.best || 0) >= 2048 },
+      { id: '2048_4096', title: '2048: Beyond', description: 'Reach 4096 tile', icon: '💎', category: '2048', rarity: 'epic', xp_reward: 1000, check: () => (this.gameStats['2048']?.best || 0) >= 4096 },
+      { id: '2048_addict', title: '2048 Addict', description: 'Play 50 games of 2048', icon: '🎯', category: '2048', rarity: 'uncommon', xp_reward: 300, check: () => (this.gameStats['2048']?.plays || 0) >= 50 },
       
-      // Login Streaks
-      { id: 'login_7', title: 'Week Warrior', description: 'Log in 7 days in a row', icon: '📅', category: 'loyalty', rarity: 'common', xp_reward: 200, requirement_value: 7, unlocked: false },
-      { id: 'login_30', title: 'Month Master', description: 'Log in 30 days in a row', icon: '📆', category: 'loyalty', rarity: 'rare', xp_reward: 750, requirement_value: 30, unlocked: false },
-      { id: 'login_100', title: 'Dedicated Fan', description: 'Log in 100 days in a row', icon: '🗓️', category: 'loyalty', rarity: 'legendary', xp_reward: 3000, requirement_value: 100, unlocked: false },
+      // Snake
+      { id: 'snake_first', title: 'Snake Beginner', description: 'Play Snake', icon: '🐍', category: 'snake', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['snake']?.plays || 0) >= 1 },
+      { id: 'snake_25', title: 'Snake: 25 Points', description: 'Score 25 in Snake', icon: '🐍', category: 'snake', rarity: 'common', xp_reward: 50, check: () => (this.gameStats['snake']?.best || 0) >= 25 },
+      { id: 'snake_50', title: 'Snake: 50 Points', description: 'Score 50 in Snake', icon: '🐍', category: 'snake', rarity: 'common', xp_reward: 100, check: () => (this.gameStats['snake']?.best || 0) >= 50 },
+      { id: 'snake_100', title: 'Snake: Century', description: 'Score 100 in Snake', icon: '🐍', category: 'snake', rarity: 'uncommon', xp_reward: 250, check: () => (this.gameStats['snake']?.best || 0) >= 100 },
+      { id: 'snake_150', title: 'Snake: Expert', description: 'Score 150 in Snake', icon: '🐍', category: 'snake', rarity: 'rare', xp_reward: 500, check: () => (this.gameStats['snake']?.best || 0) >= 150 },
+      { id: 'snake_200', title: 'Snake: Master', description: 'Score 200 in Snake', icon: '🐍', category: 'snake', rarity: 'epic', xp_reward: 1000, check: () => (this.gameStats['snake']?.best || 0) >= 200 },
       
-      // Social
-      { id: 'first_friend', title: 'Social', description: 'Add your first friend', icon: '👋', category: 'social', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'friends_10', title: 'Popular', description: 'Have 10 friends', icon: '🤝', category: 'social', rarity: 'uncommon', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'friends_50', title: 'Celebrity', description: 'Have 50 friends', icon: '⭐', category: 'social', rarity: 'epic', xp_reward: 750, requirement_value: 50, unlocked: false },
+      // Sky Hop
+      { id: 'skyhop_first', title: 'Sky Hopper', description: 'Play Sky Hop', icon: '☁️', category: 'sky-hop', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['sky-hop']?.plays || 0) >= 1 },
+      { id: 'skyhop_25', title: 'Cloud Jumper', description: 'Score 25 in Sky Hop', icon: '☁️', category: 'sky-hop', rarity: 'common', xp_reward: 75, check: () => (this.gameStats['sky-hop']?.best || 0) >= 25 },
+      { id: 'skyhop_50', title: 'Sky Walker', description: 'Score 50 in Sky Hop', icon: '🌤️', category: 'sky-hop', rarity: 'uncommon', xp_reward: 150, check: () => (this.gameStats['sky-hop']?.best || 0) >= 50 },
+      { id: 'skyhop_100', title: 'Cloud Master', description: 'Score 100 in Sky Hop', icon: '⛅', category: 'sky-hop', rarity: 'rare', xp_reward: 400, check: () => (this.gameStats['sky-hop']?.best || 0) >= 100 },
+      { id: 'skyhop_200', title: 'Heaven Bound', description: 'Score 200 in Sky Hop', icon: '✨', category: 'sky-hop', rarity: 'legendary', xp_reward: 2500, check: () => (this.gameStats['sky-hop']?.best || 0) >= 200 },
       
-      // Referrals
-      { id: 'referral_1', title: 'Recruiter', description: 'Refer your first friend', icon: '📣', category: 'referrals', rarity: 'uncommon', xp_reward: 250, requirement_value: 1, unlocked: false },
-      { id: 'referral_5', title: 'Ambassador', description: 'Refer 5 friends', icon: '🎺', category: 'referrals', rarity: 'rare', xp_reward: 1000, requirement_value: 5, unlocked: false },
-      { id: 'referral_10', title: 'Influencer', description: 'Refer 10 friends', icon: '📡', category: 'referrals', rarity: 'epic', xp_reward: 2000, requirement_value: 10, unlocked: false },
+      // Typing Test
+      { id: 'typing_first', title: 'Keyboard Warrior', description: 'Complete a typing test', icon: '⌨️', category: 'typing', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['typing-test']?.plays || 0) >= 1 },
+      { id: 'typing_30', title: 'Casual Typer', description: 'Get 30+ WPM', icon: '⌨️', category: 'typing', rarity: 'common', xp_reward: 50, check: () => (this.gameStats['typing-test']?.best || 0) >= 30 },
+      { id: 'typing_50', title: 'Quick Fingers', description: 'Get 50+ WPM', icon: '⌨️', category: 'typing', rarity: 'common', xp_reward: 100, check: () => (this.gameStats['typing-test']?.best || 0) >= 50 },
+      { id: 'typing_70', title: 'Fast Typer', description: 'Get 70+ WPM', icon: '⚡', category: 'typing', rarity: 'uncommon', xp_reward: 250, check: () => (this.gameStats['typing-test']?.best || 0) >= 70 },
+      { id: 'typing_90', title: 'Speed Demon', description: 'Get 90+ WPM', icon: '💨', category: 'typing', rarity: 'rare', xp_reward: 500, check: () => (this.gameStats['typing-test']?.best || 0) >= 90 },
+      { id: 'typing_120', title: 'Typing Legend', description: 'Get 120+ WPM', icon: '👑', category: 'typing', rarity: 'epic', xp_reward: 1500, check: () => (this.gameStats['typing-test']?.best || 0) >= 120 },
       
-      // Solo Games - 2048
-      { id: '2048_first', title: '2048 Beginner', description: 'Play your first 2048 game', icon: '🔢', category: '2048', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: '2048_2048', title: '2048: Victory!', description: 'Reach the 2048 tile', icon: '🏆', category: '2048', rarity: 'rare', xp_reward: 500, requirement_value: 2048, unlocked: false },
-      { id: '2048_4096', title: '2048: Beyond', description: 'Reach the 4096 tile', icon: '💎', category: '2048', rarity: 'epic', xp_reward: 1000, requirement_value: 4096, unlocked: false },
+      // Reaction Time (lower is better)
+      { id: 'reaction_first', title: 'Quick Thinker', description: 'Complete reaction test', icon: '⚡', category: 'reaction', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['reaction-time']?.plays || 0) >= 1 },
+      { id: 'reaction_300', title: 'Average Reflexes', description: 'Get under 300ms', icon: '⚡', category: 'reaction', rarity: 'common', xp_reward: 50, check: () => { const b = this.gameStats['reaction-time']?.best; return b && b > 0 && b <= 300; }},
+      { id: 'reaction_250', title: 'Quick Reflexes', description: 'Get under 250ms', icon: '⚡', category: 'reaction', rarity: 'common', xp_reward: 100, check: () => { const b = this.gameStats['reaction-time']?.best; return b && b > 0 && b <= 250; }},
+      { id: 'reaction_200', title: 'Fast Reflexes', description: 'Get under 200ms', icon: '💨', category: 'reaction', rarity: 'uncommon', xp_reward: 250, check: () => { const b = this.gameStats['reaction-time']?.best; return b && b > 0 && b <= 200; }},
+      { id: 'reaction_175', title: 'Lightning Fast', description: 'Get under 175ms', icon: '⚡', category: 'reaction', rarity: 'rare', xp_reward: 500, check: () => { const b = this.gameStats['reaction-time']?.best; return b && b > 0 && b <= 175; }},
+      { id: 'reaction_150', title: 'Superhuman', description: 'Get under 150ms', icon: '🔥', category: 'reaction', rarity: 'epic', xp_reward: 1000, check: () => { const b = this.gameStats['reaction-time']?.best; return b && b > 0 && b <= 150; }},
       
-      // Solo Games - Snake
-      { id: 'snake_first', title: 'Snake Beginner', description: 'Play your first Snake game', icon: '🐍', category: 'snake', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'snake_50', title: 'Snake: 50 Points', description: 'Score 50 points in Snake', icon: '🐍', category: 'snake', rarity: 'common', xp_reward: 100, requirement_value: 50, unlocked: false },
-      { id: 'snake_100', title: 'Snake: Century', description: 'Score 100 points in Snake', icon: '🐍', category: 'snake', rarity: 'uncommon', xp_reward: 250, requirement_value: 100, unlocked: false },
-      { id: 'snake_200', title: 'Snake: Master', description: 'Score 200 points in Snake', icon: '🐍', category: 'snake', rarity: 'epic', xp_reward: 1000, requirement_value: 200, unlocked: false },
+      // Aim Trainer
+      { id: 'aim_first', title: 'Target Practice', description: 'Play Aim Trainer', icon: '🎯', category: 'aim', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['aim-trainer']?.plays || 0) >= 1 },
+      { id: 'aim_50', title: 'Decent Aim', description: 'Score 50+ in Aim Trainer', icon: '🎯', category: 'aim', rarity: 'common', xp_reward: 75, check: () => (this.gameStats['aim-trainer']?.best || 0) >= 50 },
+      { id: 'aim_75', title: 'Good Aim', description: 'Score 75+ in Aim Trainer', icon: '🎯', category: 'aim', rarity: 'uncommon', xp_reward: 150, check: () => (this.gameStats['aim-trainer']?.best || 0) >= 75 },
+      { id: 'aim_90', title: 'Great Aim', description: 'Score 90+ in Aim Trainer', icon: '🎯', category: 'aim', rarity: 'rare', xp_reward: 300, check: () => (this.gameStats['aim-trainer']?.best || 0) >= 90 },
+      { id: 'aim_95', title: 'Elite Aim', description: 'Score 95+ in Aim Trainer', icon: '🎯', category: 'aim', rarity: 'epic', xp_reward: 750, check: () => (this.gameStats['aim-trainer']?.best || 0) >= 95 },
       
-      // Solo Games - Sky Hop
-      { id: 'skyhop_first', title: 'Sky Hopper', description: 'Play your first Sky Hop game', icon: '☁️', category: 'sky-hop', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'skyhop_50', title: 'Sky Walker', description: 'Score 50 in Sky Hop', icon: '🌤️', category: 'sky-hop', rarity: 'uncommon', xp_reward: 150, requirement_value: 50, unlocked: false },
-      { id: 'skyhop_100', title: 'Cloud Master', description: 'Score 100 in Sky Hop', icon: '⛅', category: 'sky-hop', rarity: 'rare', xp_reward: 400, requirement_value: 100, unlocked: false },
-      { id: 'skyhop_200', title: 'Heaven Bound', description: 'Score 200 in Sky Hop', icon: '✨', category: 'sky-hop', rarity: 'legendary', xp_reward: 2500, requirement_value: 200, unlocked: false },
-      
-      // Solo Games - Typing
-      { id: 'typing_first', title: 'Keyboard Warrior', description: 'Complete your first typing test', icon: '⌨️', category: 'typing', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'typing_50', title: 'Quick Fingers', description: 'Get 50+ WPM', icon: '⌨️', category: 'typing', rarity: 'common', xp_reward: 100, requirement_value: 50, unlocked: false },
-      { id: 'typing_90', title: 'Speed Demon', description: 'Get 90+ WPM', icon: '💨', category: 'typing', rarity: 'rare', xp_reward: 500, requirement_value: 90, unlocked: false },
-      { id: 'typing_130', title: 'Typing Legend', description: 'Get 130+ WPM', icon: '👑', category: 'typing', rarity: 'legendary', xp_reward: 2500, requirement_value: 130, unlocked: false },
-      
-      // Solo Games - Reaction Time
-      { id: 'reaction_first', title: 'Quick Thinker', description: 'Complete your first reaction test', icon: '⚡', category: 'reaction', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'reaction_200', title: 'Fast Reflexes', description: 'Get under 200ms', icon: '💨', category: 'reaction', rarity: 'uncommon', xp_reward: 250, requirement_value: 200, unlocked: false },
-      { id: 'reaction_150', title: 'Superhuman', description: 'Get under 150ms', icon: '🔥', category: 'reaction', rarity: 'epic', xp_reward: 1000, requirement_value: 150, unlocked: false },
-      
-      // Solo Games - Memory
-      { id: 'memory_first', title: 'Memory Start', description: 'Play your first memory game', icon: '🧠', category: 'memory', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'memory_10', title: 'Good Memory', description: 'Reach level 10 in a memory game', icon: '🧠', category: 'memory', rarity: 'uncommon', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'memory_20', title: 'Photographic', description: 'Reach level 20 in a memory game', icon: '📸', category: 'memory', rarity: 'epic', xp_reward: 1000, requirement_value: 20, unlocked: false },
-      
-      // Solo Games - Aim Trainer
-      { id: 'aim_first', title: 'Target Practice', description: 'Play your first Aim Trainer', icon: '🎯', category: 'aim', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'aim_90', title: 'Great Aim', description: 'Score 90+ in Aim Trainer', icon: '🎯', category: 'aim', rarity: 'rare', xp_reward: 300, requirement_value: 90, unlocked: false },
-      { id: 'aim_99', title: 'Perfect Aim', description: 'Score 99+ in Aim Trainer', icon: '👑', category: 'aim', rarity: 'legendary', xp_reward: 2000, requirement_value: 99, unlocked: false },
-      
-      // Solo Games - Chimp Test
-      { id: 'chimp_first', title: 'Chimp Challenger', description: 'Play your first Chimp Test', icon: '🐵', category: 'chimp', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'chimp_9', title: 'Super Chimp', description: 'Reach level 9 in Chimp Test', icon: '🐒', category: 'chimp', rarity: 'rare', xp_reward: 400, requirement_value: 9, unlocked: false },
-      { id: 'chimp_15', title: 'Beyond Chimp', description: 'Reach level 15 in Chimp Test', icon: '👑', category: 'chimp', rarity: 'legendary', xp_reward: 2500, requirement_value: 15, unlocked: false },
+      // Memory Games
+      { id: 'chimp_first', title: 'Chimp Challenger', description: 'Play Chimp Test', icon: '🐵', category: 'memory', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['chimp-test']?.plays || 0) >= 1 },
+      { id: 'chimp_7', title: 'Chimp Brain', description: 'Level 7 in Chimp Test', icon: '🐵', category: 'memory', rarity: 'uncommon', xp_reward: 150, check: () => (this.gameStats['chimp-test']?.best || 0) >= 7 },
+      { id: 'chimp_10', title: 'Super Chimp', description: 'Level 10 in Chimp Test', icon: '🐒', category: 'memory', rarity: 'rare', xp_reward: 400, check: () => (this.gameStats['chimp-test']?.best || 0) >= 10 },
+      { id: 'sequence_first', title: 'Pattern Starter', description: 'Play Sequence Memory', icon: '🔵', category: 'memory', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['sequence-memory']?.plays || 0) >= 1 },
+      { id: 'sequence_10', title: 'Pattern Pro', description: 'Level 10 in Sequence Memory', icon: '🔵', category: 'memory', rarity: 'uncommon', xp_reward: 200, check: () => (this.gameStats['sequence-memory']?.best || 0) >= 10 },
+      { id: 'visual_first', title: 'Sharp Eyes', description: 'Play Visual Memory', icon: '👁️', category: 'memory', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['visual-memory']?.plays || 0) >= 1 },
+      { id: 'visual_10', title: 'Pattern Vision', description: 'Level 10 in Visual Memory', icon: '👁️', category: 'memory', rarity: 'uncommon', xp_reward: 200, check: () => (this.gameStats['visual-memory']?.best || 0) >= 10 },
+      { id: 'number_first', title: 'Number Novice', description: 'Play Number Memory', icon: '🔢', category: 'memory', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['number-memory']?.plays || 0) >= 1 },
+      { id: 'number_10', title: 'Digit Master', description: 'Remember 10+ digits', icon: '🔢', category: 'memory', rarity: 'uncommon', xp_reward: 250, check: () => (this.gameStats['number-memory']?.best || 0) >= 10 },
+      { id: 'verbal_first', title: 'Word Watcher', description: 'Play Verbal Memory', icon: '📝', category: 'memory', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['verbal-memory']?.plays || 0) >= 1 },
+      { id: 'verbal_50', title: 'Word Bank', description: 'Score 50+ in Verbal Memory', icon: '📚', category: 'memory', rarity: 'uncommon', xp_reward: 200, check: () => (this.gameStats['verbal-memory']?.best || 0) >= 50 },
       
       // Puzzles
-      { id: 'sudoku_1', title: 'Sudoku Novice', description: 'Complete a Sudoku puzzle', icon: '🔢', category: 'puzzles', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'minesweeper_1', title: 'Mine Finder', description: 'Win a Minesweeper game', icon: '💣', category: 'puzzles', rarity: 'common', xp_reward: 75, requirement_value: 1, unlocked: false },
-      { id: 'crossword_1', title: 'Word Finder', description: 'Complete a crossword puzzle', icon: '📝', category: 'puzzles', rarity: 'common', xp_reward: 75, requirement_value: 1, unlocked: false },
-      { id: 'nonogram_1', title: 'Pixel Artist', description: 'Complete a Nonogram puzzle', icon: '🖼️', category: 'puzzles', rarity: 'common', xp_reward: 75, requirement_value: 1, unlocked: false },
+      { id: 'minesweeper_first', title: 'Mine Finder', description: 'Play Minesweeper', icon: '💣', category: 'puzzles', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['minesweeper']?.plays || 0) >= 1 },
+      { id: 'sudoku_first', title: 'Sudoku Novice', description: 'Play Sudoku', icon: '🔢', category: 'puzzles', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['sudoku']?.plays || 0) >= 1 },
+      { id: 'crossword_first', title: 'Word Finder', description: 'Play Crossword', icon: '📝', category: 'puzzles', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['crossword']?.plays || 0) >= 1 },
+      { id: 'wordsearch_first', title: 'Word Seeker', description: 'Play Word Search', icon: '🔍', category: 'puzzles', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['wordsearch']?.plays || 0) >= 1 },
+      { id: 'nonogram_first', title: 'Pixel Artist', description: 'Play Nonogram', icon: '🖼️', category: 'puzzles', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['nonogram']?.plays || 0) >= 1 },
       
-      // Multiplayer
-      { id: 'mp_first', title: 'Multiplayer Debut', description: 'Play your first multiplayer game', icon: '👥', category: 'multiplayer', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'mp_50', title: 'Party Player', description: 'Play 50 multiplayer games', icon: '🎉', category: 'multiplayer', rarity: 'uncommon', xp_reward: 400, requirement_value: 50, unlocked: false },
-      
-      // Trivia
-      { id: 'trivia_first', title: 'Trivia Rookie', description: 'Play your first Trivia Royale', icon: '❓', category: 'trivia', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'trivia_win_10', title: 'Trivia Expert', description: 'Win 10 Trivia Royale games', icon: '🎓', category: 'trivia', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      { id: 'trivia_win_50', title: 'Trivia Legend', description: 'Win 50 Trivia Royale games', icon: '👑', category: 'trivia', rarity: 'epic', xp_reward: 2500, requirement_value: 50, unlocked: false },
-      
-      // Spyfall
-      { id: 'spy_first', title: 'Undercover', description: 'Play your first Spyfall game', icon: '🕵️', category: 'spyfall', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'spy_win_spy_1', title: 'Master of Disguise', description: 'Win as the Spy', icon: '🕵️', category: 'spyfall', rarity: 'uncommon', xp_reward: 200, requirement_value: 1, unlocked: false },
-      { id: 'spy_win_spy_10', title: 'Shadow Master', description: 'Win 10 games as the Spy', icon: '🖤', category: 'spyfall', rarity: 'epic', xp_reward: 1000, requirement_value: 10, unlocked: false },
-      
-      // Codenames
-      { id: 'codenames_first', title: 'Codebreaker', description: 'Play your first Codenames game', icon: '🔐', category: 'codenames', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'codenames_win_10', title: 'Spymaster', description: 'Win 10 Codenames games', icon: '🎖️', category: 'codenames', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      // Party Games
-      { id: 'party_first', title: 'Party Starter', description: 'Play your first party game', icon: '🎉', category: 'party', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'party_50', title: 'Life of the Party', description: 'Play 50 party games', icon: '🎈', category: 'party', rarity: 'uncommon', xp_reward: 400, requirement_value: 50, unlocked: false },
-      { id: 'wyr_10', title: 'Decision Maker', description: 'Play 10 Would You Rather games', icon: '🤔', category: 'party', rarity: 'common', xp_reward: 150, requirement_value: 10, unlocked: false },
-      { id: 'nhie_10', title: 'Confessor', description: 'Play 10 Never Have I Ever games', icon: '🙈', category: 'party', rarity: 'common', xp_reward: 150, requirement_value: 10, unlocked: false },
-      { id: 'tod_10', title: 'Daredevil', description: 'Play 10 Truth or Dare games', icon: '😈', category: 'party', rarity: 'common', xp_reward: 150, requirement_value: 10, unlocked: false },
-      
-      // Hosting
-      { id: 'host_first', title: 'First Host', description: 'Host your first game room', icon: '🏠', category: 'hosting', rarity: 'common', xp_reward: 75, requirement_value: 1, unlocked: false },
-      { id: 'host_10', title: 'Regular Host', description: 'Host 10 game rooms', icon: '🏠', category: 'hosting', rarity: 'common', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'host_50', title: 'Party Organizer', description: 'Host 50 game rooms', icon: '🎭', category: 'hosting', rarity: 'rare', xp_reward: 600, requirement_value: 50, unlocked: false },
-      { id: 'host_100', title: 'Event Manager', description: 'Host 100 game rooms', icon: '👑', category: 'hosting', rarity: 'epic', xp_reward: 1500, requirement_value: 100, unlocked: false },
-      
-      // More Solo Games - Block Stack
-      { id: 'blockstack_first', title: 'Block Builder', description: 'Play your first Block Stack game', icon: '🧱', category: 'block-stack', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'blockstack_25', title: 'Tower Builder', description: 'Stack 25 blocks', icon: '🧱', category: 'block-stack', rarity: 'uncommon', xp_reward: 150, requirement_value: 25, unlocked: false },
-      { id: 'blockstack_50', title: 'Architect', description: 'Stack 50 blocks', icon: '🏗️', category: 'block-stack', rarity: 'rare', xp_reward: 500, requirement_value: 50, unlocked: false },
-      
-      // Math Speed
-      { id: 'math_first', title: 'Calculator', description: 'Play your first Math Speed game', icon: '➕', category: 'math', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'math_50', title: 'Quick Math', description: 'Score 50+ in Math Speed', icon: '🔢', category: 'math', rarity: 'uncommon', xp_reward: 200, requirement_value: 50, unlocked: false },
-      { id: 'math_100', title: 'Math Wizard', description: 'Score 100+ in Math Speed', icon: '🧙', category: 'math', rarity: 'epic', xp_reward: 1000, requirement_value: 100, unlocked: false },
-      
-      // Stroop Test
-      { id: 'stroop_first', title: 'Color Confused', description: 'Play your first Stroop Test', icon: '🌈', category: 'stroop', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'stroop_30', title: 'Focus Master', description: 'Score 30+ in Stroop Test', icon: '🎯', category: 'stroop', rarity: 'uncommon', xp_reward: 200, requirement_value: 30, unlocked: false },
-      { id: 'stroop_50', title: 'Mind Over Matter', description: 'Score 50+ in Stroop Test', icon: '🧠', category: 'stroop', rarity: 'rare', xp_reward: 500, requirement_value: 50, unlocked: false },
-      
-      // Sequence Memory
-      { id: 'sequence_first', title: 'Pattern Starter', description: 'Play Sequence Memory', icon: '🔵', category: 'sequence', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'sequence_10', title: 'Pattern Pro', description: 'Level 10 in Sequence Memory', icon: '🔵', category: 'sequence', rarity: 'uncommon', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'sequence_20', title: 'Sequence Master', description: 'Level 20 in Sequence Memory', icon: '💫', category: 'sequence', rarity: 'epic', xp_reward: 1000, requirement_value: 20, unlocked: false },
-      
-      // Number Memory
-      { id: 'number_first', title: 'Number Novice', description: 'Play Number Memory', icon: '🔢', category: 'number-memory', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'number_10', title: 'Digit Master', description: 'Remember 10+ digits', icon: '🔢', category: 'number-memory', rarity: 'uncommon', xp_reward: 250, requirement_value: 10, unlocked: false },
-      { id: 'number_15', title: 'Human Calculator', description: 'Remember 15+ digits', icon: '🧮', category: 'number-memory', rarity: 'epic', xp_reward: 1000, requirement_value: 15, unlocked: false },
-      
-      // Visual Memory
-      { id: 'visual_first', title: 'Sharp Eyes', description: 'Play Visual Memory', icon: '👁️', category: 'visual-memory', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'visual_10', title: 'Pattern Vision', description: 'Level 10 in Visual Memory', icon: '👁️', category: 'visual-memory', rarity: 'uncommon', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'visual_18', title: 'Eagle Eye', description: 'Level 18 in Visual Memory', icon: '🦅', category: 'visual-memory', rarity: 'epic', xp_reward: 1000, requirement_value: 18, unlocked: false },
-      
-      // Verbal Memory
-      { id: 'verbal_first', title: 'Word Watcher', description: 'Play Verbal Memory', icon: '📝', category: 'verbal-memory', rarity: 'common', xp_reward: 25, requirement_value: 1, unlocked: false },
-      { id: 'verbal_50', title: 'Word Bank', description: 'Score 50+ in Verbal Memory', icon: '📚', category: 'verbal-memory', rarity: 'uncommon', xp_reward: 200, requirement_value: 50, unlocked: false },
-      { id: 'verbal_100', title: 'Dictionary', description: 'Score 100+ in Verbal Memory', icon: '📖', category: 'verbal-memory', rarity: 'epic', xp_reward: 750, requirement_value: 100, unlocked: false },
-      
-      // More Puzzles
-      { id: 'sudoku_10', title: 'Sudoku Fan', description: 'Complete 10 Sudoku puzzles', icon: '🔢', category: 'puzzles', rarity: 'uncommon', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'sudoku_50', title: 'Sudoku Expert', description: 'Complete 50 Sudoku puzzles', icon: '🔢', category: 'puzzles', rarity: 'rare', xp_reward: 750, requirement_value: 50, unlocked: false },
-      { id: 'minesweeper_10', title: 'Bomb Squad', description: 'Win 10 Minesweeper games', icon: '💣', category: 'puzzles', rarity: 'uncommon', xp_reward: 300, requirement_value: 10, unlocked: false },
-      { id: 'minesweeper_50', title: 'Mine Master', description: 'Win 50 Minesweeper games', icon: '💣', category: 'puzzles', rarity: 'rare', xp_reward: 1000, requirement_value: 50, unlocked: false },
-      { id: 'crossword_10', title: 'Crossword Fan', description: 'Complete 10 crosswords', icon: '📝', category: 'puzzles', rarity: 'uncommon', xp_reward: 300, requirement_value: 10, unlocked: false },
-      { id: 'wordsearch_10', title: 'Word Hunter', description: 'Complete 10 word searches', icon: '🔍', category: 'puzzles', rarity: 'uncommon', xp_reward: 200, requirement_value: 10, unlocked: false },
-      { id: 'nonogram_10', title: 'Pixel Master', description: 'Complete 10 Nonograms', icon: '🖼️', category: 'puzzles', rarity: 'uncommon', xp_reward: 300, requirement_value: 10, unlocked: false },
-      
-      // More Multiplayer Games
-      { id: 'trivia_win_100', title: 'Trivia God', description: 'Win 100 Trivia Royale games', icon: '👑', category: 'trivia', rarity: 'legendary', xp_reward: 5000, requirement_value: 100, unlocked: false },
-      
-      { id: 'spy_10', title: 'Secret Agent', description: 'Play 10 Spyfall games', icon: '🕵️', category: 'spyfall', rarity: 'common', xp_reward: 150, requirement_value: 10, unlocked: false },
-      { id: 'spy_win_10', title: 'Master Detective', description: 'Win 10 Spyfall games', icon: '🔍', category: 'spyfall', rarity: 'rare', xp_reward: 500, requirement_value: 10, unlocked: false },
-      
-      { id: 'codenames_10', title: 'Codemaster', description: 'Play 10 Codenames games', icon: '🔐', category: 'codenames', rarity: 'common', xp_reward: 150, requirement_value: 10, unlocked: false },
-      { id: 'codenames_win_25', title: 'Spymaster Elite', description: 'Win 25 Codenames games', icon: '🎖️', category: 'codenames', rarity: 'rare', xp_reward: 1000, requirement_value: 25, unlocked: false },
-      
-      { id: 'werewolf_first', title: 'Villager', description: 'Play your first Werewolf game', icon: '🐺', category: 'werewolf', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'werewolf_win_10', title: 'Pack Leader', description: 'Win 10 Werewolf games', icon: '🐺', category: 'werewolf', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      { id: 'werewolf_wolf_5', title: 'Alpha Wolf', description: 'Win 5 games as Werewolf', icon: '🌕', category: 'werewolf', rarity: 'rare', xp_reward: 750, requirement_value: 5, unlocked: false },
-      
-      { id: 'sketch_first', title: 'Artist', description: 'Play Sketch & Guess', icon: '🎨', category: 'sketch', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'sketch_win_10', title: 'Picasso', description: 'Win 10 Sketch & Guess games', icon: '🖼️', category: 'sketch', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'wordassoc_first', title: 'Word Link', description: 'Play Word Association', icon: '💬', category: 'word-games', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'wordassoc_win_10', title: 'Word Chain', description: 'Win 10 Word Association games', icon: '🔗', category: 'word-games', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'connections_first', title: 'Connector', description: 'Play Connections', icon: '🔗', category: 'connections', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'connections_win_10', title: 'Master Connector', description: 'Win 10 Connections games', icon: '🧩', category: 'connections', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'npat_first', title: 'NPAT Rookie', description: 'Play your first NPAT game', icon: '📊', category: 'npat', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'npat_win_10', title: 'NPAT Pro', description: 'Win 10 NPAT games', icon: '📊', category: 'npat', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'betbluff_first', title: 'Risk Taker', description: 'Play Bet or Bluff', icon: '🎰', category: 'bet-bluff', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'betbluff_win_10', title: 'High Roller', description: 'Win 10 Bet or Bluff games', icon: '💰', category: 'bet-bluff', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'foolsgold_first', title: 'Gold Digger', description: "Play Fool's Gold", icon: '💰', category: 'fools-gold', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'foolsgold_win_10', title: 'Gold Rush', description: "Win 10 Fool's Gold games", icon: '🏆', category: 'fools-gold', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'duos_first', title: 'Dynamic Duo', description: 'Play Duos', icon: '👫', category: 'duos', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'duos_win_10', title: 'Perfect Partners', description: 'Win 10 Duos games', icon: '💑', category: 'duos', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'imposter_first', title: 'Suspect', description: 'Play Imposter', icon: '🎭', category: 'imposter', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'imposter_win_5', title: 'Master Deceiver', description: 'Win 5 games as Imposter', icon: '🎭', category: 'imposter', rarity: 'rare', xp_reward: 500, requirement_value: 5, unlocked: false },
-      
-      { id: 'herd_first', title: 'Sheep', description: 'Play Herd Mentality', icon: '🐑', category: 'herd', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'herd_win_10', title: 'Shepherd', description: 'Win 10 Herd Mentality games', icon: '🐑', category: 'herd', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      { id: 'hotseat_first', title: 'Hot Seat Starter', description: 'Play Hot Seat', icon: '🔥', category: 'hot-seat', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      
-      { id: 'kmk_first', title: 'KMK Player', description: 'Play Kill Marry Kiss', icon: '🤔', category: 'kmk', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      
-      { id: '21q_first', title: 'Question Asker', description: 'Play 21 Questions', icon: '❔', category: '21-questions', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: '21q_win_10', title: 'Guesser', description: 'Win 10 games of 21 Questions', icon: '🎯', category: '21-questions', rarity: 'uncommon', xp_reward: 400, requirement_value: 10, unlocked: false },
-      
-      // More Party Games
-      { id: 'wyr_50', title: 'Choice Master', description: 'Play 50 Would You Rather games', icon: '🤔', category: 'party', rarity: 'rare', xp_reward: 500, requirement_value: 50, unlocked: false },
-      { id: 'nhie_50', title: 'Open Book', description: 'Play 50 Never Have I Ever games', icon: '🙈', category: 'party', rarity: 'rare', xp_reward: 500, requirement_value: 50, unlocked: false },
-      { id: 'tod_50', title: 'Truth Seeker', description: 'Play 50 Truth or Dare games', icon: '😈', category: 'party', rarity: 'rare', xp_reward: 500, requirement_value: 50, unlocked: false },
-      { id: 'tot_first', title: 'This or That', description: 'Play This or That', icon: '⚖️', category: 'party', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'hottakes_first', title: 'Hot Take', description: 'Play Hot Takes', icon: '🌶️', category: 'party', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'charades_first', title: 'Actor', description: 'Play Charades', icon: '🎭', category: 'party', rarity: 'common', xp_reward: 50, requirement_value: 1, unlocked: false },
-      { id: 'charades_50', title: 'Drama Queen', description: 'Play 50 Charades games', icon: '🎭', category: 'party', rarity: 'rare', xp_reward: 500, requirement_value: 50, unlocked: false },
-      
-      // Secret/Hidden
-      { id: 'night_owl', title: 'Night Owl', description: 'Play a game after midnight', icon: '🦉', category: 'special', rarity: 'uncommon', xp_reward: 100, requirement_value: 0, unlocked: false, is_hidden: true },
-      { id: 'early_bird', title: 'Early Bird', description: 'Play a game before 6 AM', icon: '🐦', category: 'special', rarity: 'uncommon', xp_reward: 100, requirement_value: 6, unlocked: false, is_hidden: true },
-      { id: 'marathon', title: 'Marathon', description: 'Play for 3 hours in one session', icon: '🏃', category: 'special', rarity: 'rare', xp_reward: 300, requirement_value: 180, unlocked: false, is_hidden: true },
-      { id: 'perfect_day', title: 'Perfect Day', description: 'Complete all daily challenges', icon: '✨', category: 'special', rarity: 'uncommon', xp_reward: 250, requirement_value: 1, unlocked: false, is_hidden: true },
-      { id: 'comeback_king', title: 'Comeback King', description: 'Win after losing 5 in a row', icon: '💪', category: 'special', rarity: 'rare', xp_reward: 500, requirement_value: 5, unlocked: false, is_hidden: true },
-      { id: 'jack_of_all', title: 'Jack of All Trades', description: 'Play 20 different games', icon: '🃏', category: 'special', rarity: 'rare', xp_reward: 750, requirement_value: 20, unlocked: false, is_hidden: true },
-      { id: 'weekend_warrior', title: 'Weekend Warrior', description: 'Play 50 games in one weekend', icon: '⚔️', category: 'special', rarity: 'epic', xp_reward: 1000, requirement_value: 50, unlocked: false, is_hidden: true },
-      { id: 'century', title: 'Century', description: 'Reach level 100', icon: '💯', category: 'special', rarity: 'legendary', xp_reward: 10000, requirement_value: 100, unlocked: false, is_hidden: true },
+      // Other games
+      { id: 'stroop_first', title: 'Color Confused', description: 'Play Stroop Test', icon: '🌈', category: 'other', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['stroop-test']?.plays || 0) >= 1 },
+      { id: 'math_first', title: 'Calculator', description: 'Play Math Speed', icon: '➕', category: 'other', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['math-speed']?.plays || 0) >= 1 },
+      { id: 'blockstack_first', title: 'Block Builder', description: 'Play Block Stack', icon: '🧱', category: 'other', rarity: 'common', xp_reward: 25, check: () => (this.gameStats['block-stack']?.plays || 0) >= 1 },
     ];
   }
 
   async init() {
+    console.log('[ProfileUI] Initializing...');
+    
     try {
-      console.log('[ProfileUI] Initializing...');
-      
       const { data: { session } } = await this.supabase.auth.getSession();
-      
       if (!session?.user) {
-        console.log('[ProfileUI] No user session, using defaults');
-        // Generate a default referral code
-        this.referralCode = 'TGCO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        console.log('[ProfileUI] No user session');
+        this.generateReferralCode();
         return;
       }
       
@@ -318,89 +169,73 @@ class ProfileEngagementUI {
         .single();
       this.userProfile = profile;
       
-      // Try to load stats
-      await this.loadUserStats();
-      
-      // Try to initialize engagement system
-      if (window.EngagementSystem) {
-        try {
-          this.engagement = new EngagementSystem(this.supabase);
-          await this.engagement.init();
-          console.log('[ProfileUI] Engagement system initialized');
-        } catch (e) {
-          console.log('[ProfileUI] Engagement system unavailable:', e.message);
-        }
-      }
+      // Load actual game stats from solo_scores
+      await this.loadGameStats();
       
       // Generate referral code
-      await this.loadReferralData();
+      this.generateReferralCode();
       
-      console.log('[ProfileUI] Init complete');
+      console.log('[ProfileUI] Init complete. Total games:', this.totalGamesPlayed);
     } catch (e) {
       console.error('[ProfileUI] Init error:', e);
-      // Still set a default referral code
-      this.referralCode = 'TGCO' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      this.generateReferralCode();
     }
   }
   
-  async loadUserStats() {
+  generateReferralCode() {
+    const name = this.userProfile?.display_name || this.userProfile?.gamer_tag || 'PLAYER';
+    const clean = name.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 4);
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referralCode = (clean || 'TGCO') + rand;
+  }
+  
+  async loadGameStats() {
+    if (!this.currentUser) return;
+    
     try {
-      const { data, error } = await this.supabase
-        .from('user_stats')
-        .select('*')
-        .eq('user_id', this.currentUser.id)
-        .single();
+      // Get all scores for this user
+      const { data: scores, error } = await this.supabase
+        .from('solo_scores')
+        .select('game_id, score')
+        .eq('user_id', this.currentUser.id);
       
-      if (data) {
-        this.userStats = data;
-      } else {
-        this.userStats = {
-          total_games_played: 0,
-          total_wins: 0,
-          solo_games_played: 0,
-          multiplayer_games_played: 0,
-          friends_count: 0,
-          referrals_count: 0,
-          daily_login_streak: 0
-        };
+      if (error) {
+        console.log('[ProfileUI] Error loading scores:', error.message);
+        return;
       }
-    } catch (e) {
-      console.log('[ProfileUI] Stats not available');
-      this.userStats = { total_games_played: 0, total_wins: 0 };
-    }
-  }
-  
-  async loadReferralData() {
-    try {
-      // Try to get or generate referral code
-      const { data, error } = await this.supabase.rpc('generate_referral_code', {
-        p_user_id: this.currentUser.id
+      
+      if (!scores || scores.length === 0) {
+        console.log('[ProfileUI] No scores found');
+        return;
+      }
+      
+      this.totalGamesPlayed = scores.length;
+      console.log('[ProfileUI] Found', scores.length, 'game plays');
+      
+      // Group by game and find best scores
+      scores.forEach(s => {
+        if (!this.gameStats[s.game_id]) {
+          this.gameStats[s.game_id] = { plays: 0, best: null, scores: [] };
+        }
+        this.gameStats[s.game_id].plays++;
+        this.gameStats[s.game_id].scores.push(s.score);
       });
       
-      if (data) {
-        this.referralCode = data;
-      } else {
-        const name = this.userProfile?.display_name || 'USER';
-        this.referralCode = name.substring(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, '') + Math.random().toString(36).substring(2, 6).toUpperCase();
-      }
+      // Calculate best for each game
+      Object.entries(this.gameStats).forEach(([gameId, stats]) => {
+        const config = this.SOLO_GAMES[gameId];
+        if (config?.ascending) {
+          // Lower is better (reaction time, puzzle times)
+          stats.best = Math.min(...stats.scores.filter(s => s > 0));
+        } else {
+          // Higher is better
+          stats.best = Math.max(...stats.scores);
+        }
+      });
       
-      // Try to get referral stats
-      const { data: refs } = await this.supabase
-        .from('referrals')
-        .select('*')
-        .eq('referrer_id', this.currentUser.id);
-      
-      if (refs) {
-        this.referralStats = {
-          total: refs.length,
-          successful: refs.filter(r => r.referee_rewarded).length,
-          xpEarned: refs.length * 500
-        };
-      }
+      console.log('[ProfileUI] Game stats:', this.gameStats);
     } catch (e) {
-      console.log('[ProfileUI] Referral system not available');
-      const name = this.userProfile?.display_name || 'PLAYER';
-      this.referralCode = name.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '') + Math.random().toString(36).substring(2, 6).toUpperCase();
+      console.error('[ProfileUI] Error loading game stats:', e);
     }
   }
 
@@ -413,41 +248,33 @@ class ProfileEngagementUI {
       return;
     }
     
-    const dailyChallenges = this.engagement?.getDailyChallenges?.() || this.defaultDailyChallenges;
-    const weeklyChallenges = this.engagement?.getWeeklyChallenges?.() || this.defaultWeeklyChallenges;
-    
-    console.log('[ProfileUI] Rendering challenges:', dailyChallenges.length, 'daily,', weeklyChallenges.length, 'weekly');
+    console.log('[ProfileUI] Rendering', this.dailyChallenges.length, 'daily and', this.weeklyChallenges.length, 'weekly challenges');
     
     container.innerHTML = `
       <div class="engagement-section">
-        <div class="challenge-tabs-wrapper">
+        <div class="challenge-tabs">
           <button class="challenge-tab active" data-tab="daily">Daily Challenges</button>
           <button class="challenge-tab" data-tab="weekly">Weekly Challenges</button>
         </div>
         
-        <div class="challenge-content" id="daily-challenges-content">
-          ${dailyChallenges.length > 0 ? dailyChallenges.map(c => this.renderChallengeCard(c, 'daily')).join('') : `
-            <div class="empty-state"><p>No daily challenges available. Check back tomorrow!</p></div>
-          `}
+        <div class="challenge-list" id="daily-challenges">
+          ${this.dailyChallenges.map(c => this.renderChallengeCard(c)).join('')}
         </div>
         
-        <div class="challenge-content" id="weekly-challenges-content" style="display: none;">
-          ${weeklyChallenges.length > 0 ? weeklyChallenges.map(c => this.renderChallengeCard(c, 'weekly')).join('') : `
-            <div class="empty-state"><p>No weekly challenges available. Check back next week!</p></div>
-          `}
+        <div class="challenge-list" id="weekly-challenges" style="display: none;">
+          ${this.weeklyChallenges.map(c => this.renderChallengeCard(c)).join('')}
         </div>
       </div>
       
       <style>
         .engagement-section { margin-top: 8px; }
-        .challenge-tabs-wrapper { display: flex; gap: 8px; margin-bottom: 16px; }
+        .challenge-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
         .challenge-tab {
           padding: 10px 20px;
           background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 8px;
           color: rgba(255,255,255,0.6);
-          font-size: 0.85rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
@@ -467,93 +294,46 @@ class ProfileEngagementUI {
           display: flex;
           align-items: center;
           gap: 16px;
-          transition: all 0.2s;
         }
         .challenge-card:hover { background: rgba(255,255,255,0.05); }
-        .challenge-card.completed { border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.05); }
-        .challenge-icon { font-size: 2rem; flex-shrink: 0; }
-        .challenge-info { flex: 1; min-width: 0; }
+        .challenge-icon { font-size: 2rem; }
+        .challenge-info { flex: 1; }
         .challenge-title { font-weight: 600; margin-bottom: 4px; }
         .challenge-desc { font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
-        .challenge-progress-bar {
-          height: 6px;
-          background: rgba(255,255,255,0.1);
-          border-radius: 3px;
-          overflow: hidden;
-        }
-        .challenge-progress-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #ff6b9d, #a445b2);
-          border-radius: 3px;
-          transition: width 0.3s;
-        }
-        .challenge-card.completed .challenge-progress-fill { background: #34d399; }
-        .challenge-stats { display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 6px; }
-        .challenge-xp { 
-          background: rgba(255,107,157,0.15);
-          color: #ff6b9d;
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-weight: 600;
-          font-size: 0.75rem;
-        }
-        .claim-btn {
-          padding: 8px 16px;
-          background: linear-gradient(135deg, #ff6b9d, #a445b2);
-          border: none;
-          border-radius: 8px;
-          color: white;
-          font-weight: 600;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .claim-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(255,107,157,0.4); }
-        .claimed-badge { color: #34d399; font-size: 0.85rem; }
-        .empty-state { text-align: center; padding: 40px; color: rgba(255,255,255,0.5); }
+        .challenge-progress { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .challenge-progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #a445b2); border-radius: 3px; }
+        .challenge-meta { display: flex; gap: 12px; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 6px; }
+        .challenge-xp { background: rgba(255,107,157,0.15); color: #ff6b9d; padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 0.75rem; }
       </style>
     `;
     
-    // Add tab switching
+    // Tab switching
     container.querySelectorAll('.challenge-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         container.querySelectorAll('.challenge-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        
         const isDaily = tab.dataset.tab === 'daily';
-        container.querySelector('#daily-challenges-content').style.display = isDaily ? 'block' : 'none';
-        container.querySelector('#weekly-challenges-content').style.display = isDaily ? 'none' : 'block';
+        container.querySelector('#daily-challenges').style.display = isDaily ? 'block' : 'none';
+        container.querySelector('#weekly-challenges').style.display = isDaily ? 'none' : 'block';
       });
     });
   }
   
-  renderChallengeCard(challenge, type) {
-    const c = challenge.challenges || challenge;
-    const progress = challenge.progress || 0;
-    const target = c.requirement_target || 1;
-    const percent = Math.min(100, (progress / target) * 100);
-    const completed = challenge.completed || percent >= 100;
-    const claimed = challenge.reward_claimed || false;
-    
+  renderChallengeCard(challenge) {
     return `
-      <div class="challenge-card ${completed ? 'completed' : ''}" data-id="${challenge.id || c.id}">
-        <div class="challenge-icon">${c.icon || '🎯'}</div>
+      <div class="challenge-card">
+        <div class="challenge-icon">${challenge.icon}</div>
         <div class="challenge-info">
-          <div class="challenge-title">${c.title}</div>
-          <div class="challenge-desc">${c.description}</div>
-          <div class="challenge-progress-bar">
-            <div class="challenge-progress-fill" style="width: ${percent}%"></div>
+          <div class="challenge-title">${challenge.title}</div>
+          <div class="challenge-desc">${challenge.description}</div>
+          <div class="challenge-progress">
+            <div class="challenge-progress-fill" style="width: 0%"></div>
           </div>
-          <div class="challenge-stats">
-            <span>${progress}/${target}</span>
-            <span class="challenge-xp">+${c.xp_reward || 0} XP</span>
+          <div class="challenge-meta">
+            <span>0/${challenge.requirement_target}</span>
+            <span class="challenge-xp">+${challenge.xp_reward} XP</span>
           </div>
         </div>
-        ${completed && !claimed ? `
-          <button class="claim-btn" onclick="window.profileEngagementUI?.claimChallengeReward('${challenge.id}', '${type}')">Claim</button>
-        ` : claimed ? `
-          <span class="claimed-badge">✓ Claimed</span>
-        ` : ''}
       </div>
     `;
   }
@@ -564,70 +344,35 @@ class ProfileEngagementUI {
     const container = document.getElementById('achievements-container');
     if (!container) return;
     
-    const achievements = this.engagement?.achievements || this.defaultAchievements;
-    const unlocked = this.engagement?.unlockedAchievements || [];
-    const unlockedIds = new Set(unlocked.map(u => u.achievement_id));
-    
-    const processedAchievements = achievements.map(a => ({
+    // Check which achievements are unlocked
+    const processed = this.achievements.map(a => ({
       ...a,
-      unlocked: unlockedIds.has(a.id)
+      unlocked: a.check ? a.check() : false
     }));
     
     // Group by category
     const categories = {};
-    processedAchievements.forEach(a => {
-      if (a.is_hidden && !a.unlocked) return;
-      const cat = a.category || 'general';
+    processed.forEach(a => {
+      const cat = a.category || 'other';
       if (!categories[cat]) categories[cat] = [];
       categories[cat].push(a);
     });
     
-    const unlockedCount = processedAchievements.filter(a => a.unlocked).length;
-    const totalCount = processedAchievements.filter(a => !a.is_hidden).length;
+    const unlockedCount = processed.filter(a => a.unlocked).length;
+    const totalCount = processed.length;
     
     const categoryNames = {
       games: '🎮 Games Played',
-      wins: '🏆 Victories',
-      streaks: '🔥 Win Streaks',
-      loyalty: '📅 Login Streaks',
-      social: '👥 Social',
-      referrals: '📣 Referrals',
+      variety: '🎲 Variety',
       '2048': '🔢 2048',
       snake: '🐍 Snake',
       'sky-hop': '☁️ Sky Hop',
       typing: '⌨️ Typing Test',
       reaction: '⚡ Reaction Time',
-      memory: '🧠 Memory Games',
       aim: '🎯 Aim Trainer',
-      chimp: '🐵 Chimp Test',
-      'block-stack': '🧱 Block Stack',
-      math: '➕ Math Speed',
-      stroop: '🌈 Stroop Test',
-      sequence: '🔵 Sequence Memory',
-      'number-memory': '🔢 Number Memory',
-      'visual-memory': '👁️ Visual Memory',
-      'verbal-memory': '📝 Verbal Memory',
+      memory: '🧠 Memory Games',
       puzzles: '🧩 Puzzles',
-      multiplayer: '👥 Multiplayer',
-      trivia: '❓ Trivia Royale',
-      spyfall: '🕵️ Spyfall',
-      codenames: '🔐 Codenames',
-      werewolf: '🐺 Werewolf',
-      sketch: '🎨 Sketch & Guess',
-      'word-games': '💬 Word Games',
-      connections: '🔗 Connections',
-      npat: '📊 NPAT',
-      'bet-bluff': '🎰 Bet or Bluff',
-      'fools-gold': '💰 Fools Gold',
-      duos: '👫 Duos',
-      imposter: '🎭 Imposter',
-      herd: '🐑 Herd Mentality',
-      'hot-seat': '🔥 Hot Seat',
-      kmk: '🤔 KMK',
-      '21-questions': '❔ 21 Questions',
-      party: '🎉 Party Games',
-      hosting: '🏠 Hosting',
-      special: '✨ Special'
+      other: '🎮 Other Games'
     };
     
     container.innerHTML = `
@@ -637,8 +382,8 @@ class ProfileEngagementUI {
             <span class="achievements-count">${unlockedCount}/${totalCount}</span>
             <span class="achievements-label">Achievements Unlocked</span>
           </div>
-          <div class="achievements-progress-bar">
-            <div class="achievements-progress-fill" style="width: ${(unlockedCount/totalCount)*100}%"></div>
+          <div class="achievements-bar">
+            <div class="achievements-bar-fill" style="width: ${(unlockedCount/totalCount)*100}%"></div>
           </div>
         </div>
         
@@ -646,11 +391,11 @@ class ProfileEngagementUI {
           ${Object.entries(categories).map(([cat, achs]) => `
             <div class="achievement-category">
               <div class="category-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                <span class="category-name">${categoryNames[cat] || cat}</span>
+                <span>${categoryNames[cat] || cat}</span>
                 <span class="category-count">${achs.filter(a => a.unlocked).length}/${achs.length}</span>
                 <span class="category-toggle">▼</span>
               </div>
-              <div class="category-achievements">
+              <div class="category-list">
                 ${achs.map(a => this.renderAchievementCard(a)).join('')}
               </div>
             </div>
@@ -662,92 +407,72 @@ class ProfileEngagementUI {
         .achievements-header { margin-bottom: 20px; }
         .achievements-progress { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
         .achievements-count { font-size: 1.5rem; font-weight: 700; color: #ff6b9d; }
-        .achievements-label { color: rgba(255,255,255,0.6); font-size: 0.9rem; }
-        .achievements-progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
-        .achievements-progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #a445b2); border-radius: 4px; }
+        .achievements-label { color: rgba(255,255,255,0.6); }
+        .achievements-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+        .achievements-bar-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #a445b2); }
         
         .achievement-category { margin-bottom: 16px; }
         .category-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+          display: flex; align-items: center; gap: 12px;
           padding: 12px 16px;
           background: rgba(255,255,255,0.03);
           border-radius: 10px;
           cursor: pointer;
-          transition: background 0.2s;
         }
         .category-header:hover { background: rgba(255,255,255,0.06); }
-        .category-name { flex: 1; font-weight: 600; }
+        .category-header span:first-child { flex: 1; font-weight: 600; }
         .category-count { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
         .category-toggle { color: rgba(255,255,255,0.4); transition: transform 0.2s; }
         .achievement-category.collapsed .category-toggle { transform: rotate(-90deg); }
-        .achievement-category.collapsed .category-achievements { display: none; }
+        .achievement-category.collapsed .category-list { display: none; }
         
-        .category-achievements { padding: 12px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .category-list { padding: 12px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
         
         .achievement-card {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+          display: flex; align-items: center; gap: 12px;
           padding: 12px;
           background: rgba(255,255,255,0.02);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 10px;
-          transition: all 0.2s;
         }
-        .achievement-card:hover { background: rgba(255,255,255,0.04); }
         .achievement-card.unlocked { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
         .achievement-card.locked { opacity: 0.5; }
         
-        .achievement-icon-wrapper {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .achievement-icon {
+          width: 48px; height: 48px;
+          display: flex; align-items: center; justify-content: center;
           font-size: 1.5rem;
           background: rgba(255,255,255,0.05);
           border-radius: 10px;
-          flex-shrink: 0;
         }
-        .achievement-card.unlocked .achievement-icon-wrapper { background: rgba(52,211,153,0.15); }
+        .achievement-card.unlocked .achievement-icon { background: rgba(52,211,153,0.15); }
         
-        .achievement-info { flex: 1; min-width: 0; }
-        .achievement-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .achievement-info { flex: 1; }
+        .achievement-title { font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .achievement-desc { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .achievement-xp { font-size: 0.75rem; color: #ff6b9d; font-weight: 600; }
         
-        .rarity-badge {
-          font-size: 0.65rem;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
+        .rarity-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
         .rarity-common { background: rgba(148,163,184,0.2); color: #94a3b8; }
         .rarity-uncommon { background: rgba(34,197,94,0.2); color: #22c55e; }
         .rarity-rare { background: rgba(59,130,246,0.2); color: #3b82f6; }
         .rarity-epic { background: rgba(168,85,247,0.2); color: #a855f7; }
         .rarity-legendary { background: rgba(251,191,36,0.2); color: #fbbf24; }
-        
-        .achievement-xp { font-size: 0.75rem; color: #ff6b9d; font-weight: 600; }
       </style>
     `;
   }
   
-  renderAchievementCard(achievement) {
-    const rarity = achievement.rarity || 'common';
-    
+  renderAchievementCard(a) {
     return `
-      <div class="achievement-card ${achievement.unlocked ? 'unlocked' : 'locked'}">
-        <div class="achievement-icon-wrapper">${achievement.icon}</div>
+      <div class="achievement-card ${a.unlocked ? 'unlocked' : 'locked'}">
+        <div class="achievement-icon">${a.icon}</div>
         <div class="achievement-info">
           <div class="achievement-title">
-            ${achievement.title}
-            <span class="rarity-badge rarity-${rarity}">${rarity}</span>
+            ${a.title}
+            <span class="rarity-badge rarity-${a.rarity}">${a.rarity}</span>
           </div>
-          <div class="achievement-desc">${achievement.description}</div>
-          <div class="achievement-xp">+${achievement.xp_reward} XP</div>
+          <div class="achievement-desc">${a.description}</div>
+          <div class="achievement-xp">+${a.xp_reward} XP</div>
         </div>
       </div>
     `;
@@ -759,11 +484,6 @@ class ProfileEngagementUI {
     const container = document.getElementById('referrals-container');
     if (!container) return;
     
-    // Ensure we have a referral code
-    if (!this.referralCode) {
-      this.referralCode = 'TGCO' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    }
-    
     const shareUrl = `${window.location.origin}?ref=${this.referralCode}`;
     
     container.innerHTML = `
@@ -774,82 +494,47 @@ class ProfileEngagementUI {
         </div>
         
         <div class="referral-rewards">
-          <div class="reward-item">
-            <span class="reward-icon">🎮</span>
-            <span class="reward-text">You get <strong>500 XP</strong> per referral</span>
-          </div>
-          <div class="reward-item">
-            <span class="reward-icon">🎉</span>
-            <span class="reward-text">Friends get <strong>250 XP</strong> bonus</span>
-          </div>
-          <div class="reward-item">
-            <span class="reward-icon">🏆</span>
-            <span class="reward-text">Unlock exclusive achievements</span>
-          </div>
+          <div class="reward-item"><span>🎮</span> You get <strong>500 XP</strong> per referral</div>
+          <div class="reward-item"><span>🎉</span> Friends get <strong>250 XP</strong> bonus</div>
+          <div class="reward-item"><span>🏆</span> Unlock exclusive achievements</div>
         </div>
         
         <div class="referral-code-box">
           <div class="code-label">Your Referral Code</div>
           <div class="code-display">
-            <span class="code-text" id="referral-code">${this.referralCode}</span>
-            <button class="copy-btn" onclick="window.profileEngagementUI?.copyReferralCode()">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              Copy
-            </button>
+            <span class="code-text">${this.referralCode}</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('${this.referralCode}'); this.textContent='Copied!'">Copy</button>
           </div>
         </div>
         
-        <div class="referral-share">
+        <div class="share-section">
           <div class="share-label">Share Link</div>
-          <div class="share-url-box">
-            <input type="text" class="share-url" value="${shareUrl}" readonly>
-            <button class="copy-btn" onclick="window.profileEngagementUI?.copyShareLink()">Copy Link</button>
+          <div class="share-box">
+            <input type="text" value="${shareUrl}" readonly>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('${shareUrl}'); this.textContent='Copied!'">Copy</button>
           </div>
         </div>
         
-        <div class="referral-stats-grid">
-          <div class="ref-stat">
-            <div class="ref-stat-value">${this.referralStats.total}</div>
-            <div class="ref-stat-label">Total Referrals</div>
-          </div>
-          <div class="ref-stat">
-            <div class="ref-stat-value">${this.referralStats.successful}</div>
-            <div class="ref-stat-label">Successful</div>
-          </div>
-          <div class="ref-stat">
-            <div class="ref-stat-value">${this.referralStats.xpEarned}</div>
-            <div class="ref-stat-label">XP Earned</div>
-          </div>
+        <div class="referral-stats">
+          <div class="ref-stat"><div class="ref-value">${this.referralStats.total}</div><div class="ref-label">Referrals</div></div>
+          <div class="ref-stat"><div class="ref-value">${this.referralStats.successful}</div><div class="ref-label">Successful</div></div>
+          <div class="ref-stat"><div class="ref-value">${this.referralStats.xpEarned}</div><div class="ref-label">XP Earned</div></div>
         </div>
       </div>
       
       <style>
-        .referral-section { }
-        .referral-header { margin-bottom: 20px; }
-        .referral-header h3 { font-size: 1.2rem; margin-bottom: 8px; font-family: inherit; letter-spacing: 0; }
-        .referral-header p { color: rgba(255,255,255,0.6); font-size: 0.9rem; }
+        .referral-header h3 { margin-bottom: 8px; }
+        .referral-header p { color: rgba(255,255,255,0.6); }
         
-        .referral-rewards {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-          margin-bottom: 24px;
-        }
+        .referral-rewards { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
         .reward-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          display: flex; align-items: center; gap: 8px;
           padding: 10px 16px;
           background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
-          font-size: 0.85rem;
         }
-        .reward-icon { font-size: 1.2rem; }
-        .reward-text strong { color: #ff6b9d; }
+        .reward-item strong { color: #ff6b9d; }
         
         .referral-code-box {
           background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(164,69,178,0.1));
@@ -858,400 +543,146 @@ class ProfileEngagementUI {
           padding: 20px;
           margin-bottom: 16px;
         }
-        .code-label { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .code-label { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 8px; text-transform: uppercase; }
         .code-display { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .code-text { 
-          font-family: 'Bebas Neue', monospace;
-          font-size: 2rem;
-          letter-spacing: 4px;
-          color: white;
-        }
+        .code-text { font-size: 2rem; font-weight: 700; letter-spacing: 4px; }
         
         .copy-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
           padding: 8px 16px;
           background: rgba(255,255,255,0.1);
           border: 1px solid rgba(255,255,255,0.2);
           border-radius: 8px;
           color: white;
-          font-size: 0.85rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s;
         }
         .copy-btn:hover { background: rgba(255,255,255,0.15); }
         
-        .referral-share { margin-bottom: 24px; }
+        .share-section { margin-bottom: 20px; }
         .share-label { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
-        .share-url-box { display: flex; gap: 8px; }
-        .share-url {
-          flex: 1;
-          padding: 12px 16px;
+        .share-box { display: flex; gap: 8px; }
+        .share-box input {
+          flex: 1; padding: 12px;
           background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 8px;
-          color: rgba(255,255,255,0.8);
-          font-size: 0.85rem;
+          color: white;
         }
         
-        .referral-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
-        }
-        .ref-stat {
-          text-align: center;
-          padding: 16px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-        }
-        .ref-stat-value { font-size: 1.5rem; font-weight: 700; color: #ff6b9d; }
-        .ref-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
-        
-        @media (max-width: 600px) {
-          .code-text { font-size: 1.5rem; letter-spacing: 2px; }
-          .referral-stats-grid { grid-template-columns: 1fr; }
-          .share-url-box { flex-direction: column; }
-        }
+        .referral-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .ref-stat { text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+        .ref-value { font-size: 1.5rem; font-weight: 700; color: #ff6b9d; }
+        .ref-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
       </style>
     `;
   }
-  
-  copyReferralCode() {
-    navigator.clipboard.writeText(this.referralCode);
-    this.showToast('Referral code copied!');
-  }
-  
-  copyShareLink() {
-    const url = `${window.location.origin}?ref=${this.referralCode}`;
-    navigator.clipboard.writeText(url);
-    this.showToast('Share link copied!');
-  }
-  
-  showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'profile-toast';
-    toast.textContent = message;
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(52,211,153,0.9);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      z-index: 9999;
-      animation: fadeInUp 0.3s ease;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
-  }
-  
-  async claimChallengeReward(challengeId, type) {
-    if (this.engagement) {
-      await this.engagement.claimChallengeReward(challengeId);
-      this.renderChallengesSection();
-    } else {
-      this.showToast('Reward claimed! +XP');
-    }
-  }
-}
 
-// ============ STATS ============
+  // ============ STATS ============
   
   renderStatsSection() {
     const container = document.getElementById('stats-container');
     if (!container) return;
     
-    const stats = this.userStats || {};
     const profile = this.userProfile || {};
-    
-    // Calculate level from XP
     const xp = profile.xp || 0;
     const level = Math.floor(xp / 1000) + 1;
     const xpInLevel = xp % 1000;
-    const xpForNextLevel = 1000;
     
     container.innerHTML = `
       <div class="stats-section">
-        <!-- Level & XP -->
-        <div class="stats-card level-card">
+        <div class="level-card">
           <div class="level-display">
             <div class="level-badge">LVL ${level}</div>
             <div class="level-info">
               <div class="xp-text">${xp.toLocaleString()} XP</div>
-              <div class="xp-progress-bar">
-                <div class="xp-progress-fill" style="width: ${(xpInLevel/xpForNextLevel)*100}%"></div>
-              </div>
-              <div class="xp-to-next">${xpForNextLevel - xpInLevel} XP to level ${level + 1}</div>
+              <div class="xp-bar"><div class="xp-fill" style="width: ${(xpInLevel/1000)*100}%"></div></div>
+              <div class="xp-next">${1000 - xpInLevel} XP to level ${level + 1}</div>
             </div>
           </div>
         </div>
         
-        <!-- Overview Stats -->
-        <div class="stats-grid overview-grid">
-          <div class="stat-item">
-            <div class="stat-value">${stats.total_games_played || 0}</div>
-            <div class="stat-label">Games Played</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${stats.total_wins || 0}</div>
-            <div class="stat-label">Total Wins</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${stats.total_games_played > 0 ? Math.round((stats.total_wins / stats.total_games_played) * 100) : 0}%</div>
-            <div class="stat-label">Win Rate</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${stats.best_win_streak || 0}</div>
-            <div class="stat-label">Best Streak</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${stats.daily_login_streak || 0}</div>
-            <div class="stat-label">Login Streak</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${stats.friends_count || 0}</div>
-            <div class="stat-label">Friends</div>
-          </div>
+        <div class="overview-stats">
+          <div class="stat-box"><div class="stat-val">${this.totalGamesPlayed}</div><div class="stat-lbl">Games Played</div></div>
+          <div class="stat-box"><div class="stat-val">${Object.keys(this.gameStats).length}</div><div class="stat-lbl">Games Tried</div></div>
+          <div class="stat-box"><div class="stat-val">${Object.keys(this.SOLO_GAMES).length - Object.keys(this.gameStats).length}</div><div class="stat-lbl">Games Left</div></div>
         </div>
         
-        <!-- Solo Games Stats -->
-        <div class="stats-category">
-          <h3 class="category-title">🎮 Solo Games</h3>
-          <div class="stats-grid games-grid">
-            ${this.renderGameStat('2048', '🔢', stats.games_2048_played, stats.games_2048_best, 'Best Tile')}
-            ${this.renderGameStat('Snake', '🐍', stats.games_snake_played, stats.games_snake_best, 'High Score')}
-            ${this.renderGameStat('Sky Hop', '☁️', stats.games_skyhop_played, stats.games_skyhop_best, 'High Score')}
-            ${this.renderGameStat('Typing Test', '⌨️', stats.games_typing_played, stats.games_typing_best_wpm, 'Best WPM')}
-            ${this.renderGameStat('Reaction Time', '⚡', stats.games_reaction_played, stats.games_reaction_best_ms, 'Best Time', 'ms')}
-            ${this.renderGameStat('Aim Trainer', '🎯', stats.games_aim_played, stats.games_aim_best, 'Best Score')}
-            ${this.renderGameStat('Chimp Test', '🐵', stats.games_chimp_played, stats.games_chimp_best, 'Best Level')}
-            ${this.renderGameStat('Sequence Memory', '🔵', stats.games_sequence_played, stats.games_sequence_best, 'Best Level')}
-            ${this.renderGameStat('Number Memory', '🔢', stats.games_number_played, stats.games_number_best, 'Best Level')}
-            ${this.renderGameStat('Visual Memory', '👁️', stats.games_visual_played, stats.games_visual_best, 'Best Level')}
-            ${this.renderGameStat('Verbal Memory', '📝', stats.games_verbal_played, stats.games_verbal_best, 'Best Score')}
-            ${this.renderGameStat('Stroop Test', '🌈', stats.games_stroop_played, stats.games_stroop_best, 'Best Score')}
-            ${this.renderGameStat('Math Speed', '➕', stats.games_math_played, stats.games_math_best, 'Best Score')}
-            ${this.renderGameStat('Minesweeper', '💣', stats.games_minesweeper_played, stats.games_minesweeper_wins, 'Wins')}
-            ${this.renderGameStat('Sudoku', '🔢', stats.games_sudoku_played, stats.games_sudoku_completed, 'Completed')}
-            ${this.renderGameStat('Crossword', '📝', stats.games_crossword_played, stats.games_crossword_completed, 'Completed')}
-            ${this.renderGameStat('Word Search', '🔍', stats.games_wordsearch_played, stats.games_wordsearch_completed, 'Completed')}
-            ${this.renderGameStat('Nonogram', '🖼️', stats.games_nonogram_played, stats.games_nonogram_completed, 'Completed')}
-            ${this.renderGameStat('Block Stack', '🧱', stats.games_blockstack_played, stats.games_blockstack_best, 'High Score')}
-          </div>
-        </div>
-        
-        <!-- Multiplayer Games Stats -->
-        <div class="stats-category">
-          <h3 class="category-title">👥 Multiplayer Games</h3>
-          <div class="stats-grid games-grid">
-            ${this.renderGameStat('Trivia Royale', '❓', stats.games_trivia_played, stats.games_trivia_wins, 'Wins')}
-            ${this.renderGameStat('Spyfall', '🕵️', stats.games_spyfall_played, stats.games_spyfall_wins, 'Wins')}
-            ${this.renderGameStat('Codenames', '🔐', stats.games_codenames_played, stats.games_codenames_wins, 'Wins')}
-            ${this.renderGameStat('Werewolf', '🐺', stats.games_werewolf_played, stats.games_werewolf_wins, 'Wins')}
-            ${this.renderGameStat('Sketch & Guess', '🎨', stats.games_drawguess_played, stats.games_drawguess_wins, 'Wins')}
-            ${this.renderGameStat('Word Association', '💬', stats.games_wordassoc_played, stats.games_wordassoc_wins, 'Wins')}
-            ${this.renderGameStat('Connections', '🔗', stats.games_connections_played, stats.games_connections_wins, 'Wins')}
-            ${this.renderGameStat('NPAT', '📊', stats.games_npat_played, stats.games_npat_wins, 'Wins')}
-            ${this.renderGameStat('Bet or Bluff', '🎰', stats.games_betbluff_played, stats.games_betbluff_wins, 'Wins')}
-            ${this.renderGameStat("Fool's Gold", '💰', stats.games_foolsgold_played, stats.games_foolsgold_wins, 'Wins')}
-            ${this.renderGameStat('Duos', '👫', stats.games_duos_played, stats.games_duos_wins, 'Wins')}
-            ${this.renderGameStat('Imposter', '🎭', stats.games_imposter_played, stats.games_imposter_wins, 'Wins')}
-            ${this.renderGameStat('Herd Mentality', '🐑', stats.games_herd_played, stats.games_herd_wins, 'Wins')}
-            ${this.renderGameStat('Hot Seat', '🔥', stats.games_hotseat_played, stats.games_hotseat_wins, 'Wins')}
-            ${this.renderGameStat('KMK', '🤔', stats.games_kmk_played, stats.games_kmk_wins, 'Wins')}
-            ${this.renderGameStat('21 Questions', '❔', stats.games_21q_played, stats.games_21q_wins, 'Wins')}
-            ${this.renderGameStat('Story Builder', '📖', stats.games_story_played, null, null)}
-            ${this.renderGameStat('Finish My Sentence', '✍️', stats.games_sentence_played, null, null)}
-          </div>
-        </div>
-        
-        <!-- Party Games Stats -->
-        <div class="stats-category">
-          <h3 class="category-title">🎉 Party Games</h3>
-          <div class="stats-grid games-grid">
-            ${this.renderGameStat('Would You Rather', '🤔', stats.games_wyr_played, null, null)}
-            ${this.renderGameStat('Never Have I Ever', '🙈', stats.games_nhie_played, null, null)}
-            ${this.renderGameStat('Truth or Dare', '😈', stats.games_tod_played, null, null)}
-            ${this.renderGameStat('This or That', '⚖️', stats.games_tot_played, null, null)}
-            ${this.renderGameStat('Hot Takes', '🌶️', stats.games_hottakes_played, null, null)}
-            ${this.renderGameStat('Charades', '🎭', stats.games_charades_played, null, null)}
-          </div>
-        </div>
-        
-        <!-- Hosting Stats -->
-        <div class="stats-category">
-          <h3 class="category-title">🏠 Hosting</h3>
-          <div class="stats-grid overview-grid">
-            <div class="stat-item">
-              <div class="stat-value">${stats.games_hosted || 0}</div>
-              <div class="stat-label">Games Hosted</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">${stats.total_playtime_minutes ? Math.floor(stats.total_playtime_minutes / 60) : 0}h</div>
-              <div class="stat-label">Total Playtime</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value">${stats.referrals_count || 0}</div>
-              <div class="stat-label">Referrals</div>
-            </div>
-          </div>
+        <h3 class="section-title">🎮 Solo Games</h3>
+        <div class="games-grid">
+          ${Object.entries(this.SOLO_GAMES).map(([id, config]) => this.renderGameStatCard(id, config)).join('')}
         </div>
       </div>
       
       <style>
-        .stats-section { }
-        
-        .stats-card {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+        .level-card {
+          background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(164,69,178,0.1));
+          border: 1px solid rgba(255,107,157,0.3);
           border-radius: 12px;
           padding: 20px;
           margin-bottom: 20px;
         }
-        
-        .level-card {
-          background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(164,69,178,0.1));
-          border-color: rgba(255,107,157,0.3);
-        }
-        
         .level-display { display: flex; align-items: center; gap: 20px; }
-        
         .level-badge {
-          font-size: 1.5rem;
-          font-weight: 800;
+          font-size: 1.5rem; font-weight: 800;
           background: linear-gradient(135deg, #ff6b9d, #a445b2);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
           padding: 12px 20px;
           border: 2px solid rgba(255,107,157,0.4);
           border-radius: 12px;
         }
-        
         .level-info { flex: 1; }
         .xp-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
-        .xp-progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
-        .xp-progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #a445b2); border-radius: 4px; }
-        .xp-to-next { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .xp-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+        .xp-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #a445b2); }
+        .xp-next { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 6px; }
         
-        .stats-grid {
-          display: grid;
-          gap: 12px;
-        }
+        .overview-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-box { text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+        .stat-val { font-size: 1.5rem; font-weight: 700; color: #ff6b9d; }
+        .stat-lbl { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
         
-        .overview-grid {
-          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-          margin-bottom: 24px;
-        }
+        .section-title { margin: 20px 0 12px; font-size: 1rem; }
         
-        .games-grid {
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        }
-        
-        .stat-item {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-          padding: 16px;
-          text-align: center;
-        }
-        
-        .stat-value {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #ff6b9d;
-          margin-bottom: 4px;
-        }
-        
-        .stat-label {
-          font-size: 0.75rem;
-          color: rgba(255,255,255,0.5);
-          text-transform: uppercase;
-          letter-spacing: 0.03em;
-        }
-        
-        .stats-category {
-          margin-bottom: 24px;
-        }
-        
-        .category-title {
-          font-size: 1rem;
-          font-weight: 600;
-          margin-bottom: 12px;
-          color: rgba(255,255,255,0.9);
-          font-family: inherit;
-          letter-spacing: 0;
-        }
-        
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
         .game-stat-card {
+          display: flex; align-items: center; gap: 12px;
+          padding: 12px;
           background: rgba(255,255,255,0.02);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 10px;
-          padding: 12px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
         }
-        
-        .game-stat-card.no-plays {
-          opacity: 0.5;
-        }
-        
-        .game-icon {
-          font-size: 1.5rem;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255,255,255,0.05);
-          border-radius: 8px;
-          flex-shrink: 0;
-        }
-        
-        .game-stat-info { flex: 1; min-width: 0; }
-        .game-stat-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; }
-        .game-stat-detail { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
-        .game-stat-plays { font-size: 0.7rem; color: rgba(255,255,255,0.4); }
-        .game-stat-best { color: #ff6b9d; font-weight: 600; }
-        
-        @media (max-width: 600px) {
-          .level-display { flex-direction: column; text-align: center; }
-          .overview-grid { grid-template-columns: repeat(3, 1fr); }
-          .games-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+        .game-stat-card.played { border-color: rgba(255,107,157,0.3); }
+        .game-stat-card.not-played { opacity: 0.5; }
+        .game-icon { font-size: 1.5rem; width: 40px; text-align: center; }
+        .game-info { flex: 1; }
+        .game-name { font-weight: 600; font-size: 0.85rem; }
+        .game-best { font-size: 0.8rem; color: #ff6b9d; font-weight: 600; }
+        .game-plays { font-size: 0.7rem; color: rgba(255,255,255,0.4); }
       </style>
     `;
   }
   
-  renderGameStat(name, icon, played, best, bestLabel, suffix = '') {
-    const hasPlays = played && played > 0;
-    const hasBest = best !== null && best !== undefined && best > 0;
+  renderGameStatCard(gameId, config) {
+    const stats = this.gameStats[gameId];
+    const played = stats && stats.plays > 0;
+    
+    let bestDisplay = '--';
+    if (stats?.best !== null && stats?.best !== undefined) {
+      bestDisplay = stats.best + (config.suffix || '');
+    }
     
     return `
-      <div class="game-stat-card ${hasPlays ? '' : 'no-plays'}">
-        <div class="game-icon">${icon}</div>
-        <div class="game-stat-info">
-          <div class="game-stat-name">${name}</div>
-          ${hasBest ? `
-            <div class="game-stat-detail">
-              <span class="game-stat-best">${best}${suffix}</span> ${bestLabel}
-            </div>
-          ` : ''}
-          <div class="game-stat-plays">${played || 0} plays</div>
+      <div class="game-stat-card ${played ? 'played' : 'not-played'}">
+        <div class="game-icon">${config.icon}</div>
+        <div class="game-info">
+          <div class="game-name">${config.name}</div>
+          ${played ? `<div class="game-best">Best: ${bestDisplay}</div>` : ''}
+          <div class="game-plays">${stats?.plays || 0} plays</div>
         </div>
       </div>
     `;
   }
 }
 
-// Export for use
+// Export
 window.ProfileEngagementUI = ProfileEngagementUI;
