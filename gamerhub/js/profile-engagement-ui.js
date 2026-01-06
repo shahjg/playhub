@@ -40,40 +40,47 @@ class ProfileEngagementUI {
     this.renderStatsSection();
   }
 
-  renderChallengesSection() {
+  async renderChallengesSection() {
     const container = document.getElementById('challenges-container');
-    if (!container || !this.engagement) return;
+    if (!container) return;
 
-    const dailyChallenges = this.engagement.getDailyChallenges();
-    const weeklyChallenges = this.engagement.getWeeklyChallenges();
+    // Get user stats to calculate progress
+    const stats = this.engagement?.userStats || {};
+    const gamesPlayedToday = stats.games_played_today || 0;
+    const gamesPlayedWeek = stats.games_played_week || 0;
+    const uniqueGamesWeek = stats.unique_games_week || 0;
+
+    // Define daily challenges
+    const dailyChallenges = [
+      { id: 'first-game', icon: '🎮', title: 'First Game', description: 'Play 1 game today', target: 1, progress: Math.min(gamesPlayedToday, 1), xp: 25 },
+      { id: 'triple-play', icon: '🎲', title: 'Triple Play', description: 'Play 3 games today', target: 3, progress: Math.min(gamesPlayedToday, 3), xp: 50 },
+      { id: 'high-five', icon: '🖐️', title: 'High Five', description: 'Play 5 games today', target: 5, progress: Math.min(gamesPlayedToday, 5), xp: 75 },
+      { id: 'brain-trainer', icon: '🧠', title: 'Brain Trainer', description: 'Play a memory game', target: 1, progress: stats.memory_games_today || 0, xp: 40 },
+      { id: 'speed-demon', icon: '⚡', title: 'Speed Demon', description: 'Play Reaction Time', target: 1, progress: stats.reaction_games_today || 0, xp: 35 }
+    ];
+
+    // Define weekly challenges
+    const weeklyChallenges = [
+      { id: 'dedicated-player', icon: '🏆', title: 'Dedicated Player', description: 'Play 20 games this week', target: 20, progress: Math.min(gamesPlayedWeek, 20), xp: 200 },
+      { id: 'variety-pack', icon: '🎯', title: 'Variety Pack', description: 'Play 5 different games', target: 5, progress: Math.min(uniqueGamesWeek, 5), xp: 150 },
+      { id: '2048-expert', icon: '🔲', title: '2048 Expert', description: 'Reach the 2048 tile', target: 2048, progress: stats.best_2048_tile || 0, xp: 300 },
+      { id: 'snake-century', icon: '🐍', title: 'Snake Century', description: 'Score 100+ in Snake', target: 100, progress: stats.best_snake_score || 0, xp: 250 },
+      { id: 'typing-pro', icon: '⌨️', title: 'Typing Pro', description: 'Achieve 70+ WPM', target: 70, progress: stats.best_typing_wpm || 0, xp: 200 }
+    ];
 
     container.innerHTML = `
-      <div class="profile-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="section-icon">🎯</span>
-            CHALLENGES
-          </h2>
-          <div class="challenge-tabs">
-            <button class="challenge-tab active" data-tab="daily">Daily</button>
-            <button class="challenge-tab" data-tab="weekly">Weekly</button>
-          </div>
+      <div class="challenges-wrapper">
+        <div class="challenge-tabs">
+          <button class="challenge-tab active" data-tab="daily">Daily Challenges</button>
+          <button class="challenge-tab" data-tab="weekly">Weekly Challenges</button>
         </div>
 
         <div class="challenge-content" id="daily-challenges">
-          ${dailyChallenges.length > 0 ? dailyChallenges.map(c => this.renderChallengeCard(c)).join('') : `
-            <div class="empty-state">
-              <p>No daily challenges available. Check back later!</p>
-            </div>
-          `}
+          ${dailyChallenges.map(c => this.renderChallengeCard(c)).join('')}
         </div>
 
         <div class="challenge-content hidden" id="weekly-challenges">
-          ${weeklyChallenges.length > 0 ? weeklyChallenges.map(c => this.renderChallengeCard(c)).join('') : `
-            <div class="empty-state">
-              <p>No weekly challenges available. Check back later!</p>
-            </div>
-          `}
+          ${weeklyChallenges.map(c => this.renderChallengeCard(c)).join('')}
         </div>
       </div>
     `;
@@ -87,50 +94,33 @@ class ProfileEngagementUI {
         document.getElementById(`${tab.dataset.tab}-challenges`).classList.remove('hidden');
       });
     });
-
-    // Claim buttons
-    container.querySelectorAll('.challenge-claim-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const result = await this.engagement.claimChallengeReward(
-          btn.dataset.challengeId,
-          btn.dataset.period
-        );
-        if (result?.success) {
-          this.renderChallengesSection(); // Re-render
-        }
-      });
-    });
   }
 
   renderChallengeCard(challenge) {
-    const c = challenge.challenges;
-    const progress = Math.min(challenge.progress / c.requirement_target, 1);
-    const completed = challenge.completed;
-    const claimed = challenge.reward_claimed;
+    const progress = Math.min(challenge.progress / challenge.target, 1);
+    const completed = challenge.progress >= challenge.target;
+    const progressPercent = Math.round(progress * 100);
 
     return `
-      <div class="challenge-card ${completed ? 'completed' : ''} ${claimed ? 'claimed' : ''}">
-        <div class="challenge-header">
-          <div class="challenge-info">
-            <h4>${c.title}</h4>
-            <p>${c.description}</p>
+      <div class="challenge-card ${completed ? 'completed' : ''}">
+        <div class="challenge-icon">${challenge.icon}</div>
+        <div class="challenge-content-inner">
+          <div class="challenge-header">
+            <div class="challenge-info">
+              <h4>${challenge.title}</h4>
+              <p>${challenge.description}</p>
+            </div>
+            <div class="challenge-reward">
+              <span class="xp-badge">+${challenge.xp} XP</span>
+            </div>
           </div>
-          <div class="challenge-reward">
-            <span class="xp-badge">+${c.xp_reward} XP</span>
+          <div class="challenge-progress-bar">
+            <div class="challenge-progress-fill" style="width: ${progressPercent}%"></div>
           </div>
-        </div>
-        <div class="challenge-progress-bar">
-          <div class="challenge-progress-fill" style="width: ${progress * 100}%"></div>
-        </div>
-        <div class="challenge-footer">
-          <span class="progress-text">${challenge.progress} / ${c.requirement_target}</span>
-          ${completed && !claimed ? `
-            <button class="challenge-claim-btn" data-challenge-id="${c.id}" data-period="${challenge.period_start}">
-              Claim Reward
-            </button>
-          ` : claimed ? `
-            <span class="claimed-badge">✓ Claimed</span>
-          ` : ''}
+          <div class="challenge-footer">
+            <span class="progress-text">${challenge.progress.toLocaleString()} / ${challenge.target.toLocaleString()}</span>
+            ${completed ? `<span class="completed-badge">✓ Complete</span>` : `<span class="progress-percent">${progressPercent}%</span>`}
+          </div>
         </div>
       </div>
     `;
@@ -225,59 +215,139 @@ class ProfileEngagementUI {
 
   async renderReferralSection() {
     const container = document.getElementById('referrals-container');
-    if (!container || !this.engagement) return;
+    if (!container) return;
 
-    const code = await this.engagement.getReferralCode();
-    const stats = await this.engagement.getReferralStats();
-    const shareUrl = `${window.location.origin}?ref=${code}`;
+    // Get referral code - generate if null
+    let code = this.engagement ? await this.engagement.getReferralCode() : null;
+    if (!code || code === 'null') {
+      // Generate a random code if none exists
+      code = this.currentUser ? this.currentUser.id.substring(0, 8).toUpperCase() : 'GAMER' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
+
+    const stats = this.engagement ? await this.engagement.getReferralStats() : { totalReferrals: 0 };
+    const totalReferrals = stats.totalReferrals || 0;
+    const shareUrl = `${window.location.origin}/signup?ref=${code}`;
+
+    // Calculate tier
+    const tiers = [
+      { name: 'Bronze', icon: '🥉', required: 1, color: '#cd7f32' },
+      { name: 'Silver', icon: '🥈', required: 5, color: '#c0c0c0' },
+      { name: 'Gold', icon: '🥇', required: 10, color: '#ffd700' },
+      { name: 'Platinum', icon: '💎', required: 25, color: '#e5e4e2' }
+    ];
+
+    let currentTier = null;
+    let nextTier = tiers[0];
+    for (let i = tiers.length - 1; i >= 0; i--) {
+      if (totalReferrals >= tiers[i].required) {
+        currentTier = tiers[i];
+        nextTier = tiers[i + 1] || null;
+        break;
+      }
+    }
+
+    const tierProgress = nextTier
+      ? Math.min(((totalReferrals - (currentTier?.required || 0)) / (nextTier.required - (currentTier?.required || 0))) * 100, 100)
+      : 100;
 
     container.innerHTML = `
-      <div class="profile-section referral-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="section-icon">🎁</span>
-            INVITE FRIENDS
-          </h2>
+      <div class="referral-wrapper">
+        <!-- How it works -->
+        <div class="how-it-works">
+          <h3>How It Works</h3>
+          <div class="steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div class="step-icon">📋</div>
+              <div class="step-text">Share your code</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div class="step-icon">👥</div>
+              <div class="step-text">Friends sign up</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div class="step-icon">🎁</div>
+              <div class="step-text">Both get XP!</div>
+            </div>
+          </div>
         </div>
 
-        <div class="referral-card">
-          <div class="referral-info">
-            <p>Share your code and earn rewards when friends sign up!</p>
-            <ul class="referral-benefits">
-              <li>🎮 You get <strong>500 XP</strong> per referral</li>
-              <li>🎉 Friends get <strong>250 XP</strong> bonus</li>
-              <li>🏆 Unlock exclusive achievements</li>
-            </ul>
+        <!-- Referral Code Box -->
+        <div class="referral-code-section">
+          <div class="code-label">Your Referral Code</div>
+          <div class="code-box">
+            <span class="referral-code">${code}</span>
+            <button class="copy-code-btn" onclick="navigator.clipboard.writeText('${shareUrl}').then(() => { this.innerHTML = '✓ Copied!'; this.classList.add('copied'); setTimeout(() => { this.innerHTML = '📋 Copy Link'; this.classList.remove('copied'); }, 2000); })">
+              📋 Copy Link
+            </button>
           </div>
+        </div>
 
-          <div class="referral-code-box">
-            <label>Your Referral Code</label>
-            <div class="code-display">
-              <span class="code">${code}</span>
-              <button class="copy-btn" onclick="navigator.clipboard.writeText('${shareUrl}').then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000); })">
-                Copy
-              </button>
+        <!-- Share Buttons -->
+        <div class="share-section">
+          <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent('Join me on TheGaming.co! Use my referral code ' + code + ' to get bonus XP! 🎮')}&url=${encodeURIComponent(shareUrl)}" target="_blank" class="share-btn-large twitter">
+            <span class="share-icon">𝕏</span>
+            <span class="share-text">Share on X</span>
+          </a>
+          <a href="https://wa.me/?text=${encodeURIComponent('Join me on TheGaming.co! 🎮 Use my code: ' + code + ' to get bonus XP! ' + shareUrl)}" target="_blank" class="share-btn-large whatsapp">
+            <span class="share-icon">💬</span>
+            <span class="share-text">WhatsApp</span>
+          </a>
+          <a href="mailto:?subject=${encodeURIComponent('Join me on TheGaming.co!')}&body=${encodeURIComponent('Hey! Join me on TheGaming.co and use my referral code ' + code + ' to get bonus XP! ' + shareUrl)}" class="share-btn-large email">
+            <span class="share-icon">📧</span>
+            <span class="share-text">Email</span>
+          </a>
+        </div>
+
+        <!-- Tier Progress -->
+        <div class="tier-section">
+          <div class="tier-header">
+            <div class="current-tier">
+              ${currentTier ? `<span class="tier-icon">${currentTier.icon}</span> ${currentTier.name}` : '🎯 Getting Started'}
             </div>
+            <div class="referral-count">${totalReferrals} referral${totalReferrals !== 1 ? 's' : ''}</div>
           </div>
-
-          <div class="referral-stats">
-            <div class="referral-stat">
-              <span class="stat-value">${stats.totalReferrals}</span>
-              <span class="stat-label">Friends Invited</span>
+          ${nextTier ? `
+            <div class="tier-progress">
+              <div class="tier-progress-bar">
+                <div class="tier-progress-fill" style="width: ${tierProgress}%"></div>
+              </div>
+              <div class="tier-next">
+                <span>${nextTier.icon} ${nextTier.name}</span>
+                <span>${nextTier.required - totalReferrals} more to go</span>
+              </div>
             </div>
-            <div class="referral-stat">
-              <span class="stat-value">${stats.totalReferrals * 500}</span>
-              <span class="stat-label">XP Earned</span>
-            </div>
+          ` : `
+            <div class="tier-max">🏆 Maximum tier reached!</div>
+          `}
+          <div class="tier-rewards">
+            ${tiers.map(t => `
+              <div class="tier-badge ${totalReferrals >= t.required ? 'unlocked' : 'locked'}">
+                <span class="tier-badge-icon">${t.icon}</span>
+                <span class="tier-badge-name">${t.name}</span>
+                <span class="tier-badge-req">${t.required}+</span>
+              </div>
+            `).join('')}
           </div>
+        </div>
 
-          <div class="share-buttons">
-            <a href="https://twitter.com/intent/tweet?text=Join%20me%20on%20TheGaming.co%20and%20get%20bonus%20XP!%20Use%20code%20${code}%20${encodeURIComponent(shareUrl)}" target="_blank" class="share-btn twitter">
-              Share on X
-            </a>
-            <a href="https://wa.me/?text=Join%20me%20on%20TheGaming.co%20and%20get%20bonus%20XP!%20Use%20my%20code%3A%20${code}%20${encodeURIComponent(shareUrl)}" target="_blank" class="share-btn whatsapp">
-              WhatsApp
-            </a>
+        <!-- Stats -->
+        <div class="referral-stats-row">
+          <div class="ref-stat">
+            <div class="ref-stat-value">${totalReferrals}</div>
+            <div class="ref-stat-label">Friends Invited</div>
+          </div>
+          <div class="ref-stat">
+            <div class="ref-stat-value">${(totalReferrals * 500).toLocaleString()}</div>
+            <div class="ref-stat-label">XP Earned</div>
+          </div>
+          <div class="ref-stat">
+            <div class="ref-stat-value">250</div>
+            <div class="ref-stat-label">Friend Bonus</div>
           </div>
         </div>
       </div>
@@ -784,18 +854,155 @@ const profileEngagementStyles = `
     color: rgba(255, 255, 255, 0.5);
   }
 
+  /* ========== CHALLENGES STYLES ========== */
+  .challenges-wrapper {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .challenge-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 4px;
+  }
+
+  .challenge-tab {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+  }
+
+  .challenge-tab:hover { color: rgba(255, 255, 255, 0.8); }
+  .challenge-tab.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+  .challenge-card {
+    display: flex;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+  }
+
+  .challenge-card:hover { border-color: rgba(255, 255, 255, 0.2); }
+  .challenge-card.completed { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.08); }
+
+  .challenge-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+
+  .challenge-content-inner { flex: 1; min-width: 0; }
+  .challenge-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .challenge-info h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .challenge-info p { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); }
+
+  .challenge-progress-bar { height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .challenge-progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); border-radius: 4px; transition: width 0.3s; }
+
+  .challenge-footer { display: flex; justify-content: space-between; align-items: center; }
+  .progress-text { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); }
+  .progress-percent { font-size: 0.8rem; color: rgba(255, 255, 255, 0.4); }
+  .completed-badge { color: #22c55e; font-weight: 600; font-size: 0.85rem; }
+
+  .xp-badge {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #000;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ========== REFERRAL STYLES ========== */
+  .referral-wrapper {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .how-it-works { margin-bottom: 24px; text-align: center; }
+  .how-it-works h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: rgba(255, 255, 255, 0.7); }
+  .steps { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .step { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 20px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; min-width: 100px; }
+  .step-number { width: 24px; height: 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+  .step-icon { font-size: 1.5rem; }
+  .step-text { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); }
+  .step-arrow { font-size: 1.2rem; color: rgba(255, 255, 255, 0.3); }
+
+  .referral-code-section { text-align: center; margin-bottom: 24px; }
+  .code-label { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .code-box { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 16px 24px; background: rgba(255, 255, 255, 0.05); border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; }
+  .referral-code { font-family: 'Bebas Neue', monospace; font-size: 2rem; letter-spacing: 4px; color: #fff; }
+  .copy-code-btn { padding: 10px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 8px; color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+  .copy-code-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+  .copy-code-btn.copied { background: linear-gradient(135deg, #22c55e, #16a34a); }
+
+  .share-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .share-btn-large { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-radius: 12px; text-decoration: none; transition: all 0.2s; font-weight: 600; }
+  .share-btn-large:hover { transform: translateY(-3px); }
+  .share-btn-large.twitter { background: #1da1f2; color: #fff; }
+  .share-btn-large.whatsapp { background: #25d366; color: #fff; }
+  .share-btn-large.email { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
+  .share-icon { font-size: 1.5rem; }
+  .share-text { font-size: 0.8rem; }
+
+  .tier-section { background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .tier-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .current-tier { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .tier-icon { font-size: 1.3rem; }
+  .referral-count { font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); }
+  .tier-progress { margin-bottom: 16px; }
+  .tier-progress-bar { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+  .tier-progress-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); border-radius: 5px; transition: width 0.3s; }
+  .tier-next { display: flex; justify-content: space-between; font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); }
+  .tier-max { text-align: center; color: #fbbf24; font-weight: 600; padding: 12px; }
+  .tier-rewards { display: flex; justify-content: space-between; gap: 8px; }
+  .tier-badge { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; transition: all 0.2s; }
+  .tier-badge.unlocked { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
+  .tier-badge.locked { opacity: 0.4; }
+  .tier-badge-icon { font-size: 1.3rem; }
+  .tier-badge-name { font-size: 0.7rem; font-weight: 600; }
+  .tier-badge-req { font-size: 0.65rem; color: rgba(255, 255, 255, 0.4); }
+
+  .referral-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .ref-stat { text-align: center; padding: 16px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; }
+  .ref-stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: #fff; margin-bottom: 4px; }
+  .ref-stat-label { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.5px; }
+
   @media (max-width: 600px) {
-    .profile-section {
-      padding: 16px;
-    }
-    
-    .achievements-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .share-buttons {
-      flex-direction: column;
-    }
+    .profile-section { padding: 16px; }
+    .achievements-grid { grid-template-columns: 1fr; }
+    .share-buttons { flex-direction: column; }
+    .steps { flex-direction: column; gap: 12px; }
+    .step-arrow { transform: rotate(90deg); }
+    .share-section { grid-template-columns: 1fr; }
+    .tier-rewards { flex-wrap: wrap; }
+    .tier-badge { min-width: calc(50% - 4px); }
+    .referral-stats-row { grid-template-columns: 1fr; }
+    .code-box { flex-direction: column; gap: 12px; }
+    .referral-code { font-size: 1.5rem; }
   }
 </style>
 `;

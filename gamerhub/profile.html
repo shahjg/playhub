@@ -333,6 +333,30 @@
     .stat-value { font-size: 1.6rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; margin-bottom: 4px; }
     .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
 
+    /* ========== GAME SCORE CARDS ========== */
+    #game-scores-grid { grid-template-columns: repeat(2, 1fr); }
+    .game-score-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--dark-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: all 0.2s ease;
+    }
+    .game-score-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+    .game-score-card.unplayed { opacity: 0.5; }
+    .game-score-card.played { border-color: rgba(34, 197, 94, 0.3); }
+    .game-icon { font-size: 1.8rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border-radius: 10px; flex-shrink: 0; }
+    .game-details { flex: 1; min-width: 0; }
+    .game-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .game-plays { font-size: 0.7rem; color: var(--text-muted); }
+    .game-score { text-align: right; }
+    .score-value { font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #22c55e; }
+    .game-score-card.unplayed .score-value { color: var(--text-muted); }
+    .score-unit { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+
     /* ========== FAVORITE GAMES ========== */
     .favorites-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
 
@@ -800,6 +824,7 @@
       }
 
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      #game-scores-grid { grid-template-columns: 1fr; }
       .favorites-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
       .premium-features { grid-template-columns: 1fr; }
@@ -1334,17 +1359,27 @@
       5905000, 6118000, 6335000, 6556000, 6781000, 7010000, 7243000, 7480000, 7721000, 7966000  // 91-100
     ];
 
-    // Solo games config - matches leaderboards.html exactly
+    // Solo games config - all games with icons
     const SOLO_GAMES = {
-      'reaction-time': { name: 'Reaction Time', unit: 'ms', ascending: true },
-      'typing-test-60': { name: 'Typing Test', unit: 'WPM', ascending: false },
-      'aim-trainer-30': { name: 'Aim Trainer', unit: 'ms', ascending: true },
-      'chimp-test': { name: 'Chimp Test', unit: 'Level', ascending: false },
-      'number-memory': { name: 'Number Memory', unit: 'Digits', ascending: false },
-      'sequence-memory': { name: 'Sequence Memory', unit: 'Level', ascending: false },
-      'visual-memory': { name: 'Visual Memory', unit: 'Level', ascending: false },
-      'verbal-memory': { name: 'Verbal Memory', unit: 'words', ascending: false },
-      'math-speed-add': { name: 'Math Speed', unit: 'solved', ascending: false }
+      'reaction-time': { name: 'Reaction Time', unit: 'ms', ascending: true, icon: '⚡' },
+      'typing-test-60': { name: 'Typing Test', unit: 'WPM', ascending: false, icon: '⌨️' },
+      'aim-trainer-30': { name: 'Aim Trainer', unit: 'ms', ascending: true, icon: '🎯' },
+      'chimp-test': { name: 'Chimp Test', unit: 'Level', ascending: false, icon: '🐵' },
+      'number-memory': { name: 'Number Memory', unit: 'Digits', ascending: false, icon: '🔢' },
+      'sequence-memory': { name: 'Sequence Memory', unit: 'Level', ascending: false, icon: '🔄' },
+      'visual-memory': { name: 'Visual Memory', unit: 'Level', ascending: false, icon: '👁️' },
+      'verbal-memory': { name: 'Verbal Memory', unit: 'words', ascending: false, icon: '📝' },
+      'math-speed-add': { name: 'Math Speed', unit: 'solved', ascending: false, icon: '➕' },
+      '2048': { name: '2048', unit: 'score', ascending: false, icon: '🔲' },
+      'snake': { name: 'Snake', unit: 'score', ascending: false, icon: '🐍' },
+      'sky-hop': { name: 'Sky Hop', unit: 'score', ascending: false, icon: '☁️' },
+      'stroop-test': { name: 'Stroop Test', unit: 'score', ascending: false, icon: '🎨' },
+      'minesweeper': { name: 'Minesweeper', unit: 'sec', ascending: true, icon: '💣' },
+      'sudoku': { name: 'Sudoku', unit: 'sec', ascending: true, icon: '🔢' },
+      'crossword': { name: 'Crossword', unit: 'score', ascending: false, icon: '📰' },
+      'word-search': { name: 'Word Search', unit: 'sec', ascending: true, icon: '🔍' },
+      'nonogram': { name: 'Nonogram', unit: 'sec', ascending: true, icon: '🖼️' },
+      'block-stack': { name: 'Block Stack', unit: 'score', ascending: false, icon: '🧱' }
     };
 
     const blockedWords = ['fuck', 'shit', 'ass', 'bitch', 'dick', 'pussy', 'cock', 'cunt', 'nigger', 'faggot', 'retard'];
@@ -1552,26 +1587,31 @@
         }
       }
 
-      return { gamesPlayed, playtime, personalBests, bestRank, favoriteGame, favoriteGamePlays, leastPlayedGame, totalWins, bestWinStreak, dayStreak, avgScore, gameScores };
+      return { gamesPlayed, playtime, personalBests, bestRank, favoriteGame, favoriteGamePlays, leastPlayedGame, totalWins, bestWinStreak, dayStreak, avgScore, gameScores, gameCounts };
     }
 
-    function renderGameScores(gameScores) {
+    function renderGameScores(gameScores, gameCounts = {}) {
       const container = document.getElementById('game-scores-grid');
       if (!container) return;
 
-      // Build HTML for all games, showing scores if available
+      // Build HTML for all games, showing icon, name, times played, best score
       let html = '';
       for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
         const score = gameScores[gameId];
+        const timesPlayed = gameCounts[gameId] || 0;
         const hasScore = score !== undefined && score !== null;
-        const displayScore = hasScore ? `${score.toLocaleString()} ${config.unit}` : 'Not played';
-        const cardClass = hasScore ? '' : 'unplayed';
 
         html += `
-          <div class="stat-card ${cardClass}" style="${!hasScore ? 'opacity: 0.5;' : ''}">
-            <div class="stat-value" style="font-size: 1.1rem;">${hasScore ? score.toLocaleString() : '--'}</div>
-            <div class="stat-label">${config.name}</div>
-            ${hasScore ? `<div class="stat-unit" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">${config.unit}</div>` : ''}
+          <div class="game-score-card ${hasScore ? 'played' : 'unplayed'}">
+            <div class="game-icon">${config.icon}</div>
+            <div class="game-details">
+              <div class="game-name">${config.name}</div>
+              <div class="game-plays">${timesPlayed} ${timesPlayed === 1 ? 'play' : 'plays'}</div>
+            </div>
+            <div class="game-score">
+              <div class="score-value">${hasScore ? score.toLocaleString() : '--'}</div>
+              <div class="score-unit">${hasScore ? config.unit : ''}</div>
+            </div>
           </div>
         `;
       }
@@ -1679,7 +1719,7 @@
       document.getElementById('stat-avg-score').textContent = stats.avgScore !== null ? stats.avgScore.toLocaleString() : '--';
 
       // Render per-game scores
-      renderGameScores(stats.gameScores);
+      renderGameScores(stats.gameScores, stats.gameCounts);
 
       // Favorite games
       if (stats.favoriteGame && SOLO_GAMES[stats.favoriteGame]) {
