@@ -126,87 +126,196 @@ class ProfileEngagementUI {
     `;
   }
 
-  renderAchievementsSection() {
+  async renderAchievementsSection() {
     const container = document.getElementById('achievements-container');
-    if (!container || !this.engagement) return;
+    if (!container) return;
 
-    const achievements = this.engagement.achievements;
-    const unlocked = this.engagement.unlockedAchievements;
-    
-    // Group by category
-    const categories = {};
-    achievements.forEach(a => {
-      if (!categories[a.category]) categories[a.category] = [];
-      categories[a.category].push(a);
-    });
+    // Fetch actual stats from solo_scores
+    const playerStats = await this.fetchPlayerStats();
 
-    const unlockedCount = unlocked.length;
-    const totalCount = achievements.filter(a => !a.is_hidden).length;
+    // Define all achievements with requirements
+    const achievements = [
+      // Play count achievements
+      { id: 'first-steps', icon: '👣', title: 'First Steps', description: 'Play your first game', category: 'milestone', rarity: 'common', xp: 25, type: 'games_played', target: 1 },
+      { id: 'getting-started', icon: '🎮', title: 'Getting Started', description: 'Play 10 games', category: 'milestone', rarity: 'common', xp: 50, type: 'games_played', target: 10 },
+      { id: 'dedicated', icon: '🏃', title: 'Dedicated Player', description: 'Play 50 games', category: 'milestone', rarity: 'uncommon', xp: 100, type: 'games_played', target: 50 },
+      { id: 'veteran', icon: '🎖️', title: 'Veteran', description: 'Play 100 games', category: 'milestone', rarity: 'rare', xp: 200, type: 'games_played', target: 100 },
+      { id: 'legend', icon: '👑', title: 'Living Legend', description: 'Play 500 games', category: 'milestone', rarity: 'legendary', xp: 500, type: 'games_played', target: 500 },
+
+      // Variety achievements
+      { id: 'explorer', icon: '🗺️', title: 'Explorer', description: 'Try 5 different games', category: 'variety', rarity: 'common', xp: 50, type: 'unique_games', target: 5 },
+      { id: 'jack-of-all', icon: '🃏', title: 'Jack of All Trades', description: 'Try 10 different games', category: 'variety', rarity: 'uncommon', xp: 100, type: 'unique_games', target: 10 },
+      { id: 'completionist', icon: '✅', title: 'Completionist', description: 'Play every game at least once', category: 'variety', rarity: 'rare', xp: 250, type: 'unique_games', target: 19 },
+
+      // Game-specific achievements - Reaction Time
+      { id: 'quick-reflex', icon: '⚡', title: 'Quick Reflexes', description: 'Get under 300ms in Reaction Time', category: 'skill', rarity: 'common', xp: 50, type: 'reaction-time', target: 300, compare: 'less' },
+      { id: 'lightning', icon: '🌩️', title: 'Lightning Fast', description: 'Get under 200ms in Reaction Time', category: 'skill', rarity: 'rare', xp: 150, type: 'reaction-time', target: 200, compare: 'less' },
+
+      // Game-specific achievements - Typing
+      { id: 'typist', icon: '⌨️', title: 'Typist', description: 'Reach 50 WPM in Typing Test', category: 'skill', rarity: 'common', xp: 50, type: 'typing-test-60', target: 50, compare: 'greater' },
+      { id: 'speed-typist', icon: '💨', title: 'Speed Typist', description: 'Reach 80 WPM in Typing Test', category: 'skill', rarity: 'uncommon', xp: 100, type: 'typing-test-60', target: 80, compare: 'greater' },
+      { id: 'keyboard-master', icon: '🏆', title: 'Keyboard Master', description: 'Reach 100 WPM in Typing Test', category: 'skill', rarity: 'epic', xp: 200, type: 'typing-test-60', target: 100, compare: 'greater' },
+
+      // Game-specific achievements - 2048
+      { id: '2048-256', icon: '🔲', title: '2048 Beginner', description: 'Reach the 256 tile in 2048', category: 'skill', rarity: 'common', xp: 50, type: '2048', target: 256, compare: 'greater' },
+      { id: '2048-512', icon: '🟨', title: '2048 Intermediate', description: 'Reach the 512 tile in 2048', category: 'skill', rarity: 'uncommon', xp: 100, type: '2048', target: 512, compare: 'greater' },
+      { id: '2048-1024', icon: '🟧', title: '2048 Advanced', description: 'Reach the 1024 tile in 2048', category: 'skill', rarity: 'rare', xp: 150, type: '2048', target: 1024, compare: 'greater' },
+      { id: '2048-winner', icon: '🏅', title: '2048 Master', description: 'Reach the 2048 tile!', category: 'skill', rarity: 'epic', xp: 300, type: '2048', target: 2048, compare: 'greater' },
+
+      // Game-specific achievements - Snake
+      { id: 'snake-50', icon: '🐍', title: 'Snake Charmer', description: 'Score 50+ in Snake', category: 'skill', rarity: 'common', xp: 50, type: 'snake', target: 50, compare: 'greater' },
+      { id: 'snake-100', icon: '🐍', title: 'Snake Master', description: 'Score 100+ in Snake', category: 'skill', rarity: 'uncommon', xp: 100, type: 'snake', target: 100, compare: 'greater' },
+      { id: 'snake-200', icon: '🐉', title: 'Snake Legend', description: 'Score 200+ in Snake', category: 'skill', rarity: 'rare', xp: 200, type: 'snake', target: 200, compare: 'greater' },
+
+      // Memory achievements
+      { id: 'memory-5', icon: '🧠', title: 'Good Memory', description: 'Reach level 5 in Sequence Memory', category: 'skill', rarity: 'common', xp: 50, type: 'sequence-memory', target: 5, compare: 'greater' },
+      { id: 'memory-10', icon: '🧠', title: 'Great Memory', description: 'Reach level 10 in Sequence Memory', category: 'skill', rarity: 'uncommon', xp: 100, type: 'sequence-memory', target: 10, compare: 'greater' },
+      { id: 'chimp-10', icon: '🐵', title: 'Chimp Challenger', description: 'Reach level 10 in Chimp Test', category: 'skill', rarity: 'rare', xp: 150, type: 'chimp-test', target: 10, compare: 'greater' },
+
+      // Aim Trainer
+      { id: 'sharpshooter', icon: '🎯', title: 'Sharpshooter', description: 'Get under 400ms average in Aim Trainer', category: 'skill', rarity: 'uncommon', xp: 100, type: 'aim-trainer-30', target: 400, compare: 'less' },
+    ];
+
+    // Check which achievements are unlocked
+    const checkedAchievements = achievements.map(a => ({
+      ...a,
+      ...this.checkAchievement(a, playerStats)
+    }));
+
+    const unlockedCount = checkedAchievements.filter(a => a.unlocked).length;
+    const totalCount = achievements.length;
 
     container.innerHTML = `
-      <div class="profile-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="section-icon">🏆</span>
-            ACHIEVEMENTS
-          </h2>
-          <span class="achievement-count">${unlockedCount} / ${totalCount}</span>
+      <div class="achievements-wrapper">
+        <div class="achievements-header">
+          <span class="achievements-count">${unlockedCount} / ${totalCount} Unlocked</span>
+          <div class="achievements-xp">🏆 ${checkedAchievements.filter(a => a.unlocked).reduce((sum, a) => sum + a.xp, 0)} XP earned</div>
         </div>
 
         <div class="achievements-grid">
-          ${achievements.map(a => this.renderAchievementCard(a)).join('')}
+          ${checkedAchievements.map(a => this.renderAchievementCard(a)).join('')}
         </div>
       </div>
     `;
+  }
 
-    // Claim buttons
-    container.querySelectorAll('.achievement-claim-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const result = await this.engagement.claimAchievementReward(btn.dataset.achievementId);
-        if (result?.success) {
-          this.renderAchievementsSection();
+  async fetchPlayerStats() {
+    if (!this.supabase || !this.currentUser) {
+      return { gamesPlayed: 0, uniqueGames: 0, gameScores: {} };
+    }
+
+    try {
+      // Fetch all solo_scores for this user
+      const { data: entries, error } = await this.supabase
+        .from('solo_scores')
+        .select('game_id, score')
+        .eq('user_id', this.currentUser.id);
+
+      if (error || !entries) {
+        console.error('[Achievements] Error fetching stats:', error);
+        return { gamesPlayed: 0, uniqueGames: 0, gameScores: {} };
+      }
+
+      // Calculate stats
+      const gamesPlayed = entries.length;
+      const gameScores = {};
+      const gameCounts = {};
+
+      entries.forEach(e => {
+        gameCounts[e.game_id] = (gameCounts[e.game_id] || 0) + 1;
+
+        // Track best scores (lower is better for time-based, higher for score-based)
+        const isTimeBased = ['reaction-time', 'aim-trainer-30', 'minesweeper', 'sudoku', 'word-search', 'nonogram'].includes(e.game_id);
+
+        if (!gameScores[e.game_id]) {
+          gameScores[e.game_id] = e.score;
+        } else if (isTimeBased) {
+          gameScores[e.game_id] = Math.min(gameScores[e.game_id], e.score);
+        } else {
+          gameScores[e.game_id] = Math.max(gameScores[e.game_id], e.score);
         }
       });
-    });
+
+      const uniqueGames = Object.keys(gameCounts).length;
+
+      console.log('[Achievements] Player stats:', { gamesPlayed, uniqueGames, gameScores });
+
+      return { gamesPlayed, uniqueGames, gameScores, gameCounts };
+    } catch (err) {
+      console.error('[Achievements] Exception:', err);
+      return { gamesPlayed: 0, uniqueGames: 0, gameScores: {} };
+    }
+  }
+
+  checkAchievement(achievement, stats) {
+    let progress = 0;
+    let unlocked = false;
+    let currentValue = 0;
+
+    switch (achievement.type) {
+      case 'games_played':
+        currentValue = stats.gamesPlayed || 0;
+        progress = Math.min(currentValue / achievement.target, 1);
+        unlocked = currentValue >= achievement.target;
+        break;
+
+      case 'unique_games':
+        currentValue = stats.uniqueGames || 0;
+        progress = Math.min(currentValue / achievement.target, 1);
+        unlocked = currentValue >= achievement.target;
+        break;
+
+      default:
+        // Game-specific achievement - check best score
+        const score = stats.gameScores?.[achievement.type];
+        if (score !== undefined) {
+          currentValue = score;
+          if (achievement.compare === 'less') {
+            // Lower is better (reaction time, aim trainer)
+            unlocked = score <= achievement.target;
+            progress = unlocked ? 1 : Math.min(achievement.target / score, 0.99);
+          } else {
+            // Higher is better (typing, 2048, snake)
+            unlocked = score >= achievement.target;
+            progress = Math.min(score / achievement.target, 1);
+          }
+        }
+        break;
+    }
+
+    return { unlocked, progress, currentValue };
   }
 
   renderAchievementCard(achievement) {
-    const isUnlocked = this.engagement.isAchievementUnlocked(achievement.id);
-    const unlockData = this.engagement.unlockedAchievements.find(u => u.achievement_id === achievement.id);
-    const progress = this.engagement.getAchievementProgress(achievement);
-    const progressPercent = Math.round(progress * 100);
-
-    if (achievement.is_hidden && !isUnlocked) {
-      return `
-        <div class="achievement-card locked hidden-achievement">
-          <div class="achievement-icon">❓</div>
-          <div class="achievement-info">
-            <h4>Hidden Achievement</h4>
-            <p>Keep playing to discover!</p>
-          </div>
-        </div>
-      `;
-    }
+    const progressPercent = Math.round(achievement.progress * 100);
+    const rarityColors = {
+      common: '#9ca3af',
+      uncommon: '#22c55e',
+      rare: '#3b82f6',
+      epic: '#a855f7',
+      legendary: '#fbbf24'
+    };
 
     return `
-      <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
-        <div class="achievement-icon">${achievement.icon}</div>
-        <div class="achievement-info">
-          <h4>${achievement.title}</h4>
-          <p>${achievement.description}</p>
+      <div class="achievement-card ${achievement.unlocked ? 'unlocked' : 'locked'}">
+        ${achievement.unlocked ? '<div class="achievement-checkmark">✓</div>' : ''}
+        <div class="achievement-icon-wrapper ${achievement.unlocked ? 'unlocked' : ''}">
+          <span class="achievement-icon">${achievement.icon}</span>
+        </div>
+        <div class="achievement-details">
+          <h4 class="achievement-title">${achievement.title}</h4>
+          <p class="achievement-desc">${achievement.description}</p>
           <div class="achievement-meta">
-            <span class="rarity rarity-${achievement.rarity}">${achievement.rarity}</span>
-            <span class="xp-reward">+${achievement.xp_reward} XP</span>
+            <span class="achievement-rarity" style="color: ${rarityColors[achievement.rarity]}">${achievement.rarity}</span>
+            <span class="achievement-xp">+${achievement.xp} XP</span>
           </div>
-          ${!isUnlocked ? `
-            <div class="achievement-progress">
+          ${!achievement.unlocked ? `
+            <div class="achievement-progress-bar">
               <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
             </div>
-            <span class="progress-percent">${progressPercent}%</span>
-          ` : unlockData && !unlockData.reward_claimed ? `
-            <button class="achievement-claim-btn" data-achievement-id="${achievement.id}">Claim</button>
+            <div class="achievement-progress-text">${progressPercent}%</div>
           ` : `
-            <span class="unlocked-date">Unlocked!</span>
+            <div class="achievement-unlocked-badge">🎉 Unlocked!</div>
           `}
         </div>
       </div>
@@ -990,6 +1099,78 @@ const profileEngagementStyles = `
   .ref-stat { text-align: center; padding: 16px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; }
   .ref-stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: #fff; margin-bottom: 4px; }
   .ref-stat-label { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ========== ACHIEVEMENTS STYLES ========== */
+  .achievements-wrapper { background: rgba(255, 255, 255, 0.02); border-radius: 16px; padding: 20px; }
+  .achievements-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+  .achievements-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 1px; }
+  .achievements-xp { font-size: 0.9rem; color: #fbbf24; font-weight: 600; }
+
+  .achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+  .achievement-card {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 16px;
+    transition: all 0.3s ease;
+  }
+
+  .achievement-card.locked { opacity: 0.6; filter: grayscale(0.3); }
+  .achievement-card.unlocked {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(255, 255, 255, 0.03));
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.15);
+  }
+  .achievement-card.unlocked:hover { box-shadow: 0 0 30px rgba(251, 191, 36, 0.25); transform: translateY(-2px); }
+
+  .achievement-checkmark {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(34, 197, 94, 0.4);
+  }
+
+  .achievement-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .achievement-icon-wrapper.unlocked { background: rgba(251, 191, 36, 0.2); }
+  .achievement-icon { font-size: 1.8rem; }
+
+  .achievement-details { flex: 1; min-width: 0; }
+  .achievement-title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .achievement-desc { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); margin-bottom: 8px; }
+
+  .achievement-meta { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .achievement-rarity { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .achievement-xp { font-size: 0.75rem; color: #6366f1; font-weight: 600; }
+
+  .achievement-progress-bar { height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+  .achievement-progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 3px; transition: width 0.3s; }
+  .achievement-progress-text { font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); }
+
+  .achievement-unlocked-badge { font-size: 0.85rem; color: #22c55e; font-weight: 600; }
 
   @media (max-width: 600px) {
     .profile-section { padding: 16px; }
