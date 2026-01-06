@@ -224,7 +224,7 @@ class ProfileEngagementUI {
   }
 
   async renderReferralSection() {
-    const container = document.getElementById('referral-container');
+    const container = document.getElementById('referrals-container');
     if (!container || !this.engagement) return;
 
     const code = await this.engagement.getReferralCode();

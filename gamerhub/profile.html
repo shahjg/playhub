@@ -974,6 +974,23 @@
             <div class="stat-card"><div class="stat-value" id="stat-playtime-2">0m</div><div class="stat-label">Playtime</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-personal-bests-2">0</div><div class="stat-label">Personal Bests</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-best-rank-2">#--</div><div class="stat-label">Best Rank</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-total-wins">0</div><div class="stat-label">Total Wins</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-win-streak">0</div><div class="stat-label">Best Win Streak</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-day-streak">0</div><div class="stat-label">Login Streak</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-avg-score">--</div><div class="stat-label">Avg Score</div></div>
+          </div>
+
+          <div class="section-header" style="margin-top: 30px;">
+            <h2 class="section-title" style="font-size: 1.2rem;">GAME SCORES</h2>
+            <p class="section-subtitle">Your best scores for each game</p>
+          </div>
+          <div id="game-scores-grid" class="stats-grid">
+            <div style="text-align: center; padding: 20px; color: var(--text-muted); grid-column: 1 / -1;">Loading game scores...</div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Your Leaderboard Rankings</h3>
+            <div class="ranks-grid" id="leaderboard-ranks"></div>
           </div>
         </div>
       </section>
@@ -1429,7 +1446,7 @@
     // COMPUTE STATS FROM ACTUAL DATA (solo_scores table)
     // =====================================
     async function computeStatsFromData() {
-      if (!currentUser) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
+      if (!currentUser) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null, totalWins: 0, bestWinStreak: 0, dayStreak: 0, avgScore: null, gameScores: {} };
 
       // Get all solo_scores entries for this user
       const { data: entries, error } = await supabaseClient
@@ -1437,16 +1454,52 @@
         .select('game_id, score, created_at')
         .eq('user_id', currentUser.id);
 
+      // Get user_stats for additional data (wins, streaks)
+      const { data: userStats } = await supabaseClient
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      const totalWins = userStats?.total_wins || 0;
+      const bestWinStreak = userStats?.best_win_streak || 0;
+      const dayStreak = userStats?.daily_login_streak || currentProfile?.current_streak || 0;
+
       if (error || !entries || entries.length === 0) {
-        return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null };
+        return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null, totalWins, bestWinStreak, dayStreak, avgScore: null, gameScores: {} };
       }
 
       // Count games played (total entries)
       const gamesPlayed = entries.length;
 
-      // Count plays per game
+      // Count plays per game and track best scores
       const gameCounts = {};
-      entries.forEach(e => { gameCounts[e.game_id] = (gameCounts[e.game_id] || 0) + 1; });
+      const gameScores = {};
+      entries.forEach(e => {
+        gameCounts[e.game_id] = (gameCounts[e.game_id] || 0) + 1;
+        const config = SOLO_GAMES[e.game_id];
+        if (config) {
+          if (!gameScores[e.game_id]) {
+            gameScores[e.game_id] = e.score;
+          } else if (config.ascending) {
+            gameScores[e.game_id] = Math.min(gameScores[e.game_id], e.score);
+          } else {
+            gameScores[e.game_id] = Math.max(gameScores[e.game_id], e.score);
+          }
+        }
+      });
+
+      // Calculate average score (normalized)
+      let totalNormalized = 0, scoreCount = 0;
+      Object.entries(gameScores).forEach(([gameId, score]) => {
+        const config = SOLO_GAMES[gameId];
+        if (config) {
+          scoreCount++;
+          // Simple normalization - just count valid scores
+          totalNormalized += score;
+        }
+      });
+      const avgScore = scoreCount > 0 ? Math.round(totalNormalized / scoreCount) : null;
 
       // Find favorite (most played) and least played
       let favoriteGame = null, favoriteGamePlays = 0, leastPlayedGame = null, leastPlays = Infinity;
@@ -1462,7 +1515,7 @@
       if (unplayedGame) leastPlayedGame = unplayedGame;
 
       // Playtime estimation (assume ~30 seconds per game on average)
-      const playtime = Math.round(gamesPlayed * 0.5); // in minutes
+      const playtime = userStats?.total_playtime_minutes || Math.round(gamesPlayed * 0.5); // in minutes
 
       // Personal bests - count unique games played
       const personalBests = Object.keys(gameCounts).length;
@@ -1471,7 +1524,7 @@
       let bestRank = null;
       for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
         if (!gameCounts[gameId]) continue;
-        
+
         // Get user's best score for this game
         const { data: userBest } = await supabaseClient
           .from('solo_scores')
@@ -1489,17 +1542,41 @@
             .select('user_id', { count: 'exact', head: true })
             .eq('game_id', gameId)
             .neq('user_id', currentUser.id);
-          
+
           if (config.ascending) { countQuery = countQuery.lt('score', userBest.score); }
           else { countQuery = countQuery.gt('score', userBest.score); }
-          
+
           const { count } = await countQuery;
           const rank = (count || 0) + 1;
           if (bestRank === null || rank < bestRank) bestRank = rank;
         }
       }
 
-      return { gamesPlayed, playtime, personalBests, bestRank, favoriteGame, favoriteGamePlays, leastPlayedGame };
+      return { gamesPlayed, playtime, personalBests, bestRank, favoriteGame, favoriteGamePlays, leastPlayedGame, totalWins, bestWinStreak, dayStreak, avgScore, gameScores };
+    }
+
+    function renderGameScores(gameScores) {
+      const container = document.getElementById('game-scores-grid');
+      if (!container) return;
+
+      // Build HTML for all games, showing scores if available
+      let html = '';
+      for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
+        const score = gameScores[gameId];
+        const hasScore = score !== undefined && score !== null;
+        const displayScore = hasScore ? `${score.toLocaleString()} ${config.unit}` : 'Not played';
+        const cardClass = hasScore ? '' : 'unplayed';
+
+        html += `
+          <div class="stat-card ${cardClass}" style="${!hasScore ? 'opacity: 0.5;' : ''}">
+            <div class="stat-value" style="font-size: 1.1rem;">${hasScore ? score.toLocaleString() : '--'}</div>
+            <div class="stat-label">${config.name}</div>
+            ${hasScore ? `<div class="stat-unit" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">${config.unit}</div>` : ''}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: var(--text-muted); grid-column: 1 / -1;">No game scores yet. Play some games to see your scores here!</div>';
     }
 
     async function loadProfile() {
@@ -1594,6 +1671,15 @@
       document.getElementById('stat-playtime-2').textContent = playtime;
       document.getElementById('stat-personal-bests-2').textContent = stats.personalBests;
       document.getElementById('stat-best-rank-2').textContent = bestRankDisplay;
+
+      // Additional stats
+      document.getElementById('stat-total-wins').textContent = stats.totalWins.toLocaleString();
+      document.getElementById('stat-win-streak').textContent = stats.bestWinStreak;
+      document.getElementById('stat-day-streak').textContent = stats.dayStreak;
+      document.getElementById('stat-avg-score').textContent = stats.avgScore !== null ? stats.avgScore.toLocaleString() : '--';
+
+      // Render per-game scores
+      renderGameScores(stats.gameScores);
 
       // Favorite games
       if (stats.favoriteGame && SOLO_GAMES[stats.favoriteGame]) {
@@ -1790,12 +1876,12 @@
   <script>
     // Initialize engagement UI on page load
     window.profileEngagementUI = null;
-    
+
     async function initEngagementUI() {
       console.log('[Profile] initEngagementUI called');
       console.log('[Profile] ProfileEngagementUI:', !!window.ProfileEngagementUI);
       console.log('[Profile] supabaseClient:', !!window.supabaseClient);
-      
+
       if (!window.profileEngagementUI && window.ProfileEngagementUI && window.supabaseClient) {
         try {
           window.profileEngagementUI = new ProfileEngagementUI(window.supabaseClient);
@@ -1807,20 +1893,20 @@
       }
       return window.profileEngagementUI;
     }
-    
+
     // Initialize when supabase is ready
     async function startEngagement() {
       console.log('[Profile] startEngagement called');
-      
+
       // Wait for supabase
       let tries = 0;
       while (!window.supabaseClient && tries < 50) {
         await new Promise(r => setTimeout(r, 100));
         tries++;
       }
-      
+
       console.log('[Profile] supabaseClient ready after', tries, 'tries:', !!window.supabaseClient);
-      
+
       if (window.supabaseClient) {
         const ui = await initEngagementUI();
         if (ui) {
@@ -1843,24 +1929,24 @@
         console.error('[Profile] supabaseClient not available');
       }
     }
-    
+
     // Start engagement UI
     startEngagement();
-    
+
     // Sidebar navigation - switch sections
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
       btn.addEventListener('click', async () => {
         const section = btn.dataset.section;
-        
+
         // Update active button
         document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
+
         // Update active section
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
         const targetSection = document.getElementById(section + '-section');
         if (targetSection) targetSection.classList.add('active');
-        
+
         // Render engagement content if needed (in case not yet loaded)
         const ui = window.profileEngagementUI;
         if (ui) {
