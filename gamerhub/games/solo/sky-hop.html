@@ -16,7 +16,6 @@
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
             --accent:#38bdf8;--accent-dark:#0284c7;--accent-light:#e0f2fe;
-            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;
             --gold:#ffd700;--text-dark:#1a1a2e;--text-muted:#6b7280;
         }
         html,body{overscroll-behavior:none;touch-action:manipulation}
@@ -191,16 +190,15 @@ const ctx=canvas.getContext('2d');
 const W=canvas.width;
 const H=canvas.height;
 
-// Game constants - BALANCED FOR PLAYABILITY
-const GRAVITY=0.32;
-const JUMP=-6.2;
-const PIPE_SPEED=1.6;
-const PIPE_GAP=165;
-const PIPE_WIDTH=52;
-const PIPE_INTERVAL=140;
+// EASY MODE - very forgiving settings
+const GRAVITY=0.25;        // Very slow fall
+const JUMP=-5.5;           // Gentle jump
+const PIPE_SPEED=1.3;      // Very slow pipes
+const PIPE_GAP=180;        // Big gap to fly through
+const PIPE_WIDTH=50;
+const PIPE_INTERVAL=170;   // Lots of time between pipes
 const GROUND_HEIGHT=50;
 
-// Game state
 let gameState='idle';
 let score=0;
 let bestScore=parseInt(localStorage.getItem('skyhop_best')||'0');
@@ -209,28 +207,22 @@ let currentUserId=null;
 let friendIds=[];
 let currentTab='global';
 
-// Bird - starts higher up
-let bird={x:70,y:H*0.35,vy:0,radius:16,rotation:0};
-
-// Pipes
+let bird={x:70,y:H*0.4,vy:0,radius:16,rotation:0};
 let pipes=[];
 let pipeTimer=0;
 
-// Clouds
 let clouds=[];
 for(let i=0;i<6;i++){
     clouds.push({
         x:Math.random()*W,
         y:30+Math.random()*(H*0.4),
         size:25+Math.random()*35,
-        speed:0.2+Math.random()*0.3
+        speed:0.15+Math.random()*0.2
     });
 }
 
-// Particles
 let particles=[];
 
-// UI
 const overlay=document.getElementById('overlay');
 const overlayTitle=document.getElementById('overlay-title');
 const overlayScore=document.getElementById('overlay-score');
@@ -293,8 +285,8 @@ function drawBird(){
     ctx.save();
     ctx.translate(bird.x,bird.y);
     
-    const targetRotation=Math.min(Math.max(bird.vy*3,-30),70);
-    bird.rotation+=(targetRotation-bird.rotation)*0.15;
+    const targetRotation=Math.min(Math.max(bird.vy*4,-25),60);
+    bird.rotation+=(targetRotation-bird.rotation)*0.12;
     ctx.rotate(bird.rotation*Math.PI/180);
     
     const r=bird.radius;
@@ -435,7 +427,7 @@ function update(){
     });
     
     if(gameState==='ready'){
-        bird.y=H*0.35+Math.sin(Date.now()/300)*8;
+        bird.y=H*0.4+Math.sin(Date.now()/300)*10;
         bird.vy=0;
         return;
     }
@@ -448,8 +440,8 @@ function update(){
     pipeTimer++;
     if(pipeTimer>=PIPE_INTERVAL){
         pipeTimer=0;
-        const minTop=80;
-        const maxTop=H-PIPE_GAP-GROUND_HEIGHT-80;
+        const minTop=70;
+        const maxTop=H-PIPE_GAP-GROUND_HEIGHT-70;
         const topHeight=minTop+Math.random()*(maxTop-minTop);
         pipes.push({x:W,topHeight,passed:false});
     }
@@ -471,7 +463,8 @@ function update(){
         return;
     }
     
-    const hitbox=bird.radius-3;
+    // Very forgiving hitbox
+    const hitbox=bird.radius-5;
     for(const pipe of pipes){
         if(bird.x+hitbox>pipe.x&&bird.x-hitbox<pipe.x+PIPE_WIDTH){
             if(bird.y-hitbox<pipe.topHeight||bird.y+hitbox>pipe.topHeight+PIPE_GAP){
@@ -500,7 +493,7 @@ function gameLoop(){
 function startGame(){
     gameState='ready';
     score=0;
-    bird={x:70,y:H*0.35,vy:0,radius:16,rotation:0};
+    bird={x:70,y:H*0.4,vy:0,radius:16,rotation:0};
     pipes=[];
     pipeTimer=0;
     particles=[];
