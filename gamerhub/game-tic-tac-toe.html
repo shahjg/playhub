@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tic Tac Toe - TheGaming.co</title>
+    <meta name="description" content="Play Tic Tac Toe online for free. Classic 2-player game - get three in a row to win!">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="/header.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #fafbff; 
+            color: #1a1a1a; 
+            overflow-x: hidden; 
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
+        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
+        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
+        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
+        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 80px 20px 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 30px; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        .back-btn:hover { color: #1a1a1a; }
+
+        .game-header { text-align: center; margin-bottom: 30px; }
+        .game-title { font-size: 3.5rem; margin-bottom: 10px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
+        .game-subtitle { font-size: 1.1rem; color: #666; }
+
+        .scoreboard { 
+            display: flex; 
+            justify-content: center; 
+            gap: 40px; 
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px 40px;
+            border: 3px solid #1a1a1a;
+            box-shadow: 5px 5px 0 #e0e0e0;
+        }
+        .score-item { text-align: center; }
+        .score-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #666; letter-spacing: 1px; }
+        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: #ff6b9d; }
+        .score-item.active .score-label { color: #ff6b9d; }
+
+        .turn-indicator {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .turn-indicator span { color: #ff6b9d; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 350px;
+            margin: 0 auto 30px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            background: white;
+            border: 3px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 4px 4px 0 #e0e0e0;
+            aspect-ratio: 1;
+        }
+
+        .cell:hover:not(.taken) {
+            background: #fff5f8;
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #e0e0e0;
+        }
+
+        .cell:active:not(.taken) {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 #e0e0e0;
+        }
+
+        .cell.taken { cursor: default; }
+        .cell.x { color: #ff6b9d; }
+        .cell.o { color: #4facfe; }
+        .cell.winner { 
+            background: linear-gradient(135deg, #ff6b9d20 0%, #c4456920 100%);
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .game-message {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+        .game-message.winner { color: #ff6b9d; }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 15px 30px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            border: 3px solid #1a1a1a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 50px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border-color: #8b2e47;
+            box-shadow: 5px 5px 0 #8b2e47;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            color: #1a1a1a;
+            box-shadow: 5px 5px 0 #e0e0e0;
+        }
+
+        .action-btn:hover {
+            transform: translate(2px, 2px);
+        }
+        .action-btn.primary:hover { box-shadow: 3px 3px 0 #8b2e47; }
+        .action-btn.secondary:hover { box-shadow: 3px 3px 0 #e0e0e0; }
+
+        @media (max-width: 500px) {
+            .container { padding: 70px 15px 30px; }
+            .game-title { font-size: 2.8rem; }
+            .board { max-width: 280px; gap: 8px; }
+            .cell { font-size: 3rem; border-width: 2px; }
+            .scoreboard { gap: 20px; padding: 15px 20px; }
+            .score-value { font-size: 2rem; }
+            .game-message { font-size: 2rem; }
+        }
+
+        @supports (padding: max(0px)) {
+            .container { padding-top: max(80px, calc(env(safe-area-inset-top) + 70px)); }
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="container">
+        <div class="game-nav">
+            <a href="/duos.html" class="back-btn">← Back to Duos</a>
+        </div>
+
+        <div class="game-header">
+            <h1 class="game-title">TIC TAC TOE</h1>
+            <p class="game-subtitle">Get three in a row to win!</p>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-item" id="scoreX">
+                <div class="score-label">PLAYER X</div>
+                <div class="score-value" id="scoreXValue">0</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">DRAWS</div>
+                <div class="score-value" id="scoreDraws">0</div>
+            </div>
+            <div class="score-item" id="scoreO">
+                <div class="score-label">PLAYER O</div>
+                <div class="score-value" id="scoreOValue">0</div>
+            </div>
+        </div>
+
+        <div class="turn-indicator" id="turnIndicator">
+            <span>X</span>'S TURN
+        </div>
+
+        <div class="board" id="board"></div>
+
+        <div class="game-message" id="gameMessage"></div>
+
+        <div class="actions">
+            <button class="action-btn primary" onclick="resetGame()">NEW GAME</button>
+            <button class="action-btn secondary" onclick="resetScores()">RESET SCORES</button>
+        </div>
+    </div>
+
+    <script>
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let scores = { X: 0, O: 0, draws: 0 };
+
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+            [0, 4, 8], [2, 4, 6] // diagonals
+        ];
+
+        function init() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleCellClick(i));
+                boardEl.appendChild(cell);
+            }
+            
+            updateTurnIndicator();
+        }
+
+        function handleCellClick(index) {
+            if (!gameActive || board[index] !== '') return;
+
+            board[index] = currentPlayer;
+            const cell = document.querySelector(`[data-index="${index}"]`);
+            cell.textContent = currentPlayer;
+            cell.classList.add('taken', currentPlayer.toLowerCase());
+
+            const winner = checkWinner();
+            if (winner) {
+                gameActive = false;
+                highlightWinner(winner.pattern);
+                scores[currentPlayer]++;
+                updateScores();
+                showMessage(`PLAYER ${currentPlayer} WINS!`, true);
+                document.getElementById(`score${currentPlayer}`).classList.add('active');
+            } else if (board.every(cell => cell !== '')) {
+                gameActive = false;
+                scores.draws++;
+                updateScores();
+                showMessage("IT'S A DRAW!");
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updateTurnIndicator();
+            }
+        }
+
+        function checkWinner() {
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return { winner: board[a], pattern };
+                }
+            }
+            return null;
+        }
+
+        function highlightWinner(pattern) {
+            pattern.forEach(index => {
+                document.querySelector(`[data-index="${index}"]`).classList.add('winner');
+            });
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            indicator.innerHTML = `<span>${currentPlayer}</span>'S TURN`;
+            
+            document.getElementById('scoreX').classList.toggle('active', currentPlayer === 'X');
+            document.getElementById('scoreO').classList.toggle('active', currentPlayer === 'O');
+        }
+
+        function showMessage(msg, isWinner = false) {
+            const messageEl = document.getElementById('gameMessage');
+            messageEl.textContent = msg;
+            messageEl.className = 'game-message' + (isWinner ? ' winner' : '');
+            document.getElementById('turnIndicator').style.visibility = 'hidden';
+        }
+
+        function updateScores() {
+            document.getElementById('scoreXValue').textContent = scores.X;
+            document.getElementById('scoreOValue').textContent = scores.O;
+            document.getElementById('scoreDraws').textContent = scores.draws;
+        }
+
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            
+            document.getElementById('gameMessage').textContent = '';
+            document.getElementById('turnIndicator').style.visibility = 'visible';
+            document.getElementById('scoreX').classList.remove('active');
+            document.getElementById('scoreO').classList.remove('active');
+            
+            init();
+        }
+
+        function resetScores() {
+            scores = { X: 0, O: 0, draws: 0 };
+            updateScores();
+            resetGame();
+        }
+
+        window.onload = init;
+    </script>
+    
+    <script>
+        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
+    </script>
+    <script src="/header.js"></script>
+    <script src="/js/engagement.js"></script>
+</body>
+</html>

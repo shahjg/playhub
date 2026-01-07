@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Reaction Race - TheGaming.co</title>
+    <meta name="description" content="Test your reflexes! Who can react faster when the screen turns green?">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="/header.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #fafbff; 
+            color: #1a1a1a; 
+            overflow-x: hidden; 
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 80px 20px 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 30px; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        .back-btn:hover { color: #1a1a1a; }
+
+        .game-header { text-align: center; margin-bottom: 25px; }
+        .game-title { font-size: 3rem; margin-bottom: 8px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
+        .game-subtitle { font-size: 1rem; color: #666; }
+
+        .scoreboard { 
+            display: flex; 
+            justify-content: center; 
+            gap: 40px; 
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px 40px;
+            border: 3px solid #1a1a1a;
+            box-shadow: 5px 5px 0 #e0e0e0;
+        }
+        .score-item { text-align: center; }
+        .score-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: #666; letter-spacing: 1px; }
+        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: #1a1a1a; }
+        .score-item.p1 .score-label { color: #ff6b9d; }
+        .score-item.p2 .score-label { color: #4facfe; }
+
+        .game-area {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            height: 350px;
+        }
+
+        .player-zone {
+            flex: 1;
+            border: 4px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .player-zone.p1 {
+            background: #ff6b9d;
+            box-shadow: 6px 6px 0 #c44569;
+        }
+
+        .player-zone.p2 {
+            background: #4facfe;
+            box-shadow: 6px 6px 0 #3498db;
+        }
+
+        .player-zone.waiting {
+            background: #ff4444 !important;
+        }
+
+        .player-zone.ready {
+            background: #22c55e !important;
+        }
+
+        .player-zone.winner {
+            animation: winFlash 0.3s ease-in-out 3;
+        }
+
+        .player-zone.too-early {
+            background: #666 !important;
+        }
+
+        @keyframes winFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .player-zone .zone-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: white;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+
+        .player-zone .zone-instruction {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+            text-align: center;
+            padding: 0 15px;
+        }
+
+        .player-zone .reaction-time {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: white;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+
+        .game-status {
+            text-align: center;
+            background: white;
+            border: 3px solid #1a1a1a;
+            padding: 20px;
+            box-shadow: 5px 5px 0 #e0e0e0;
+            margin-bottom: 25px;
+        }
+
+        .status-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            color: #1a1a1a;
+        }
+
+        .status-text.winner { color: #22c55e; }
+        .status-text.too-early { color: #ff4444; }
+
+        .round-info {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 15px 30px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            border: 3px solid #1a1a1a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 50px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border-color: #8b2e47;
+            box-shadow: 5px 5px 0 #8b2e47;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            color: #1a1a1a;
+            box-shadow: 5px 5px 0 #e0e0e0;
+        }
+
+        .action-btn:hover { transform: translate(2px, 2px); }
+        .action-btn.primary:hover { box-shadow: 3px 3px 0 #8b2e47; }
+        .action-btn.secondary:hover { box-shadow: 3px 3px 0 #e0e0e0; }
+
+        @media (max-width: 500px) {
+            .container { padding: 70px 12px 30px; }
+            .game-title { font-size: 2.3rem; }
+            .game-area { height: 300px; gap: 10px; }
+            .player-zone .zone-label { font-size: 1.5rem; }
+            .player-zone .reaction-time { font-size: 2.2rem; }
+            .scoreboard { gap: 25px; padding: 15px 20px; }
+            .score-value { font-size: 2rem; }
+            .status-text { font-size: 1.5rem; }
+        }
+
+        @supports (padding: max(0px)) {
+            .container { padding-top: max(80px, calc(env(safe-area-inset-top) + 70px)); }
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <div class="container">
+        <div class="game-nav">
+            <a href="/duos.html" class="back-btn">← Back to Duos</a>
+        </div>
+
+        <div class="game-header">
+            <h1 class="game-title">REACTION RACE</h1>
+            <p class="game-subtitle">Tap your zone when it turns green!</p>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-item p1">
+                <div class="score-label">PLAYER 1</div>
+                <div class="score-value" id="scoreP1">0</div>
+            </div>
+            <div class="score-item p2">
+                <div class="score-label">PLAYER 2</div>
+                <div class="score-value" id="scoreP2">0</div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="player-zone p1" id="zoneP1" onclick="playerTap(1)">
+                <div class="zone-label">P1</div>
+                <div class="zone-instruction" id="instructP1">Tap here when green!</div>
+                <div class="reaction-time" id="timeP1"></div>
+            </div>
+            <div class="player-zone p2" id="zoneP2" onclick="playerTap(2)">
+                <div class="zone-label">P2</div>
+                <div class="zone-instruction" id="instructP2">Tap here when green!</div>
+                <div class="reaction-time" id="timeP2"></div>
+            </div>
+        </div>
+
+        <div class="game-status">
+            <div class="status-text" id="statusText">TAP START TO BEGIN</div>
+            <div class="round-info" id="roundInfo">Best of 5 rounds</div>
+        </div>
+
+        <div class="actions">
+            <button class="action-btn primary" id="startBtn" onclick="startRound()">START</button>
+            <button class="action-btn secondary" onclick="resetGame()">RESET</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = 'idle'; // idle, waiting, ready, finished
+        let startTime = 0;
+        let timeoutId = null;
+        let scores = { p1: 0, p2: 0 };
+        let round = 0;
+        const WINNING_SCORE = 3;
+
+        function startRound() {
+            if (gameState !== 'idle') return;
+            
+            round++;
+            gameState = 'waiting';
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('statusText').textContent = 'WAIT FOR GREEN...';
+            document.getElementById('statusText').className = 'status-text';
+            document.getElementById('roundInfo').textContent = `Round ${round}`;
+            
+            // Reset zones
+            const zone1 = document.getElementById('zoneP1');
+            const zone2 = document.getElementById('zoneP2');
+            
+            zone1.className = 'player-zone p1 waiting';
+            zone2.className = 'player-zone p2 waiting';
+            
+            document.getElementById('timeP1').textContent = '';
+            document.getElementById('timeP2').textContent = '';
+            document.getElementById('instructP1').textContent = 'Wait...';
+            document.getElementById('instructP2').textContent = 'Wait...';
+            
+            // Random delay 1-4 seconds
+            const delay = 1000 + Math.random() * 3000;
+            
+            timeoutId = setTimeout(() => {
+                if (gameState === 'waiting') {
+                    gameState = 'ready';
+                    startTime = performance.now();
+                    
+                    zone1.className = 'player-zone p1 ready';
+                    zone2.className = 'player-zone p2 ready';
+                    
+                    document.getElementById('instructP1').textContent = 'TAP NOW!';
+                    document.getElementById('instructP2').textContent = 'TAP NOW!';
+                    document.getElementById('statusText').textContent = 'GO!';
+                }
+            }, delay);
+        }
+
+        function playerTap(player) {
+            if (gameState === 'waiting') {
+                // Too early!
+                clearTimeout(timeoutId);
+                gameState = 'idle';
+                
+                const zone = document.getElementById(`zoneP${player}`);
+                zone.className = `player-zone p${player === 1 ? '1' : '2'} too-early`;
+                
+                document.getElementById(`instructP${player}`).textContent = 'Too early!';
+                document.getElementById('statusText').textContent = `PLAYER ${player} WAS TOO EARLY!`;
+                document.getElementById('statusText').className = 'status-text too-early';
+                
+                // Other player wins
+                const winner = player === 1 ? 2 : 1;
+                scores[`p${winner}`]++;
+                updateScores();
+                
+                checkMatchEnd();
+                
+                document.getElementById('startBtn').disabled = false;
+                
+            } else if (gameState === 'ready') {
+                const reactionTime = Math.round(performance.now() - startTime);
+                gameState = 'finished';
+                
+                const zone = document.getElementById(`zoneP${player}`);
+                zone.classList.add('winner');
+                
+                document.getElementById(`timeP${player}`).textContent = `${reactionTime}ms`;
+                document.getElementById(`instructP${player}`).textContent = 'WINNER!';
+                
+                const otherPlayer = player === 1 ? 2 : 1;
+                document.getElementById(`instructP${otherPlayer}`).textContent = 'Too slow!';
+                
+                document.getElementById('statusText').textContent = `PLAYER ${player} WINS! (${reactionTime}ms)`;
+                document.getElementById('statusText').className = 'status-text winner';
+                
+                scores[`p${player}`]++;
+                updateScores();
+                
+                checkMatchEnd();
+                
+                gameState = 'idle';
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        function updateScores() {
+            document.getElementById('scoreP1').textContent = scores.p1;
+            document.getElementById('scoreP2').textContent = scores.p2;
+        }
+
+        function checkMatchEnd() {
+            if (scores.p1 >= WINNING_SCORE) {
+                document.getElementById('statusText').textContent = 'PLAYER 1 WINS THE MATCH!';
+                document.getElementById('statusText').className = 'status-text winner';
+                document.getElementById('roundInfo').textContent = 'Game Over!';
+            } else if (scores.p2 >= WINNING_SCORE) {
+                document.getElementById('statusText').textContent = 'PLAYER 2 WINS THE MATCH!';
+                document.getElementById('statusText').className = 'status-text winner';
+                document.getElementById('roundInfo').textContent = 'Game Over!';
+            }
+        }
+
+        function resetGame() {
+            clearTimeout(timeoutId);
+            gameState = 'idle';
+            scores = { p1: 0, p2: 0 };
+            round = 0;
+            
+            updateScores();
+            
+            const zone1 = document.getElementById('zoneP1');
+            const zone2 = document.getElementById('zoneP2');
+            
+            zone1.className = 'player-zone p1';
+            zone2.className = 'player-zone p2';
+            
+            document.getElementById('timeP1').textContent = '';
+            document.getElementById('timeP2').textContent = '';
+            document.getElementById('instructP1').textContent = 'Tap here when green!';
+            document.getElementById('instructP2').textContent = 'Tap here when green!';
+            
+            document.getElementById('statusText').textContent = 'TAP START TO BEGIN';
+            document.getElementById('statusText').className = 'status-text';
+            document.getElementById('roundInfo').textContent = 'Best of 5 rounds';
+            document.getElementById('startBtn').disabled = false;
+        }
+    </script>
+    
+    <script>
+        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
+    </script>
+    <script src="/header.js"></script>
+    <script src="/js/engagement.js"></script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Memory Match - TheGaming.co</title>
+    <meta name="description" content="Test your memory! Take turns flipping cards to find matching pairs.">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="/header.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #fafbff; 
+            color: #1a1a1a; 
+            overflow-x: hidden; 
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
+        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
+        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
+        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+
+        .container { max-width: 550px; margin: 0 auto; padding: 80px 15px 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 25px; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        .back-btn:hover { color: #1a1a1a; }
+
+        .game-header { text-align: center; margin-bottom: 20px; }
+        .game-title { font-size: 2.8rem; margin-bottom: 6px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
+        .game-subtitle { font-size: 0.95rem; color: #666; }
+
+        .scoreboard { 
+            display: flex; 
+            justify-content: center; 
+            gap: 30px; 
+            margin-bottom: 15px;
+            background: white;
+            padding: 15px 25px;
+            border: 3px solid #1a1a1a;
+            box-shadow: 5px 5px 0 #e0e0e0;
+        }
+        .score-item { text-align: center; padding: 5px 15px; border-radius: 8px; transition: all 0.3s ease; }
+        .score-item.active { background: rgba(255, 107, 157, 0.15); }
+        .score-label { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: #666; letter-spacing: 1px; }
+        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: #1a1a1a; }
+        .score-item.p1 .score-label { color: #ff6b9d; }
+        .score-item.p2 .score-label { color: #4facfe; }
+        .score-item.active.p1 .score-value { color: #ff6b9d; }
+        .score-item.active.p2 .score-value { color: #4facfe; }
+
+        .turn-indicator {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        .turn-indicator.p1 { color: #ff6b9d; }
+        .turn-indicator.p2 { color: #4facfe; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            border: 3px solid #1a1a1a;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: transform 0.3s ease;
+            box-shadow: 3px 3px 0 #8b2e47;
+            position: relative;
+        }
+
+        .card::before {
+            content: '?';
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .card.flipped {
+            background: white;
+            box-shadow: 3px 3px 0 #e0e0e0;
+        }
+
+        .card.flipped::before {
+            content: none;
+        }
+
+        .card.matched {
+            opacity: 0.5;
+            cursor: default;
+            transform: scale(0.95);
+        }
+
+        .card.matched.p1 {
+            background: rgba(255, 107, 157, 0.3);
+            border-color: #ff6b9d;
+        }
+
+        .card.matched.p2 {
+            background: rgba(79, 172, 254, 0.3);
+            border-color: #4facfe;
+        }
+
+        .card:not(.flipped):not(.matched):hover {
+            transform: scale(1.05);
+        }
+
+        .card:not(.flipped):not(.matched):active {
+            transform: scale(0.98);
+        }
+
+        .game-message {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            min-height: 50px;
+        }
+        .game-message.p1 { color: #ff6b9d; }
+        .game-message.p2 { color: #4facfe; }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            border: 3px solid #1a1a1a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 48px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+            border-color: #8b2e47;
+            box-shadow: 4px 4px 0 #8b2e47;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            color: #1a1a1a;
+            box-shadow: 4px 4px 0 #e0e0e0;
+        }
+
+        .action-btn:hover { transform: translate(2px, 2px); }
+        .action-btn.primary:hover { box-shadow: 2px 2px 0 #8b2e47; }
+        .action-btn.secondary:hover { box-shadow: 2px 2px 0 #e0e0e0; }
+
+        @media (max-width: 450px) {
+            .container { padding: 70px 10px 30px; }
+            .game-title { font-size: 2.2rem; }
+            .board { gap: 6px; }
+            .card { font-size: 1.5rem; border-width: 2px; }
+            .card::before { font-size: 1.5rem; }
+            .scoreboard { gap: 15px; padding: 12px 15px; }
+            .score-value { font-size: 1.6rem; }
+        }
+
+        @supports (padding: max(0px)) {
+            .container { padding-top: max(80px, calc(env(safe-area-inset-top) + 70px)); }
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+
+    <div class="container">
+        <div class="game-nav">
+            <a href="/duos.html" class="back-btn">← Back to Duos</a>
+        </div>
+
+        <div class="game-header">
+            <h1 class="game-title">MEMORY MATCH</h1>
+            <p class="game-subtitle">Find matching pairs to score points!</p>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-item p1 active" id="scoreP1">
+                <div class="score-label">PLAYER 1</div>
+                <div class="score-value" id="scoreP1Value">0</div>
+            </div>
+            <div class="score-item p2" id="scoreP2">
+                <div class="score-label">PLAYER 2</div>
+                <div class="score-value" id="scoreP2Value">0</div>
+            </div>
+        </div>
+
+        <div class="turn-indicator p1" id="turnIndicator">PLAYER 1'S TURN</div>
+
+        <div class="board" id="board"></div>
+
+        <div class="game-message" id="gameMessage"></div>
+
+        <div class="actions">
+            <button class="action-btn primary" onclick="resetGame()">NEW GAME</button>
+        </div>
+    </div>
+
+    <script>
+        const emojis = ['🌟', '🎮', '🎯', '🎪', '🎨', '🎭', '🎪', '🎸'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let currentPlayer = 1;
+        let scores = { p1: 0, p2: 0 };
+        let canFlip = true;
+
+        function init() {
+            // Create pairs
+            const pairs = [...emojis, ...emojis];
+            cards = shuffleArray(pairs);
+            
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            cards.forEach((emoji, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = index;
+                card.dataset.emoji = emoji;
+                card.addEventListener('click', () => flipCard(index));
+                board.appendChild(card);
+            });
+            
+            updateTurnIndicator();
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function flipCard(index) {
+            if (!canFlip) return;
+            
+            const card = document.querySelector(`[data-index="${index}"]`);
+            
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            if (flippedCards.length >= 2) return;
+            
+            card.classList.add('flipped');
+            card.textContent = cards[index];
+            flippedCards.push({ index, emoji: cards[index], element: card });
+            
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            
+            if (card1.emoji === card2.emoji) {
+                // Match found!
+                setTimeout(() => {
+                    card1.element.classList.add('matched', `p${currentPlayer}`);
+                    card2.element.classList.add('matched', `p${currentPlayer}`);
+                    
+                    scores[`p${currentPlayer}`]++;
+                    updateScores();
+                    matchedPairs++;
+                    
+                    flippedCards = [];
+                    canFlip = true;
+                    
+                    if (matchedPairs === emojis.length) {
+                        endGame();
+                    }
+                    // Same player continues on match
+                }, 500);
+            } else {
+                // No match
+                setTimeout(() => {
+                    card1.element.classList.remove('flipped');
+                    card2.element.classList.remove('flipped');
+                    card1.element.textContent = '';
+                    card2.element.textContent = '';
+                    
+                    flippedCards = [];
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updateTurnIndicator();
+                    canFlip = true;
+                }, 1000);
+            }
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            indicator.textContent = `PLAYER ${currentPlayer}'S TURN`;
+            indicator.className = `turn-indicator p${currentPlayer}`;
+            
+            document.getElementById('scoreP1').classList.toggle('active', currentPlayer === 1);
+            document.getElementById('scoreP2').classList.toggle('active', currentPlayer === 2);
+        }
+
+        function updateScores() {
+            document.getElementById('scoreP1Value').textContent = scores.p1;
+            document.getElementById('scoreP2Value').textContent = scores.p2;
+        }
+
+        function endGame() {
+            const messageEl = document.getElementById('gameMessage');
+            document.getElementById('turnIndicator').style.display = 'none';
+            
+            if (scores.p1 > scores.p2) {
+                messageEl.textContent = 'PLAYER 1 WINS!';
+                messageEl.className = 'game-message p1';
+            } else if (scores.p2 > scores.p1) {
+                messageEl.textContent = 'PLAYER 2 WINS!';
+                messageEl.className = 'game-message p2';
+            } else {
+                messageEl.textContent = "IT'S A TIE!";
+                messageEl.className = 'game-message';
+            }
+        }
+
+        function resetGame() {
+            matchedPairs = 0;
+            currentPlayer = 1;
+            scores = { p1: 0, p2: 0 };
+            flippedCards = [];
+            canFlip = true;
+            
+            updateScores();
+            document.getElementById('gameMessage').textContent = '';
+            document.getElementById('turnIndicator').style.display = 'block';
+            
+            init();
+        }
+
+        window.onload = init;
+    </script>
+    
+    <script>
+        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
+    </script>
+    <script src="/header.js"></script>
+    <script src="/js/engagement.js"></script>
+</body>
+</html>

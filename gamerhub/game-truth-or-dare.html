@@ -2,15 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Truth or Dare - PlayHub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Truth or Dare - TheGaming.co</title>
+    <meta name="description" content="Play Truth or Dare online for free. The classic game of confessions and challenges for 2 players.">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="stylesheet" href="/header.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #fafbff; 
+            color: #1a1a1a; 
+            overflow-x: hidden; 
+            position: relative; 
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
         h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 
         /* Animated background blobs */
@@ -20,12 +41,11 @@
         .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
         @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
 
-        .container { max-width: 900px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 900px; margin: 0 auto; padding: 80px 40px 0; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* Navigation */
-        nav { padding: 30px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
-        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
+        /* Game Navigation */
+        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; -webkit-tap-highlight-color: transparent; }
         .back-btn:hover { color: #1a1a1a; }
 
         /* General Content */
@@ -166,31 +186,50 @@
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .container { padding: 0 20px; }
+            .container { padding: 70px 20px 0; }
             .selection-header h2, .end-screen h2, .choice-screen h2 { font-size: 3.5rem; }
             .selection-grid { grid-template-columns: 1fr; } 
             .packs-grid { grid-template-columns: 1fr; }
             .choice-buttons { flex-direction: column; gap: 10px; }
             .prompt-text { font-size: 1.4rem; }
             .prompt-card, .choice-screen { padding: 40px 30px; min-height: 240px; }
-            .nav-btn { font-size: 1.1rem; padding: 15px 20px; }
+            .nav-btn { font-size: 1.1rem; padding: 15px 20px; min-height: 50px; }
+            .selection-card { padding: 30px 20px; min-height: 44px; }
+            .action-btn { min-height: 50px; }
+        }
+        
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .selection-card:active { transform: translate(2px, -2px); }
+            .pack-card:active { transform: translate(2px, -2px); }
+            .nav-btn:active { transform: scale(0.98); }
+            .action-btn:active { transform: scale(0.98); }
+        }
+        
+        /* iOS safe areas */
+        @supports (padding: max(0px)) {
+            .container {
+                padding-top: max(80px, calc(env(safe-area-inset-top) + 70px));
+            }
+            .game-content {
+                padding-bottom: max(60px, env(safe-area-inset-bottom));
+            }
         }
     </style>
-    <link rel="stylesheet" href="/header.css">
 </head>
 <body>
     <div id="site-header"></div>
+    
     <div class="bg-shape shape-1"></div>
     <div class="bg-shape shape-2"></div>
     <div class="bg-shape shape-3"></div>
 
     <div class="container">
-        <nav>
-            <a href="index.html" class="logo-nav">PLAYHUB</a>
-            <a href="date-night.html" class="back-btn">
-                ← Back to Games
+        <div class="game-nav">
+            <a href="/duos.html" class="back-btn">
+                ← Back to Duos
             </a>
-        </nav>
+        </div>
 
         <div class="game-content">
             
@@ -261,7 +300,7 @@
                 <p class="end-message">Hope you chose wisely! You survived the challenges.</p>
                 <div class="end-actions">
                     <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
-                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DATE NIGHT</button>
+                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DUOS</button>
                 </div>
             </div>
         </div>
@@ -618,12 +657,20 @@
         }
 
         function backToGames() {
-            window.location.href = 'date-night.html';
+            window.location.href = '/duos.html';
         }
 
         window.onload = init;
     </script>
+    
+    <script>
+        // Supabase initialization
+        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
+    </script>
     <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+    <script src="/js/engagement.js"></script>
 </body>
 </html>
