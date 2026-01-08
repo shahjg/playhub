@@ -425,7 +425,7 @@
                         <h5>COMPANY</h5>
                         <ul>
                             <li><a href="/about.html">About</a></li>
-                            <li><a href="mailto:hello@thegaming.co">Contact</a></li>
+                            <li><a href="/cdn-cgi/l/email-protection#90f8f5fcfcffd0e4f8f5f7f1fdf9fef7bef3ff">Contact</a></li>
                         </ul>
                     </div>
                 </div>
@@ -436,7 +436,7 @@
         </footer>
     </div>
 
-<script src="/header.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/header.js"></script>
 <script>
 const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
@@ -736,9 +736,31 @@ async function fetchLeaderboard() {
     
     // Fetch profiles with premium info
     const userIds = [...new Set(dedupedData.map(e => e.user_id))];
-    const { data: profiles } = await supabaseClient.from('profiles')
+    console.log('Fetching profiles for user IDs:', userIds);
+    
+    // Try fetching profiles - handle potential column differences
+    let profiles = null;
+    let profileError = null;
+    
+    // First try with all columns
+    const result1 = await supabaseClient.from('profiles')
         .select('id, display_name, gamer_tag, clan_tag, clan_color, premium_tier, name_effect')
         .in('id', userIds);
+    
+    if (result1.error) {
+        console.log('Full query failed, trying basic columns:', result1.error);
+        // Fallback to basic columns only
+        const result2 = await supabaseClient.from('profiles')
+            .select('id, display_name, gamer_tag')
+            .in('id', userIds);
+        profiles = result2.data;
+        profileError = result2.error;
+    } else {
+        profiles = result1.data;
+    }
+    
+    console.log('Profiles fetched:', profiles);
+    if (profileError) console.log('Profile error:', profileError);
     
     const profileMap = {};
     profiles?.forEach(p => profileMap[p.id] = p);
@@ -794,6 +816,8 @@ function getAvatarClass(profile) {
 }
 
 function renderLeaderboard(data, profileMap, game) {
+    console.log('ProfileMap:', profileMap);
+    
     // Render podium (top 3)
     [1, 2, 3].forEach(rank => {
         const entry = data[rank - 1];
@@ -801,7 +825,10 @@ function renderLeaderboard(data, profileMap, game) {
         
         if (entry) {
             const profile = profileMap[entry.user_id];
-            const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+            console.log(`Rank ${rank} - user_id: ${entry.user_id}, profile:`, profile);
+            
+            // Better fallback: show truncated user ID if no profile
+            const name = profile?.display_name || profile?.gamer_tag || `Player_${entry.user_id.substring(0, 6)}`;
             const initial = name.charAt(0).toUpperCase();
             const nameClass = getNameClass(profile);
             const avatarClass = getAvatarClass(profile);
@@ -831,7 +858,7 @@ function renderLeaderboard(data, profileMap, game) {
     
     data.slice(3).forEach((entry, i) => {
         const profile = profileMap[entry.user_id];
-        const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+        const name = profile?.display_name || profile?.gamer_tag || `Player_${entry.user_id.substring(0, 6)}`;
         const initial = name.charAt(0).toUpperCase();
         const isYou = entry.user_id === currentUserId;
         const dateField = game.isDaily ? entry.puzzle_date : entry.created_at;
@@ -898,15 +925,4 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     } else {
         isLoggedIn = false;
         currentUserId = null;
-        friendIds = [];
-        updateLeaderboardVisibility();
-    }
-});
-
-// Initialize
-handleUrlParams();
-updateFiltersAndBadge();
-initAuth();
-</script>
-</body>
-</html>
+        friendIds = [
