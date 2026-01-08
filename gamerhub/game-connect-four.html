@@ -3,394 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Connect Four - TheGaming.co</title>
-    <meta name="description" content="Play Connect Four online for free. Drop discs and connect 4 in a row to win!">
+    <title>Connect Four – 2 Player Game | TheGaming.co</title>
+    <meta name="description" content="Classic Connect Four for 2 players. Drop discs and connect four to win!">
     <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="/header.css">
-    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: #fafbff; 
-            color: #1a1a1a; 
-            overflow-x: hidden; 
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
+            --p1:#ef4444;--p2:#facc15;
+            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;
+            --gold:#ffd700;--text-dark:#1a1a2e;--text-muted:#6b7280;
         }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        a{color:inherit;text-decoration:none}
 
-        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
-        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
-        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
-        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
-        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
 
-        .container { max-width: 600px; margin: 0 auto; padding: 80px 20px 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 30px; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
-        .back-btn:hover { color: #1a1a1a; }
+        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
+        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .hero-icon{width:60px;height:60px;margin:0 auto 16px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px}
+        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
 
-        .game-header { text-align: center; margin-bottom: 25px; }
-        .game-title { font-size: 3.2rem; margin-bottom: 8px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
-        .game-subtitle { font-size: 1rem; color: #666; }
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
+        .game-container{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
 
-        .scoreboard { 
-            display: flex; 
-            justify-content: center; 
-            gap: 30px; 
-            margin-bottom: 20px;
-            background: white;
-            padding: 15px 30px;
-            border: 3px solid #1a1a1a;
-            box-shadow: 5px 5px 0 #e0e0e0;
-        }
-        .score-item { text-align: center; }
-        .score-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: #666; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; justify-content: center; }
-        .score-label .disc { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #1a1a1a; }
-        .score-label .disc.red { background: #ff6b9d; }
-        .score-label .disc.yellow { background: #ffd700; }
-        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: #1a1a1a; }
-        .score-item.active .score-value { color: #ff6b9d; }
+        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px}
+        .score-card.active{border-color:var(--accent);box-shadow:0 4px 20px rgba(244,114,182,0.2)}
+        .score-disc{width:24px;height:24px;border-radius:50%;flex-shrink:0}
+        .score-disc.red{background:linear-gradient(135deg,#ef4444,#dc2626)}
+        .score-disc.yellow{background:linear-gradient(135deg,#facc15,#eab308)}
+        .score-info{text-align:left}
+        .score-label{font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)}
+        .score-value{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text-dark)}
 
-        .turn-indicator {
-            text-align: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: #1a1a1a;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .turn-indicator .disc { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #1a1a1a; }
+        .turn-indicator{text-align:center;padding:8px;font-size:0.85rem;font-weight:600;color:var(--text-muted)}
+        .turn-indicator span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px}
+        .turn-indicator.p1 span{color:var(--p1)}
+        .turn-indicator.p2 span{color:#ca8a04}
 
-        .board-wrapper {
-            background: #4169e1;
-            border: 4px solid #1a1a1a;
-            box-shadow: 6px 6px 0 #1a1a1a;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 0 auto 25px;
-        }
+        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:16px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
+        .board-wrapper{background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;padding:10px;display:inline-block;margin:0 auto}
+        .board-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+        .cell{width:40px;height:40px;background:#e0f2fe;border-radius:50%;cursor:pointer;transition:all 0.2s;position:relative}
+        .cell:hover:not(.taken){background:#bae6fd}
+        .cell.red{background:linear-gradient(135deg,#ef4444,#dc2626);cursor:default}
+        .cell.yellow{background:linear-gradient(135deg,#facc15,#eab308);cursor:default}
+        .cell.winner::after{content:'';position:absolute;inset:-3px;border:3px solid #fff;border-radius:50%;animation:winRing 0.5s ease}
+        @keyframes winRing{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
-        }
+        .game-status{text-align:center;padding:16px;min-height:60px}
+        .status-text{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text-dark)}
+        .status-text.win{color:var(--accent-dark)}
 
-        .cell {
-            aspect-ratio: 1;
-            background: #fafbff;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
+        .actions{display:flex;gap:10px;justify-content:center}
+        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(244,114,182,0.4)}
+        .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(244,114,182,0.2)}
+        .btn-secondary:hover{border-color:var(--accent)}
 
-        .cell:hover:not(.taken) {
-            background: #e0e0e0;
-        }
-
-        .cell.red { background: #ff6b9d; }
-        .cell.yellow { background: #ffd700; }
-        .cell.winner { 
-            animation: winPulse 0.6s ease-in-out infinite;
-            box-shadow: 0 0 0 3px white;
-        }
-
-        @keyframes winPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes dropIn {
-            0% { transform: translateY(-300px); }
-            60% { transform: translateY(10px); }
-            80% { transform: translateY(-5px); }
-            100% { transform: translateY(0); }
-        }
-
-        .cell.dropping {
-            animation: dropIn 0.4s ease-out;
-        }
-
-        .game-message {
-            text-align: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-            min-height: 50px;
-        }
-        .game-message.winner { color: #ff6b9d; }
-
-        .actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            padding: 12px 25px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            border: 3px solid #1a1a1a;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 48px;
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white;
-            border-color: #8b2e47;
-            box-shadow: 4px 4px 0 #8b2e47;
-        }
-
-        .action-btn.secondary {
-            background: white;
-            color: #1a1a1a;
-            box-shadow: 4px 4px 0 #e0e0e0;
-        }
-
-        .action-btn:hover {
-            transform: translate(2px, 2px);
-        }
-        .action-btn.primary:hover { box-shadow: 2px 2px 0 #8b2e47; }
-        .action-btn.secondary:hover { box-shadow: 2px 2px 0 #e0e0e0; }
-
-        @media (max-width: 500px) {
-            .container { padding: 70px 12px 30px; }
-            .game-title { font-size: 2.5rem; }
-            .board-wrapper { padding: 8px; }
-            .board { gap: 4px; }
-            .scoreboard { gap: 15px; padding: 12px 15px; }
-            .score-value { font-size: 1.8rem; }
-            .score-label { font-size: 0.9rem; }
-            .score-label .disc { width: 14px; height: 14px; }
-            .game-message { font-size: 1.6rem; }
-            .turn-indicator { font-size: 1.2rem; }
-            .turn-indicator .disc { width: 20px; height: 20px; }
-        }
-
-        @supports (padding: max(0px)) {
-            .container { padding-top: max(80px, calc(env(safe-area-inset-top) + 70px)); }
+        @media(max-width:400px){
+            .cell{width:34px;height:34px}
+            .board-grid{gap:4px}
+            .board-wrapper{padding:8px}
         }
     </style>
 </head>
 <body>
     <div id="site-header"></div>
-    
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
-
-    <div class="container">
-        <div class="game-nav">
-            <a href="/duos.html" class="back-btn">← Back to Duos</a>
-        </div>
-
-        <div class="game-header">
-            <h1 class="game-title">CONNECT FOUR</h1>
-            <p class="game-subtitle">Drop discs and connect 4 in a row!</p>
-        </div>
-
-        <div class="scoreboard">
-            <div class="score-item" id="scoreRed">
-                <div class="score-label"><span class="disc red"></span> RED</div>
-                <div class="score-value" id="scoreRedValue">0</div>
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="16" width="48" height="40" rx="6" fill="#3b82f6"/>
+                        <circle cx="20" cy="28" r="6" fill="#e0f2fe"/>
+                        <circle cx="32" cy="28" r="6" fill="#ef4444"/>
+                        <circle cx="44" cy="28" r="6" fill="#e0f2fe"/>
+                        <circle cx="20" cy="44" r="6" fill="#facc15"/>
+                        <circle cx="32" cy="44" r="6" fill="#ef4444"/>
+                        <circle cx="44" cy="44" r="6" fill="#facc15"/>
+                    </svg>
+                </div>
+                <h1 class="hero-title">CONNECT FOUR</h1>
+                <p class="hero-sub">Drop discs and connect four in a row to win!</p>
             </div>
-            <div class="score-item">
-                <div class="score-label">DRAWS</div>
-                <div class="score-value" id="scoreDraws">0</div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="score-bar">
+                    <div class="score-card" id="cardRed">
+                        <div class="score-disc red"></div>
+                        <div class="score-info">
+                            <div class="score-label">Red</div>
+                            <div class="score-value" id="scoreRed">0</div>
+                        </div>
+                    </div>
+                    <div class="score-card" id="cardYellow">
+                        <div class="score-disc yellow"></div>
+                        <div class="score-info">
+                            <div class="score-label">Yellow</div>
+                            <div class="score-value" id="scoreYellow">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="turn-indicator p1" id="turnIndicator"><span>RED</span>'s turn</div>
+
+                <div class="game-board">
+                    <div class="board-wrapper">
+                        <div class="board-grid" id="board"></div>
+                    </div>
+                </div>
+
+                <div class="game-status">
+                    <div class="status-text" id="statusText"></div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="resetGame()">New Game</button>
+                    <button class="btn btn-secondary" onclick="resetScores()">Reset All</button>
+                </div>
             </div>
-            <div class="score-item" id="scoreYellow">
-                <div class="score-label"><span class="disc yellow"></span> YELLOW</div>
-                <div class="score-value" id="scoreYellowValue">0</div>
-            </div>
         </div>
+    </main>
 
-        <div class="turn-indicator" id="turnIndicator">
-            <span class="disc red"></span> RED'S TURN
-        </div>
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+window.supabaseClient=supabaseClient;
 
-        <div class="board-wrapper">
-            <div class="board" id="board"></div>
-        </div>
+const ROWS=6,COLS=7;
+let board=[];
+let current='red';
+let gameActive=true;
+let scores={red:0,yellow:0};
 
-        <div class="game-message" id="gameMessage"></div>
+function createBoard(){
+    return Array(ROWS).fill(null).map(()=>Array(COLS).fill(null));
+}
 
-        <div class="actions">
-            <button class="action-btn primary" onclick="resetGame()">NEW GAME</button>
-            <button class="action-btn secondary" onclick="resetScores()">RESET SCORES</button>
-        </div>
-    </div>
-
-    <script>
-        const ROWS = 6;
-        const COLS = 7;
-        let board = [];
-        let currentPlayer = 'red';
-        let gameActive = true;
-        let scores = { red: 0, yellow: 0, draws: 0 };
-
-        function init() {
-            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(''));
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.row = row;
-                    cell.dataset.col = col;
-                    cell.addEventListener('click', () => handleColumnClick(col));
-                    boardEl.appendChild(cell);
-                }
-            }
-            
-            updateTurnIndicator();
+function init(){
+    board=createBoard();
+    const boardEl=document.getElementById('board');
+    boardEl.innerHTML='';
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            const cell=document.createElement('div');
+            cell.className='cell';
+            cell.dataset.r=r;
+            cell.dataset.c=c;
+            cell.addEventListener('click',()=>play(c));
+            boardEl.appendChild(cell);
         }
+    }
+    updateTurn();
+    document.getElementById('statusText').textContent='';
+}
 
-        function handleColumnClick(col) {
-            if (!gameActive) return;
+function play(col){
+    if(!gameActive)return;
+    let row=-1;
+    for(let r=ROWS-1;r>=0;r--){
+        if(!board[r][col]){row=r;break;}
+    }
+    if(row===-1)return;
 
-            // Find lowest empty row in column
-            let targetRow = -1;
-            for (let row = ROWS - 1; row >= 0; row--) {
-                if (board[row][col] === '') {
-                    targetRow = row;
-                    break;
-                }
-            }
+    board[row][col]=current;
+    const cell=document.querySelector(`[data-r="${row}"][data-c="${col}"]`);
+    cell.classList.add(current,'taken');
 
-            if (targetRow === -1) return; // Column full
+    const winCells=checkWin(row,col);
+    if(winCells){
+        gameActive=false;
+        winCells.forEach(([r,c])=>document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('winner'));
+        scores[current]++;
+        updateScores();
+        showStatus(`${current.toUpperCase()} wins!`,'win');
+        document.getElementById('turnIndicator').style.opacity='0';
+    }else if(board[0].every(c=>c)){
+        gameActive=false;
+        showStatus("It's a draw!",'');
+        document.getElementById('turnIndicator').style.opacity='0';
+    }else{
+        current=current==='red'?'yellow':'red';
+        updateTurn();
+    }
+}
 
-            board[targetRow][col] = currentPlayer;
-            const cell = document.querySelector(`[data-row="${targetRow}"][data-col="${col}"]`);
-            cell.classList.add(currentPlayer, 'taken', 'dropping');
-
-            const winner = checkWinner(targetRow, col);
-            if (winner) {
-                gameActive = false;
-                highlightWinner(winner);
-                scores[currentPlayer]++;
-                updateScores();
-                showMessage(`${currentPlayer.toUpperCase()} WINS!`, true);
-            } else if (isBoardFull()) {
-                gameActive = false;
-                scores.draws++;
-                updateScores();
-                showMessage("IT'S A DRAW!");
-            } else {
-                currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
-                updateTurnIndicator();
-            }
+function checkWin(row,col){
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    for(const[dr,dc]of directions){
+        let cells=[[row,col]];
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===current)cells.push([r,c]);
+            else break;
         }
-
-        function checkWinner(row, col) {
-            const directions = [
-                [[0, 1], [0, -1]],   // horizontal
-                [[1, 0], [-1, 0]],   // vertical
-                [[1, 1], [-1, -1]], // diagonal
-                [[1, -1], [-1, 1]]  // anti-diagonal
-            ];
-
-            for (const [dir1, dir2] of directions) {
-                const cells = [[row, col]];
-                
-                for (const [dr, dc] of [dir1, dir2]) {
-                    let r = row + dr, c = col + dc;
-                    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === currentPlayer) {
-                        cells.push([r, c]);
-                        r += dr;
-                        c += dc;
-                    }
-                }
-
-                if (cells.length >= 4) {
-                    return cells;
-                }
-            }
-            return null;
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===current)cells.push([r,c]);
+            else break;
         }
+        if(cells.length>=4)return cells;
+    }
+    return null;
+}
 
-        function highlightWinner(cells) {
-            cells.forEach(([row, col]) => {
-                document.querySelector(`[data-row="${row}"][data-col="${col}"]`).classList.add('winner');
-            });
-        }
+function updateTurn(){
+    const el=document.getElementById('turnIndicator');
+    el.innerHTML=`<span>${current.toUpperCase()}</span>'s turn`;
+    el.className=`turn-indicator p${current==='red'?'1':'2'}`;
+    el.style.opacity='1';
+    document.getElementById('cardRed').classList.toggle('active',current==='red');
+    document.getElementById('cardYellow').classList.toggle('active',current==='yellow');
+}
 
-        function isBoardFull() {
-            return board[0].every(cell => cell !== '');
-        }
+function showStatus(msg,type){
+    const el=document.getElementById('statusText');
+    el.textContent=msg;
+    el.className='status-text'+(type?' '+type:'');
+}
 
-        function updateTurnIndicator() {
-            const indicator = document.getElementById('turnIndicator');
-            indicator.innerHTML = `<span class="disc ${currentPlayer}"></span> ${currentPlayer.toUpperCase()}'S TURN`;
-            
-            document.getElementById('scoreRed').classList.toggle('active', currentPlayer === 'red');
-            document.getElementById('scoreYellow').classList.toggle('active', currentPlayer === 'yellow');
-        }
+function updateScores(){
+    document.getElementById('scoreRed').textContent=scores.red;
+    document.getElementById('scoreYellow').textContent=scores.yellow;
+}
 
-        function showMessage(msg, isWinner = false) {
-            const messageEl = document.getElementById('gameMessage');
-            messageEl.textContent = msg;
-            messageEl.className = 'game-message' + (isWinner ? ' winner' : '');
-            document.getElementById('turnIndicator').style.visibility = 'hidden';
-        }
+function resetGame(){
+    current='red';
+    gameActive=true;
+    document.getElementById('cardRed').classList.remove('active');
+    document.getElementById('cardYellow').classList.remove('active');
+    init();
+}
 
-        function updateScores() {
-            document.getElementById('scoreRedValue').textContent = scores.red;
-            document.getElementById('scoreYellowValue').textContent = scores.yellow;
-            document.getElementById('scoreDraws').textContent = scores.draws;
-        }
+function resetScores(){
+    scores={red:0,yellow:0};
+    updateScores();
+    resetGame();
+}
 
-        function resetGame() {
-            currentPlayer = 'red';
-            gameActive = true;
-            document.getElementById('gameMessage').textContent = '';
-            document.getElementById('turnIndicator').style.visibility = 'visible';
-            document.getElementById('scoreRed').classList.remove('active');
-            document.getElementById('scoreYellow').classList.remove('active');
-            init();
-        }
-
-        function resetScores() {
-            scores = { red: 0, yellow: 0, draws: 0 };
-            updateScores();
-            resetGame();
-        }
-
-        window.onload = init;
-    </script>
-    
-    <script>
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
-    </script>
-    <script src="/header.js"></script>
-    <script src="/js/engagement.js"></script>
+init();
+</script>
+<script src="/header.js"></script>
+<script src="/js/engagement.js" defer></script>
 </body>
 </html>

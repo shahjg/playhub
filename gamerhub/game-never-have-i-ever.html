@@ -3,435 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Never Have I Ever – 2 Player Game | TheGaming.co</title>
+    <meta name="description" content="Never Have I Ever - discover secrets about each other!">
     <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Never Have I Ever - TheGaming.co</title>
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        /* All Base Styles (from previous versions) */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-
-        /* Animated background blobs (Copied directly for consistency) */
-        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
-        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
-        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
-        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
-        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
-
-        .container { max-width: 900px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Navigation */
-        nav { padding: 30px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
-        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
-        .back-btn:hover { color: #1a1a1a; }
-
-        /* General Content */
-        .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
-        .hidden { display: none !important; }
-
-        /* --- SCREEN STYLES (Category, Pack Selection) --- */
-        .selection-screen { max-width: 800px; margin: 40px auto; }
-        .selection-header { text-align: center; margin-bottom: 50px; }
-        .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
-        .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
-        
-        /* 3x2 Grid for 6 categories */
-        .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; } 
-        
-        .selection-card { background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
-        .selection-card:hover { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
-        .selection-icon { font-size: 3rem; margin-bottom: 15px; }
-        .selection-card h3 { font-size: 2rem; margin-bottom: 10px; line-height: 1; }
-        .selection-description { font-size: 0.95rem; color: #666; margin-bottom: 12px; font-weight: 500; line-height: 1.5; }
-
-        /* Pack Specific Styles */
-        .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
-
-        .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
-        .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
-        .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
-
-        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-bottom: 30px; }
-        .back-link:hover { color: #1a1a1a; }
-
-        /* --- GAME SCREEN STYLES --- */
-        .game-screen { display: none; }
-        .progress-bar-container { background: white; border: 3px solid #1a1a1a; padding: 8px; margin-bottom: 40px; box-shadow: 4px 4px 0 #e0e0e0; }
-        .progress-bar { height: 12px; background: #f0f0f0; position: relative; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); transition: width 0.3s ease; }
-        .game-header { text-align: center; margin-bottom: 40px; position: relative; }
-        .quit-btn { position: absolute; right: 0; top: 0; background: white; border: 2px solid #1a1a1a; padding: 8px 20px; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; color: #666; }
-        .quit-btn:hover { background: #f0f0f0; color: #1a1a1a; }
-        
-        .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
-        .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
-
-        /* Prompt Card - Shows the question immediately (no turn card) */
-        .prompt-card { 
-            background: white; 
-            color: #1a1a1a; 
-            border: 4px solid #1a1a1a; 
-            padding: 60px 50px; 
-            margin-bottom: 40px; 
-            box-shadow: 8px 8px 0 #e0e0e0; 
-            min-height: 280px; 
-            display: flex; /* Always visible when game is active */
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            text-align: center;
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
+            --p1:#f472b6;--p2:#60a5fa;
+            --text-dark:#1a1a2e;--text-muted:#6b7280;
         }
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
 
-        .prompt-text { 
-            font-size: 1.8rem; 
-            line-height: 1.5; 
-            font-weight: 600; 
-            color: #1a1a1a; 
-        }
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
 
-        .answer-prompt {
-            font-size: 1rem;
-            color: #ff6b9d;
-            font-weight: 700;
-            margin-top: 20px;
-        }
-        
-        .navigation { 
-            display: flex; 
-            gap: 15px;
-            justify-content: center;
-        }
-        .nav-btn { flex: 1; padding: 18px 30px; font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
-        .nav-btn.prev { 
-            background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0;
-            flex-grow: 0.5;
-        }
-        .nav-btn.prev:hover:not(:disabled) { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
-        .nav-btn.next { 
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; 
-            flex-grow: 1;
-        }
-        .nav-btn.next:hover:not(:disabled) { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #8b2e47; }
-        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
+        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .hero-title{font-size:clamp(2rem,7vw,3.5rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
 
-        /* End Screen */
-        .end-screen { display: none; text-align: center; max-width: 700px; margin: 80px auto; }
-        .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
-        .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
-        .end-actions { display: flex; flex-direction: column; gap: 15px; }
-        .action-btn { padding: 18px 40px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
-        .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
-        .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
+        .game-container{width:100%;max-width:450px;display:flex;flex-direction:column;gap:16px}
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container { padding: 0 20px; }
-            .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
-            .selection-grid { grid-template-columns: 1fr; } 
-            .packs-grid { grid-template-columns: 1fr; }
-            .quit-btn { position: static; margin-bottom: 15px; display: block; width: 100%; }
-            .prompt-text { font-size: 1.4rem; }
-            .prompt-card { padding: 40px 30px; min-height: 240px; }
-            .nav-btn { font-size: 1.1rem; padding: 15px 20px; }
-        }
+        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08)}
+        .score-card.p1 .score-label{color:var(--p1)}
+        .score-card.p2 .score-label{color:var(--p2)}
+        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .score-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text-dark)}
+        .score-sub{font-size:0.7rem;color:var(--text-muted)}
+
+        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
+
+        .phase{display:none}
+        .phase.active{display:block}
+
+        .category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+        .category-card{background:#fdf2f8;border:2px solid #fce7f3;border-radius:14px;padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.2s}
+        .category-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+        .category-icon{font-size:2rem;margin-bottom:8px}
+        .category-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;margin-bottom:4px}
+        .category-desc{font-size:0.75rem;color:var(--text-muted)}
+
+        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;text-align:center;margin-bottom:20px;color:var(--accent-dark)}
+
+        .progress-bar{height:6px;background:#eee;border-radius:3px;margin-bottom:16px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width 0.3s}
+        .progress-text{text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:20px}
+
+        .prompt-card{text-align:center;padding:20px 10px}
+        .prompt-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--accent-dark);margin-bottom:16px}
+        .prompt-text{font-size:1.15rem;line-height:1.6;margin-bottom:24px;min-height:60px;font-weight:500}
+        .prompt-hint{font-size:0.85rem;color:var(--text-muted);margin-bottom:20px}
+        .response-btns{display:flex;gap:12px;justify-content:center}
+        .response-btn{flex:1;max-width:130px;padding:14px;border-radius:12px;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;cursor:pointer;transition:all 0.2s}
+        .response-btn.have{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
+        .response-btn.havent{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+        .response-btn:hover{transform:scale(1.05)}
+
+        .end-screen{text-align:center;padding:30px}
+        .end-emoji{font-size:4rem;margin-bottom:16px}
+        .end-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:8px;color:var(--accent-dark)}
+        .end-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
+
+        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
+
+        .actions{display:flex;gap:10px;justify-content:center}
     </style>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="/header.css">
 </head>
 <body>
     <div id="site-header"></div>
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
-
-    <div class="container">
-        <nav>
-            <a href="index.html" class="logo-nav">THEGAMING.CO</a>
-            <a href="/duos.html" class="back-btn">
-                ← Back to Duos
-            </a>
-        </nav>
-
-        <div class="game-content">
-            
-            <div class="selection-screen" id="categorySelection">
-                <div class="selection-header">
-                    <h2>NEVER HAVE I EVER</h2>
-                    <p>Choose a category and discover your partner's playful secrets!</p>
-                </div>
-
-                <div class="selection-grid">
-                    
-                    <div class="selection-card" onclick="showPacks('icebreaker')">
-                        <div class="selection-icon">🧊</div>
-                        <h3>BREAKING THE ICE</h3>
-                        <p class="selection-description">Lighthearted, funny statements about travel, habits, and silly mistakes.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('personal')">
-                        <div class="selection-icon">💭</div>
-                        <h3>DEEP & PERSONAL</h3>
-                        <p class="selection-description">Truths about past regrets, strong opinions, and big life choices.</p>
-                    </div>
-                    
-                    <div class="selection-card" onclick="showPacks('spicy')">
-                        <div class="selection-icon">🔥</div>
-                        <h3>SPICY & FLIRTY</h3>
-                        <p class="selection-description">Intimate questions about dating history, fantasy, and sensual experiences.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('nostalgia')">
-                        <div class="selection-icon">🧸</div>
-                        <h3>NOSTALGIA & PAST</h3>
-                        <p class="selection-description">Secrets about childhood, exes, and embarrassing history.</p>
-                    </div>
-                    
-                    <div class="selection-card" onclick="showPacks('work')">
-                        <div class="selection-icon">💼</div>
-                        <h3>WORK & AMBITION</h3>
-                        <p class="selection-description">Professional ethics, money, career goals, and workplace secrets.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('moral')">
-                        <div class="selection-icon">⚖️</div>
-                        <h3>HYPOTHETICAL & MORAL</h3>
-                        <p class="selection-description">Tough dilemmas and questions about what you *would* do.</p>
-                    </div>
-
-                </div>
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">🙈</div>
+                <h1 class="hero-title">NEVER HAVE I EVER</h1>
+                <p class="hero-sub">Discover secrets about each other!</p>
             </div>
+        </section>
 
-            <div class="selection-screen hidden" id="packSelection">
-                <span class="back-link" onclick="backToCategories()">← Back to Categories</span>
-                
-                <div class="selection-header">
-                    <h2 id="packCategoryTitle"></h2>
-                    <p>Choose a pack of 20 prompts</p>
-                </div>
-
-                <div class="packs-grid" id="packsGrid">
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="score-bar">
+                    <div class="score-card p1">
+                        <div class="score-label">Player 1</div>
+                        <div class="score-value" id="score1">0</div>
+                        <div class="score-sub">confessions</div>
                     </div>
-            </div>
-
-            <div class="game-screen" id="gameScreen">
-                <div class="progress-bar-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                    <div class="score-card p2">
+                        <div class="score-label">Player 2</div>
+                        <div class="score-value" id="score2">0</div>
+                        <div class="score-sub">confessions</div>
                     </div>
                 </div>
 
-                <div class="game-header">
-                    <button class="quit-btn" onclick="quitToPacks()">QUIT</button>
-                    <div class="mode-label">NEVER HAVE I EVER</div>
-                    <div class="prompt-counter" id="promptCounter">PROMPT 1 OF 20</div>
-                </div>
+                <div class="game-board">
+                    <div class="phase active" id="categoryPhase">
+                        <div class="phase-title">CHOOSE A MODE</div>
+                        <div class="category-grid">
+                            <div class="category-card" onclick="selectCategory('clean')">
+                                <div class="category-icon">😇</div>
+                                <div class="category-name">CLEAN</div>
+                                <div class="category-desc">Family friendly</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('social')">
+                                <div class="category-icon">👯</div>
+                                <div class="category-name">SOCIAL</div>
+                                <div class="category-desc">Life experiences</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('party')">
+                                <div class="category-icon">🎉</div>
+                                <div class="category-name">PARTY</div>
+                                <div class="category-desc">Wild times</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('spicy')">
+                                <div class="category-icon">🔥</div>
+                                <div class="category-name">SPICY</div>
+                                <div class="category-desc">Adults only</div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="prompt-card" id="promptCard">
-                    <p class="prompt-text" id="promptText">Never have I ever...</p>
-                    <p class="answer-prompt">Answer together, then pass the phone for the next prompt!</p>
-                </div>
+                    <div class="phase" id="playPhase">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                        <div class="progress-text"><span id="currentNum">1</span> of 15</div>
+                        <div class="prompt-card">
+                            <div class="prompt-title">NEVER HAVE I EVER...</div>
+                            <div class="prompt-text" id="promptText"></div>
+                            <div class="prompt-hint">Both players answer honestly!</div>
+                            <div class="response-btns">
+                                <button class="response-btn have" onclick="respond(true)">I HAVE 🙋</button>
+                                <button class="response-btn havent" onclick="respond(false)">NEVER 🙅</button>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="navigation">
-                    <button class="nav-btn prev" id="prevBtn" onclick="previousPrompt()">← PREVIOUS</button>
-                    <button class="nav-btn next" id="nextBtn" onclick="nextPrompt()">NEXT →</button>
-                </div>
-            </div>
+                    <div class="phase" id="resultPhase">
+                        <div class="prompt-card">
+                            <div class="prompt-title">RESULTS</div>
+                            <div class="prompt-text" id="resultText"></div>
+                            <div class="prompt-hint">Discuss and share your stories!</div>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="nextPrompt()">Next</button>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="end-screen" id="endScreen">
-                <h2>YOU DID IT! 🎉</h2>
-                <p class="end-message">
-                    Great revelations! Hope you learned something new about your partner.
-                </p>
-                <div class="end-actions">
-                    <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
-                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DUOS</button>
+                    <div class="phase" id="endPhase">
+                        <div class="end-screen">
+                            <div class="end-emoji">🎊</div>
+                            <div class="end-title">GAME COMPLETE!</div>
+                            <div class="end-sub" id="endSub">You've learned so much about each other!</div>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </main>
 
-        <footer>
-            </footer>
-    </div>
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-    <script>
-        // --- GAME STATE & DATA ---
-        let currentPromptIndex = 0;
-        let currentCategory = '';
-        let currentPack = '';
-        let currentPrompts = [];
-        const PROMPT_COUNT = 20; 
+const prompts={
+    clean:["Stayed up all night","Eaten something off the floor","Forgotten someone's name right after meeting them","Pretended to laugh at a joke I didn't get","Sung in the shower","Talked to myself out loud","Tripped in public","Had food stuck in my teeth all day","Waved back at someone who wasn't waving at me","Walked into a glass door","Cried during a movie","Laughed so hard I cried","Danced when nobody was watching","Made up an excuse to leave early","Blamed a fart on someone else"],
+    social:["Been on a blind date","Ghosted someone","Been ghosted","Lied on my resume","Called in sick when I wasn't","Regifted a present","Read someone's diary or messages","Spread a rumor","Had a crush on a friend's partner","Pretended to be busy to avoid someone","Unfollowed an ex on social media","Stalked someone's social media","Lied about my age","Pretended to text to avoid conversation","Faked being interested in someone's story"],
+    party:["Done a walk of shame","Drunk texted an ex","Thrown up from drinking","Kissed a stranger","Had a one night stand","Been kicked out of a bar","Blacked out from drinking","Lied about how many people I've been with","Had a friends with benefits","Kissed someone of the same gender","Done something illegal","Been arrested","Skinny dipped","Crashed a party","Had a hangover at work"],
+    spicy:["Faked an orgasm","Watched adult content with a partner","Sent explicit photos","Had a threesome","Done it in public","Been caught in the act","Had a one night stand I regret","Hooked up with a coworker","Had a secret relationship","Role played in bed","Used toys with a partner","Had phone or video intimacy","Kissed someone in a relationship","Been unfaithful","Had a fantasy about a friend's partner"]
+};
 
-        const categoryTitles = {
-            'icebreaker': 'BREAKING THE ICE',
-            'personal': 'DEEP & PERSONAL',
-            'spicy': 'SPICY & FLIRTY',
-            'nostalgia': 'NOSTALGIA & PAST',
-            'work': 'WORK & AMBITION',
-            'moral': 'HYPOTHETICAL & MORAL',
-        };
+let category='';
+let deck=[];
+let round=0;
+const totalRounds=15;
+let scores={1:0,2:0};
+let currentAnswer=null;
+let answering=1;
+
+function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+
+function showPhase(id){
+    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function selectCategory(cat){
+    category=cat;
+    deck=shuffle([...prompts[cat]]);
+    round=0;
+    scores={1:0,2:0};
+    answering=1;
+    updateScores();
+    showPrompt();
+}
+
+function showPrompt(){
+    if(round>=totalRounds||deck.length===0){
+        endGame();
+        return;
+    }
+    const p=deck.pop();
+    document.getElementById('promptText').textContent=p;
+    updateProgress();
+    showPhase('playPhase');
+}
+
+function updateProgress(){
+    const pct=(round/totalRounds)*100;
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('currentNum').textContent=round+1;
+}
+
+function updateScores(){
+    document.getElementById('score1').textContent=scores[1];
+    document.getElementById('score2').textContent=scores[2];
+}
+
+function respond(hasDonel){
+    if(answering===1){
+        currentAnswer=hasDonel;
+        if(hasDonel)scores[1]++;
+        answering=2;
+        document.querySelector('.prompt-hint').textContent='Now Player 2 answers!';
+    }else{
+        if(hasDonel)scores[2]++;
+        updateScores();
         
-        // --- NEVER HAVE I EVER PROMPTS (6 CATEGORIES, 3 PACKS EACH = 18 Packs Total) ---
-        const nhiePrompts = {
-            icebreaker: {
-                pack1: [ "forgotten my wallet and had to borrow money from a stranger.", "lied to a friend about where I was going.", "spilled a drink all over myself in public.", "re-gifted a present.", "snuck into a movie theater.", "eaten cereal for dinner.", "pretended to know a song when I didn't.", "gone a full 24 hours without checking my phone.", "gotten lost in my own city.", "watched a movie more than three times in a single week.", "accidentally sent a text message to the wrong person.", "faked sick to get out of an obligation.", "worn the same outfit two days in a row.", "fallen asleep during a date.", "dyed my hair a crazy color.", "cried over spilled milk (literally).", "gone skinny dipping.", "forgotten someone's name right after they told me.", "broken something valuable and tried to hide it.", "been on a cruise ship." ],
-                pack2: [ "eaten food that fell on the floor.", "regretted a purchase over $100 immediately.", "left the country without telling anyone.", "tried to cut my own hair.", "taken a bubble bath since I was 10.", "had a nightmare about work.", "been caught singing in the car.", "had a crush on a fictional character.", "spent an entire paycheck in one day.", "gotten a bad fortune cookie.", "had to wear a terrible uniform.", "been snow skiing.", "lied about my age.", "thought I saw a ghost.", "read a book in one sitting.", "had a terrible roommate.", "pulled an all-nighter for fun.", "tried a social media trend.", "worn sunglasses indoors.", "tried to learn a foreign language and quit." ],
-                pack3: [ "been banned from a website.", "gone viral on social media.", "had a near-death experience.", "flown first class.", "used a fake ID.", "won a contest.", "eaten something exotic (e.g., bugs).", "taken a spontaneous road trip.", "spent a night sleeping under the stars.", "had a fight with a stranger.", "danced on a table.", "broken a bone.", "had a pet snake.", "been scuba diving.", "been recognized by someone famous.", "crashed a party.", "witnessed something paranormal.", "made up an excuse to skip a family event.", "gotten a tattoo I regret.", "sent a risky email or text." ]
-            },
-            personal: {
-                pack1: [ "questioned my career path this past month.", "felt like I didn't belong in a group.", "cried in front of my boss.", "lied to protect someone else's feelings.", "held a grudge for more than a year.", "kept a secret from my partner.", "been genuinely surprised by my partner's generosity.", "dreamed about quitting my job and traveling.", "made a big purchase purely out of impulse.", "felt deeply insecure about my appearance.", "wished I had handled a past relationship differently.", "helped a stranger anonymously.", "voted in every election since I was eligible.", "felt a strong spiritual connection.", "feared getting old.", "been jealous of my partner's friends.", "thought about moving to a different continent.", "started a big project and never finished it.", "regretted saying 'I love you' too soon.", "changed a core belief I had since childhood." ],
-                pack2: [ "cried while watching a cartoon.", "wished I were better at managing money.", "made a huge life decision without asking for advice.", "felt proud of myself this week.", "been told I talk too much.", "worried about money in the last week.", "apologized when I wasn't wrong, just to keep the peace.", "felt true fear of failure.", "kept a serious mistake secret from my family.", "made a donation to a charity this year.", "had an intense argument with a loved one.", "struggled with my body image.", "felt truly isolated, even when surrounded by people.", "used alcohol to cope with stress.", "had a complicated relationship with a family member.", "had a childhood dream come true.", "sacrificed my happiness for someone else's.", "broken a promise to myself.", "tried therapy or counseling.", "helped a rival or competitor." ],
-                pack3: [ "felt undervalued by someone I love.", "been envious of my partner's success.", "lied about being busy to avoid someone.", "spent time thinking about my own funeral.", "been misunderstood in a relationship.", "thought about having an open relationship.", "been judged unfairly based on my looks.", "had a breakdown in public.", "given up on a major life goal.", "had a secret crush on someone I shouldn't.", "been a victim of bullying.", "thought about quitting social media permanently.", "forgiven someone who didn't deserve it.", "taken full responsibility for something that wasn't my fault.", "been afraid of true intimacy.", "made a major sacrifice for my partner.", "believed in a conspiracy theory.", "had a friend betray my trust.", "felt immense gratitude for my partner.", "written a letter that I never sent." ]
-            },
-            spicy: {
-                pack1: [ "flirted with a co-worker.", "had a one-night stand.", "lied about my number of past partners.", "hooked up in public.", "faked a reason to leave a date early.", "read my partner's private messages without permission.", "had a secret admirer.", "kissed someone the first night I met them.", "used sex to get something I wanted.", "had a crush on a friend's sibling.", "broken up with someone over text.", "sent a risky photo or video.", "had a dream about cheating.", "been sexually propositioned by a stranger.", "kissed a partner just to shut them up.", "felt jealous of my partner's past.", "thought about experimenting with my sexuality.", "been nude in public (not skinny dipping).", "had a partner cry during sex.", "dated two people at the same time." ],
-                pack2: [ "faked an orgasm.", "kissed someone in front of my current partner just to make a point.", "used a dating app while in a committed relationship.", "had a sexual fantasy involving someone famous.", "hooked up with a boss or subordinate.", "lied to a partner about where I was going.", "had an accidental wardrobe malfunction in public.", "given someone a gift I knew they would hate.", "been turned on by a romantic comedy.", "had a partner who was significantly older or younger.", "flirted with a service professional (waiter, bartender).", "made a suggestive joke to a stranger.", "had sex in a place I regretted immediately.", "thought about marrying someone for money.", "had a partner whose parent hated me.", "broken up with someone right before a major holiday.", "secretly wished a date would end faster.", "gotten back together with an ex more than once.", "had a friend try to sabotage my relationship.", "cheated on a test using my phone." ],
-                pack3: [ "used a safe word outside of intimacy.", "been caught making out.", "had sex on a beach.", "sent a very drunk text to an ex.", "kissed someone with terrible breath.", "been sexually rejected.", "had a partner get caught cheating.", "had sex in a vehicle.", "been attracted to a friend of my partner.", "had a partner who was terrible in bed.", "had a three-way.", "used my looks to get out of trouble.", "thought my current partner was cheating.", "been asked to keep a relationship secret.", "had a fight that almost ended my relationship.", "been naked outside in the winter.", "had a partner who was secretly rich.", "been caught masturbating.", "hooked up in a public bathroom.", "used my partner's toothbrush without telling them." ]
-            },
-            nostalgia: {
-                pack1: [ "kept in touch with an ex.", "gone back to an ex's place late at night.", "had a crush on one of my high school teachers.", "lied to get out of seeing my family.", "had a terrible perm or haircut.", "thought I was allergic to something and I wasn't.", "worn clothes that were wildly out of style.", "been embarrassed by my parents in public.", "broken curfew and gotten away with it.", "had a fake illness to get out of school.", "snuck food into a movie theater.", "made up a ridiculous lie that someone believed.", "been caught cheating on a test.", "had a secret relationship.", "been in love with two people at once.", "regretted an old photograph.", "owned a pet that hated me.", "been grounded for over a month.", "had an imaginary friend after age 10.", "lied about where I went to college."],
-                pack2: [ "skipped class without permission.", "had a secret smoking habit.", "had a summer job I hated.", "lied about being sick to get attention.", "cheated on a partner.", "had a pet die and kept it secret.", "been drunk/high in school.", "stolen something from a grocery store.", "had a major wardrobe malfunction.", "had a crush on a friend's parent.", "spent a ridiculous amount of money on a concert.", "crashed a car.", "lied on a resume.", "forgotten an anniversary or birthday.", "had an embarrassing celebrity encounter.", "faked being busy to ignore someone.", "had an irrational fear that ruled my life.", "been afraid of the dark recently.", "thought about running away from home.", "had a fake dating profile."],
-                pack3: [ "had a secret stash of money.", "cried because of a grade.", "had a weird collection as a kid.", "snuck out of the house as an adult.", "been mistaken for a celebrity.", "lied about my age for a discount.", "regretted starting a fight.", "had a best friend betray me.", "dated someone my friend warned me about.", "faked a job interview.", "been caught making out in a public place.", "had a one-sided crush that lasted years.", "been in a physical fight.", "had a partner who was abusive.", "thought about leaving my current partner.", "used a fake name.", "tried to convince someone I was famous.", "been a terrible singer at karaoke.", "ruined a surprise party.", "had a job for less than 48 hours."],
-            },
-            work: {
-                pack1: [ "lied about my skills on a resume.", "slept with a co-worker.", "called in sick when I was perfectly fine.", "thought my boss was flirting with me.", "stole supplies from a workplace.", "secretly hated a gift from a boss.", "quit a job without notice.", "drank alcohol during work hours.", "fantasized about firing someone.", "used work time to plan a trip.", "stole someone else's lunch.", "used a terrible excuse to miss a meeting.", "gone into my partner's bank account without asking.", "felt pressured to spend more money than I earn.", "lied about a business trip.", "had a disastrous job interview.", "faked technical difficulties to avoid a video call.", "had an office romance that ended badly.", "used company resources for personal projects.", "made fun of my boss behind their back."],
-                pack2: [ "had a huge crush on a customer or client.", "purposely sabotaged a co-worker.", "gotten fired for being lazy.", "lied to my partner about how much money I make.", "cried in the office bathroom.", "been asked out by a subordinate.", "taken credit for someone else's work.", "spent an entire day doing nothing at work.", "used a friend's Netflix/Hulu account.", "thought about taking a nude photo at work.", "flirted my way out of a professional mistake.", "made a major mistake at work that cost the company money.", "had an intense argument with a colleague.", "quit a job because of one annoying person.", "worked for free.", "sold something for way less than it was worth.", "bought something extravagant and immediately regretted it.", "cheated on my taxes.", "faked excitement about a promotion.", "skipped a meeting and lied about why."],
-                pack3: [ "had a secret business idea I never pursued.", "gotten a terrible performance review.", "felt completely unqualified for a job.", "had a work crush on my partner.", "used company secrets for personal gain.", "been caught sleeping on the job.", "lied to a customer.", "drank so much at a work event I embarrassed myself.", "pretended to be sick for a job interview.", "been offered a bribe.", "had an inappropriate relationship with a professional contact.", "taken extra long breaks regularly.", "purposely tried to get my partner to hate my job.", "spent all my money on a single item.", "judged someone solely based on their job title.", "lied about knowing a language.", "felt burnt out this past week.", "used a professional license without authorization.", "gossiped about my boss's personal life.", "been caught taking a nap at work."],
-            },
-            moral: {
-                pack1: [ "stolen something small.", "thought about running away from a problem.", "lied to the police or a government official.", "driven drunk or under the influence.", "cheated on a partner.", "witnessed a crime and didn't report it.", "broken a promise I knew I couldn't keep.", "taken credit for someone else's good deed.", "purposely hurt someone's feelings.", "lied about an injury to get sympathy.", "given money to a scammer.", "used someone for financial gain.", "kept quiet while someone else took the blame.", "made a significant ethical compromise.", "thought about ending a friendship over something minor.", "been in a major car accident.", "faked expertise in something important.", "been racist, sexist, or homophobic.", "purposely given someone the wrong directions.", "used my position to benefit myself unfairly."],
-                pack2: [ "purposely damaged someone else's property.", "thought about committing fraud.", "lied about being sick to get out of a fine or fee.", "hidden cash from my partner.", "believed in a conspiracy theory.", "betrayed a family member.", "broken a vow or promise I made to myself.", "thought about cheating on a partner.", "taken revenge on someone.", "stole money from a friend.", "told a harmful secret.", "been involved in a hit-and-run.", "faked a medical condition.", "lied about a relationship status.", "purposely set up two friends who I knew wouldn't work.", "used a fake charity for tax benefits.", "yelled at someone over the phone.", "had a public meltdown.", "lied about having a degree or certification.", "purposely made someone feel jealous."],
-                pack3: [ "purposely ignored someone's cry for help.", "cheated on my taxes.", "kept a valuable lost item instead of returning it.", "thought about stealing from a wealthy person.", "purposely misled my partner about a serious matter.", "driven far over the speed limit.", "lied to a doctor.", "stole a significant amount of money.", "purposely failed a task to avoid future work.", "been manipulated by someone I trusted.", "thought about quitting my life/job immediately.", "used a position of power to hurt someone.", "forgiven someone who didn't deserve it.", "stolen someone's idea and claimed it as my own.", "lied about my age to get a job.", "purposely missed an important family event.", "taken advantage of a drunk person.", "been involved in a cover-up.", "lied about a criminal record.", "used a false identity online."]
-            },
-        };
+        let result='';
+        if(currentAnswer&&hasDonel)result="You've BOTH done it! Share your stories! 🔥";
+        else if(!currentAnswer&&!hasDonel)result="Neither of you have! Interesting... 🤔";
+        else if(currentAnswer)result="Only Player 1 has done it! Spill the tea! ☕";
+        else result="Only Player 2 has done it! Tell us more! 👀";
+        
+        document.getElementById('resultText').textContent=result;
+        answering=1;
+        showPhase('resultPhase');
+    }
+}
 
-        // --- CORE GAME FUNCTIONS (Simplified to remove turn logic) ---
+function nextPrompt(){
+    round++;
+    document.querySelector('.prompt-hint').textContent='Both players answer honestly!';
+    showPrompt();
+}
 
-        function init() {
-            document.getElementById('categorySelection').style.display = 'block';
-        }
+function endGame(){
+    const winner=scores[1]>scores[2]?'Player 1':scores[2]>scores[1]?'Player 2':'Tie';
+    document.getElementById('endSub').textContent=`P1: ${scores[1]} confessions | P2: ${scores[2]} confessions`;
+    showPhase('endPhase');
+}
 
-        function showPacks(categoryId) {
-            currentCategory = categoryId;
-            document.getElementById('categorySelection').classList.add('hidden');
-            document.getElementById('packSelection').classList.remove('hidden');
-            
-            document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
-            
-            const packsGrid = document.getElementById('packsGrid');
-            packsGrid.innerHTML = '';
-            
-            const categoryPacks = nhiePrompts[categoryId];
-            let packIndex = 1;
-
-            for (const packId in categoryPacks) {
-                if (categoryPacks.hasOwnProperty(packId) && categoryPacks[packId].length > 0) {
-                    const promptsCount = categoryPacks[packId].length;
-                    
-                    const packCard = `
-                        <div class="pack-card" onclick="selectPack('${packId}')">
-                            <div class="pack-number">${packIndex}</div>
-                            <h3>PACK ${packIndex}</h3>
-                            <p class="pack-questions">${promptsCount} PROMPTS</p>
-                        </div>
-                    `;
-                    packsGrid.innerHTML += packCard;
-                    packIndex++;
-                }
-            }
-        }
-
-        function selectPack(packId) {
-            currentPack = packId;
-            currentPrompts = nhiePrompts[currentCategory][packId];
-            
-            if (currentPrompts.length === 0) {
-                 alert(`Selected pack is empty. Please choose an active pack.`);
-                 return;
-            }
-
-            currentPromptIndex = 0;
-            
-            document.getElementById('packSelection').classList.add('hidden');
-            document.getElementById('gameScreen').style.display = 'block';
-            
-            updateDisplay();
-        }
-
-        function updateDisplay() {
-            const totalPrompts = currentPrompts.length;
-            const promptsPlayed = currentPromptIndex + 1;
-            const progress = (promptsPlayed / totalPrompts) * 100;
-            
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('promptCounter').textContent = `PROMPT ${promptsPlayed} OF ${totalPrompts}`;
-            
-            // The prompt text is always visible and ready to be read by either player
-            document.getElementById('promptText').textContent = "Never have I ever " + currentPrompts[currentPromptIndex] + ".";
-            
-            document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
-            document.getElementById('nextBtn').textContent = currentPromptIndex === totalPrompts - 1 ? 'FINISH' : 'NEXT →';
-        }
-
-        function nextPrompt() {
-            if (currentPromptIndex === currentPrompts.length - 1) {
-                showEndScreen();
-            } else {
-                currentPromptIndex++;
-                updateDisplay();
-            }
-        }
-
-        function previousPrompt() {
-            if (currentPromptIndex > 0) {
-                currentPromptIndex--;
-                updateDisplay();
-            }
-        }
-
-        // --- BACK/QUIT FUNCTIONS ---
-        function backToCategories() {
-            document.getElementById('packSelection').classList.add('hidden');
-            document.getElementById('categorySelection').classList.remove('hidden');
-        }
-
-        function quitToPacks() {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('packSelection').classList.remove('hidden');
-            currentPromptIndex = 0;
-        }
-
-        function showEndScreen() {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'block';
-        }
-
-        function backToPackSelection() {
-            document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('packSelection').classList.remove('hidden');
-            currentPromptIndex = 0;
-        }
-
-        function backToGames() {
-            window.location.href = '/duos.html';
-        }
-
-        window.onload = init;
-    </script>
-    <script>
-        // Supabase initialization
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
-    </script>
-    <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+function resetGame(){
+    category='';
+    deck=[];
+    round=0;
+    scores={1:0,2:0};
+    answering=1;
+    showPhase('categoryPhase');
+}
+</script>
+<script src="/header.js"></script>
+<script src="/js/engagement.js" defer></script>
 </body>
 </html>

@@ -3,445 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Word Chain - TheGaming.co</title>
-    <meta name="description" content="Word Chain for 2 players. Each word must start with the last letter of the previous word!">
+    <title>Word Chain – 2 Player Game | TheGaming.co</title>
+    <meta name="description" content="Word Chain for 2 players. Each word must start with the last letter!">
     <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="/header.css">
-    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: #fafbff; 
-            color: #1a1a1a; 
-            overflow-x: hidden; 
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
+            --p1:#f472b6;--p2:#60a5fa;
+            --text-dark:#1a1a2e;--text-muted:#6b7280;
         }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
 
-        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
-        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
-        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
-        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
 
-        .container { max-width: 600px; margin: 0 auto; padding: 80px 20px 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 25px; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
-        .back-btn:hover { color: #1a1a1a; }
+        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
+        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
 
-        .game-header { text-align: center; margin-bottom: 20px; }
-        .game-title { font-size: 3rem; margin-bottom: 8px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
-        .game-subtitle { font-size: 1rem; color: #666; }
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
+        .game-container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
 
-        .scoreboard { 
-            display: flex; 
-            justify-content: center; 
-            gap: 30px; 
-            margin-bottom: 20px;
-            background: white;
-            padding: 15px 30px;
-            border: 3px solid #1a1a1a;
-            box-shadow: 5px 5px 0 #e0e0e0;
-        }
-        .score-item { text-align: center; padding: 5px 15px; border-radius: 8px; transition: all 0.3s ease; }
-        .score-item.active { background: rgba(255, 107, 157, 0.15); }
-        .score-label { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: #666; letter-spacing: 1px; }
-        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: #1a1a1a; }
-        .score-item.p1 .score-label { color: #ff6b9d; }
-        .score-item.p2 .score-label { color: #4facfe; }
-        .score-item.active.p1 .score-value { color: #ff6b9d; }
-        .score-item.active.p2 .score-value { color: #4facfe; }
+        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s}
+        .score-card.active{border-color:var(--accent);box-shadow:0 4px 20px rgba(244,114,182,0.2)}
+        .score-card.p1 .score-label{color:var(--p1)}
+        .score-card.p2 .score-label{color:var(--p2)}
+        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .score-value{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;color:var(--text-dark)}
+        .score-sub{font-size:0.7rem;color:var(--text-muted)}
 
-        .turn-indicator {
-            text-align: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-        }
-        .turn-indicator.p1 { color: #ff6b9d; }
-        .turn-indicator.p2 { color: #4facfe; }
+        .turn-indicator{text-align:center;padding:8px;font-size:0.85rem;font-weight:600;color:var(--text-muted)}
+        .turn-indicator span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px}
+        .turn-indicator.p1 span{color:var(--p1)}
+        .turn-indicator.p2 span{color:var(--p2)}
 
-        .current-letter {
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white;
-            text-align: center;
-            padding: 25px;
-            border: 3px solid #8b2e47;
-            box-shadow: 5px 5px 0 #8b2e47;
-            margin-bottom: 20px;
-        }
+        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
 
-        .letter-label {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin-bottom: 5px;
-        }
+        .last-word{text-align:center;margin-bottom:20px}
+        .last-label{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+        .last-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px}
+        .last-hint{font-size:0.85rem;color:var(--accent-dark);margin-top:4px}
+        .last-hint span{font-family:'Bebas Neue',sans-serif;font-size:1.2rem}
 
-        .letter-display {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 4rem;
-            line-height: 1;
-        }
+        .input-area{display:flex;gap:10px;margin-bottom:16px}
+        .word-input{flex:1;padding:14px;border:2px solid #eee;border-radius:12px;font-size:1rem;text-transform:uppercase;letter-spacing:2px}
+        .word-input:focus{outline:none;border-color:var(--accent)}
 
-        .input-area {
-            background: white;
-            border: 3px solid #1a1a1a;
-            padding: 20px;
-            box-shadow: 5px 5px 0 #e0e0e0;
-            margin-bottom: 20px;
-        }
+        .error-msg{text-align:center;color:#ef4444;font-size:0.85rem;min-height:24px;font-weight:500}
 
-        .word-input {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.3rem;
-            border: 3px solid #1a1a1a;
-            font-family: 'Inter', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: center;
-            margin-bottom: 15px;
-        }
+        .word-history{max-height:150px;overflow-y:auto;border-top:1px solid #eee;margin-top:16px;padding-top:16px}
+        .history-title{font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+        .history-list{display:flex;flex-wrap:wrap;gap:6px}
+        .history-word{padding:4px 10px;background:#f8f8f8;border-radius:20px;font-size:0.8rem;font-weight:500}
+        .history-word.p1{background:var(--accent-light);color:var(--accent-dark)}
+        .history-word.p2{background:#dbeafe;color:#1d4ed8}
 
-        .word-input:focus {
-            outline: none;
-            border-color: #ff6b9d;
-        }
+        .result-screen{text-align:center;padding:20px;display:none}
+        .result-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:8px}
+        .result-title.p1{color:var(--p1)}
+        .result-title.p2{color:var(--p2)}
+        .result-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:20px}
 
-        .submit-row {
-            display: flex;
-            gap: 10px;
-        }
+        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
+        .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(244,114,182,0.2)}
+        .btn-danger{background:#fee2e2;color:#dc2626;border:2px solid #fecaca}
 
-        .submit-btn {
-            flex: 1;
-            padding: 12px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.1rem;
-            border: 3px solid #1a1a1a;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .submit-btn.primary {
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white;
-            border-color: #8b2e47;
-            box-shadow: 3px 3px 0 #8b2e47;
-        }
-
-        .submit-btn.give-up {
-            background: #666;
-            color: white;
-            border-color: #444;
-            box-shadow: 3px 3px 0 #444;
-            flex: 0.5;
-        }
-
-        .submit-btn:hover { transform: translate(1px, 1px); }
-
-        .error-message {
-            color: #ff4444;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 24px;
-        }
-
-        .word-chain {
-            background: white;
-            border: 3px solid #1a1a1a;
-            padding: 20px;
-            box-shadow: 5px 5px 0 #e0e0e0;
-            margin-bottom: 20px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .chain-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .chain-words {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .chain-word {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .chain-word.p1 {
-            background: rgba(255, 107, 157, 0.2);
-            color: #c44569;
-        }
-
-        .chain-word.p2 {
-            background: rgba(79, 172, 254, 0.2);
-            color: #3498db;
-        }
-
-        .game-message {
-            text-align: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-        .game-message.p1 { color: #ff6b9d; }
-        .game-message.p2 { color: #4facfe; }
-
-        .actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-
-        .action-btn {
-            padding: 15px 30px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            border: 3px solid #1a1a1a;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white;
-            border-color: #8b2e47;
-            box-shadow: 5px 5px 0 #8b2e47;
-        }
-
-        .action-btn:hover { transform: translate(2px, 2px); }
-        .action-btn.primary:hover { box-shadow: 3px 3px 0 #8b2e47; }
-
-        .hidden { display: none !important; }
-
-        @media (max-width: 500px) {
-            .container { padding: 70px 15px 30px; }
-            .game-title { font-size: 2.5rem; }
-            .letter-display { font-size: 3rem; }
-            .scoreboard { gap: 20px; padding: 12px 20px; }
-            .score-value { font-size: 1.6rem; }
-            .word-chain { max-height: 150px; }
-        }
-
-        @supports (padding: max(0px)) {
-            .container { padding-top: max(80px, calc(env(safe-area-inset-top) + 70px)); }
-        }
+        .actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
     </style>
 </head>
 <body>
     <div id="site-header"></div>
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">🔗</div>
+                <h1 class="hero-title">WORD CHAIN</h1>
+                <p class="hero-sub">Each word must start with the last letter!</p>
+            </div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="score-bar">
+                    <div class="score-card p1" id="card1">
+                        <div class="score-label">Player 1</div>
+                        <div class="score-value" id="score1">0</div>
+                        <div class="score-sub">words</div>
+                    </div>
+                    <div class="score-card p2" id="card2">
+                        <div class="score-label">Player 2</div>
+                        <div class="score-value" id="score2">0</div>
+                        <div class="score-sub">words</div>
+                    </div>
+                </div>
+
+                <div class="turn-indicator p1" id="turnIndicator"><span>PLAYER 1</span>'s turn</div>
+
+                <div class="game-board" id="gameBoard">
+                    <div class="last-word">
+                        <div class="last-label">Last Word</div>
+                        <div class="last-value" id="lastWord">—</div>
+                        <div class="last-hint" id="lastHint">Start with any word!</div>
+                    </div>
+
+                    <div class="input-area">
+                        <input type="text" class="word-input" id="wordInput" placeholder="Enter a word..." autocomplete="off">
+                        <button class="btn btn-primary" onclick="submitWord()">Go</button>
+                    </div>
+
+                    <div class="error-msg" id="errorMsg"></div>
+
+                    <button class="btn btn-danger" onclick="giveUp()" style="width:100%">Give Up</button>
+
+                    <div class="word-history">
+                        <div class="history-title">Words Used</div>
+                        <div class="history-list" id="historyList"></div>
+                    </div>
+                </div>
+
+                <div class="result-screen" id="resultScreen">
+                    <div class="result-title" id="resultTitle"></div>
+                    <div class="result-sub" id="resultSub"></div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+let current=1;
+let lastWord='';
+let usedWords=new Set();
+let scores={1:0,2:0};
+
+function submitWord(){
+    const input=document.getElementById('wordInput');
+    const word=input.value.trim().toUpperCase();
+    const error=document.getElementById('errorMsg');
     
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-
-    <div class="container">
-        <div class="game-nav">
-            <a href="/duos.html" class="back-btn">← Back to Duos</a>
-        </div>
-
-        <div class="game-header">
-            <h1 class="game-title">WORD CHAIN</h1>
-            <p class="game-subtitle">Each word starts with the last letter of the previous!</p>
-        </div>
-
-        <div class="scoreboard">
-            <div class="score-item p1 active" id="scoreP1">
-                <div class="score-label">PLAYER 1</div>
-                <div class="score-value" id="scoreP1Value">0</div>
-            </div>
-            <div class="score-item p2" id="scoreP2">
-                <div class="score-label">PLAYER 2</div>
-                <div class="score-value" id="scoreP2Value">0</div>
-            </div>
-        </div>
-
-        <div class="turn-indicator p1" id="turnIndicator">PLAYER 1'S TURN</div>
-
-        <div class="current-letter">
-            <div class="letter-label">YOUR WORD MUST START WITH</div>
-            <div class="letter-display" id="currentLetter">ANY</div>
-        </div>
-
-        <div class="input-area" id="inputArea">
-            <input type="text" class="word-input" id="wordInput" placeholder="TYPE A WORD" autocomplete="off">
-            <div class="submit-row">
-                <button class="submit-btn primary" onclick="submitWord()">SUBMIT</button>
-                <button class="submit-btn give-up" onclick="giveUp()">GIVE UP</button>
-            </div>
-            <div class="error-message" id="errorMessage"></div>
-        </div>
-
-        <div class="word-chain">
-            <div class="chain-title">WORD CHAIN</div>
-            <div class="chain-words" id="chainWords"></div>
-        </div>
-
-        <div class="game-message" id="gameMessage"></div>
-
-        <div class="actions hidden" id="gameActions">
-            <button class="action-btn primary" onclick="resetGame()">PLAY AGAIN</button>
-        </div>
-    </div>
-
-    <script>
-        let currentPlayer = 1;
-        let currentLetter = null;
-        let usedWords = [];
-        let scores = { p1: 0, p2: 0 };
-        let gameActive = true;
-
-        function init() {
-            updateTurnIndicator();
-            document.getElementById('wordInput').focus();
-        }
-
-        function submitWord() {
-            if (!gameActive) return;
-            
-            const input = document.getElementById('wordInput');
-            const word = input.value.toUpperCase().trim();
-            const errorEl = document.getElementById('errorMessage');
-            
-            // Validation
-            if (word.length < 2) {
-                errorEl.textContent = 'Word must be at least 2 letters!';
-                return;
-            }
-            
-            if (!/^[A-Z]+$/.test(word)) {
-                errorEl.textContent = 'Letters only!';
-                return;
-            }
-            
-            if (usedWords.includes(word)) {
-                errorEl.textContent = 'Word already used!';
-                return;
-            }
-            
-            if (currentLetter && word[0] !== currentLetter) {
-                errorEl.textContent = `Word must start with "${currentLetter}"!`;
-                return;
-            }
-            
-            // Valid word
-            errorEl.textContent = '';
-            usedWords.push(word);
-            scores[`p${currentPlayer}`]++;
-            
-            // Add to chain display
-            addWordToChain(word, currentPlayer);
-            
-            // Update for next turn
-            currentLetter = word[word.length - 1];
-            document.getElementById('currentLetter').textContent = currentLetter;
-            
-            // Switch player
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            updateTurnIndicator();
-            updateScores();
-            
-            input.value = '';
-            input.focus();
-        }
-
-        function addWordToChain(word, player) {
-            const chain = document.getElementById('chainWords');
-            const wordEl = document.createElement('span');
-            wordEl.className = `chain-word p${player}`;
-            wordEl.textContent = word;
-            chain.appendChild(wordEl);
-            chain.scrollTop = chain.scrollHeight;
-        }
-
-        function giveUp() {
-            if (!gameActive) return;
-            
-            gameActive = false;
-            const winner = currentPlayer === 1 ? 2 : 1;
-            
-            document.getElementById('inputArea').classList.add('hidden');
-            
-            const messageEl = document.getElementById('gameMessage');
-            messageEl.textContent = `PLAYER ${winner} WINS!`;
-            messageEl.className = `game-message p${winner}`;
-            
-            document.getElementById('gameActions').classList.remove('hidden');
-        }
-
-        function updateTurnIndicator() {
-            const indicator = document.getElementById('turnIndicator');
-            indicator.textContent = `PLAYER ${currentPlayer}'S TURN`;
-            indicator.className = `turn-indicator p${currentPlayer}`;
-            
-            document.getElementById('scoreP1').classList.toggle('active', currentPlayer === 1);
-            document.getElementById('scoreP2').classList.toggle('active', currentPlayer === 2);
-        }
-
-        function updateScores() {
-            document.getElementById('scoreP1Value').textContent = scores.p1;
-            document.getElementById('scoreP2Value').textContent = scores.p2;
-        }
-
-        function resetGame() {
-            currentPlayer = 1;
-            currentLetter = null;
-            usedWords = [];
-            scores = { p1: 0, p2: 0 };
-            gameActive = true;
-            
-            document.getElementById('currentLetter').textContent = 'ANY';
-            document.getElementById('chainWords').innerHTML = '';
-            document.getElementById('wordInput').value = '';
-            document.getElementById('errorMessage').textContent = '';
-            document.getElementById('gameMessage').textContent = '';
-            document.getElementById('inputArea').classList.remove('hidden');
-            document.getElementById('gameActions').classList.add('hidden');
-            
-            updateScores();
-            updateTurnIndicator();
-            document.getElementById('wordInput').focus();
-        }
-
-        // Enter key submit
-        document.getElementById('wordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') submitWord();
-        });
-
-        window.onload = init;
-    </script>
+    if(word.length<2){
+        error.textContent='Word must be at least 2 letters';
+        return;
+    }
+    if(!/^[A-Z]+$/.test(word)){
+        error.textContent='Letters only!';
+        return;
+    }
+    if(usedWords.has(word)){
+        error.textContent='Word already used!';
+        return;
+    }
+    if(lastWord&&word[0]!==lastWord[lastWord.length-1]){
+        error.textContent=`Must start with "${lastWord[lastWord.length-1]}"`;
+        return;
+    }
     
-    <script>
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
-    </script>
-    <script src="/header.js"></script>
-    <script src="/js/engagement.js"></script>
+    error.textContent='';
+    usedWords.add(word);
+    scores[current]++;
+    updateScores();
+    
+    addToHistory(word,current);
+    lastWord=word;
+    document.getElementById('lastWord').textContent=word;
+    document.getElementById('lastHint').innerHTML=`Next word starts with "<span>${word[word.length-1]}</span>"`;
+    
+    current=current===1?2:1;
+    updateTurn();
+    input.value='';
+    input.focus();
+}
+
+function addToHistory(word,player){
+    const list=document.getElementById('historyList');
+    const tag=document.createElement('span');
+    tag.className=`history-word p${player}`;
+    tag.textContent=word;
+    list.appendChild(tag);
+}
+
+function updateTurn(){
+    const el=document.getElementById('turnIndicator');
+    el.innerHTML=`<span>PLAYER ${current}</span>'s turn`;
+    el.className=`turn-indicator p${current}`;
+    document.getElementById('card1').classList.toggle('active',current===1);
+    document.getElementById('card2').classList.toggle('active',current===2);
+}
+
+function updateScores(){
+    document.getElementById('score1').textContent=scores[1];
+    document.getElementById('score2').textContent=scores[2];
+}
+
+function giveUp(){
+    const winner=current===1?2:1;
+    endGame(winner);
+}
+
+function endGame(winner){
+    document.getElementById('gameBoard').style.display='none';
+    const result=document.getElementById('resultScreen');
+    result.style.display='block';
+    
+    const title=document.getElementById('resultTitle');
+    title.textContent=`PLAYER ${winner} WINS!`;
+    title.className=`result-title p${winner}`;
+    document.getElementById('resultSub').textContent=`Final: P1 ${scores[1]} words, P2 ${scores[2]} words`;
+}
+
+function resetGame(){
+    current=1;
+    lastWord='';
+    usedWords=new Set();
+    scores={1:0,2:0};
+    updateScores();
+    updateTurn();
+    
+    document.getElementById('lastWord').textContent='—';
+    document.getElementById('lastHint').textContent='Start with any word!';
+    document.getElementById('historyList').innerHTML='';
+    document.getElementById('errorMsg').textContent='';
+    document.getElementById('wordInput').value='';
+    
+    document.getElementById('gameBoard').style.display='block';
+    document.getElementById('resultScreen').style.display='none';
+}
+
+document.getElementById('wordInput').addEventListener('keypress',e=>{
+    if(e.key==='Enter')submitWord();
+});
+</script>
+<script src="/header.js"></script>
+<script src="/js/engagement.js" defer></script>
 </body>
 </html>

@@ -3,809 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Kiss Marry Kill – 2 Player Game | TheGaming.co</title>
+    <meta name="description" content="Kiss Marry Kill - the classic choice game!">
     <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Kiss, Marry, Kill - TheGaming.co</title>
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
-    
     <style>
-        /* Base Styles from Q&A Template */
-        * { margin: 0; padding: 0; box-sizing: border-box; --radius: 8px; }
-        body { 
-            font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; 
-            position: relative; min-height: 100vh;
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
+            --kiss:#ec4899;--marry:#8b5cf6;--kill:#ef4444;
+            --p1:#f472b6;--p2:#60a5fa;
+            --text-dark:#1a1a2e;--text-muted:#6b7280;
         }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
 
-        /* Animated background blobs (Kept for background aesthetic) */
-        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
-        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
-        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
-        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
-        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
 
-        .container { 
-            max-width: 900px; margin: 0 auto; padding: 0; 
-            position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; 
-        }
-        
-        /* Navigation (Added horizontal padding back) */
-        nav { 
-            padding: 30px 40px; 
-            display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; 
-            margin-bottom: 40px; position: relative; z-index: 10; 
-            max-width: 900px; width: 100%; margin-left: auto; margin-right: auto;
-        }
-        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
-        .back-btn:hover { color: #1a1a1a; }
+        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
+        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
 
-        /* General Content (Added horizontal padding back) */
-        .game-content { flex: 1; display: flex; flex-direction: column; padding: 0 40px 60px; }
-        .hidden { display: none !important; }
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
+        .game-container{width:100%;max-width:450px;display:flex;flex-direction:column;gap:16px}
 
-        /* --- SELECTION SCREENS --- */
-        .selection-screen { max-width: 800px; margin: 0 auto; }
-        .selection-header { text-align: center; margin-bottom: 50px; }
-        .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
-        .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
-        
-        /* 2x2 Grid for 4 categories */
-        .selection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; } 
-        
-        .selection-card { 
-            background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; 
-            transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; 
-            border-radius: var(--radius); 
-        }
-        .selection-card h3 { font-size: 2.2rem; margin-bottom: 10px; line-height: 1; } 
-        .selection-description { font-size: 1rem; color: #666; font-weight: 500; line-height: 1.5; }
+        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
 
-        /* Round Selection UI */
-        .round-selector-group { text-align: center; margin-bottom: 30px; border-top: 3px solid #e0e0e0; padding-top: 30px; }
-        .round-selector-group label { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: #1a1a1a; letter-spacing: 1px; margin-bottom: 15px; display: block; }
-        .round-options button {
-            padding: 10px 20px; font-size: 1rem; margin: 0 5px; border: 2px solid #ccc; background: #f0f0f0;
-            cursor: pointer; border-radius: var(--radius); transition: all 0.2s;
-        }
-        .round-options button.selected {
-            background: #ff6b9d; color: white; border-color: #c44569;
-        }
+        .phase{display:none}
+        .phase.active{display:block}
 
-        /* --- GAME SCREEN STYLES --- */
-        .game-screen { display: none; }
-        
-        /* PROGRESS BAR FIX: Integrated styling directly into the header bar */
-        .progress-bar-integrated {
-            background: #f0f0f0;
-            border: 3px solid #1a1a1a;
-            padding: 8px;
-            margin-bottom: 20px; 
-            height: 40px; 
-            border-radius: var(--radius);
-        }
-        .progress-bar-integrated .progress-fill { 
-            height: 100%; 
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); 
-            transition: width 0.3s ease; 
-            border-radius: 2px;
-        } 
+        .category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+        .category-card{background:#fdf2f8;border:2px solid #fce7f3;border-radius:14px;padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.2s}
+        .category-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+        .category-icon{font-size:2rem;margin-bottom:8px}
+        .category-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;margin-bottom:4px}
+        .category-desc{font-size:0.75rem;color:var(--text-muted)}
 
-        /* ARTIFACT FIX: Simplifies the Header Structure */
-        .game-header { 
-            margin-bottom: 20px; /* Reduced margin since progress bar is above */
-            position: relative; 
-            width: 100%;
-            text-align: center; 
-            padding: 5px 0; 
-        }
-        
-        .header-center {
-            padding: 0 100px; /* Space reserved for the QUIT button */
-        }
+        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;text-align:center;margin-bottom:20px;color:var(--accent-dark)}
 
-        .quit-btn { 
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%); /* Vertically centers the button on the header */
-            
-            border: 2px solid #1a1a1a; padding: 8px 20px; font-family: 'Bebas Neue', sans-serif; 
-            font-size: 1rem; letter-spacing: 1px; color: #666; border-radius: var(--radius); 
-            cursor: pointer;
-            flex-shrink: 0; 
-        }
-        /* QUIT BUTTON HOVER FIX */
-        .quit-btn:hover {
-            color: #1a1a1a;
-            background: #f0f0f0;
-        }
-        
-        .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
-        .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
+        .progress-bar{height:6px;background:#eee;border-radius:3px;margin-bottom:16px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width 0.3s}
+        .progress-text{text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:16px}
 
-        /* Card container for the three targets */
-        .kmk-card-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            max-width: 700px;
-            margin: 0 auto 30px;
-        }
+        .player-turn{text-align:center;margin-bottom:16px}
+        .player-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px}
+        .player-badge.p1{background:var(--accent-light);color:var(--accent-dark)}
+        .player-badge.p2{background:#dbeafe;color:#1d4ed8}
 
-        .target-group {
-            background: white;
-            border: 4px solid #1a1a1a;
-            box-shadow: 6px 6px 0 #e0e0e0;
-            padding: 30px;
-            text-align: center;
-            border-radius: var(--radius);
-        }
+        .options-card{text-align:center}
+        .options-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+        .option-item{display:flex;align-items:center;gap:12px;padding:14px;background:#fdf2f8;border:2px solid #fce7f3;border-radius:12px}
+        .option-name{flex:1;font-weight:600;text-align:left}
+        .choice-btns{display:flex;gap:6px}
+        .choice-btn{width:36px;height:36px;border-radius:10px;border:2px solid #eee;background:#fff;font-size:1rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+        .choice-btn:hover{transform:scale(1.1)}
+        .choice-btn.kiss:hover,.choice-btn.kiss.selected{border-color:var(--kiss);background:#fce7f3}
+        .choice-btn.marry:hover,.choice-btn.marry.selected{border-color:var(--marry);background:#ede9fe}
+        .choice-btn.kill:hover,.choice-btn.kill.selected{border-color:var(--kill);background:#fee2e2}
 
-        .targets-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-        
-        /* Individual Target Card */
-        .target-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px 10px;
-            border: 3px solid #ccc;
-            border-radius: var(--radius);
-            min-height: 140px;
-            justify-content: space-between;
-            background: #fcfcfc;
-        }
+        .submit-area{text-align:center}
 
-        .target-item-text {
-            font-size: 1.3rem; 
-            font-weight: 700;
-            line-height: 1.4;
-            margin-bottom: 10px;
-            flex-grow: 1; 
-            display: flex;
-            align-items: center;
-            text-align: center;
-        }
-        
-        /* Action Buttons Container */
-        .action-btns {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            gap: 5px;
-        }
+        .result-card{text-align:center;padding:20px}
+        .result-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;margin-bottom:16px;color:var(--accent-dark)}
+        .result-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+        .result-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fdf2f8;border-radius:10px}
+        .result-name{font-weight:600}
+        .result-choices{display:flex;gap:8px}
+        .result-badge{padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600}
+        .result-badge.kiss{background:#fce7f3;color:var(--kiss)}
+        .result-badge.marry{background:#ede9fe;color:var(--marry)}
+        .result-badge.kill{background:#fee2e2;color:var(--kill)}
+        .match-indicator{font-size:0.85rem;color:var(--text-muted);margin-bottom:16px}
+        .match-indicator.match{color:#22c55e}
 
-        .action-btn-sm {
-            padding: 8px 0; 
-            font-size: 0.9rem; 
-            font-weight: 700;
-            flex-grow: 1;
-            border: 2px solid #ccc;
-            background: #f0f0f0;
-            cursor: pointer;
-            transition: all 0.1s;
-            border-radius: 4px;
-        }
+        .end-screen{text-align:center;padding:30px}
+        .end-emoji{font-size:4rem;margin-bottom:16px}
+        .end-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:8px;color:var(--accent-dark)}
+        .end-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
 
-        /* Color Coding for Selection */
-        .action-btn-sm.kmk-kiss.selected { background: #ffc0cb; border-color: #ff6b9d; color: #1a1a1a; }
-        .action-btn-sm.kmk-marry.selected { background: #a8dadc; border-color: #457b9d; color: #1a1a1a; }
-        .action-btn-sm.kmk-kill.selected { background: #e63946; border-color: #d11d2a; color: white; }
+        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
 
-        .turn-indicator-kmk {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #1a1a1a;
-            margin-bottom: 10px;
-            line-height: 1;
-        }
-
-        /* Submit Button */
-        .kmk-submit-btn {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white;
-            border: 2px solid #8b2e47;
-            box-shadow: 4px 4px 0 #8b2e47;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-radius: var(--radius);
-            width: 100%;
-            margin-top: 20px;
-        }
-        .kmk-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Turn Pass Screen Styles */
-        .pass-screen {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 400px;
-            background: white;
-            border: 4px solid #1a1a1a;
-            box-shadow: 8px 8px 0 #e0e0e0;
-            padding: 30px;
-            margin-bottom: 20px;
-            border-radius: var(--radius);
-            width: 100%;
-        }
-        .pass-screen h3 { font-size: 3rem; color: #ff6b9d; margin-bottom: 20px; }
-        .pass-screen p { font-size: 1.2rem; color: #666; margin-bottom: 30px; }
-        .continue-btn {
-            padding: 15px 40px; font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px;
-            background: #1a1a1a; color: white; border-radius: var(--radius); cursor: pointer;
-        }
-
-
-        /* End Screen */
-        .end-screen { display: none; text-align: center; max-width: 700px; margin: 80px auto; }
-        .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
-        .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
-        
-        .action-row-final { display: flex; justify-content: space-between; gap: 15px; margin-top: 30px; width: 100%; }
-        .action-row-final button { flex-grow: 1; padding: 15px; font-size: 1.1rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border-radius: var(--radius); }
-        .primary-action { background: #1a1a1a; color: white; border-color: #1a1a1a; box-shadow: 4px 4px 0 #e0e0e0; }
-        .secondary-action { background: white; color: #1a1a1a; border-color: #1a1a1a; box-shadow: 4px 4px 0 #e0e0e0; }
-
-        /* FOOTER STYLES FIX */
-        footer {
-            padding: 30px 40px 20px; 
-            background: #333; /* Lighter dark gray */
-            color: white; 
-            text-align: center; 
-            position: relative; 
-            z-index: 1;
-            max-width: 900px;
-            width: 100%; 
-            margin-left: auto; 
-            margin-right: auto;
-        }
-        .footer-links { 
-            display: flex; gap: 25px; justify-content: center; margin-bottom: 15px; 
-        }
-        .footer-links a { 
-            color: #ccc; 
-            text-decoration: none; font-weight: 700; transition: color 0.3s ease; 
-            font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; 
-        }
-        .footer-links a:hover { 
-            color: white; 
-        }
-        .footer-bottom { 
-            color: #999; 
-            font-size: 0.9rem; font-weight: 600; 
-        }
-
-
-        @media (max-width: 768px) {
-            .selection-grid { grid-template-columns: 1fr; } 
-            .targets-grid { grid-template-columns: 1fr; }
-            .action-btn-sm { font-size: 0.8rem; padding: 10px 0; }
-            .target-card { min-height: 100px; }
-            .pass-screen { height: 300px; }
-        }
+        .actions{display:flex;gap:10px;justify-content:center}
     </style>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="/header.css">
 </head>
 <body>
     <div id="site-header"></div>
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">💋💍💀</div>
+                <h1 class="hero-title">KISS MARRY KILL</h1>
+                <p class="hero-sub">The classic choice game!</p>
+            </div>
+        </section>
 
-    <div class="container">
-        <nav>
-            <a href="index.html" class="logo-nav">TheGaming.co</a>
-            <a href="/duos.html" class="back-btn">
-                ← Back to Duos
-            </a>
-        </nav>
-
-        <div class="game-content">
-            
-            <!-- 1. CATEGORY SELECTION SCREEN -->
-            <div class="selection-screen" id="categorySelection">
-                <div class="selection-header">
-                    <h2>KISS, MARRY, KILL</h2>
-                    <p>Choose a category of three targets. Assign one Kiss, one Marry, and one Kill.</p>
-                </div>
-
-                <div class="round-selector-group">
-                    <label>Choose Total Rounds:</label>
-                    <div class="round-options" id="roundSelector">
-                        <button class="selected" data-rounds="5">5 SETS (Quick)</button>
-                        <button data-rounds="10">10 SETS (Standard)</button>
-                        <button data-rounds="20">20 SETS (Deep Dive)</button>
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="game-board">
+                    <div class="phase active" id="categoryPhase">
+                        <div class="phase-title">CHOOSE A CATEGORY</div>
+                        <div class="category-grid">
+                            <div class="category-card" onclick="selectCategory('celebs')">
+                                <div class="category-icon">⭐</div>
+                                <div class="category-name">CELEBRITIES</div>
+                                <div class="category-desc">Famous people</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('fictional')">
+                                <div class="category-icon">🎬</div>
+                                <div class="category-name">FICTIONAL</div>
+                                <div class="category-desc">Movie & TV characters</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('random')">
+                                <div class="category-icon">🎲</div>
+                                <div class="category-name">RANDOM</div>
+                                <div class="category-desc">Wild mix</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('food')">
+                                <div class="category-icon">🍕</div>
+                                <div class="category-name">FOODS</div>
+                                <div class="category-desc">Eat forever, once, never</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="selection-grid">
-                    <div class="selection-card" onclick="selectPack('celebrity')"> <div class="selection-icon">⭐</div> <h3>CELEBRITY EDITION</h3> <p class="selection-description">Actors, musicians, and public figures.</p> </div>
-                    <div class="selection-card" onclick="selectPack('fictional')"> <div class="selection-icon">📚</div> <h3>FICTIONAL CHARACTERS</h3> <p class="selection-description">Heroes, villains, and animated friends.</p> </div>
-                    <div class="selection-card" onclick="selectPack('historical')"> <div class="selection-icon">🏛️</div> <h3>HISTORICAL FIGURES</h3> <p class="selection-description">Politicians, artists, and leaders from the past.</p> </div>
-                    <div class="selection-card" onclick="selectPack('spicy')"> <div class="selection-icon">🌶️</div> <h3>SPICY SCENARIOS</h3> <p class="selection-description">Exes, crushes, and challenging choices.</p> </div>
-                </div>
-            </div>
-
-            <!-- 2. GAME SCREENS -->
-
-            <!-- 2A. Turn Pass Screen -->
-            <div class="pass-screen" id="passScreen">
-                <h3 id="passTurnTitle">PASS DEVICE TO PLAYER 2</h3>
-                <p>Ensure Player 1 is looking away before proceeding.</p>
-                <button class="continue-btn" onclick="startNextSet()">CONTINUE</button>
-            </div>
-            
-            <!-- 2B. Main Choice Screen -->
-            <div class="game-screen" id="gameScreen" style="max-width: 700px;">
-                <div class="progress-bar-container">
-                    <div class="progress-fill" id="progressFill" style="width: 0;"></div>
-                </div>
-                <div class="kmk-card-container">
-                    
-                    <!-- FIX: Game Header now properly aligned using Flexbox -->
-                    <div class="game-header">
-                        <div class="header-center">
-                            <div class="mode-label">KISS, MARRY, KILL</div>
-                            <div class="prompt-counter" id="promptCounter">SET 1 OF 20</div>
+                    <div class="phase" id="playPhase">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                        <div class="progress-text">Round <span id="currentNum">1</span> of 5</div>
+                        
+                        <div class="player-turn">
+                            <span class="player-badge p1" id="playerBadge">PLAYER 1</span>
                         </div>
                         
-                        <button class="quit-btn" onclick="quitGame()">← QUIT</button>
-                    </div>
-                    
-                    <div class="target-group">
-                        <div class="turn-indicator-kmk" id="turnIndicator">PLAYER 1'S CHOICE</div>
-                        <p class="question-text" id="targetQuestion">Assign Kiss, Marry, and Kill to the following targets:</p>
-                        
-                        <div class="targets-grid" id="targetsGrid">
-                            <!-- Targets dynamically loaded here -->
+                        <div class="options-card">
+                            <div class="options-list" id="optionsList"></div>
+                            <div class="submit-area">
+                                <button class="btn btn-primary" id="submitBtn" onclick="submitChoices()" disabled>Lock In</button>
+                            </div>
                         </div>
-                        
-                        <button class="kmk-submit-btn" id="submitBtn" onclick="submitChoices()">ASSIGN KISS, MARRY, & KILL</button>
                     </div>
-                </div>
-            </div>
 
-            <!-- 3. END SCREEN -->
-            <div class="end-screen" id="endScreen">
-                <h2>GAME OVER! 💋💍🔪</h2>
-                <p class="end-message">You've revealed all your dating preferences! Time to analyze the results.</p>
-                
-                <div class="action-row-final">
-                    <button class="secondary-action" onclick="quitGame()">BACK TO CATEGORIES</button>
-                    <button class="primary-action" onclick="backToGames()">BACK TO DUOS</button>
+                    <div class="phase" id="resultPhase">
+                        <div class="result-card">
+                            <div class="result-title">ROUND RESULTS</div>
+                            <div class="result-list" id="resultList"></div>
+                            <div class="match-indicator" id="matchIndicator"></div>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="nextRound()">Next Round</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="phase" id="endPhase">
+                        <div class="end-screen">
+                            <div class="end-emoji">🎉</div>
+                            <div class="end-title">GAME COMPLETE!</div>
+                            <div class="end-sub" id="endSub">You agreed on 3/5 rounds!</div>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </main>
 
-        <footer>
-            <div class="footer-links">
-                <a href="#">About</a>
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-                <a href="#">Contact</a>
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const sets={
+    celebs:[
+        ["Brad Pitt","Ryan Gosling","Leonardo DiCaprio"],
+        ["Beyoncé","Rihanna","Taylor Swift"],
+        ["Chris Hemsworth","Chris Evans","Chris Pratt"],
+        ["Zendaya","Sydney Sweeney","Florence Pugh"],
+        ["Harry Styles","Bad Bunny","The Weeknd"]
+    ],
+    fictional:[
+        ["Iron Man","Captain America","Thor"],
+        ["Hermione","Katniss","Black Widow"],
+        ["Jack Sparrow","James Bond","Indiana Jones"],
+        ["Elsa","Moana","Rapunzel"],
+        ["The Joker","Thanos","Darth Vader"]
+    ],
+    random:[
+        ["Your ex","Your boss","A stranger"],
+        ["Rich but boring","Poor but exciting","Average everything"],
+        ["Morning person","Night owl","No sleep needed"],
+        ["Always cold","Always hot","Always sweaty"],
+        ["No music ever","No movies ever","No games ever"]
+    ],
+    food:[
+        ["Pizza","Sushi","Tacos"],
+        ["Chocolate","Ice cream","Cake"],
+        ["Burgers","Hot dogs","Sandwiches"],
+        ["Coffee","Tea","Energy drinks"],
+        ["Pasta","Rice","Bread"]
+    ]
+};
+
+let category='';
+let deck=[];
+let round=0;
+const totalRounds=5;
+let currentPlayer=1;
+let choices={1:{},2:{}};
+let currentOptions=[];
+let matches=0;
+
+function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+
+function showPhase(id){
+    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function selectCategory(cat){
+    category=cat;
+    deck=shuffle([...sets[cat]]);
+    round=0;
+    matches=0;
+    currentPlayer=1;
+    startRound();
+}
+
+function startRound(){
+    if(round>=totalRounds){
+        endGame();
+        return;
+    }
+    currentOptions=deck[round];
+    choices={1:{},2:{}};
+    currentPlayer=1;
+    renderOptions();
+    updateProgress();
+    updatePlayerBadge();
+    showPhase('playPhase');
+}
+
+function renderOptions(){
+    const list=document.getElementById('optionsList');
+    list.innerHTML=currentOptions.map((opt,i)=>`
+        <div class="option-item" data-index="${i}">
+            <div class="option-name">${opt}</div>
+            <div class="choice-btns">
+                <button class="choice-btn kiss" onclick="choose(${i},'kiss')">💋</button>
+                <button class="choice-btn marry" onclick="choose(${i},'marry')">💍</button>
+                <button class="choice-btn kill" onclick="choose(${i},'kill')">💀</button>
             </div>
-            <div class="footer-bottom">
-                © 2025 TheGaming.co. All games free forever.
+        </div>
+    `).join('');
+    document.getElementById('submitBtn').disabled=true;
+}
+
+function choose(index,type){
+    const playerChoices=choices[currentPlayer];
+    
+    // Remove this type from other options
+    for(let i=0;i<3;i++){
+        if(playerChoices[i]===type)delete playerChoices[i];
+    }
+    playerChoices[index]=type;
+    
+    // Update UI
+    document.querySelectorAll('.option-item').forEach((item,i)=>{
+        item.querySelectorAll('.choice-btn').forEach(btn=>{
+            btn.classList.remove('selected');
+        });
+        if(playerChoices[i]){
+            item.querySelector(`.${playerChoices[i]}`).classList.add('selected');
+        }
+    });
+    
+    // Check if all chosen
+    const hasKiss=Object.values(playerChoices).includes('kiss');
+    const hasMarry=Object.values(playerChoices).includes('marry');
+    const hasKill=Object.values(playerChoices).includes('kill');
+    document.getElementById('submitBtn').disabled=!(hasKiss&&hasMarry&&hasKill);
+}
+
+function submitChoices(){
+    if(currentPlayer===1){
+        currentPlayer=2;
+        renderOptions();
+        updatePlayerBadge();
+    }else{
+        showResults();
+    }
+}
+
+function updatePlayerBadge(){
+    const badge=document.getElementById('playerBadge');
+    badge.textContent=`PLAYER ${currentPlayer}`;
+    badge.className=`player-badge p${currentPlayer}`;
+}
+
+function updateProgress(){
+    const pct=(round/totalRounds)*100;
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('currentNum').textContent=round+1;
+}
+
+function showResults(){
+    const list=document.getElementById('resultList');
+    let allMatch=true;
+    
+    list.innerHTML=currentOptions.map((opt,i)=>{
+        const p1=choices[1][i]||'';
+        const p2=choices[2][i]||'';
+        const match=p1===p2;
+        if(!match)allMatch=false;
+        return `
+            <div class="result-item">
+                <div class="result-name">${opt}</div>
+                <div class="result-choices">
+                    <span class="result-badge ${p1}">P1: ${p1.toUpperCase()}</span>
+                    <span class="result-badge ${p2}">P2: ${p2.toUpperCase()}</span>
+                </div>
             </div>
-        </footer>
-    </div>
+        `;
+    }).join('');
+    
+    if(allMatch)matches++;
+    document.getElementById('matchIndicator').textContent=allMatch?'Perfect match! 💕':'Different choices!';
+    document.getElementById('matchIndicator').className='match-indicator'+(allMatch?' match':'');
+    
+    showPhase('resultPhase');
+}
 
-    <script>
-        // --- GAME STATE & DATA ---
-        let currentPackId = '';
-        let currentSetIndex = 0;
-        let currentPlayer = 1;
-        let totalRounds = 5; // Default rounds
-        let targetsArray = []; // The shuffled array of sets for the session
-        
-        // Tracks the choices made by the current player for the current set
-        let currentChoices = { Kiss: null, Marry: null, Kill: null };
-        
-        const MAX_PACK_SETS = 20;
+function nextRound(){
+    round++;
+    startRound();
+}
 
-        // Structure: category: { packID: [[Target A, Target B, Target C], [...]], ... }
-        const kmkPrompts = {
-            celebrity: {
-                pack1: [
-                    ["Ryan Gosling", "Dwayne 'The Rock' Johnson", "Chris Evans"], ["Taylor Swift", "Dua Lipa", "Beyoncé"],
-                    ["Keanu Reeves", "Tom Holland", "Jason Momoa"], ["Zendaya", "Emma Stone", "Jenna Ortega"],
-                    ["Leonardo DiCaprio", "Brad Pitt", "George Clooney"], ["Adele", "Ariana Grande", "Rihanna"],
-                    ["Timothee Chalamet", "Harry Styles", "Shawn Mendes"], ["Selena Gomez", "Halle Berry", "Megan Fox"],
-                    ["Idris Elba", "Henry Cavill", "Robert Pattinson"], ["Angelina Jolie", "Scarlett Johansson", "Gal Gadot"],
-                    ["Tom Cruise", "Robert Downey Jr.", "Will Smith"], ["Jennifer Lopez", "Shakira", "Cardi B"],
-                    ["Kanye West", "Drake", "Kendrick Lamar"], ["Billie Eilish", "Olivia Rodrigo", "H.E.R."],
-                    ["The Rock", "Jason Statham", "Vin Diesel"], ["Miley Cyrus", "Demi Lovato", "Lady Gaga"],
-                    ["Justin Bieber", "Ed Sheeran", "The Weeknd"], ["Channing Tatum", "Ryan Reynolds", "Chris Pratt"],
-                    ["Margot Robbie", "Emma Watson", "Ana de Armas"], ["Chris Hemsworth", "Chris Pine", "Chris Pratt"]
-                ],
-                pack2: [
-                    ["Denzel Washington", "Samuel L. Jackson", "Morgan Freeman"], ["Julia Roberts", "Sandra Bullock", "Nicole Kidman"],
-                    ["Leonardo DiCaprio", "Johnny Depp", "Tom Hanks"], ["Gal Gadot", "Daisy Ridley", "Millie Bobby Brown"],
-                    ["Dwayne Johnson", "Jason Statham", "Kevin Hart"], ["Jennifer Aniston", "Reese Witherspoon", "Cameron Diaz"],
-                    ["Eminem", "Snoop Dogg", "Jay-Z"], ["Lady Gaga", "Katy Perry", "Britney Spears"],
-                    ["Benedict Cumberbatch", "Eddie Redmayne", "Taron Egerton"], ["Saoirse Ronan", "Florence Pugh", "Anya Taylor-Joy"],
-                    ["Tom Hardy", "Christian Bale", "Michael Fassbender"], ["Blake Lively", "Ryan Reynolds", "Anna Kendrick"],
-                    ["Zac Efron", "Liam Hemsworth", "Ansel Elgort"], ["Hillary Clinton", "Michelle Obama", "Jacinda Ardern"],
-                    ["Bill Gates", "Warren Buffett", "Mark Zuckerberg"], ["Taylor Lautner", "Robert Pattinson", "Daniel Radcliffe"],
-                    ["Ryan Reynolds", "Chris Pratt", "Dax Shepard"], ["Zoe Kravitz", "Vanessa Hudgens", "Bella Hadid"],
-                    ["Justin Timberlake", "Bruno Mars", "Adam Levine"], ["Keira Knightley", "Carey Mulligan", "Emily Blunt"]
-                ],
-                pack3: [
-                    ["Will Smith", "Jamie Foxx", "Eddie Murphy"], ["Halle Berry", "Viola Davis", "Taraji P. Henson"],
-                    ["Ryan Gosling", "Emma Stone", "La La Land"], ["Hugh Jackman", "Russell Crowe", "Chris Evans"],
-                    ["Mariah Carey", "Celine Dion", "Christina Aguilera"], ["Dwayne 'The Rock' Johnson", "Kevin Hart", "Jack Black"],
-                    ["Emma Watson", "Saoirse Ronan", "Zoe Saldana"], ["Tom Cruise", "Brad Pitt", "Matthew McConaughey"],
-                    ["Jennifer Lawrence", "Scarlett Johansson", "Zoe Saldana"], ["Channing Tatum", "Zac Efron", "Dax Shepard"],
-                    ["Ryan Reynolds", "Chris Pratt", "Anna Kendrick"], ["Angelina Jolie", "Scarlett Johansson", "Gal Gadot"],
-                    ["Timothee Chalamet", "Harry Styles", "Shawn Mendes"], ["Selena Gomez", "Halle Berry", "Megan Fox"],
-                    ["Idris Elba", "Henry Cavill", "Robert Pattinson"], ["Zendaya", "Emma Stone", "Jenna Ortega"],
-                    ["Tom Cruise", "Robert Downey Jr.", "Will Smith"], ["Jennifer Lopez", "Shakira", "Cardi B"],
-                    ["Kanye West", "Drake", "Kendrick Lamar"], ["Billie Eilish", "Olivia Rodrigo", "H.E.R."]
-                ]
-            },
-            fictional: {
-                pack1: [
-                    ["Darth Vader", "Obi-Wan Kenobi", "Han Solo"], ["Wonder Woman", "Black Widow", "Captain Marvel"],
-                    ["Sherlock Holmes", "Dracula", "James Bond"], ["Elsa (Frozen)", "Maleficent", "Cinderella"],
-                    ["A talking robot", "A grumpy wizard", "A charming vampire"], ["A high school jock", "A brooding poet", "A nerdy scientist"],
-                    ["The main character from the last book you read", "The villain from your partner's favorite movie", "Your favorite character from a video game"],
-                    ["A classic Disney prince", "A villain's sidekick", "A character known for being very clumsy"],
-                    ["Captain Kirk", "Spock", "Picard"], ["Ron Weasley", "Draco Malfoy", "Severus Snape"],
-                    ["A character who can time travel", "A character who can read minds", "A character who can shapeshift"], ["A zombie", "A werewolf", "A ghost"],
-                    ["The main character of a soap opera", "The main character of a sitcom", "The main character of a horror film"], ["A superhero who flies", "A superhero who is super strong", "A superhero who is invisible"],
-                    ["An ancient Greek god", "A modern reality TV star", "A historical figure"], ["The most annoying sidekick", "The most romantic lead", "The most powerful wizard"],
-                    ["The friendly monster", "The silent guardian", "The wise old mentor"], ["The most boring character", "The most chaotic character", "The most mysterious character"],
-                    ["A character known for being unlucky", "A character known for being overly optimistic", "A character known for being too serious"], ["A character you secretly hate", "A character your partner loves", "A character who betrayed their friends"]
-                ],
-                pack2: [
-                    ["Gandalf", "Aragorn", "Legolas"], ["Hermione Granger", "Luna Lovegood", "Ginny Weasley"],
-                    ["Katniss Everdeen", "Tris Prior", "Bella Swan"], ["Homer Simpson", "Peter Griffin", "Eric Cartman"],
-                    ["Captain America", "Iron Man", "Thor"], ["Black Panther", "Doctor Strange", "Spider-Man"],
-                    ["Captain Jack Sparrow", "Severus Snape", "Loki"], ["Princess Leia", "Rey", "Padmé Amidala"],
-                    ["Mickey Mouse", "Donald Duck", "Goofy"], ["Buzz Lightyear", "Woody", "Forky"],
-                    ["The Grinch", "Scrooge McDuck", "Ebenezer Scrooge"], ["The Joker", "Lex Luthor", "Thanos"],
-                    ["A talking animal sidekick", "A non-talking animal sidekick", "A fictional pet"], ["A character who can teleport", "A character who can fly", "A character who can read minds"],
-                    ["A detective from a noir film", "A cowboy from a Western film", "A spy from a Bond film"], ["A robot who wants to destroy humanity", "A robot who wants to save humanity", "A robot who wants to be human"],
-                    ["The most loyal friend", "The most chaotic friend", "The most honest friend"], ["A monster under your bed", "A vampire next door", "A ghost in your attic"],
-                    ["The character you relate to most", "The character your partner relates to most", "The character you wish you could save"], ["A character who dies dramatically", "A character who lives forever", "A character who never speaks"]
-                ],
-                pack3: [
-                    ["Tony Stark", "Bruce Banner", "Steve Rogers"], ["Daenerys Targaryen", "Cersei Lannister", "Arya Stark"],
-                    ["Jon Snow", "Tyrion Lannister", "Jaime Lannister"], ["Spongebob", "Patrick", "Squidward"],
-                    ["Geralt of Rivia", "Yennefer of Vengerberg", "Ciri"], ["Michael Scott", "Dwight Schrute", "Jim Halpert"],
-                    ["Leslie Knope", "Ron Swanson", "April Ludgate"], ["An actual alien", "A time traveler", "A mutant"],
-                    ["A Disney villain", "A Disney princess", "A Disney sidekick"], ["A character who is immortal", "A character who can't die", "A character who is always reborn"],
-                    ["A character who can shapeshift", "A character who can become invisible", "A character who can clone themselves"], ["A character known for being lazy", "A character known for being hyperactive", "A character known for being overly dramatic"],
-                    ["A character who is always eating", "A character who is always sleeping", "A character who is always working"], ["The strongest character", "The weakest character", "The smartest character"],
-                    ["A character who broke the rules", "A character who always follows the rules", "A character who invents the rules"], ["A character who sacrifices themselves", "A character who betrays others", "A character who runs away"],
-                    ["The most famous movie monster", "The most famous literary detective", "The most famous TV doctor"], ["A character who is always happy", "A character who is always sad", "A character who is always angry"],
-                    ["A fictional president", "A fictional mayor", "A fictional general"], ["A character who can control fire", "A character who can control water", "A character who can control earth"]
-                ]
-            },
-            historical: {
-                pack1: [
-                    ["Leonardo da Vinci", "Albert Einstein", "Nikola Tesla"], ["Cleopatra", "Queen Elizabeth I", "Marie Curie"],
-                    ["George Washington", "Abraham Lincoln", "Theodore Roosevelt"], ["William Shakespeare", "Edgar Allan Poe", "Ernest Hemingway"],
-                    ["Marilyn Monroe", "Audrey Hepburn", "Grace Kelly"], ["A Viking explorer", "A Roman emperor", "A Medieval knight"],
-                    ["A famous historical artist", "A famous historical musician", "A famous historical general"], ["King Arthur", "Robin Hood", "Dr. Frankenstein"],
-                    ["A famous philosophical figure", "A famous political activist", "A famous space pioneer"], ["A Roman gladiator", "A Japanese samurai", "A French musketeer"],
-                    ["Vincent van Gogh", "Pablo Picasso", "Claude Monet"], ["Julius Caesar", "Alexander the Great", "Genghis Khan"],
-                    ["Elvis Presley", "Marlon Brando", "James Dean"], ["Amelia Earhart", "Rosa Parks", "Mother Teresa"],
-                    ["A famous king known for being tyrannical", "A famous king known for being generous", "A famous king known for being mad"], ["A famous inventor", "A famous mathematician", "A famous poet"],
-                    ["A notorious pirate", "A brilliant spy", "A gentle queen"], ["A famous athlete from the 1920s", "A famous singer from the 1960s", "A famous actor from the 1980s"],
-                    ["A famous explorer", "A famous writer", "A famous scientist"], ["Your favorite historical figure", "Your partner's favorite historical figure", "A historical figure you find annoying"]
-                ],
-                pack2: [
-                    ["Socrates", "Plato", "Aristotle"], ["Alexander Hamilton", "Thomas Jefferson", "Benjamin Franklin"],
-                    ["Jane Austen", "Virginia Woolf", "Mary Shelley"], ["Beethoven", "Mozart", "Bach"],
-                    ["Queen Victoria", "Catherine the Great", "Isabella I"], ["Winston Churchill", "Franklin D. Roosevelt", "John F. Kennedy"],
-                    ["Muhammad Ali", "Jesse Owens", "Babe Ruth"], ["Galileo Galilei", "Copernicus", "Isaac Newton"],
-                    ["Napoleon Bonaparte", "Queen Victoria", "Prince Albert"], ["Cleopatra", "Julius Caesar", "Mark Antony"],
-                    ["Marie Antoinette", "Louis XVI", "Robespierre"], ["Martin Luther King Jr.", "Malcolm X", "Nelson Mandela"],
-                    ["Frida Kahlo", "Georgia O'Keeffe", "Tamara de Lempicka"], ["Coco Chanel", "Elsa Schiaparelli", "Christian Dior"],
-                    ["Homer", "Virgil", "Dante"], ["Marie Curie", "Rosalind Franklin", "Ada Lovelace"],
-                    ["A famous historical philosopher", "A famous historical painter", "A famous historical architect"], ["A notorious bank robber", "A famous spy", "A famous jewel thief"],
-                    ["The most powerful woman in history", "The most influential man in history", "The most misunderstood person in history"], ["A figure known for great cruelty", "A figure known for great kindness", "A figure known for great intelligence"]
-                ],
-                pack3: [
-                    ["Joan of Arc", "Helen of Troy", "Pocahontas"], ["Attila the Hun", "Boudicca", "Spartacus"],
-                    ["Genghis Khan", "Kublai Khan", "Marco Polo"], ["Michelangelo", "Raphael", "Donatello"],
-                    ["The head of the Roman Empire", "The head of the Chinese Empire", "The head of the Aztec Empire"], ["A famous historical scientist", "A famous historical artist", "A famous historical writer"],
-                    ["A figure known for being mad", "A figure known for being eccentric", "A figure known for being stoic"], ["A famous historical musician", "A famous historical dancer", "A famous historical poet"],
-                    ["The person who invented the printing press", "The person who invented the light bulb", "The person who invented the telephone"], ["A figure known for their beauty", "A figure known for their power", "A figure known for their intellect"],
-                    ["A famous historical chef", "A famous historical tailor", "A famous historical gardener"], ["A political revolutionary", "A scientific revolutionary", "An artistic revolutionary"],
-                    ["The most famous female pirate", "The most famous male pirate", "The most famous fictional pirate"], ["A historical figure you wish you could have mentored", "A historical figure you wish you could have fought", "A historical figure you wish you could have dated"],
-                    ["The head of the Soviet Union", "The head of Nazi Germany", "The head of the British Empire"], ["A famous historical doctor", "A famous historical nurse", "A famous historical patient"],
-                    ["A religious figure known for tolerance", "A religious figure known for rigidity", "A religious figure known for miracles"], ["A figure known for extravagance", "A figure known for simplicity", "A figure known for generosity"],
-                    ["A medieval princess", "A Renaissance courtesan", "A Victorian suffragette"], ["Your historical crush", "Your partner's historical crush", "A historical figure you would kill immediately"]
-                ]
-            },
-            spicy: {
-                pack1: [
-                    ["Your high school crush", "A co-worker you flirt with", "Your partner's most annoying friend"],
-                    ["Your hottest ex", "The one ex who constantly texts you", "The ex you stole something from"],
-                    ["Your first love", "Your most recent one-night stand", "The one person you almost cheated with"],
-                    ["The main character of a romance novel", "Your partner's dad/mom (age appropriate)", "A fictional character you find repulsive"],
-                    ["A celebrity who cheated publicly", "A politician known for scandal", "The person who invented daylight saving time"],
-                    ["Your partner's most attractive sibling", "The person who ghosted you", "The person you ghosted"],
-                    ["The kindest person you know", "The person who made you the angriest", "The person who owes you money"],
-                    ["A person who is terrible in bed but rich", "A person who is amazing in bed but broke", "A person who is average but loves you deeply"],
-                    ["The person who broke your heart", "The person whose heart you broke", "The person who was 'the one who got away'"],
-                    ["Your partner's favorite ex", "The ex you introduced to your family", "The ex who moved far away"],
-                    ["Your partner's best friend", "Your own best friend", "The annoying person who is always commenting on your social media"],
-                    ["A fictional character known for being very bad in bed", "A fictional character known for being very good in bed", "A fictional character known for being very boring"],
-                    ["A celebrity who is secretly mean", "A celebrity who is secretly dumb", "A celebrity who is secretly broke"],
-                    ["The person who gave you your first kiss", "The person you lost your virginity to", "The person who gave you the most awkward sexual experience"],
-                    ["Your partner's first love", "The person who introduced you to your partner", "The person who tried to break you up"],
-                    ["A fictional character you secretly hate", "A fictional character you secretly love", "A fictional character you secretly want to be intimate with"],
-                    ["The person who has the worst breath", "The person who has the worst taste in music", "The person who has the worst fashion sense"],
-                    ["Your partner's most attractive ex", "Your most annoying sibling", "Your most critical parent"],
-                    ["A person who is constantly late", "A person who is constantly complaining", "A person who is constantly texting"],
-                    ["The one person who knows all your secrets", "The person who knows none of your secrets", "The person who you wish knew all your secrets"]
-                ],
-                pack2: [
-                    ["Your ex's current partner", "A reality TV villain", "A person who always gives bad advice"],
-                    ["The last person who made you genuinely jealous", "The person who introduced us", "A celebrity you secretly dislike"],
-                    ["A person you met on a dating app", "A person you met at work", "A person you met at a bar"],
-                    ["Your most judgmental relative", "Your most supportive friend", "Your most chaotic sibling"],
-                    ["Someone you regret kissing", "Someone you regret marrying (fictional)", "Someone you regret killing (fictional)"],
-                    ["The last person who broke your heart", "The last person whose heart you broke", "The last person who tried to kiss you"],
-                    ["A person who is always naked", "A person who is always shouting", "A person who is always dancing"],
-                    ["The person who knows your darkest secret", "The person who knows your brightest dream", "The person who knows your favorite food"],
-                    ["A celebrity known for being promiscuous", "A celebrity known for being boring", "A celebrity known for being mean"],
-                    ["The person who owns the biggest house", "The person who owns the fastest car", "The person who owns the most clothes"],
-                    ["The person who always wins", "The person who always loses", "The person who never plays"],
-                    ["The person who is always complaining", "The person who is always complimenting", "The person who is always silent"],
-                    ["A co-worker you find annoying", "A co-worker you find attractive", "A co-worker you find intelligent"],
-                    ["A fictional character who is always drunk", "A fictional character who is always sober", "A fictional character who is always philosophical"],
-                    ["The person who would give you the best advice", "The person who would give you the worst advice", "The person who would give you no advice"],
-                    ["The person who always cooks", "The person who always cleans", "The person who always works"],
-                    ["The most famous fictional doctor", "The most famous fictional lawyer", "The most famous fictional spy"],
-                    ["A historical figure known for their infidelity", "A historical figure known for their monogamy", "A historical figure known for their celibacy"],
-                    ["A person who is constantly flirting with you", "A person who is constantly insulting you", "A person who is constantly ignoring you"],
-                    ["The person you trust the most", "The person you trust the least", "The person who you wish you could trust"]
-                ],
-                pack3: [
-                    ["Your partner's most recent ex", "The ex you dated the longest", "The ex you see most often"],
-                    ["A person who is extremely wealthy but has bad hygiene", "A person who is broke but has perfect hygiene", "A person who is average in both"],
-                    ["Your most famous one-night stand (fictional)", "Your most recent date (fictional)", "Your ideal partner (fictional)"],
-                    ["A celebrity who is known for being wild", "A celebrity who is known for being conservative", "A celebrity who is known for being quiet"],
-                    ["The person who always gossips", "The person who never gossips", "The person who only gossips about you"],
-                    ["A fictional character known for being very short", "A fictional character known for being very tall", "A fictional character known for being average height"],
-                    ["A person who is always drunk", "A person who is always sober", "A person who is always philosophical"],
-                    ["The person who owns the biggest house", "The person who owns the fastest car", "The person who owns the most clothes"],
-                    ["The person who always wins", "The person who always loses", "The person who never plays"],
-                    ["The person who is always complaining", "The person who is always complimenting", "The person who is always silent"],
-                    ["A co-worker you find annoying", "A co-worker you find attractive", "A co-worker you find intelligent"],
-                    ["A fictional character who is always drunk", "A fictional character who is always sober", "A fictional character who is always philosophical"],
-                    ["The person who would give you the best advice", "The person who would give you the worst advice", "The person who would give you no advice"],
-                    ["The person who always cooks", "The person who always cleans", "The person who always works"],
-                    ["The most famous fictional doctor", "The most famous fictional lawyer", "The most famous fictional spy"],
-                    ["A historical figure known for their infidelity", "A historical figure known for their monogamy", "A historical figure known for their celibacy"],
-                    ["A person who is constantly flirting with you", "A person who is constantly insulting you", "A person who is constantly ignoring you"],
-                    ["The person you trust the most", "The person you trust the least", "The person who you wish you could trust"],
-                    ["Your most attractive relative", "Your least attractive relative", "Your average relative"],
-                    ["The person who always gives you a gift", "The person who never gives you a gift", "The person who only gives you a gift when they want something"]
-                ],
-            }
-        };
+function endGame(){
+    document.getElementById('endSub').textContent=`You agreed on ${matches}/${totalRounds} rounds!`;
+    showPhase('endPhase');
+}
 
-        // --- CORE GAME LOGIC ---
-
-        function init() {
-            document.getElementById('categorySelection').style.display = 'block';
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('passScreen').style.display = 'none';
-            
-            // Set up round selector default state
-            document.getElementById('roundSelector').addEventListener('click', function(e) {
-                if (e.target.tagName === 'BUTTON') {
-                    // Deselect all
-                    this.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
-                    // Select clicked one
-                    e.target.classList.add('selected');
-                    totalRounds = parseInt(e.target.dataset.rounds);
-                }
-            });
-        }
-
-        function selectPack(categoryId) {
-            currentPackId = categoryId;
-            targetsArray = kmkPrompts[categoryId].pack1; // Using pack1 for simplicity, can be extended later
-            
-            shuffleArray(targetsArray);
-
-            currentSetIndex = 0;
-            currentPlayer = 1;
-
-            document.getElementById('categorySelection').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'flex';
-            
-            updateGameScreen();
-        }
-
-        function toggleChoice(targetIndex, action) {
-            const targetsGrid = document.getElementById('targetsGrid');
-            const targetCard = targetsGrid.querySelector(`.targets-grid > div:nth-child(${targetIndex + 1})`);
-            const buttonToToggle = targetCard.querySelector(`.kmk-${action.toLowerCase()}`);
-            
-            // 1. Check if the current action is already assigned to this target (Deselection)
-            if (currentChoices[action] === targetIndex) {
-                currentChoices[action] = null;
-                buttonToToggle.classList.remove('selected');
-            } else {
-                // 2. Clear this ACTION from the DIFFERENT target that currently holds it (Enforces 1 Kiss total, 1 Marry total, etc.)
-                const targetCurrentlyHoldingAction = currentChoices[action];
-                if (targetCurrentlyHoldingAction !== null) {
-                    // Clear the action from the previous target
-                    const oldTargetCard = targetsGrid.querySelector(`.targets-grid > div:nth-child(${targetCurrentlyHoldingAction + 1})`);
-                    oldTargetCard.querySelector(`.kmk-${action.toLowerCase()}`).classList.remove('selected');
-                }
-                
-                // 3. Clear any previous action selection on the current target (Enforces 1 Action Per Target)
-                // Find the action assigned to this target
-                const oldActionOnThisTarget = Object.keys(currentChoices).find(key => currentChoices[key] === targetIndex);
-                if (oldActionOnThisTarget) {
-                    currentChoices[oldActionOnThisTarget] = null;
-                    targetCard.querySelector(`.kmk-${oldActionOnThisTarget.toLowerCase()}`).classList.remove('selected');
-                }
-
-                // 4. Assign the new action to the current target and highlight the button
-                currentChoices[action] = targetIndex;
-                buttonToToggle.classList.add('selected');
-            }
-            
-            checkSubmissionStatus();
-        }
-
-        function checkSubmissionStatus() {
-            // Checks if all three actions have been assigned to a target (i.e., not null)
-            const isReady = (currentChoices.Kiss !== null) && 
-                           (currentChoices.Marry !== null) && 
-                           (currentChoices.Kill !== null);
-            
-            const submitBtn = document.getElementById('submitBtn');
-            
-            submitBtn.disabled = !isReady;
-            
-            // If ready, change text to prompt discussion
-            if (isReady) {
-                 submitBtn.textContent = "CHOICES MADE! NEXT SET →";
-            } else {
-                 submitBtn.textContent = "ASSIGN KISS, MARRY, & KILL";
-            }
-        }
-
-        function updateGameScreen() {
-            // Reset choices for the new set
-            currentChoices = { Kiss: null, Marry: null, Kill: null };
-
-            if (currentSetIndex >= totalRounds) {
-                showEndScreen();
-                return;
-            }
-
-            // Ensure we don't go past the maximum available packs
-            const targetsIndex = currentSetIndex % targetsArray.length; 
-            const currentTargets = targetsArray[targetsIndex];
-            
-            document.getElementById('turnIndicator').textContent = `PLAYER ${currentPlayer}'S CHOICE`;
-            document.getElementById('targetQuestion').textContent = `Assign Kiss, Marry, and Kill to the following targets:`;
-            document.getElementById('promptCounter').textContent = `SET ${currentSetIndex + 1} OF ${totalRounds}`;
-
-            // Update Progress Bar
-            const progress = ((currentSetIndex) / totalRounds) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-
-
-            const targetsGrid = document.getElementById('targetsGrid');
-            targetsGrid.innerHTML = '';
-
-            // Display the three targets
-            ['A', 'B', 'C'].forEach((label, index) => {
-                const targetText = currentTargets[index];
-                targetsGrid.innerHTML += `
-                    <div class="target-card">
-                        <div class="target-item-text">
-                            <span style="font-weight: 900; color: #ff6b9d; margin-right: 5px;">${label}:</span> ${targetText}
-                        </div>
-                        <div class="action-btns">
-                            <button class="action-btn-sm kmk-kiss" onclick="toggleChoice(${index}, 'Kiss')">KISS</button>
-                            <button class="action-btn-sm kmk-marry" onclick="toggleChoice(${index}, 'Marry')">MARRY</button>
-                            <button class="action-btn-sm kmk-kill" onclick="toggleChoice(${index}, 'Kill')">KILL</button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            checkSubmissionStatus(); // Initialize button state
-        }
-
-        function submitChoices() {
-            if (document.getElementById('submitBtn').disabled) {
-                alert("You must assign Kiss, Marry, and Kill before proceeding.");
-                return;
-            }
-            
-            // ** In a production version, you would save the current player's choices here. **
-            
-            // Advance game state
-            currentSetIndex++;
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-
-            // Check if next turn is needed or if game is over
-            if (currentSetIndex >= totalRounds) {
-                showEndScreen();
-            } else {
-                showPassScreen();
-            }
-        }
-        
-        function showPassScreen() {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('passScreen').style.display = 'flex';
-            document.getElementById('passTurnTitle').textContent = `PASS DEVICE TO PLAYER ${currentPlayer}`;
-        }
-        
-        function startNextSet() {
-            document.getElementById('passScreen').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'flex';
-            updateGameScreen();
-        }
-
-
-        function quitGame() {
-            // Simple restart back to the category selection
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('categorySelection').style.display = 'block';
-            document.getElementById('passScreen').style.display = 'none';
-        }
-
-        function showEndScreen() {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'block';
-        }
-
-        function backToGames() {
-            window.location.href = '/duos.html';
-        }
-
-        // Utility function to shuffle an array (Fisher-Yates)
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        window.onload = init;
-    </script>
-    <script>
-        // Supabase initialization
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
-    </script>
-    <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+function resetGame(){
+    category='';
+    round=0;
+    matches=0;
+    showPhase('categoryPhase');
+}
+</script>
+<script src="/header.js"></script>
+<script src="/js/engagement.js" defer></script>
 </body>
 </html>

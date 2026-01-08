@@ -3,385 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Memory Match - TheGaming.co</title>
-    <meta name="description" content="Test your memory! Take turns flipping cards to find matching pairs.">
+    <title>Memory Match – 2 Player Game | TheGaming.co</title>
+    <meta name="description" content="Find matching pairs! Take turns flipping cards.">
     <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="/header.css">
-    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: #fafbff; 
-            color: #1a1a1a; 
-            overflow-x: hidden; 
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
+            --p1:#f472b6;--p2:#60a5fa;
+            --text-dark:#1a1a2e;--text-muted:#6b7280;
         }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
 
-        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
-        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
-        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
-        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
 
-        .container { max-width: 550px; margin: 0 auto; padding: 80px 15px 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        .game-nav { padding: 20px 0; display: flex; justify-content: flex-start; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 25px; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
-        .back-btn:hover { color: #1a1a1a; }
+        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
+        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
 
-        .game-header { text-align: center; margin-bottom: 20px; }
-        .game-title { font-size: 2.8rem; margin-bottom: 6px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
-        .game-subtitle { font-size: 0.95rem; color: #666; }
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
+        .game-container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
 
-        .scoreboard { 
-            display: flex; 
-            justify-content: center; 
-            gap: 30px; 
-            margin-bottom: 15px;
-            background: white;
-            padding: 15px 25px;
-            border: 3px solid #1a1a1a;
-            box-shadow: 5px 5px 0 #e0e0e0;
-        }
-        .score-item { text-align: center; padding: 5px 15px; border-radius: 8px; transition: all 0.3s ease; }
-        .score-item.active { background: rgba(255, 107, 157, 0.15); }
-        .score-label { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: #666; letter-spacing: 1px; }
-        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: #1a1a1a; }
-        .score-item.p1 .score-label { color: #ff6b9d; }
-        .score-item.p2 .score-label { color: #4facfe; }
-        .score-item.active.p1 .score-value { color: #ff6b9d; }
-        .score-item.active.p2 .score-value { color: #4facfe; }
+        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s}
+        .score-card.active{border-color:var(--accent);box-shadow:0 4px 20px rgba(244,114,182,0.2)}
+        .score-card.p1 .score-label{color:var(--p1)}
+        .score-card.p2 .score-label{color:var(--p2)}
+        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .score-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text-dark)}
 
-        .turn-indicator {
-            text-align: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-        }
-        .turn-indicator.p1 { color: #ff6b9d; }
-        .turn-indicator.p2 { color: #4facfe; }
+        .turn-indicator{text-align:center;padding:8px;font-size:0.85rem;font-weight:600;color:var(--text-muted)}
+        .turn-indicator span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px}
+        .turn-indicator.p1 span{color:var(--p1)}
+        .turn-indicator.p2 span{color:var(--p2)}
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:16px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
+        .card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:320px;margin:0 auto}
+        .card{aspect-ratio:1;background:linear-gradient(135deg,var(--accent),var(--accent-dark));border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all 0.3s;transform-style:preserve-3d;-webkit-user-select:none;user-select:none}
+        .card:hover:not(.flipped):not(.matched){transform:scale(1.05)}
+        .card.flipped{background:#fff;border:2px solid #eee}
+        .card.matched{cursor:default}
+        .card.matched.p1{background:var(--accent-light);border:2px solid var(--p1)}
+        .card.matched.p2{background:#dbeafe;border:2px solid var(--p2)}
+        .card:not(.flipped):not(.matched) .card-face{display:none}
 
-        .card {
-            aspect-ratio: 1;
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            border: 3px solid #1a1a1a;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            transition: transform 0.3s ease;
-            box-shadow: 3px 3px 0 #8b2e47;
-            position: relative;
-        }
+        .game-status{text-align:center;padding:16px;min-height:60px}
+        .status-text{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text-dark)}
+        .status-text.win{color:var(--accent-dark)}
 
-        .card::before {
-            content: '?';
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: white;
-        }
+        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
+        .btn-primary:hover{transform:translateY(-2px)}
 
-        .card.flipped {
-            background: white;
-            box-shadow: 3px 3px 0 #e0e0e0;
-        }
+        .actions{display:flex;gap:10px;justify-content:center}
 
-        .card.flipped::before {
-            content: none;
-        }
-
-        .card.matched {
-            opacity: 0.5;
-            cursor: default;
-            transform: scale(0.95);
-        }
-
-        .card.matched.p1 {
-            background: rgba(255, 107, 157, 0.3);
-            border-color: #ff6b9d;
-        }
-
-        .card.matched.p2 {
-            background: rgba(79, 172, 254, 0.3);
-            border-color: #4facfe;
-        }
-
-        .card:not(.flipped):not(.matched):hover {
-            transform: scale(1.05);
-        }
-
-        .card:not(.flipped):not(.matched):active {
-            transform: scale(0.98);
-        }
-
-        .game-message {
-            text-align: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 20px;
-            min-height: 50px;
-        }
-        .game-message.p1 { color: #ff6b9d; }
-        .game-message.p2 { color: #4facfe; }
-
-        .actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            padding: 12px 25px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            border: 3px solid #1a1a1a;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 48px;
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white;
-            border-color: #8b2e47;
-            box-shadow: 4px 4px 0 #8b2e47;
-        }
-
-        .action-btn.secondary {
-            background: white;
-            color: #1a1a1a;
-            box-shadow: 4px 4px 0 #e0e0e0;
-        }
-
-        .action-btn:hover { transform: translate(2px, 2px); }
-        .action-btn.primary:hover { box-shadow: 2px 2px 0 #8b2e47; }
-        .action-btn.secondary:hover { box-shadow: 2px 2px 0 #e0e0e0; }
-
-        @media (max-width: 450px) {
-            .container { padding: 70px 10px 30px; }
-            .game-title { font-size: 2.2rem; }
-            .board { gap: 6px; }
-            .card { font-size: 1.5rem; border-width: 2px; }
-            .card::before { font-size: 1.5rem; }
-            .scoreboard { gap: 15px; padding: 12px 15px; }
-            .score-value { font-size: 1.6rem; }
-        }
-
-        @supports (padding: max(0px)) {
-            .container { padding-top: max(80px, calc(env(safe-area-inset-top) + 70px)); }
+        @media(max-width:360px){
+            .card-grid{gap:6px}
+            .card{font-size:1.5rem;border-radius:8px}
         }
     </style>
 </head>
 <body>
     <div id="site-header"></div>
-    
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-
-    <div class="container">
-        <div class="game-nav">
-            <a href="/duos.html" class="back-btn">← Back to Duos</a>
-        </div>
-
-        <div class="game-header">
-            <h1 class="game-title">MEMORY MATCH</h1>
-            <p class="game-subtitle">Find matching pairs to score points!</p>
-        </div>
-
-        <div class="scoreboard">
-            <div class="score-item p1 active" id="scoreP1">
-                <div class="score-label">PLAYER 1</div>
-                <div class="score-value" id="scoreP1Value">0</div>
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">🎴</div>
+                <h1 class="hero-title">MEMORY MATCH</h1>
+                <p class="hero-sub">Find matching pairs – most matches wins!</p>
             </div>
-            <div class="score-item p2" id="scoreP2">
-                <div class="score-label">PLAYER 2</div>
-                <div class="score-value" id="scoreP2Value">0</div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="score-bar">
+                    <div class="score-card p1" id="card1">
+                        <div class="score-label">Player 1</div>
+                        <div class="score-value" id="score1">0</div>
+                    </div>
+                    <div class="score-card p2" id="card2">
+                        <div class="score-label">Player 2</div>
+                        <div class="score-value" id="score2">0</div>
+                    </div>
+                </div>
+
+                <div class="turn-indicator p1" id="turnIndicator"><span>PLAYER 1</span>'s turn</div>
+
+                <div class="game-board">
+                    <div class="card-grid" id="grid"></div>
+                </div>
+
+                <div class="game-status">
+                    <div class="status-text" id="statusText"></div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="resetGame()">New Game</button>
+                </div>
             </div>
         </div>
+    </main>
 
-        <div class="turn-indicator p1" id="turnIndicator">PLAYER 1'S TURN</div>
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-        <div class="board" id="board"></div>
+const emojis=['🎮','🎯','🎪','🎨','🎭','🎬','🎤','🎧'];
+let cards=[];
+let flipped=[];
+let matched=0;
+let current=1;
+let scores={1:0,2:0};
+let locked=false;
 
-        <div class="game-message" id="gameMessage"></div>
+function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
 
-        <div class="actions">
-            <button class="action-btn primary" onclick="resetGame()">NEW GAME</button>
-        </div>
-    </div>
-
-    <script>
-        const emojis = ['🌟', '🎮', '🎯', '🎪', '🎨', '🎭', '🎪', '🎸'];
-        let cards = [];
-        let flippedCards = [];
-        let matchedPairs = 0;
-        let currentPlayer = 1;
-        let scores = { p1: 0, p2: 0 };
-        let canFlip = true;
-
-        function init() {
-            // Create pairs
-            const pairs = [...emojis, ...emojis];
-            cards = shuffleArray(pairs);
-            
-            const board = document.getElementById('board');
-            board.innerHTML = '';
-            
-            cards.forEach((emoji, index) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.dataset.index = index;
-                card.dataset.emoji = emoji;
-                card.addEventListener('click', () => flipCard(index));
-                board.appendChild(card);
-            });
-            
-            updateTurnIndicator();
-        }
-
-        function shuffleArray(array) {
-            const arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
-        function flipCard(index) {
-            if (!canFlip) return;
-            
-            const card = document.querySelector(`[data-index="${index}"]`);
-            
-            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
-            if (flippedCards.length >= 2) return;
-            
-            card.classList.add('flipped');
-            card.textContent = cards[index];
-            flippedCards.push({ index, emoji: cards[index], element: card });
-            
-            if (flippedCards.length === 2) {
-                canFlip = false;
-                checkMatch();
-            }
-        }
-
-        function checkMatch() {
-            const [card1, card2] = flippedCards;
-            
-            if (card1.emoji === card2.emoji) {
-                // Match found!
-                setTimeout(() => {
-                    card1.element.classList.add('matched', `p${currentPlayer}`);
-                    card2.element.classList.add('matched', `p${currentPlayer}`);
-                    
-                    scores[`p${currentPlayer}`]++;
-                    updateScores();
-                    matchedPairs++;
-                    
-                    flippedCards = [];
-                    canFlip = true;
-                    
-                    if (matchedPairs === emojis.length) {
-                        endGame();
-                    }
-                    // Same player continues on match
-                }, 500);
-            } else {
-                // No match
-                setTimeout(() => {
-                    card1.element.classList.remove('flipped');
-                    card2.element.classList.remove('flipped');
-                    card1.element.textContent = '';
-                    card2.element.textContent = '';
-                    
-                    flippedCards = [];
-                    currentPlayer = currentPlayer === 1 ? 2 : 1;
-                    updateTurnIndicator();
-                    canFlip = true;
-                }, 1000);
-            }
-        }
-
-        function updateTurnIndicator() {
-            const indicator = document.getElementById('turnIndicator');
-            indicator.textContent = `PLAYER ${currentPlayer}'S TURN`;
-            indicator.className = `turn-indicator p${currentPlayer}`;
-            
-            document.getElementById('scoreP1').classList.toggle('active', currentPlayer === 1);
-            document.getElementById('scoreP2').classList.toggle('active', currentPlayer === 2);
-        }
-
-        function updateScores() {
-            document.getElementById('scoreP1Value').textContent = scores.p1;
-            document.getElementById('scoreP2Value').textContent = scores.p2;
-        }
-
-        function endGame() {
-            const messageEl = document.getElementById('gameMessage');
-            document.getElementById('turnIndicator').style.display = 'none';
-            
-            if (scores.p1 > scores.p2) {
-                messageEl.textContent = 'PLAYER 1 WINS!';
-                messageEl.className = 'game-message p1';
-            } else if (scores.p2 > scores.p1) {
-                messageEl.textContent = 'PLAYER 2 WINS!';
-                messageEl.className = 'game-message p2';
-            } else {
-                messageEl.textContent = "IT'S A TIE!";
-                messageEl.className = 'game-message';
-            }
-        }
-
-        function resetGame() {
-            matchedPairs = 0;
-            currentPlayer = 1;
-            scores = { p1: 0, p2: 0 };
-            flippedCards = [];
-            canFlip = true;
-            
-            updateScores();
-            document.getElementById('gameMessage').textContent = '';
-            document.getElementById('turnIndicator').style.display = 'block';
-            
-            init();
-        }
-
-        window.onload = init;
-    </script>
+function init(){
+    cards=shuffle([...emojis,...emojis]);
+    matched=0;
+    flipped=[];
+    locked=false;
     
-    <script>
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
-    </script>
-    <script src="/header.js"></script>
-    <script src="/js/engagement.js"></script>
+    const grid=document.getElementById('grid');
+    grid.innerHTML='';
+    cards.forEach((emoji,i)=>{
+        const card=document.createElement('div');
+        card.className='card';
+        card.dataset.i=i;
+        card.innerHTML=`<span class="card-face">${emoji}</span>`;
+        card.addEventListener('click',()=>flip(i));
+        grid.appendChild(card);
+    });
+    
+    updateTurn();
+    document.getElementById('statusText').textContent='';
+}
+
+function flip(i){
+    if(locked)return;
+    const card=document.querySelector(`[data-i="${i}"]`);
+    if(card.classList.contains('flipped')||card.classList.contains('matched'))return;
+    
+    card.classList.add('flipped');
+    flipped.push(i);
+    
+    if(flipped.length===2){
+        locked=true;
+        const[a,b]=flipped;
+        
+        if(cards[a]===cards[b]){
+            setTimeout(()=>{
+                document.querySelector(`[data-i="${a}"]`).classList.add('matched',`p${current}`);
+                document.querySelector(`[data-i="${b}"]`).classList.add('matched',`p${current}`);
+                scores[current]++;
+                updateScores();
+                matched+=2;
+                flipped=[];
+                locked=false;
+                
+                if(matched===16){
+                    endGame();
+                }
+            },500);
+        }else{
+            setTimeout(()=>{
+                document.querySelector(`[data-i="${a}"]`).classList.remove('flipped');
+                document.querySelector(`[data-i="${b}"]`).classList.remove('flipped');
+                flipped=[];
+                current=current===1?2:1;
+                updateTurn();
+                locked=false;
+            },1000);
+        }
+    }
+}
+
+function updateTurn(){
+    const el=document.getElementById('turnIndicator');
+    el.innerHTML=`<span>PLAYER ${current}</span>'s turn`;
+    el.className=`turn-indicator p${current}`;
+    document.getElementById('card1').classList.toggle('active',current===1);
+    document.getElementById('card2').classList.toggle('active',current===2);
+}
+
+function updateScores(){
+    document.getElementById('score1').textContent=scores[1];
+    document.getElementById('score2').textContent=scores[2];
+}
+
+function endGame(){
+    const el=document.getElementById('statusText');
+    document.getElementById('turnIndicator').style.opacity='0';
+    
+    if(scores[1]>scores[2]){
+        el.textContent='PLAYER 1 WINS!';
+        el.className='status-text win';
+    }else if(scores[2]>scores[1]){
+        el.textContent='PLAYER 2 WINS!';
+        el.className='status-text win';
+    }else{
+        el.textContent="IT'S A TIE!";
+        el.className='status-text';
+    }
+}
+
+function resetGame(){
+    scores={1:0,2:0};
+    current=1;
+    updateScores();
+    document.getElementById('turnIndicator').style.opacity='1';
+    init();
+}
+
+init();
+</script>
+<script src="/header.js"></script>
+<script src="/js/engagement.js" defer></script>
 </body>
 </html>

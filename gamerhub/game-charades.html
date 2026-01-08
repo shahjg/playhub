@@ -3,594 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Charades – 2 Player Game | TheGaming.co</title>
+    <meta name="description" content="Charades - act it out, guess it right!">
     <meta name="theme-color" content="#0a0a0f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Couples Charades - TheGaming.co</title>
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        /* All Base Styles (from previous versions) */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #fafbff; color: #1a1a1a; overflow-x: hidden; position: relative; min-height: 100vh; }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-
-        /* Animated background blobs */
-        .bg-shape { position: fixed; pointer-events: none; z-index: 0; opacity: 0.6; }
-        .shape-1 { top: -80px; right: -80px; width: 350px; height: 350px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; animation: morph 10s ease-in-out infinite; }
-        .shape-2 { top: 50%; left: -120px; width: 300px; height: 300px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 12s ease-in-out infinite reverse; }
-        .shape-3 { bottom: -80px; right: 15%; width: 280px; height: 280px; background: linear-gradient(135deg, #ff6b9d30 0%, #c4456930 100%); border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; animation: morph 14s ease-in-out infinite; }
-        @keyframes morph { 0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); } 50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(5deg); } }
-
-        .container { max-width: 900px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Navigation */
-        nav { padding: 30px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
-        .logo-nav { font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 2px; color: #1a1a1a; text-decoration: none; }
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: color 0.3s ease; }
-        .back-btn:hover { color: #1a1a1a; }
-
-        /* General Content */
-        .game-content { flex: 1; display: flex; flex-direction: column; padding-bottom: 60px; }
-        .hidden { display: none !important; }
-
-        /* --- SCREEN STYLES (Category, Pack Selection) --- */
-        .selection-screen { max-width: 800px; margin: 40px auto; }
-        .selection-header { text-align: center; margin-bottom: 50px; }
-        .selection-header h2 { font-size: 4.5rem; line-height: 1; margin-bottom: 15px; text-shadow: 2px 2px 0 rgba(255, 107, 157, 0.2); }
-        .selection-header p { font-size: 1.2rem; color: #666; font-weight: 500; }
-        
-        /* GRID FOR 6 CATEGORIES */
-        .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        
-        .selection-card { background: white; border: 3px solid #1a1a1a; padding: 40px 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
-        .selection-card:hover { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
-        .selection-icon { font-size: 3rem; margin-bottom: 15px; }
-        .selection-card h3 { font-size: 2rem; margin-bottom: 10px; line-height: 1; }
-        .selection-description { font-size: 0.95rem; color: #666; margin-bottom: 12px; font-weight: 500; line-height: 1.5; }
-
-        /* Pack Specific Styles */
-        .packs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; } 
-
-        .pack-card { background: white; border: 3px solid #1a1a1a; padding: 35px 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 5px 5px 0 #e0e0e0; text-align: center; }
-        .pack-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #ff6b9d; margin-bottom: 10px; line-height: 1; }
-        .pack-questions { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: #666; letter-spacing: 1px; }
-
-        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-bottom: 30px; }
-        .back-link:hover { color: #1a1a1a; }
-
-        /* --- GAME SCREEN STYLES --- */
-        .game-screen { display: none; }
-        .progress-bar-container { background: white; border: 3px solid #1a1a1a; padding: 8px; margin-bottom: 40px; box-shadow: 4px 4px 0 #e0e0e0; }
-        .progress-bar { height: 12px; background: #f0f0f0; position: relative; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); transition: width 0.3s ease; }
-        .game-header { text-align: center; margin-bottom: 40px; position: relative; }
-        .quit-btn { position: absolute; right: 0; top: 0; background: white; border: 2px solid #1a1a1a; padding: 8px 20px; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; color: #666; }
-        .quit-btn:hover { background: #f0f0f0; color: #1a1a1a; }
-        
-        .mode-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #ff6b9d; letter-spacing: 2px; margin-bottom: 8px; }
-        .prompt-counter { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #666; letter-spacing: 1px; }
-
-        /* Player Turn Card */
-        .turn-card { 
-            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-            color: white; 
-            border: 4px solid #8b2e47; 
-            box-shadow: 8px 8px 0 #8b2e47; 
-            padding: 60px 50px; 
-            margin-bottom: 40px;
-            min-height: 280px; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            text-align: center;
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
+            --p1:#f472b6;--p2:#60a5fa;
+            --text-dark:#1a1a2e;--text-muted:#6b7280;
         }
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
 
-        .turn-card h3 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            line-height: 1;
-            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
-        }
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
 
-        .turn-instruction {
-            font-size: 1.2rem;
-            font-weight: 500;
-        }
+        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
+        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
 
-        /* Prompt Reveal Card */
-        .prompt-card { 
-            background: #1a1a1a;
-            color: #1a1a1a; 
-            border: 4px solid #1a1a1a; 
-            padding: 60px 50px; 
-            margin-bottom: 40px; 
-            box-shadow: 8px 8px 0 #e0e0e0; 
-            min-height: 280px; 
-            display: none; /* Starts hidden */
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            transition: all 0.5s ease;
-        }
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
+        .game-container{width:100%;max-width:450px;display:flex;flex-direction:column;gap:16px}
 
-        .prompt-text { 
-            font-size: 1.8rem; 
-            line-height: 1.5; 
-            text-align: center; 
-            font-weight: 600; 
-            color: #1a1a1a; /* Obscured by default */
-            transition: color 0.5s ease;
-        }
+        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08)}
+        .score-card.p1 .score-label{color:var(--p1)}
+        .score-card.p2 .score-label{color:var(--p2)}
+        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
+        .score-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text-dark)}
 
-        .prompt-card.revealed {
-            background: white; 
-        }
+        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
 
-        .prompt-card.revealed .prompt-text {
-             color: #1a1a1a !important; 
-        }
-        
-        .reveal-btn {
-            background: #1a1a1a;
-            color: white;
-            border-color: #1a1a1a;
-            box-shadow: 5px 5px 0 #e0e0e0;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
+        .phase{display:none}
+        .phase.active{display:block}
 
-        .reveal-btn:hover:not(:disabled) {
-            transform: translate(2px, -2px);
-            box-shadow: 3px 3px 0 #e0e0e0;
-        }
+        .category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+        .category-card{background:#fdf2f8;border:2px solid #fce7f3;border-radius:14px;padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.2s}
+        .category-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+        .category-icon{font-size:2rem;margin-bottom:8px}
+        .category-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;margin-bottom:4px}
+        .category-desc{font-size:0.75rem;color:var(--text-muted)}
 
-        .navigation { display: flex; gap: 15px; }
-        .nav-btn { flex: 1; padding: 18px 30px; font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
-        .nav-btn.prev { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
-        .nav-btn.prev:hover:not(:disabled) { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #e0e0e0; }
-        .nav-btn.next { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
-        .nav-btn.next:hover:not(:disabled) { transform: translate(2px, -2px); box-shadow: 3px 3px 0 #8b2e47; }
-        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;text-align:center;margin-bottom:20px;color:var(--accent-dark)}
 
-        /* End Screen (Copied from 21 Questions) */
-        .end-screen { display: none; text-align: center; max-width: 700px; margin: 80px auto; }
-        .end-screen h2 { font-size: 5.5rem; line-height: 1; margin-bottom: 30px; text-shadow: 3px 3px 0 rgba(255, 107, 157, 0.2); }
-        .end-message { font-size: 1.3rem; line-height: 1.8; color: #666; margin-bottom: 50px; font-weight: 500; }
-        .end-actions { display: flex; flex-direction: column; gap: 15px; }
-        .action-btn { padding: 18px 40px; font-size: 1.3rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; border: 3px solid #1a1a1a; cursor: pointer; transition: all 0.3s ease; }
-        .action-btn.primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border-color: #8b2e47; box-shadow: 5px 5px 0 #8b2e47; }
-        .action-btn.secondary { background: white; color: #1a1a1a; box-shadow: 5px 5px 0 #e0e0e0; }
+        .actor-card{text-align:center;padding:30px 20px}
+        .actor-label{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;margin-bottom:8px}
+        .actor-label.p1{color:var(--p1)}
+        .actor-label.p2{color:var(--p2)}
+        .actor-hint{font-size:0.85rem;color:var(--text-muted);margin-bottom:24px}
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container { padding: 0 20px; }
-            .selection-header h2, .end-screen h2 { font-size: 3.5rem; }
-            .selection-grid { grid-template-columns: 1fr; } 
-            .packs-grid { grid-template-columns: 1fr; }
-            .quit-btn { position: static; margin-bottom: 15px; display: block; width: 100%; }
-            .prompt-text { font-size: 1.4rem; }
-            .turn-card, .prompt-card { padding: 40px 30px; min-height: 240px; }
-            .turn-card h3 { font-size: 2.2rem; }
-            .nav-btn { font-size: 1.1rem; padding: 15px 20px; }
-        }
+        .word-card{background:linear-gradient(135deg,var(--accent-light),#fdf2f8);border:3px solid var(--accent);border-radius:16px;padding:30px 20px;text-align:center;margin-bottom:20px}
+        .word-category{font-size:0.75rem;color:var(--accent-dark);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+        .word-text{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:2px;color:var(--text-dark)}
+
+        .timer{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--accent-dark);margin-bottom:20px}
+        .timer.warning{color:#ef4444;animation:pulse 0.5s infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+        .result-btns{display:flex;gap:12px;justify-content:center}
+        .result-btn{flex:1;max-width:130px;padding:14px;border-radius:12px;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;cursor:pointer;transition:all 0.2s}
+        .result-btn.correct{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
+        .result-btn.skip{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+        .result-btn:hover{transform:scale(1.05)}
+
+        .end-screen{text-align:center;padding:30px}
+        .end-emoji{font-size:4rem;margin-bottom:16px}
+        .end-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:8px}
+        .end-title.p1{color:var(--p1)}
+        .end-title.p2{color:var(--p2)}
+        .end-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
+
+        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
+
+        .actions{display:flex;gap:10px;justify-content:center}
     </style>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="/header.css">
 </head>
 <body>
     <div id="site-header"></div>
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
-
-    <div class="container">
-        <nav>
-            <a href="index.html" class="logo-nav">THEGAMING.CO</a>
-            <a href="/duos.html" class="back-btn">
-                ← Back to Duos
-            </a>
-        </nav>
-
-        <div class="game-content">
-            
-            <div class="selection-screen" id="categorySelection">
-                <div class="selection-header">
-                    <h2>CHOOSE YOUR VIBE</h2>
-                    <p>Pick a category, then select a pack of Charades prompts to act out.</p>
-                </div>
-
-                <div class="selection-grid">
-                    
-                    <div class="selection-card" onclick="showPacks('silly')">
-                        <div class="selection-icon">😂</div>
-                        <h3>SILLY & RANDOM</h3>
-                        <p class="selection-description">Always different! Generates unique combinations for endless fun.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('romance')">
-                        <div class="selection-icon">💕</div>
-                        <h3>LOVE & ROMANCE</h3>
-                        <p class="selection-description">Sophisticated, heartfelt, or cute concepts for connection.</p>
-                    </div>
-                    
-                    <div class="selection-card" onclick="showPacks('sexy')">
-                        <div class="selection-icon">🔥</div>
-                        <h3>FLIRTY & SEXY</h3>
-                        <p class="selection-description">Sensual, intimate, or slightly naughty prompts to spice things up.</p>
-                    </div>
-                    
-                    <div class="selection-card" onclick="showPacks('pop-culture')">
-                        <div class="selection-icon">🎬</div>
-                        <h3>POP CULTURE & MEDIA</h3>
-                        <p class="selection-description">Famous scenes, characters, songs, and celebrity moments.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('nostalgia')">
-                        <div class="selection-icon">🧸</div>
-                        <h3>CHILDHOOD & NOSTALGIA</h3>
-                        <p class="selection-description">Relive old school yard games, childhood habits, and memories.</p>
-                    </div>
-
-                    <div class="selection-card" onclick="showPacks('fantasy')">
-                        <div class="selection-icon">✨</div>
-                        <h3>FUTURE & FANTASY</h3>
-                        <p class="selection-description">Sci-fi scenarios, winning big, or dream goals and achievements.</p>
-                    </div>
-
-                </div>
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">🎭</div>
+                <h1 class="hero-title">CHARADES</h1>
+                <p class="hero-sub">Act it out, guess it right!</p>
             </div>
+        </section>
 
-            <div class="selection-screen hidden" id="packSelection">
-                <span class="back-link" onclick="backToCategories()">← Back to Categories</span>
-                
-                <div class="selection-header">
-                    <h2 id="packCategoryTitle"></h2>
-                    <p>Choose a pack of prompts</p>
-                </div>
-
-                <div class="packs-grid" id="packsGrid">
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="score-bar">
+                    <div class="score-card p1">
+                        <div class="score-label">Player 1</div>
+                        <div class="score-value" id="score1">0</div>
                     </div>
-            </div>
-
-            <div class="game-screen" id="gameScreen">
-                <div class="progress-bar-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                    <div class="score-card p2">
+                        <div class="score-label">Player 2</div>
+                        <div class="score-value" id="score2">0</div>
                     </div>
                 </div>
 
-                <div class="game-header">
-                    <button class="quit-btn" onclick="quitToPacks()">QUIT</button>
-                    <div class="mode-label" id="modeTitle">CHARADES (ACTING)</div>
-                    <div class="prompt-counter" id="promptCounter">PROMPT 1 OF 20</div>
-                </div>
+                <div class="game-board">
+                    <div class="phase active" id="categoryPhase">
+                        <div class="phase-title">CHOOSE A CATEGORY</div>
+                        <div class="category-grid">
+                            <div class="category-card" onclick="selectCategory('movies')">
+                                <div class="category-icon">🎬</div>
+                                <div class="category-name">MOVIES</div>
+                                <div class="category-desc">Film titles</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('actions')">
+                                <div class="category-icon">🏃</div>
+                                <div class="category-name">ACTIONS</div>
+                                <div class="category-desc">Things you do</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('animals')">
+                                <div class="category-icon">🦁</div>
+                                <div class="category-name">ANIMALS</div>
+                                <div class="category-desc">Creatures</div>
+                            </div>
+                            <div class="category-card" onclick="selectCategory('mixed')">
+                                <div class="category-icon">🎲</div>
+                                <div class="category-name">MIXED</div>
+                                <div class="category-desc">Random mix</div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="turn-card" id="turnCard">
-                    <h3 id="turnPlayer">PASS TO PLAYER 1</h3>
-                    <p class="turn-instruction" id="turnInstruction">
-                        Player 1, click 'SHOW PROMPT' below once the other player looks away. You are ACTING.
-                    </p>
-                    <button class="reveal-btn" id="showPromptBtn" onclick="showPromptCard()">SHOW PROMPT</button>
-                </div>
+                    <div class="phase" id="readyPhase">
+                        <div class="actor-card">
+                            <div class="actor-label p1" id="actorLabel">PLAYER 1 ACTS</div>
+                            <div class="actor-hint">Don't let the guesser see the word!</div>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="showWord()">Show Word</button>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="prompt-card" id="promptCard">
-                    <p class="prompt-text" id="promptText"></p>
-                </div>
+                    <div class="phase" id="playPhase">
+                        <div class="actor-card">
+                            <div class="word-card">
+                                <div class="word-category" id="wordCategory">MOVIE</div>
+                                <div class="word-text" id="wordText">TITANIC</div>
+                            </div>
+                            <div class="timer" id="timer">60</div>
+                            <div class="result-btns">
+                                <button class="result-btn correct" onclick="gotIt()">GOT IT! ✓</button>
+                                <button class="result-btn skip" onclick="skipIt()">SKIP →</button>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="navigation">
-                    <button class="nav-btn prev" id="prevBtn" onclick="previousPrompt()">← PREVIOUS</button>
-                    <button class="nav-btn next" id="nextBtn" onclick="nextPrompt()">GUESSED! →</button>
-                </div>
-            </div>
-
-            <div class="end-screen" id="endScreen">
-                <h2>YOU DID IT! 🎉</h2>
-                <p class="end-message">
-                    Great connection and acting! Try another pack.
-                </p>
-                <div class="end-actions">
-                    <button class="action-btn primary" onclick="backToPackSelection()">TRY ANOTHER PACK</button>
-                    <button class="action-btn secondary" onclick="backToGames()">BACK TO DUOS</button>
+                    <div class="phase" id="endPhase">
+                        <div class="end-screen">
+                            <div class="end-emoji">🏆</div>
+                            <div class="end-title" id="endTitle">PLAYER 1 WINS!</div>
+                            <div class="end-sub" id="endSub">Final Score: 5 - 3</div>
+                            <div class="actions">
+                                <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </main>
 
-        <footer>
-            </footer>
-    </div>
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-    <script>
-        // --- UTILITY FUNCTION FOR GENERATOR ---
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
+const words={
+    movies:["Titanic","The Lion King","Harry Potter","Frozen","Jaws","Spider-Man","Batman","Star Wars","Finding Nemo","Shrek","Avatar","The Matrix","Jurassic Park","Toy Story","Inception"],
+    actions:["Swimming","Dancing","Cooking","Sleeping","Running","Laughing","Crying","Eating","Driving","Flying","Climbing","Jumping","Singing","Reading","Painting"],
+    animals:["Elephant","Kangaroo","Penguin","Snake","Monkey","Giraffe","Lion","Dolphin","Butterfly","Spider","Eagle","Frog","Rabbit","Horse","Cat"],
+    mixed:["Pizza","Superhero","Rollercoaster","Dentist","Selfie","Rainbow","Thunder","Zombie","Robot","Surfing","Astronaut","Magician","Vampire","Ninja","Cowboy"]
+};
+
+let category='';
+let deck=[];
+let current=1;
+let scores={1:0,2:0};
+let roundsPlayed=0;
+const totalRounds=10;
+let timer=null;
+let timeLeft=60;
+
+function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+
+function showPhase(id){
+    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function selectCategory(cat){
+    category=cat;
+    deck=shuffle([...words[cat]]);
+    roundsPlayed=0;
+    current=1;
+    scores={1:0,2:0};
+    updateScores();
+    startRound();
+}
+
+function startRound(){
+    if(roundsPlayed>=totalRounds){
+        endGame();
+        return;
+    }
+    const label=document.getElementById('actorLabel');
+    label.textContent=`PLAYER ${current} ACTS`;
+    label.className=`actor-label p${current}`;
+    showPhase('readyPhase');
+}
+
+function showWord(){
+    if(deck.length===0)deck=shuffle([...words[category]]);
+    const word=deck.pop();
+    document.getElementById('wordCategory').textContent=category.toUpperCase();
+    document.getElementById('wordText').textContent=word;
+    timeLeft=60;
+    updateTimer();
+    startTimer();
+    showPhase('playPhase');
+}
+
+function startTimer(){
+    clearInterval(timer);
+    timer=setInterval(()=>{
+        timeLeft--;
+        updateTimer();
+        if(timeLeft<=0){
+            clearInterval(timer);
+            skipIt();
         }
-        function getRandomElement(list) {
-            return list[Math.floor(Math.random() * list.length)];
-        }
-        
-        // --- GAME STATE & DATA ---
-        let currentPromptIndex = 0;
-        let currentCategory = '';
-        let currentPack = '';
-        let currentPrompts = [];
-        let currentPlayer = 1; // Start with Player 1
-        const TOTAL_GENERATOR_PROMPTS = 20; // Number of unique prompts generated per run
+    },1000);
+}
 
-        const categoryTitles = {
-            'silly': 'SILLY & RANDOM',
-            'romance': 'LOVE & ROMANCE',
-            'sexy': 'FLIRTY & SEXY',
-            'pop-culture': 'POP CULTURE & MEDIA',
-            'nostalgia': 'CHILDHOOD & NOSTALGIA',
-            'fantasy': 'FUTURE & FANTASY'
-        };
-        
-        // --- CHARADES PROMPT BANKS (Silly is now a Generator) ---
-        const charadesPrompts = {
-            silly: {
-                // The 'generator' pack uses component lists for randomization
-                generator: {
-                    components: {
-                        A: [ 'Clumsy', 'Grumpy', 'Nervous', 'Awkward', 'Invisible', 'Confused', 'Dramatic', 'Slippery', 'Oversized', 'Tiny', 'Angry' ],
-                        B: [ 'Waiter', 'Penguin', 'Athlete', 'Magician', 'Celebrity', 'Chef', 'Mascot', 'Ninja', 'Cat', 'Ghost', 'Robot', 'Dog' ],
-                        C: [ 'trying to tie its shoes', 'looking for keys', 'eating a giant messy burger', 'singing terribly', 'trying to parallel park', 'dancing to a polka', 'running for a bus', 'stuck in a revolving door', 'trying to breakdance', 'smelling something gross', 'escaping a giant spider', 'riding a tiny bicycle' ]
-                    },
-                    templates: [
-                        (A, B, C) => `Act out a ${A} ${B} ${C}.`,
-                        (A, B, C) => `Act out a ${B} who is secretly ${A} and must ${C}.`,
-                        (A, B, C) => `What happens when a ${A} ${B} tries ${C}?`,
-                    ]
-                }
-            },
-            romance: {
-                pack1: [ "Making out in the rain", "The first time we met", "Stolen kiss on a rooftop", "Planning our future home", "Couple's inside joke", "A surprise romantic getaway", "Having a deep conversation", "Writing a love letter", "Getting engaged", "Cuddling on the couch", "Sharing an umbrella", "A romantic picnic date", "Dancing slowly at a wedding", "Making breakfast in bed", "A perfect date night", "Warming my cold hands", "A big, heartfelt apology", "Gifting flowers", "Sharing a single scoop of ice cream", "Watching the sunset together"],
-                pack2: [ "Sharing headphones on a trip", "Your favorite memory of me", "A candlelit dinner", "Helping each other study", "A thoughtful surprise gift", "A long goodbye hug", "Walking hand-in-hand", "A trip to Paris", "Building a snowman together", "An awkward teenage crush", "Watching a sad movie together", "A long-distance call", "Whispering a secret", "Waking up next to you", "A romantic slow dance", "Making up after an argument", "A late-night talk", "Planning a future bucket list", "A tender forehead kiss", "Holding hands during a movie"],
-                pack3: [ "A cheesy public proposal", "My biggest pet peeve", "Comforting me after a bad day", "The moment I fell for you", "Our favorite place to eat", "Discussing our life goals", "Forgiving a mistake", "A passionate debate", "Buying groceries together", "Folding laundry together", "Sharing a childhood fear", "A couple's massage", "Building a fort in the living room", "A midnight snack run", "A tender forehead kiss", "Giving a sweet compliment", "Snuggling after a fight", "Making up our own language", "Singing in the car together", "My worst habit"]
-            },
-            sexy: {
-                pack1: [ "A slow, sensual dance", "Whispering a secret fantasy", "Trying on sexy lingerie", "A shower together", "Giving a deep neck massage", "A passionate kiss", "The biggest turn-on", "Being seductive", "Waking up spooning", "A strip tease", "A secret kiss in public", "A romantic fantasy scenario", "Body shots", "Kissing your neck slowly", "A secret desire", "A provocative wink", "A candlelit bath", "A slow body trace", "Being caught in the act", "Flirting across the room"],
-                pack2: [ "Undressing slowly", "Taking a naughty selfie", "A game of Truth or Dare (spicy)", "Biting your lip", "A lingering touch on the thigh", "Getting dressed after intimacy", "The most attractive piece of clothing", "A sexy power walk", "Giving a back scratch", "A slow tease", "A late night confession", "A body rub with lotion", "Tasting champagne off your skin", "A dirty talk moment", "Using a blindfold", "Dancing very close", "Touching my favorite spot", "A shower scene", "A secret signal for intimacy", "My most confident look"],
-                pack3: [ "A private dance just for you", "A provocative glance", "Kissing down the back", "Whipping cream challenge", "A fantasy role play", "A dominant move", "Waking up naked", "The hottest part of my body", "A naughty whisper in the ear", "A spontaneous moment", "Taking off a shirt smoothly", "A jealous stare", "My favorite part of your body", "A confident stance", "A sexy wink", "A sensual lick", "Running your hands through my hair", "A slow, deep kiss", "My favorite spot to be kissed", "A long, meaningful hug after sex"]
-            },
-            'pop-culture': {
-                pack1: [ "Tearful Oscar acceptance speech", "A celebrity hiding from the paparazzi", "The music video Thriller", "A character getting a red card", "Opening a magic portal", "A popular TikTok dance", "The famous Titanic scene", "A magician pulling a rabbit out of a hat", "A villain twirling a mustache", "A person winning the lottery", "A news anchor reading a teleprompter", "A famous painting (e.g., Mona Lisa)", "Trying to act cool on a red carpet", "Being ghosted", "A person binge-watching TV", "The movie Jaws", "The scene from The Matrix", "Drinking wine dramatically", "A person taking a selfie", "Rapping fast"],
-                pack2: [ "Doing the Macarena", "A person winning an Olympic medal", "The character Gollum", "A dramatic curtain call", "Searching for a Wi-Fi signal", "Scrolling endlessly on a phone", "A DJ scratching a record", "Trying to use a broken vending machine", "A classic dance move (e.g., Robot)", "The character Darth Vader", "An awkward talk show guest", "A superhero flying with a cape", "Watching a 3D movie", "Being photobombed", "A person playing an air guitar", "The famous shower scene in Psycho", "Singing a terrible jingle", "A person getting slimed", "Trying to break dance", "A famous celebrity couple fighting"], 
-                pack3: [ "The opening credits of Friends", "Being blinded by a camera flash", "Holding a gold record", "Playing a kazoo", "A news reporter caught in the wind", "Trying to take a panoramic photo", "A person trying to parallel park", "A character getting fired dramatically", "A person running a marathon", "A terrible attempt at magic", "A cat walking across a keyboard", "Trying to sing high notes", "A dramatic scene from a Shakespeare play", "The iconic scene from Flashdance", "A tourist looking at a map", "A person trying to start a lawnmower", "A character riding a mechanical bull", "A person doing a weather report", "A failed celebrity handshake", "An old-school video game character"]
-            },
-            'nostalgia': {
-                pack1: [ "Jumping rope", "Riding a bicycle with no hands", "Playing hopscotch", "Tasting a sour candy", "Building a sandcastle", "Trying to beat a video game boss", "Waiting for the school bus", "Hiding under the covers with a flashlight", "Getting caught sneaking out", "A teacher writing on a blackboard", "A parent reading a bedtime story", "Sharing secrets over a sleepover", "Putting a puzzle together", "Singing into a hairbrush microphone", "Learning to tie shoes", "Getting grounded", "Waiting for the ice cream truck", "Playing tag", "Passing notes in class", "Sneaking food to a pet"],
-                pack2: [ "Trying to fix a cassette tape", "Playing outside until sunset", "Doing multiplication with fingers", "A high five that misses", "Making a wish on a dandelion", "Reading a dictionary", "The struggle of dial-up internet", "Building a pillow fort", "Riding a scooter", "Losing a tooth", "Trying to sneak candy into a movie", "Trying to beat a high score on an arcade game", "Being scared by a spooky story", "Getting chased by a garden hose", "Trying to look cool in school photos", "The taste of bubble gum tape", "Jumping in a puddle", "Making mud pies", "Learning to ride a two-wheeler", "Getting caught cheating on a test"], 
-                pack3: [ "Playing 'The Floor is Lava'", "Drawing on a foggy window", "Looking for the hidden prize in a cereal box", "Writing with a fountain pen", "Trying to skip rocks", "Doing a cartwheel", "Waiting for photos to develop", "Trying to blow a huge bubble gum bubble", "A parent unplugging the console", "Playing Duck, Duck, Goose", "Getting stuck in a shirt", "Waving goodbye through a window", "A person trying to break a pinata", "Trying to catch a firefly", "Falling asleep during story time", "Trying to sneak the last cookie", "The agony of having a splinter", "Playing tetherball", "Sitting cross-legged on the floor", "Trying to whistle"]
-            },
-            'fantasy': {
-                pack1: [ "A robot rebellion", "Finding a hidden treasure map", "Living on Mars", "Flying a spaceship", "Time travel accident", "Meeting an alien", "Winning the Nobel Prize", "A future mode of transportation", "A genie granting three wishes", "Building a successful tech startup", "Curing a disease", "Surviving a zombie apocalypse", "A unicorn prancing", "A person with psychic powers", "Creating a new holiday tradition", "Discovering a new planet", "A dragon hoarding gold", "Teleporting somewhere embarrassing", "A politician making a promise", "Living in a smart house"],
-                pack2: [ "Taming a fierce dragon", "Having x-ray vision", "Winning the lottery jackpot", "Getting abducted by aliens", "Stepping into a time machine", "Discovering the Fountain of Youth", "Fighting a giant monster", "Giving a TED Talk on the future", "Getting a terrible futuristic haircut", "A villain activating a doomsday device", "Floating in zero gravity", "Inventing a teleporter", "A mythical creature (e.g., Yeti)", "Walking on the moon", "A hovercraft landing", "A person freezing time", "The end of the world", "Being turned into a frog", "A robot doing chores", "Building a sustainable farm"],
-                pack3: [ "Becoming invisible", "A magical sword fight", "A character shrinking down to miniature size", "A perfect utopian society", "Casting a spell that backfires", "Meeting a wise old wizard", "A dystopian soldier marching", "Discovering a hidden civilization", "A person communicating with animals", "A futuristic traffic jam", "Finding a magic ring", "A benevolent dictator", "A person learning to fly", "The first contact with aliens", "A character waking up from cryosleep", "An anti-gravity chamber malfunction", "Creating an AI that turns evil", "Living in a giant bubble", "A scientist mixing chemicals", "A hero saving the world at the last second"]
-            }
-        };
+function updateTimer(){
+    const el=document.getElementById('timer');
+    el.textContent=timeLeft;
+    el.className='timer'+(timeLeft<=10?' warning':'');
+}
 
-        // --- CORE GAME FUNCTIONS ---
+function gotIt(){
+    clearInterval(timer);
+    scores[current]++;
+    updateScores();
+    nextTurn();
+}
 
-        function init() {
-            document.getElementById('categorySelection').style.display = 'block';
-        }
-        
-        // --- PROMPT GENERATION LOGIC ---
-        function generateSillyPrompts() {
-            const data = charadesPrompts.silly.generator;
-            const components = data.components;
-            const prompts = [];
-            const history = new Set();
-            
-            // Generate 20 unique prompts
-            while (prompts.length < TOTAL_GENERATOR_PROMPTS) {
-                // Randomly select template and components
-                const template = getRandomElement(data.templates);
-                const A = getRandomElement(components.A);
-                const B = getRandomElement(components.B);
-                const C = getRandomElement(components.C);
-                
-                const newPrompt = template(A, B, C);
-                
-                // Use a string key for uniqueness check (e.g., "Clumsy|Chef|trying to tie its shoes")
-                const key = `${A}|${B}|${C}|${data.templates.indexOf(template)}`;
+function skipIt(){
+    clearInterval(timer);
+    nextTurn();
+}
 
-                if (!history.has(key)) {
-                    prompts.push(newPrompt);
-                    history.add(key);
-                }
-                // Stop trying if we somehow run out of unique combinations (highly unlikely here)
-                if (history.size > 1000) break; 
-            }
-            return prompts;
-        }
+function nextTurn(){
+    roundsPlayed++;
+    current=current===1?2:1;
+    startRound();
+}
 
+function updateScores(){
+    document.getElementById('score1').textContent=scores[1];
+    document.getElementById('score2').textContent=scores[2];
+}
 
-        function showPacks(categoryId) {
-            currentCategory = categoryId;
-            document.getElementById('categorySelection').classList.add('hidden');
-            document.getElementById('packSelection').classList.remove('hidden');
-            
-            document.getElementById('packCategoryTitle').textContent = categoryTitles[categoryId];
-            
-            const packsGrid = document.getElementById('packsGrid');
-            packsGrid.innerHTML = '';
-            
-            const categoryPacks = charadesPrompts[categoryId];
-            let packIndex = 1;
+function endGame(){
+    let winner,title;
+    if(scores[1]>scores[2]){winner=1;title='PLAYER 1 WINS!';}
+    else if(scores[2]>scores[1]){winner=2;title='PLAYER 2 WINS!';}
+    else{winner=0;title="IT'S A TIE!";}
+    
+    const titleEl=document.getElementById('endTitle');
+    titleEl.textContent=title;
+    titleEl.className='end-title'+(winner?` p${winner}`:'');
+    document.getElementById('endSub').textContent=`Final Score: ${scores[1]} - ${scores[2]}`;
+    showPhase('endPhase');
+}
 
-            // Iterate through every pack ID in the category
-            for (const packId in categoryPacks) {
-                if (!categoryPacks.hasOwnProperty(packId)) continue;
-
-                let promptsCount = 0;
-                let packTitle;
-                
-                if (packId === 'generator') {
-                    // This is the dynamic generator pack
-                    packTitle = 'GENERATOR PACK';
-                    promptsCount = TOTAL_GENERATOR_PROMPTS;
-                } else {
-                    // This is a standard static pack
-                    promptsCount = categoryPacks[packId].length;
-                    packTitle = `PACK ${packIndex}`;
-                }
-
-                // Only display if the pack contains playable content
-                if (promptsCount > 0) {
-                    const packCard = `
-                        <div class="pack-card" onclick="selectPack('${packId}')">
-                            <div class="pack-number">${packIndex}</div>
-                            <h3>${packTitle}</h3>
-                            <p class="pack-questions">${promptsCount} PROMPTS</p>
-                        </div>
-                    `;
-                    packsGrid.innerHTML += packCard;
-                    packIndex++;
-                }
-            }
-        }
-
-        function selectPack(packId) {
-            currentPack = packId;
-            
-            if (packId === 'generator') {
-                // GENERATE DYNAMIC PROMPTS
-                currentPrompts = generateSillyPrompts();
-            } else {
-                // LOAD STATIC PROMPTS
-                currentPrompts = charadesPrompts[currentCategory][packId];
-            }
-
-            if (currentPrompts.length === 0) {
-                 alert(`Selected pack is empty. Please choose an active pack.`);
-                 return;
-            }
-
-            currentPromptIndex = 0;
-            currentPlayer = 1; 
-            
-            document.getElementById('packSelection').classList.add('hidden');
-            document.getElementById('gameScreen').style.display = 'block';
-            
-            document.getElementById('modeTitle').textContent = 'CHARADES (ACTING)'; 
-            
-            updateDisplay();
-        }
-
-        function updateDisplay() {
-            const totalPrompts = currentPrompts.length;
-            const promptsPlayed = currentPromptIndex + 1;
-            const progress = (promptsPlayed / totalPrompts) * 100;
-            
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('promptCounter').textContent = `PROMPT ${promptsPlayed} OF ${totalPrompts}`;
-            
-            document.getElementById('turnPlayer').textContent = `PASS TO PLAYER ${currentPlayer}`;
-            document.getElementById('turnInstruction').textContent = `Player ${currentPlayer}, click 'SHOW PROMPT' below once the other player looks away. You are ACTING.`;
-            
-            document.getElementById('promptText').textContent = currentPrompts[currentPromptIndex];
-            
-            document.getElementById('turnCard').style.display = 'flex';
-            document.getElementById('promptCard').style.display = 'none';
-            document.getElementById('promptCard').classList.remove('revealed');
-
-            document.getElementById('prevBtn').disabled = currentPromptIndex === 0;
-            document.getElementById('nextBtn').textContent = currentPromptIndex === totalPrompts - 1 ? 'FINISH' : 'GUESSED! →';
-        }
-        
-        function showPromptCard() {
-            document.getElementById('turnCard').style.display = 'none';
-            document.getElementById('promptCard').style.display = 'flex';
-            document.getElementById('promptCard').classList.add('revealed');
-        }
-
-        function nextPrompt() {
-            if (document.getElementById('promptCard').style.display === 'flex') {
-                if (currentPromptIndex === currentPrompts.length - 1) {
-                    showEndScreen();
-                } else {
-                    currentPromptIndex++;
-                    currentPlayer = currentPlayer === 1 ? 2 : 1; 
-                    updateDisplay();
-                }
-            } else {
-                 alert("Please click 'SHOW PROMPT' first to reveal the challenge.");
-            }
-        }
-
-        function previousPrompt() {
-            if (currentPromptIndex > 0) {
-                currentPromptIndex--;
-                updateDisplay();
-            }
-        }
-
-        // --- BACK/QUIT FUNCTIONS ---
-        
-        function backToCategories() {
-            document.getElementById('packSelection').classList.add('hidden');
-            document.getElementById('categorySelection').classList.remove('hidden');
-        }
-
-        function quitToPacks() {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('packSelection').classList.remove('hidden');
-            currentPromptIndex = 0;
-        }
-
-        function showEndScreen() {
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('endScreen').style.display = 'block';
-        }
-
-        function backToPackSelection() {
-            document.getElementById('endScreen').style.display = 'none';
-            document.getElementById('packSelection').classList.remove('hidden');
-            currentPromptIndex = 0;
-        }
-
-        function backToGames() {
-            window.location.href = '/duos.html';
-        }
-
-        // --- KEYBOARD NAVIGATION ---
-        document.addEventListener('keydown', function(e) {
-            if (document.getElementById('gameScreen').style.display === 'block') {
-                if (e.key === 'ArrowRight') {
-                    if (document.getElementById('turnCard').style.display !== 'none') {
-                        showPromptCard();
-                    } else {
-                        nextPrompt();
-                    }
-                } else if (e.key === 'ArrowLeft' && currentPromptIndex > 0) {
-                    previousPrompt();
-                }
-            }
-        });
-
-        window.onload = init;
-    </script>
-    <script>
-        // Supabase initialization
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
-    </script>
-    <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+function resetGame(){
+    clearInterval(timer);
+    category='';
+    showPhase('categoryPhase');
+}
+</script>
+<script src="/header.js"></script>
+<script src="/js/engagement.js" defer></script>
 </body>
 </html>
