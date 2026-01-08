@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Gamedle - Daily Video Game Guessing | TheGaming.co</title>
+    <meta name="description" content="Guess the video game from attributes. New puzzle daily!">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#0a0a0f;--green:#22c55e;--yellow:#eab308;--red:#ef4444}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;padding-top:60px;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        
+        .page{min-height:calc(100vh - 60px);position:relative}
+        .page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,107,157,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(79,172,254,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(168,85,247,0.1) 0%,transparent 50%);pointer-events:none}
+        
+        .container{max-width:800px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+        
+        .header{text-align:center;margin-bottom:40px}
+        .title{font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .subtitle{color:rgba(255,255,255,0.6);font-size:1rem}
+        
+        .stats-bar{display:flex;justify-content:center;gap:32px;margin-bottom:32px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+        .stat{text-align:center}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff}
+        .stat-label{font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+        
+        .game-area{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:24px}
+        
+        .search-box{position:relative;margin-bottom:24px}
+        .search-input{width:100%;padding:16px 20px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:1rem;font-family:'Inter',sans-serif;transition:border-color 0.2s}
+        .search-input:focus{outline:none;border-color:var(--purple)}
+        .search-input::placeholder{color:rgba(255,255,255,0.3)}
+        .search-input:disabled{opacity:0.5;cursor:not-allowed}
+        
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;margin-top:4px;max-height:240px;overflow-y:auto;display:none;z-index:100}
+        .suggestions.show{display:block}
+        .suggestion{padding:12px 16px;cursor:pointer;transition:background 0.15s;font-size:0.95rem}
+        .suggestion:hover{background:rgba(255,255,255,0.08)}
+        .suggestion:first-child{border-radius:12px 12px 0 0}
+        .suggestion:last-child{border-radius:0 0 12px 12px}
+        
+        .attributes{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
+        .attr-header{padding:10px 4px;text-align:center;font-size:0.7rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px}
+        
+        .guesses{display:flex;flex-direction:column;gap:8px}
+        .guess-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;animation:slideIn 0.3s ease}
+        @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+        
+        .guess-cell{padding:12px 4px;text-align:center;border-radius:8px;font-size:0.75rem;font-weight:600;transition:all 0.3s}
+        .guess-cell.correct{background:var(--green);color:#fff}
+        .guess-cell.partial{background:var(--yellow);color:#000}
+        .guess-cell.wrong{background:var(--red);color:#fff}
+        .guess-cell.higher::after{content:' ↑';font-size:0.7rem}
+        .guess-cell.lower::after{content:' ↓';font-size:0.7rem}
+        
+        .game-over{text-align:center;padding:32px;animation:fadeIn 0.5s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .game-over h2{font-size:2rem;margin-bottom:8px}
+        .game-over.win h2{color:var(--green)}
+        .game-over.lose h2{color:var(--red)}
+        .answer-reveal{font-size:1.2rem;color:rgba(255,255,255,0.8);margin-bottom:24px}
+        .answer-reveal strong{color:#fff}
+        
+        .share-btn{padding:14px 32px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+        .share-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(168,85,247,0.4)}
+        
+        .how-to-play{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px}
+        .how-to-play h3{font-size:1.3rem;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .how-to-play p{color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.7;margin-bottom:12px}
+        .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:0.85rem;color:rgba(255,255,255,0.7)}
+        .legend-box{width:20px;height:20px;border-radius:4px}
+        .legend-box.green{background:var(--green)}
+        .legend-box.yellow{background:var(--yellow)}
+        .legend-box.red{background:var(--red)}
+        
+        .timer{font-size:0.85rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:24px}
+        
+        @media(max-width:600px){
+            .container{padding:24px 12px 60px}
+            .attributes{grid-template-columns:repeat(6,1fr);gap:4px}
+            .attr-header{font-size:0.55rem;padding:8px 2px}
+            .guess-row{gap:4px}
+            .guess-cell{padding:10px 2px;font-size:0.6rem}
+            .stats-bar{gap:16px;padding:12px}
+            .stat-value{font-size:1.2rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    
+    <div class="page">
+        <div class="container">
+            <div class="header">
+                <h1 class="title">GAMEDLE</h1>
+                <p class="subtitle">Guess the video game in 6 tries</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="streak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="played">0</div>
+                    <div class="stat-label">Played</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="win-rate">0%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+            
+            <div class="game-area">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="search" placeholder="Type a video game name..." autocomplete="off">
+                    <div class="suggestions" id="suggestions"></div>
+                </div>
+                
+                <div class="attributes">
+                    <div class="attr-header">Year</div>
+                    <div class="attr-header">Genre</div>
+                    <div class="attr-header">Platform</div>
+                    <div class="attr-header">Developer</div>
+                    <div class="attr-header">Mode</div>
+                    <div class="attr-header">Rating</div>
+                </div>
+                
+                <div class="guesses" id="guesses"></div>
+                <div id="game-over"></div>
+            </div>
+            
+            <div class="how-to-play">
+                <h3>HOW TO PLAY</h3>
+                <p>Guess the video game in 6 tries. After each guess, you'll see how close you are based on the game's attributes.</p>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-box green"></div> Correct</div>
+                    <div class="legend-item"><div class="legend-box yellow"></div> Partial match</div>
+                    <div class="legend-item"><div class="legend-box red"></div> Wrong</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">Next puzzle in: --:--:--</div>
+        </div>
+    </div>
+    
+    <script src="/header.js"></script>
+    <script>
+    const GAMES = [
+        {name:"The Legend of Zelda: Breath of the Wild",year:2017,genre:"Action-Adventure",platform:"Nintendo",developer:"Nintendo",mode:"Single",rating:"E10+"},
+        {name:"The Legend of Zelda: Tears of the Kingdom",year:2023,genre:"Action-Adventure",platform:"Nintendo",developer:"Nintendo",mode:"Single",rating:"E10+"},
+        {name:"The Legend of Zelda: Ocarina of Time",year:1998,genre:"Action-Adventure",platform:"Nintendo",developer:"Nintendo",mode:"Single",rating:"E"},
+        {name:"Super Mario Odyssey",year:2017,genre:"Platformer",platform:"Nintendo",developer:"Nintendo",mode:"Single",rating:"E10+"},
+        {name:"Super Mario Bros.",year:1985,genre:"Platformer",platform:"Nintendo",developer:"Nintendo",mode:"Multi",rating:"E"},
+        {name:"Super Mario 64",year:1996,genre:"Platformer",platform:"Nintendo",developer:"Nintendo",mode:"Single",rating:"E"},
+        {name:"Super Mario Galaxy",year:2007,genre:"Platformer",platform:"Nintendo",developer:"Nintendo",mode:"Single",rating:"E"},
+        {name:"Super Smash Bros. Ultimate",year:2018,genre:"Fighting",platform:"Nintendo",developer:"Nintendo",mode:"Multi",rating:"E10+"},
+        {name:"Mario Kart 8 Deluxe",year:2017,genre:"Racing",platform:"Nintendo",developer:"Nintendo",mode:"Multi",rating:"E"},
+        {name:"Animal Crossing: New Horizons",year:2020,genre:"Simulation",platform:"Nintendo",developer:"Nintendo",mode:"Multi",rating:"E"},
+        {name:"Pokemon Scarlet",year:2022,genre:"RPG",platform:"Nintendo",developer:"Game Freak",mode:"Multi",rating:"E"},
+        {name:"Pokemon Red",year:1996,genre:"RPG",platform:"Nintendo",developer:"Game Freak",mode:"Single",rating:"E"},
+        {name:"Pokemon Gold",year:1999,genre:"RPG",platform:"Nintendo",developer:"Game Freak",mode:"Multi",rating:"E"},
+        {name:"Splatoon 3",year:2022,genre:"Shooter",platform:"Nintendo",developer:"Nintendo",mode:"Multi",rating:"E10+"},
+        {name:"Fire Emblem: Three Houses",year:2019,genre:"Strategy",platform:"Nintendo",developer:"Intelligent Systems",mode:"Single",rating:"T"},
+        {name:"Metroid Dread",year:2021,genre:"Action-Adventure",platform:"Nintendo",developer:"MercurySteam",mode:"Single",rating:"T"},
+        {name:"Xenoblade Chronicles 3",year:2022,genre:"RPG",platform:"Nintendo",developer:"Monolith Soft",mode:"Single",rating:"T"},
+        {name:"God of War",year:2018,genre:"Action-Adventure",platform:"PlayStation",developer:"Santa Monica",mode:"Single",rating:"M"},
+        {name:"God of War Ragnarok",year:2022,genre:"Action-Adventure",platform:"PlayStation",developer:"Santa Monica",mode:"Single",rating:"M"},
+        {name:"The Last of Us",year:2013,genre:"Action-Adventure",platform:"PlayStation",developer:"Naughty Dog",mode:"Single",rating:"M"},
+        {name:"The Last of Us Part II",year:2020,genre:"Action-Adventure",platform:"PlayStation",developer:"Naughty Dog",mode:"Single",rating:"M"},
+        {name:"Uncharted 4",year:2016,genre:"Action-Adventure",platform:"PlayStation",developer:"Naughty Dog",mode:"Multi",rating:"T"},
+        {name:"Spider-Man",year:2018,genre:"Action-Adventure",platform:"PlayStation",developer:"Insomniac",mode:"Single",rating:"T"},
+        {name:"Spider-Man: Miles Morales",year:2020,genre:"Action-Adventure",platform:"PlayStation",developer:"Insomniac",mode:"Single",rating:"T"},
+        {name:"Horizon Zero Dawn",year:2017,genre:"Action-RPG",platform:"Multi",developer:"Guerrilla",mode:"Single",rating:"T"},
+        {name:"Horizon Forbidden West",year:2022,genre:"Action-RPG",platform:"PlayStation",developer:"Guerrilla",mode:"Single",rating:"T"},
+        {name:"Ghost of Tsushima",year:2020,genre:"Action-Adventure",platform:"PlayStation",developer:"Sucker Punch",mode:"Multi",rating:"M"},
+        {name:"Bloodborne",year:2015,genre:"Action-RPG",platform:"PlayStation",developer:"FromSoftware",mode:"Multi",rating:"M"},
+        {name:"Demon's Souls",year:2020,genre:"Action-RPG",platform:"PlayStation",developer:"Bluepoint",mode:"Multi",rating:"M"},
+        {name:"Ratchet & Clank: Rift Apart",year:2021,genre:"Action-Adventure",platform:"PlayStation",developer:"Insomniac",mode:"Single",rating:"E10+"},
+        {name:"Gran Turismo 7",year:2022,genre:"Racing",platform:"PlayStation",developer:"Polyphony",mode:"Multi",rating:"E"},
+        {name:"Returnal",year:2021,genre:"Roguelike",platform:"PlayStation",developer:"Housemarque",mode:"Multi",rating:"T"},
+        {name:"Halo Infinite",year:2021,genre:"Shooter",platform:"Xbox",developer:"343 Industries",mode:"Multi",rating:"T"},
+        {name:"Halo: Combat Evolved",year:2001,genre:"Shooter",platform:"Xbox",developer:"Bungie",mode:"Multi",rating:"M"},
+        {name:"Halo 3",year:2007,genre:"Shooter",platform:"Xbox",developer:"Bungie",mode:"Multi",rating:"M"},
+        {name:"Halo Reach",year:2010,genre:"Shooter",platform:"Xbox",developer:"Bungie",mode:"Multi",rating:"M"},
+        {name:"Forza Horizon 5",year:2021,genre:"Racing",platform:"Xbox",developer:"Playground",mode:"Multi",rating:"E"},
+        {name:"Forza Motorsport",year:2023,genre:"Racing",platform:"Xbox",developer:"Turn 10",mode:"Multi",rating:"E"},
+        {name:"Gears 5",year:2019,genre:"Shooter",platform:"Xbox",developer:"The Coalition",mode:"Multi",rating:"M"},
+        {name:"Gears of War",year:2006,genre:"Shooter",platform:"Xbox",developer:"Epic Games",mode:"Multi",rating:"M"},
+        {name:"Sea of Thieves",year:2018,genre:"Action-Adventure",platform:"Xbox",developer:"Rare",mode:"Multi",rating:"T"},
+        {name:"Fable II",year:2008,genre:"RPG",platform:"Xbox",developer:"Lionhead",mode:"Multi",rating:"M"},
+        {name:"Ori and the Will of the Wisps",year:2020,genre:"Platformer",platform:"Xbox",developer:"Moon Studios",mode:"Single",rating:"E"},
+        {name:"Ori and the Blind Forest",year:2015,genre:"Platformer",platform:"Xbox",developer:"Moon Studios",mode:"Single",rating:"E"},
+        {name:"Starfield",year:2023,genre:"RPG",platform:"Xbox",developer:"Bethesda",mode:"Single",rating:"M"},
+        {name:"The Elder Scrolls V: Skyrim",year:2011,genre:"RPG",platform:"Multi",developer:"Bethesda",mode:"Single",rating:"M"},
+        {name:"The Elder Scrolls IV: Oblivion",year:2006,genre:"RPG",platform:"Multi",developer:"Bethesda",mode:"Single",rating:"M"},
+        {name:"Fallout 4",year:2015,genre:"RPG",platform:"Multi",developer:"Bethesda",mode:"Single",rating:"M"},
+        {name:"Fallout: New Vegas",year:2010,genre:"RPG",platform:"Multi",developer:"Obsidian",mode:"Single",rating:"M"},
+        {name:"Fallout 3",year:2008,genre:"RPG",platform:"Multi",developer:"Bethesda",mode:"Single",rating:"M"},
+        {name:"Elden Ring",year:2022,genre:"Action-RPG",platform:"Multi",developer:"FromSoftware",mode:"Multi",rating:"M"},
+        {name:"Dark Souls",year:2011,genre:"Action-RPG",platform:"Multi",developer:"FromSoftware",mode:"Multi",rating:"M"},
+        {name:"Dark Souls III",year:2016,genre:"Action-RPG",platform:"Multi",developer:"FromSoftware",mode:"Multi",rating:"M"},
+        {name:"Sekiro: Shadows Die Twice",year:2019,genre:"Action-Adventure",platform:"Multi",developer:"FromSoftware",mode:"Single",rating:"M"},
+        {name:"Armored Core VI",year:2023,genre:"Action",platform:"Multi",developer:"FromSoftware",mode:"Multi",rating:"T"},
+        {name:"Red Dead Redemption 2",year:2018,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Multi",rating:"M"},
+        {name:"Red Dead Redemption",year:2010,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Multi",rating:"M"},
+        {name:"Grand Theft Auto V",year:2013,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Multi",rating:"M"},
+        {name:"Grand Theft Auto IV",year:2008,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Multi",rating:"M"},
+        {name:"Grand Theft Auto: San Andreas",year:2004,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Multi",rating:"M"},
+        {name:"Grand Theft Auto: Vice City",year:2002,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Single",rating:"M"},
+        {name:"The Witcher 3: Wild Hunt",year:2015,genre:"RPG",platform:"Multi",developer:"CD Projekt",mode:"Single",rating:"M"},
+        {name:"Cyberpunk 2077",year:2020,genre:"RPG",platform:"Multi",developer:"CD Projekt",mode:"Single",rating:"M"},
+        {name:"Baldur's Gate 3",year:2023,genre:"RPG",platform:"Multi",developer:"Larian",mode:"Multi",rating:"M"},
+        {name:"Divinity: Original Sin 2",year:2017,genre:"RPG",platform:"Multi",developer:"Larian",mode:"Multi",rating:"M"},
+        {name:"Mass Effect Legendary Edition",year:2021,genre:"RPG",platform:"Multi",developer:"BioWare",mode:"Single",rating:"M"},
+        {name:"Mass Effect 2",year:2010,genre:"RPG",platform:"Multi",developer:"BioWare",mode:"Single",rating:"M"},
+        {name:"Dragon Age: Inquisition",year:2014,genre:"RPG",platform:"Multi",developer:"BioWare",mode:"Multi",rating:"M"},
+        {name:"Minecraft",year:2011,genre:"Sandbox",platform:"Multi",developer:"Mojang",mode:"Multi",rating:"E10+"},
+        {name:"Terraria",year:2011,genre:"Sandbox",platform:"Multi",developer:"Re-Logic",mode:"Multi",rating:"T"},
+        {name:"Stardew Valley",year:2016,genre:"Simulation",platform:"Multi",developer:"ConcernedApe",mode:"Multi",rating:"E10+"},
+        {name:"Hollow Knight",year:2017,genre:"Metroidvania",platform:"Multi",developer:"Team Cherry",mode:"Single",rating:"E10+"},
+        {name:"Celeste",year:2018,genre:"Platformer",platform:"Multi",developer:"Maddy Makes Games",mode:"Single",rating:"E10+"},
+        {name:"Hades",year:2020,genre:"Roguelike",platform:"Multi",developer:"Supergiant",mode:"Single",rating:"T"},
+        {name:"Hades II",year:2024,genre:"Roguelike",platform:"Multi",developer:"Supergiant",mode:"Single",rating:"T"},
+        {name:"Dead Cells",year:2018,genre:"Roguelike",platform:"Multi",developer:"Motion Twin",mode:"Single",rating:"T"},
+        {name:"Slay the Spire",year:2019,genre:"Roguelike",platform:"Multi",developer:"Mega Crit",mode:"Single",rating:"E10+"},
+        {name:"Cuphead",year:2017,genre:"Platformer",platform:"Multi",developer:"MDHR",mode:"Multi",rating:"E10+"},
+        {name:"Shovel Knight",year:2014,genre:"Platformer",platform:"Multi",developer:"Yacht Club",mode:"Multi",rating:"E"},
+        {name:"Undertale",year:2015,genre:"RPG",platform:"Multi",developer:"Toby Fox",mode:"Single",rating:"E10+"},
+        {name:"Deltarune",year:2018,genre:"RPG",platform:"Multi",developer:"Toby Fox",mode:"Single",rating:"E10+"},
+        {name:"Portal",year:2007,genre:"Puzzle",platform:"Multi",developer:"Valve",mode:"Single",rating:"T"},
+        {name:"Portal 2",year:2011,genre:"Puzzle",platform:"Multi",developer:"Valve",mode:"Multi",rating:"E10+"},
+        {name:"Half-Life 2",year:2004,genre:"Shooter",platform:"PC",developer:"Valve",mode:"Single",rating:"M"},
+        {name:"Half-Life: Alyx",year:2020,genre:"Shooter",platform:"PC",developer:"Valve",mode:"Single",rating:"M"},
+        {name:"Counter-Strike 2",year:2023,genre:"Shooter",platform:"PC",developer:"Valve",mode:"Multi",rating:"M"},
+        {name:"Counter-Strike: Global Offensive",year:2012,genre:"Shooter",platform:"Multi",developer:"Valve",mode:"Multi",rating:"M"},
+        {name:"Dota 2",year:2013,genre:"MOBA",platform:"PC",developer:"Valve",mode:"Multi",rating:"T"},
+        {name:"Team Fortress 2",year:2007,genre:"Shooter",platform:"Multi",developer:"Valve",mode:"Multi",rating:"M"},
+        {name:"Left 4 Dead 2",year:2009,genre:"Shooter",platform:"Multi",developer:"Valve",mode:"Multi",rating:"M"},
+        {name:"League of Legends",year:2009,genre:"MOBA",platform:"PC",developer:"Riot Games",mode:"Multi",rating:"T"},
+        {name:"Valorant",year:2020,genre:"Shooter",platform:"PC",developer:"Riot Games",mode:"Multi",rating:"T"},
+        {name:"Overwatch 2",year:2022,genre:"Shooter",platform:"Multi",developer:"Blizzard",mode:"Multi",rating:"T"},
+        {name:"Overwatch",year:2016,genre:"Shooter",platform:"Multi",developer:"Blizzard",mode:"Multi",rating:"T"},
+        {name:"World of Warcraft",year:2004,genre:"MMO",platform:"PC",developer:"Blizzard",mode:"Multi",rating:"T"},
+        {name:"Diablo IV",year:2023,genre:"Action-RPG",platform:"Multi",developer:"Blizzard",mode:"Multi",rating:"M"},
+        {name:"Diablo III",year:2012,genre:"Action-RPG",platform:"Multi",developer:"Blizzard",mode:"Multi",rating:"M"},
+        {name:"Diablo II",year:2000,genre:"Action-RPG",platform:"PC",developer:"Blizzard",mode:"Multi",rating:"M"},
+        {name:"Hearthstone",year:2014,genre:"Card Game",platform:"Multi",developer:"Blizzard",mode:"Multi",rating:"T"},
+        {name:"StarCraft II",year:2010,genre:"Strategy",platform:"PC",developer:"Blizzard",mode:"Multi",rating:"T"},
+        {name:"Warcraft III",year:2002,genre:"Strategy",platform:"PC",developer:"Blizzard",mode:"Multi",rating:"T"},
+        {name:"Fortnite",year:2017,genre:"Battle Royale",platform:"Multi",developer:"Epic Games",mode:"Multi",rating:"T"},
+        {name:"Rocket League",year:2015,genre:"Sports",platform:"Multi",developer:"Psyonix",mode:"Multi",rating:"E"},
+        {name:"Fall Guys",year:2020,genre:"Party",platform:"Multi",developer:"Mediatonic",mode:"Multi",rating:"E"},
+        {name:"Among Us",year:2018,genre:"Party",platform:"Multi",developer:"Innersloth",mode:"Multi",rating:"E10+"},
+        {name:"PUBG: Battlegrounds",year:2017,genre:"Battle Royale",platform:"Multi",developer:"PUBG Corp",mode:"Multi",rating:"T"},
+        {name:"Apex Legends",year:2019,genre:"Battle Royale",platform:"Multi",developer:"Respawn",mode:"Multi",rating:"T"},
+        {name:"Titanfall 2",year:2016,genre:"Shooter",platform:"Multi",developer:"Respawn",mode:"Multi",rating:"M"},
+        {name:"Call of Duty: Modern Warfare",year:2019,genre:"Shooter",platform:"Multi",developer:"Infinity Ward",mode:"Multi",rating:"M"},
+        {name:"Call of Duty: Modern Warfare 2",year:2009,genre:"Shooter",platform:"Multi",developer:"Infinity Ward",mode:"Multi",rating:"M"},
+        {name:"Call of Duty: Black Ops",year:2010,genre:"Shooter",platform:"Multi",developer:"Treyarch",mode:"Multi",rating:"M"},
+        {name:"Call of Duty: Warzone",year:2020,genre:"Battle Royale",platform:"Multi",developer:"Infinity Ward",mode:"Multi",rating:"M"},
+        {name:"Battlefield 1",year:2016,genre:"Shooter",platform:"Multi",developer:"DICE",mode:"Multi",rating:"M"},
+        {name:"Battlefield V",year:2018,genre:"Shooter",platform:"Multi",developer:"DICE",mode:"Multi",rating:"M"},
+        {name:"Battlefield 2042",year:2021,genre:"Shooter",platform:"Multi",developer:"DICE",mode:"Multi",rating:"T"},
+        {name:"FIFA 23",year:2022,genre:"Sports",platform:"Multi",developer:"EA Sports",mode:"Multi",rating:"E"},
+        {name:"EA Sports FC 24",year:2023,genre:"Sports",platform:"Multi",developer:"EA Sports",mode:"Multi",rating:"E"},
+        {name:"Madden NFL 24",year:2023,genre:"Sports",platform:"Multi",developer:"EA Sports",mode:"Multi",rating:"E"},
+        {name:"NBA 2K24",year:2023,genre:"Sports",platform:"Multi",developer:"Visual Concepts",mode:"Multi",rating:"E"},
+        {name:"MLB The Show 23",year:2023,genre:"Sports",platform:"Multi",developer:"San Diego Studio",mode:"Multi",rating:"E"},
+        {name:"WWE 2K23",year:2023,genre:"Sports",platform:"Multi",developer:"Visual Concepts",mode:"Multi",rating:"T"},
+        {name:"Tony Hawk's Pro Skater 1+2",year:2020,genre:"Sports",platform:"Multi",developer:"Vicarious Visions",mode:"Multi",rating:"T"},
+        {name:"Skate 3",year:2010,genre:"Sports",platform:"Multi",developer:"EA Black Box",mode:"Multi",rating:"T"},
+        {name:"Resident Evil 4",year:2023,genre:"Horror",platform:"Multi",developer:"Capcom",mode:"Single",rating:"M"},
+        {name:"Resident Evil Village",year:2021,genre:"Horror",platform:"Multi",developer:"Capcom",mode:"Single",rating:"M"},
+        {name:"Resident Evil 2",year:2019,genre:"Horror",platform:"Multi",developer:"Capcom",mode:"Single",rating:"M"},
+        {name:"Devil May Cry 5",year:2019,genre:"Action",platform:"Multi",developer:"Capcom",mode:"Single",rating:"M"},
+        {name:"Monster Hunter: World",year:2018,genre:"Action-RPG",platform:"Multi",developer:"Capcom",mode:"Multi",rating:"T"},
+        {name:"Monster Hunter Rise",year:2021,genre:"Action-RPG",platform:"Multi",developer:"Capcom",mode:"Multi",rating:"T"},
+        {name:"Street Fighter 6",year:2023,genre:"Fighting",platform:"Multi",developer:"Capcom",mode:"Multi",rating:"T"},
+        {name:"Street Fighter V",year:2016,genre:"Fighting",platform:"Multi",developer:"Capcom",mode:"Multi",rating:"T"},
+        {name:"Mega Man 11",year:2018,genre:"Platformer",platform:"Multi",developer:"Capcom",mode:"Single",rating:"E10+"},
+        {name:"Final Fantasy XVI",year:2023,genre:"RPG",platform:"PlayStation",developer:"Square Enix",mode:"Single",rating:"M"},
+        {name:"Final Fantasy VII Remake",year:2020,genre:"RPG",platform:"PlayStation",developer:"Square Enix",mode:"Single",rating:"T"},
+        {name:"Final Fantasy VII",year:1997,genre:"RPG",platform:"Multi",developer:"Square Enix",mode:"Single",rating:"T"},
+        {name:"Final Fantasy X",year:2001,genre:"RPG",platform:"Multi",developer:"Square Enix",mode:"Single",rating:"T"},
+        {name:"Final Fantasy XIV",year:2013,genre:"MMO",platform:"Multi",developer:"Square Enix",mode:"Multi",rating:"T"},
+        {name:"Final Fantasy XV",year:2016,genre:"RPG",platform:"Multi",developer:"Square Enix",mode:"Single",rating:"T"},
+        {name:"Kingdom Hearts III",year:2019,genre:"Action-RPG",platform:"Multi",developer:"Square Enix",mode:"Single",rating:"E10+"},
+        {name:"Kingdom Hearts",year:2002,genre:"Action-RPG",platform:"PlayStation",developer:"Square Enix",mode:"Single",rating:"E"},
+        {name:"NieR: Automata",year:2017,genre:"Action-RPG",platform:"Multi",developer:"PlatinumGames",mode:"Single",rating:"M"},
+        {name:"Bayonetta 3",year:2022,genre:"Action",platform:"Nintendo",developer:"PlatinumGames",mode:"Single",rating:"M"},
+        {name:"Metal Gear Solid V",year:2015,genre:"Action-Adventure",platform:"Multi",developer:"Konami",mode:"Multi",rating:"M"},
+        {name:"Metal Gear Solid",year:1998,genre:"Action-Adventure",platform:"Multi",developer:"Konami",mode:"Single",rating:"M"},
+        {name:"Silent Hill 2",year:2001,genre:"Horror",platform:"Multi",developer:"Konami",mode:"Single",rating:"M"},
+        {name:"Castlevania: Symphony of the Night",year:1997,genre:"Metroidvania",platform:"Multi",developer:"Konami",mode:"Single",rating:"T"},
+        {name:"Death Stranding",year:2019,genre:"Action-Adventure",platform:"Multi",developer:"Kojima Productions",mode:"Single",rating:"M"},
+        {name:"Persona 5 Royal",year:2020,genre:"RPG",platform:"Multi",developer:"Atlus",mode:"Single",rating:"M"},
+        {name:"Persona 4 Golden",year:2012,genre:"RPG",platform:"Multi",developer:"Atlus",mode:"Single",rating:"M"},
+        {name:"Persona 3 Reload",year:2024,genre:"RPG",platform:"Multi",developer:"Atlus",mode:"Single",rating:"M"},
+        {name:"Shin Megami Tensei V",year:2021,genre:"RPG",platform:"Nintendo",developer:"Atlus",mode:"Single",rating:"M"},
+        {name:"Catherine: Full Body",year:2019,genre:"Puzzle",platform:"Multi",developer:"Atlus",mode:"Single",rating:"M"},
+        {name:"Sonic Frontiers",year:2022,genre:"Platformer",platform:"Multi",developer:"Sonic Team",mode:"Single",rating:"E10+"},
+        {name:"Sonic Mania",year:2017,genre:"Platformer",platform:"Multi",developer:"Sega",mode:"Multi",rating:"E"},
+        {name:"Sonic Adventure 2",year:2001,genre:"Platformer",platform:"Multi",developer:"Sonic Team",mode:"Multi",rating:"E"},
+        {name:"Yakuza: Like a Dragon",year:2020,genre:"RPG",platform:"Multi",developer:"Ryu Ga Gotoku",mode:"Single",rating:"M"},
+        {name:"Yakuza 0",year:2015,genre:"Action-Adventure",platform:"Multi",developer:"Sega",mode:"Single",rating:"M"},
+        {name:"Like a Dragon: Infinite Wealth",year:2024,genre:"RPG",platform:"Multi",developer:"Ryu Ga Gotoku",mode:"Single",rating:"M"},
+        {name:"Judgment",year:2018,genre:"Action-Adventure",platform:"Multi",developer:"Ryu Ga Gotoku",mode:"Single",rating:"M"},
+        {name:"Tekken 8",year:2024,genre:"Fighting",platform:"Multi",developer:"Bandai Namco",mode:"Multi",rating:"T"},
+        {name:"Tekken 7",year:2015,genre:"Fighting",platform:"Multi",developer:"Bandai Namco",mode:"Multi",rating:"T"},
+        {name:"SoulCalibur VI",year:2018,genre:"Fighting",platform:"Multi",developer:"Bandai Namco",mode:"Multi",rating:"T"},
+        {name:"Dragon Ball FighterZ",year:2018,genre:"Fighting",platform:"Multi",developer:"Arc System Works",mode:"Multi",rating:"T"},
+        {name:"Guilty Gear Strive",year:2021,genre:"Fighting",platform:"Multi",developer:"Arc System Works",mode:"Multi",rating:"T"},
+        {name:"Mortal Kombat 11",year:2019,genre:"Fighting",platform:"Multi",developer:"NetherRealm",mode:"Multi",rating:"M"},
+        {name:"Mortal Kombat 1",year:2023,genre:"Fighting",platform:"Multi",developer:"NetherRealm",mode:"Multi",rating:"M"},
+        {name:"Injustice 2",year:2017,genre:"Fighting",platform:"Multi",developer:"NetherRealm",mode:"Multi",rating:"T"},
+        {name:"Disco Elysium",year:2019,genre:"RPG",platform:"Multi",developer:"ZA/UM",mode:"Single",rating:"M"},
+        {name:"Outer Wilds",year:2019,genre:"Adventure",platform:"Multi",developer:"Mobius Digital",mode:"Single",rating:"E10+"},
+        {name:"The Outer Worlds",year:2019,genre:"RPG",platform:"Multi",developer:"Obsidian",mode:"Single",rating:"M"},
+        {name:"Pillars of Eternity",year:2015,genre:"RPG",platform:"Multi",developer:"Obsidian",mode:"Single",rating:"M"},
+        {name:"Grounded",year:2022,genre:"Survival",platform:"Xbox",developer:"Obsidian",mode:"Multi",rating:"T"},
+        {name:"Pentiment",year:2022,genre:"Adventure",platform:"Xbox",developer:"Obsidian",mode:"Single",rating:"M"},
+        {name:"Psychonauts 2",year:2021,genre:"Platformer",platform:"Multi",developer:"Double Fine",mode:"Single",rating:"T"},
+        {name:"It Takes Two",year:2021,genre:"Platformer",platform:"Multi",developer:"Hazelight",mode:"Multi",rating:"T"},
+        {name:"A Way Out",year:2018,genre:"Adventure",platform:"Multi",developer:"Hazelight",mode:"Multi",rating:"M"},
+        {name:"Brothers: A Tale of Two Sons",year:2013,genre:"Adventure",platform:"Multi",developer:"Starbreeze",mode:"Single",rating:"T"},
+        {name:"Inside",year:2016,genre:"Puzzle",platform:"Multi",developer:"Playdead",mode:"Single",rating:"M"},
+        {name:"Limbo",year:2010,genre:"Puzzle",platform:"Multi",developer:"Playdead",mode:"Single",rating:"T"},
+        {name:"Little Nightmares II",year:2021,genre:"Puzzle",platform:"Multi",developer:"Tarsier",mode:"Single",rating:"T"},
+        {name:"Little Nightmares",year:2017,genre:"Puzzle",platform:"Multi",developer:"Tarsier",mode:"Single",rating:"T"},
+        {name:"Ori and the Will of the Wisps",year:2020,genre:"Metroidvania",platform:"Multi",developer:"Moon Studios",mode:"Single",rating:"E"},
+        {name:"Blasphemous",year:2019,genre:"Metroidvania",platform:"Multi",developer:"The Game Kitchen",mode:"Single",rating:"M"},
+        {name:"Salt and Sanctuary",year:2016,genre:"Action-RPG",platform:"Multi",developer:"Ska Studios",mode:"Multi",rating:"M"},
+        {name:"Tunic",year:2022,genre:"Action-Adventure",platform:"Multi",developer:"Andrew Shouldice",mode:"Single",rating:"E10+"},
+        {name:"Death's Door",year:2021,genre:"Action-Adventure",platform:"Multi",developer:"Acid Nerve",mode:"Single",rating:"E10+"},
+        {name:"Sifu",year:2022,genre:"Action",platform:"Multi",developer:"Sloclap",mode:"Single",rating:"T"},
+        {name:"Absolver",year:2017,genre:"Action",platform:"Multi",developer:"Sloclap",mode:"Multi",rating:"T"},
+        {name:"Ghostwire: Tokyo",year:2022,genre:"Action-Adventure",platform:"Multi",developer:"Tango Gameworks",mode:"Single",rating:"M"},
+        {name:"The Evil Within 2",year:2017,genre:"Horror",platform:"Multi",developer:"Tango Gameworks",mode:"Single",rating:"M"},
+        {name:"Hi-Fi Rush",year:2023,genre:"Action",platform:"Multi",developer:"Tango Gameworks",mode:"Single",rating:"T"},
+        {name:"Alan Wake II",year:2023,genre:"Horror",platform:"Multi",developer:"Remedy",mode:"Single",rating:"M"},
+        {name:"Alan Wake",year:2010,genre:"Action-Adventure",platform:"Multi",developer:"Remedy",mode:"Single",rating:"T"},
+        {name:"Control",year:2019,genre:"Action-Adventure",platform:"Multi",developer:"Remedy",mode:"Single",rating:"M"},
+        {name:"Quantum Break",year:2016,genre:"Action-Adventure",platform:"Xbox",developer:"Remedy",mode:"Single",rating:"M"},
+        {name:"Max Payne 3",year:2012,genre:"Shooter",platform:"Multi",developer:"Rockstar",mode:"Multi",rating:"M"},
+        {name:"Bully",year:2006,genre:"Action-Adventure",platform:"Multi",developer:"Rockstar",mode:"Single",rating:"T"},
+        {name:"L.A. Noire",year:2011,genre:"Adventure",platform:"Multi",developer:"Rockstar",mode:"Single",rating:"M"},
+        {name:"Sleeping Dogs",year:2012,genre:"Action-Adventure",platform:"Multi",developer:"United Front",mode:"Single",rating:"M"},
+        {name:"Watch Dogs 2",year:2016,genre:"Action-Adventure",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Watch Dogs: Legion",year:2020,genre:"Action-Adventure",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Assassin's Creed Valhalla",year:2020,genre:"Action-RPG",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"M"},
+        {name:"Assassin's Creed Odyssey",year:2018,genre:"Action-RPG",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"M"},
+        {name:"Assassin's Creed Origins",year:2017,genre:"Action-RPG",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"M"},
+        {name:"Assassin's Creed IV: Black Flag",year:2013,genre:"Action-Adventure",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Assassin's Creed II",year:2009,genre:"Action-Adventure",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"M"},
+        {name:"Far Cry 6",year:2021,genre:"Shooter",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Far Cry 5",year:2018,genre:"Shooter",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Far Cry 3",year:2012,genre:"Shooter",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Tom Clancy's Rainbow Six Siege",year:2015,genre:"Shooter",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Tom Clancy's The Division 2",year:2019,genre:"Shooter",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Tom Clancy's Ghost Recon Wildlands",year:2017,genre:"Shooter",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"M"},
+        {name:"Prince of Persia: The Lost Crown",year:2024,genre:"Metroidvania",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"T"},
+        {name:"Rayman Legends",year:2013,genre:"Platformer",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"E10+"},
+        {name:"South Park: The Stick of Truth",year:2014,genre:"RPG",platform:"Multi",developer:"Obsidian",mode:"Single",rating:"M"},
+        {name:"South Park: The Fractured But Whole",year:2017,genre:"RPG",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"M"},
+        {name:"Immortals Fenyx Rising",year:2020,genre:"Action-Adventure",platform:"Multi",developer:"Ubisoft",mode:"Single",rating:"T"},
+        {name:"Just Dance 2024",year:2023,genre:"Rhythm",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"E"},
+        {name:"Riders Republic",year:2021,genre:"Sports",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"T"},
+        {name:"Steep",year:2016,genre:"Sports",platform:"Multi",developer:"Ubisoft",mode:"Multi",rating:"T"},
+        {name:"The Crew 2",year:2018,genre:"Racing",platform:"Multi",developer:"Ivory Tower",mode:"Multi",rating:"T"},
+        {name:"Need for Speed Heat",year:2019,genre:"Racing",platform:"Multi",developer:"Ghost Games",mode:"Multi",rating:"T"},
+        {name:"Need for Speed Unbound",year:2022,genre:"Racing",platform:"Multi",developer:"Criterion",mode:"Multi",rating:"T"},
+        {name:"Burnout Paradise Remastered",year:2018,genre:"Racing",platform:"Multi",developer:"Criterion",mode:"Multi",rating:"E10+"},
+        {name:"Crash Bandicoot 4",year:2020,genre:"Platformer",platform:"Multi",developer:"Toys for Bob",mode:"Multi",rating:"E10+"},
+        {name:"Crash Bandicoot N. Sane Trilogy",year:2017,genre:"Platformer",platform:"Multi",developer:"Vicarious Visions",mode:"Single",rating:"E10+"},
+        {name:"Spyro Reignited Trilogy",year:2018,genre:"Platformer",platform:"Multi",developer:"Toys for Bob",mode:"Single",rating:"E10+"},
+        {name:"Ratchet & Clank",year:2016,genre:"Platformer",platform:"PlayStation",developer:"Insomniac",mode:"Single",rating:"E10+"},
+        {name:"Sackboy: A Big Adventure",year:2020,genre:"Platformer",platform:"PlayStation",developer:"Sumo Digital",mode:"Multi",rating:"E"},
+        {name:"Astro's Playroom",year:2020,genre:"Platformer",platform:"PlayStation",developer:"Team Asobi",mode:"Single",rating:"E"},
+        {name:"LittleBigPlanet 3",year:2014,genre:"Platformer",platform:"PlayStation",developer:"Sumo Digital",mode:"Multi",rating:"E"},
+        {name:"Dreams",year:2020,genre:"Sandbox",platform:"PlayStation",developer:"Media Molecule",mode:"Multi",rating:"E10+"},
+        {name:"The Last Guardian",year:2016,genre:"Adventure",platform:"PlayStation",developer:"GenDesign",mode:"Single",rating:"T"},
+        {name:"Shadow of the Colossus",year:2018,genre:"Action-Adventure",platform:"PlayStation",developer:"Bluepoint",mode:"Single",rating:"T"},
+        {name:"Ico",year:2001,genre:"Adventure",platform:"PlayStation",developer:"Team Ico",mode:"Single",rating:"T"},
+        {name:"Journey",year:2012,genre:"Adventure",platform:"Multi",developer:"thatgamecompany",mode:"Multi",rating:"E"},
+        {name:"Flower",year:2009,genre:"Adventure",platform:"Multi",developer:"thatgamecompany",mode:"Single",rating:"E"},
+        {name:"Sky: Children of the Light",year:2019,genre:"Adventure",platform:"Multi",developer:"thatgamecompany",mode:"Multi",rating:"E"},
+        {name:"No Man's Sky",year:2016,genre:"Survival",platform:"Multi",developer:"Hello Games",mode:"Multi",rating:"T"},
+        {name:"Subnautica",year:2018,genre:"Survival",platform:"Multi",developer:"Unknown Worlds",mode:"Single",rating:"E10+"},
+        {name:"Subnautica: Below Zero",year:2021,genre:"Survival",platform:"Multi",developer:"Unknown Worlds",mode:"Single",rating:"E10+"},
+        {name:"Valheim",year:2021,genre:"Survival",platform:"PC",developer:"Iron Gate",mode:"Multi",rating:"T"},
+        {name:"Rust",year:2018,genre:"Survival",platform:"Multi",developer:"Facepunch",mode:"Multi",rating:"M"},
+        {name:"ARK: Survival Evolved",year:2017,genre:"Survival",platform:"Multi",developer:"Studio Wildcard",mode:"Multi",rating:"T"},
+        {name:"7 Days to Die",year:2013,genre:"Survival",platform:"Multi",developer:"The Fun Pimps",mode:"Multi",rating:"M"},
+        {name:"The Forest",year:2018,genre:"Survival",platform:"Multi",developer:"Endnight",mode:"Multi",rating:"M"},
+        {name:"Sons of the Forest",year:2023,genre:"Survival",platform:"PC",developer:"Endnight",mode:"Multi",rating:"M"},
+        {name:"Green Hell",year:2019,genre:"Survival",platform:"Multi",developer:"Creepy Jar",mode:"Multi",rating:"M"},
+        {name:"Raft",year:2022,genre:"Survival",platform:"PC",developer:"Redbeet",mode:"Multi",rating:"E10+"},
+        {name:"Don't Starve Together",year:2016,genre:"Survival",platform:"Multi",developer:"Klei",mode:"Multi",rating:"T"},
+        {name:"Phasmophobia",year:2020,genre:"Horror",platform:"PC",developer:"Kinetic Games",mode:"Multi",rating:"T"},
+        {name:"Lethal Company",year:2023,genre:"Horror",platform:"PC",developer:"Zeekerss",mode:"Multi",rating:"T"},
+        {name:"Devour",year:2021,genre:"Horror",platform:"PC",developer:"Straight Back",mode:"Multi",rating:"T"},
+        {name:"The Quarry",year:2022,genre:"Horror",platform:"Multi",developer:"Supermassive",mode:"Multi",rating:"M"},
+        {name:"Until Dawn",year:2015,genre:"Horror",platform:"PlayStation",developer:"Supermassive",mode:"Single",rating:"M"},
+        {name:"The Dark Pictures: House of Ashes",year:2021,genre:"Horror",platform:"Multi",developer:"Supermassive",mode:"Multi",rating:"M"},
+        {name:"Amnesia: Rebirth",year:2020,genre:"Horror",platform:"Multi",developer:"Frictional",mode:"Single",rating:"M"},
+        {name:"SOMA",year:2015,genre:"Horror",platform:"Multi",developer:"Frictional",mode:"Single",rating:"M"},
+        {name:"Outlast",year:2013,genre:"Horror",platform:"Multi",developer:"Red Barrels",mode:"Single",rating:"M"},
+        {name:"Outlast 2",year:2017,genre:"Horror",platform:"Multi",developer:"Red Barrels",mode:"Single",rating:"M"},
+        {name:"Alien: Isolation",year:2014,genre:"Horror",platform:"Multi",developer:"Creative Assembly",mode:"Single",rating:"M"},
+        {name:"Dead Space",year:2023,genre:"Horror",platform:"Multi",developer:"Motive",mode:"Single",rating:"M"},
+        {name:"Dead Space 2",year:2011,genre:"Horror",platform:"Multi",developer:"Visceral",mode:"Multi",rating:"M"},
+        {name:"The Callisto Protocol",year:2022,genre:"Horror",platform:"Multi",developer:"Striking Distance",mode:"Single",rating:"M"},
+        {name:"Layers of Fear",year:2023,genre:"Horror",platform:"Multi",developer:"Bloober Team",mode:"Single",rating:"M"},
+        {name:"The Medium",year:2021,genre:"Horror",platform:"Multi",developer:"Bloober Team",mode:"Single",rating:"M"},
+        {name:"Observer",year:2017,genre:"Horror",platform:"Multi",developer:"Bloober Team",mode:"Single",rating:"M"},
+        {name:"Visage",year:2020,genre:"Horror",platform:"Multi",developer:"SadSquare",mode:"Single",rating:"M"},
+        {name:"Madison",year:2022,genre:"Horror",platform:"Multi",developer:"Bloodious",mode:"Single",rating:"M"},
+        {name:"Inscryption",year:2021,genre:"Card Game",platform:"Multi",developer:"Daniel Mullins",mode:"Single",rating:"T"},
+        {name:"Vampire Survivors",year:2022,genre:"Roguelike",platform:"Multi",developer:"poncle",mode:"Single",rating:"T"},
+        {name:"20 Minutes Till Dawn",year:2022,genre:"Roguelike",platform:"Multi",developer:"flanne",mode:"Single",rating:"E10+"},
+        {name:"Risk of Rain 2",year:2020,genre:"Roguelike",platform:"Multi",developer:"Hopoo",mode:"Multi",rating:"T"},
+        {name:"Enter the Gungeon",year:2016,genre:"Roguelike",platform:"Multi",developer:"Dodge Roll",mode:"Multi",rating:"E10+"},
+        {name:"The Binding of Isaac: Rebirth",year:2014,genre:"Roguelike",platform:"Multi",developer:"Nicalis",mode:"Multi",rating:"M"},
+        {name:"Spelunky 2",year:2020,genre:"Roguelike",platform:"Multi",developer:"Mossmouth",mode:"Multi",rating:"T"},
+        {name:"Noita",year:2020,genre:"Roguelike",platform:"PC",developer:"Nolla",mode:"Single",rating:"T"},
+        {name:"Cult of the Lamb",year:2022,genre:"Roguelike",platform:"Multi",developer:"Massive Monster",mode:"Single",rating:"T"},
+        {name:"Darkest Dungeon",year:2016,genre:"Roguelike",platform:"Multi",developer:"Red Hook",mode:"Single",rating:"T"},
+        {name:"Darkest Dungeon II",year:2023,genre:"Roguelike",platform:"Multi",developer:"Red Hook",mode:"Single",rating:"T"},
+        {name:"FTL: Faster Than Light",year:2012,genre:"Roguelike",platform:"Multi",developer:"Subset",mode:"Single",rating:"E10+"},
+        {name:"Into the Breach",year:2018,genre:"Strategy",platform:"Multi",developer:"Subset",mode:"Single",rating:"E10+"},
+        {name:"XCOM 2",year:2016,genre:"Strategy",platform:"Multi",developer:"Firaxis",mode:"Single",rating:"T"},
+        {name:"XCOM: Enemy Unknown",year:2012,genre:"Strategy",platform:"Multi",developer:"Firaxis",mode:"Single",rating:"M"},
+        {name:"Civilization VI",year:2016,genre:"Strategy",platform:"Multi",developer:"Firaxis",mode:"Multi",rating:"E10+"},
+        {name:"Civilization V",year:2010,genre:"Strategy",platform:"PC",developer:"Firaxis",mode:"Multi",rating:"E10+"},
+        {name:"Humankind",year:2021,genre:"Strategy",platform:"Multi",developer:"Amplitude",mode:"Multi",rating:"E10+"},
+        {name:"Old World",year:2022,genre:"Strategy",platform:"PC",developer:"Mohawk",mode:"Multi",rating:"T"},
+        {name:"Age of Empires IV",year:2021,genre:"Strategy",platform:"PC",developer:"Relic",mode:"Multi",rating:"T"},
+        {name:"Age of Empires II: Definitive Edition",year:2019,genre:"Strategy",platform:"PC",developer:"Forgotten Empires",mode:"Multi",rating:"T"},
+        {name:"Total War: Warhammer III",year:2022,genre:"Strategy",platform:"PC",developer:"Creative Assembly",mode:"Multi",rating:"T"},
+        {name:"Total War: Three Kingdoms",year:2019,genre:"Strategy",platform:"PC",developer:"Creative Assembly",mode:"Multi",rating:"T"},
+        {name:"Crusader Kings III",year:2020,genre:"Strategy",platform:"Multi",developer:"Paradox",mode:"Multi",rating:"T"},
+        {name:"Europa Universalis IV",year:2013,genre:"Strategy",platform:"PC",developer:"Paradox",mode:"Multi",rating:"T"},
+        {name:"Hearts of Iron IV",year:2016,genre:"Strategy",platform:"PC",developer:"Paradox",mode:"Multi",rating:"E10+"},
+        {name:"Stellaris",year:2016,genre:"Strategy",platform:"Multi",developer:"Paradox",mode:"Multi",rating:"E10+"},
+        {name:"Victoria 3",year:2022,genre:"Strategy",platform:"PC",developer:"Paradox",mode:"Multi",rating:"E10+"},
+        {name:"Cities: Skylines",year:2015,genre:"Simulation",platform:"Multi",developer:"Colossal Order",mode:"Single",rating:"E"},
+        {name:"Cities: Skylines II",year:2023,genre:"Simulation",platform:"Multi",developer:"Colossal Order",mode:"Single",rating:"E"},
+        {name:"Planet Coaster",year:2016,genre:"Simulation",platform:"Multi",developer:"Frontier",mode:"Single",rating:"E"},
+        {name:"Planet Zoo",year:2019,genre:"Simulation",platform:"PC",developer:"Frontier",mode:"Single",rating:"E"},
+        {name:"Jurassic World Evolution 2",year:2021,genre:"Simulation",platform:"Multi",developer:"Frontier",mode:"Single",rating:"T"},
+        {name:"Two Point Hospital",year:2018,genre:"Simulation",platform:"Multi",developer:"Two Point",mode:"Single",rating:"T"},
+        {name:"Two Point Campus",year:2022,genre:"Simulation",platform:"Multi",developer:"Two Point",mode:"Single",rating:"E10+"},
+        {name:"Prison Architect",year:2015,genre:"Simulation",platform:"Multi",developer:"Introversion",mode:"Single",rating:"M"},
+        {name:"RimWorld",year:2018,genre:"Simulation",platform:"PC",developer:"Ludeon",mode:"Single",rating:"M"},
+        {name:"Dwarf Fortress",year:2022,genre:"Simulation",platform:"PC",developer:"Bay 12",mode:"Single",rating:"T"},
+        {name:"Factorio",year:2020,genre:"Simulation",platform:"PC",developer:"Wube",mode:"Multi",rating:"E10+"},
+        {name:"Satisfactory",year:2020,genre:"Simulation",platform:"PC",developer:"Coffee Stain",mode:"Multi",rating:"E"},
+        {name:"Dyson Sphere Program",year:2021,genre:"Simulation",platform:"PC",developer:"Youthcat",mode:"Single",rating:"E"},
+        {name:"Kerbal Space Program",year:2015,genre:"Simulation",platform:"Multi",developer:"Squad",mode:"Single",rating:"E"},
+        {name:"Kerbal Space Program 2",year:2023,genre:"Simulation",platform:"PC",developer:"Intercept",mode:"Multi",rating:"E"},
+        {name:"Microsoft Flight Simulator",year:2020,genre:"Simulation",platform:"Multi",developer:"Asobo",mode:"Multi",rating:"E"},
+        {name:"Euro Truck Simulator 2",year:2012,genre:"Simulation",platform:"PC",developer:"SCS",mode:"Single",rating:"E"},
+        {name:"American Truck Simulator",year:2016,genre:"Simulation",platform:"PC",developer:"SCS",mode:"Single",rating:"E"},
+        {name:"House Flipper",year:2018,genre:"Simulation",platform:"Multi",developer:"Empyrean",mode:"Single",rating:"E"},
+        {name:"PowerWash Simulator",year:2022,genre:"Simulation",platform:"Multi",developer:"FuturLab",mode:"Multi",rating:"E"},
+        {name:"Unpacking",year:2021,genre:"Puzzle",platform:"Multi",developer:"Witch Beam",mode:"Single",rating:"E"},
+        {name:"A Short Hike",year:2019,genre:"Adventure",platform:"Multi",developer:"Adam Robinson-Yu",mode:"Single",rating:"E"},
+        {name:"Firewatch",year:2016,genre:"Adventure",platform:"Multi",developer:"Campo Santo",mode:"Single",rating:"M"},
+        {name:"What Remains of Edith Finch",year:2017,genre:"Adventure",platform:"Multi",developer:"Giant Sparrow",mode:"Single",rating:"T"},
+        {name:"Gone Home",year:2013,genre:"Adventure",platform:"Multi",developer:"Fullbright",mode:"Single",rating:"M"},
+        {name:"Everybody's Gone to the Rapture",year:2015,genre:"Adventure",platform:"Multi",developer:"The Chinese Room",mode:"Single",rating:"M"},
+        {name:"Dear Esther",year:2012,genre:"Adventure",platform:"Multi",developer:"The Chinese Room",mode:"Single",rating:"T"},
+        {name:"The Stanley Parable: Ultra Deluxe",year:2022,genre:"Adventure",platform:"Multi",developer:"Crows Crows Crows",mode:"Single",rating:"E"},
+        {name:"The Beginner's Guide",year:2015,genre:"Adventure",platform:"PC",developer:"Everything Unlimited",mode:"Single",rating:"T"},
+        {name:"Return of the Obra Dinn",year:2018,genre:"Puzzle",platform:"Multi",developer:"Lucas Pope",mode:"Single",rating:"M"},
+        {name:"Papers, Please",year:2013,genre:"Puzzle",platform:"Multi",developer:"Lucas Pope",mode:"Single",rating:"M"},
+        {name:"Braid",year:2008,genre:"Puzzle",platform:"Multi",developer:"Number None",mode:"Single",rating:"E10+"},
+        {name:"The Witness",year:2016,genre:"Puzzle",platform:"Multi",developer:"Thekla",mode:"Single",rating:"E"},
+        {name:"Talos Principle",year:2014,genre:"Puzzle",platform:"Multi",developer:"Croteam",mode:"Single",rating:"E10+"},
+        {name:"The Talos Principle 2",year:2023,genre:"Puzzle",platform:"Multi",developer:"Croteam",mode:"Single",rating:"T"},
+        {name:"Superliminal",year:2019,genre:"Puzzle",platform:"Multi",developer:"Pillow Castle",mode:"Single",rating:"E10+"},
+        {name:"Antichamber",year:2013,genre:"Puzzle",platform:"PC",developer:"Alexander Bruce",mode:"Single",rating:"E"},
+        {name:"The Room",year:2014,genre:"Puzzle",platform:"Multi",developer:"Fireproof",mode:"Single",rating:"E10+"},
+        {name:"Cocoon",year:2023,genre:"Puzzle",platform:"Multi",developer:"Geometric Interactive",mode:"Single",rating:"E"},
+        {name:"Viewfinder",year:2023,genre:"Puzzle",platform:"Multi",developer:"Sad Owl",mode:"Single",rating:"E"},
+        {name:"Maquette",year:2021,genre:"Puzzle",platform:"Multi",developer:"Graceful Decay",mode:"Single",rating:"T"},
+        {name:"Gorogoa",year:2017,genre:"Puzzle",platform:"Multi",developer:"Jason Roberts",mode:"Single",rating:"E"},
+        {name:"Monument Valley",year:2014,genre:"Puzzle",platform:"Multi",developer:"ustwo",mode:"Single",rating:"E"},
+        {name:"Tetris Effect: Connected",year:2020,genre:"Puzzle",platform:"Multi",developer:"Monstars",mode:"Multi",rating:"E"},
+        {name:"Puyo Puyo Tetris 2",year:2020,genre:"Puzzle",platform:"Multi",developer:"Sega",mode:"Multi",rating:"E"},
+        {name:"Peggle 2",year:2013,genre:"Puzzle",platform:"Multi",developer:"PopCap",mode:"Multi",rating:"E"},
+        {name:"Plants vs. Zombies",year:2009,genre:"Strategy",platform:"Multi",developer:"PopCap",mode:"Single",rating:"E10+"},
+        {name:"Bejeweled 3",year:2010,genre:"Puzzle",platform:"Multi",developer:"PopCap",mode:"Single",rating:"E"},
+        {name:"Candy Crush Saga",year:2012,genre:"Puzzle",platform:"Multi",developer:"King",mode:"Single",rating:"E"},
+        {name:"Angry Birds",year:2009,genre:"Puzzle",platform:"Multi",developer:"Rovio",mode:"Single",rating:"E"},
+        {name:"Cut the Rope",year:2010,genre:"Puzzle",platform:"Multi",developer:"ZeptoLab",mode:"Single",rating:"E"},
+        {name:"Crossy Road",year:2014,genre:"Arcade",platform:"Multi",developer:"Hipster Whale",mode:"Single",rating:"E"},
+        {name:"Fruit Ninja",year:2010,genre:"Arcade",platform:"Multi",developer:"Halfbrick",mode:"Single",rating:"E"},
+        {name:"Jetpack Joyride",year:2011,genre:"Arcade",platform:"Multi",developer:"Halfbrick",mode:"Single",rating:"E10+"},
+        {name:"Temple Run",year:2011,genre:"Arcade",platform:"Multi",developer:"Imangi",mode:"Single",rating:"E"},
+        {name:"Subway Surfers",year:2012,genre:"Arcade",platform:"Multi",developer:"Kiloo",mode:"Single",rating:"E"},
+        {name:"Clash of Clans",year:2012,genre:"Strategy",platform:"Multi",developer:"Supercell",mode:"Multi",rating:"E10+"},
+        {name:"Clash Royale",year:2016,genre:"Strategy",platform:"Multi",developer:"Supercell",mode:"Multi",rating:"E10+"},
+        {name:"Brawl Stars",year:2018,genre:"Shooter",platform:"Multi",developer:"Supercell",mode:"Multi",rating:"E10+"},
+        {name:"Genshin Impact",year:2020,genre:"Action-RPG",platform:"Multi",developer:"miHoYo",mode:"Multi",rating:"T"},
+        {name:"Honkai: Star Rail",year:2023,genre:"RPG",platform:"Multi",developer:"miHoYo",mode:"Single",rating:"T"},
+        {name:"Arknights",year:2019,genre:"Strategy",platform:"Multi",developer:"Hypergryph",mode:"Single",rating:"T"},
+        {name:"Blue Archive",year:2021,genre:"RPG",platform:"Multi",developer:"Nexon",mode:"Single",rating:"T"},
+        {name:"Fate/Grand Order",year:2015,genre:"RPG",platform:"Multi",developer:"Lasengle",mode:"Single",rating:"T"},
+        {name:"Granblue Fantasy",year:2014,genre:"RPG",platform:"Multi",developer:"Cygames",mode:"Multi",rating:"T"},
+        {name:"Uma Musume",year:2021,genre:"Simulation",platform:"Multi",developer:"Cygames",mode:"Single",rating:"T"},
+        {name:"Fire Emblem Heroes",year:2017,genre:"Strategy",platform:"Multi",developer:"Intelligent Systems",mode:"Single",rating:"T"},
+        {name:"Pokemon GO",year:2016,genre:"Adventure",platform:"Multi",developer:"Niantic",mode:"Multi",rating:"E"},
+        {name:"Pokemon Unite",year:2021,genre:"MOBA",platform:"Multi",developer:"TiMi",mode:"Multi",rating:"E10+"},
+        {name:"Mario Kart Tour",year:2019,genre:"Racing",platform:"Multi",developer:"Nintendo",mode:"Multi",rating:"E"},
+        {name:"Call of Duty: Mobile",year:2019,genre:"Shooter",platform:"Multi",developer:"TiMi",mode:"Multi",rating:"T"},
+        {name:"PUBG Mobile",year:2018,genre:"Battle Royale",platform:"Multi",developer:"Lightspeed",mode:"Multi",rating:"T"},
+        {name:"Free Fire",year:2017,genre:"Battle Royale",platform:"Multi",developer:"Garena",mode:"Multi",rating:"T"},
+        {name:"Mobile Legends: Bang Bang",year:2016,genre:"MOBA",platform:"Multi",developer:"Moonton",mode:"Multi",rating:"T"},
+        {name:"Arena of Valor",year:2016,genre:"MOBA",platform:"Multi",developer:"TiMi",mode:"Multi",rating:"T"},
+        {name:"Wild Rift",year:2020,genre:"MOBA",platform:"Multi",developer:"Riot Games",mode:"Multi",rating:"T"},
+        {name:"Teamfight Tactics",year:2019,genre:"Strategy",platform:"Multi",developer:"Riot Games",mode:"Multi",rating:"T"},
+        {name:"Legends of Runeterra",year:2020,genre:"Card Game",platform:"Multi",developer:"Riot Games",mode:"Multi",rating:"T"},
+        {name:"Marvel Snap",year:2022,genre:"Card Game",platform:"Multi",developer:"Second Dinner",mode:"Multi",rating:"T"},
+        {name:"Gwent",year:2018,genre:"Card Game",platform:"Multi",developer:"CD Projekt",mode:"Multi",rating:"T"},
+        {name:"Magic: The Gathering Arena",year:2019,genre:"Card Game",platform:"Multi",developer:"Wizards",mode:"Multi",rating:"T"},
+        {name:"Yu-Gi-Oh! Master Duel",year:2022,genre:"Card Game",platform:"Multi",developer:"Konami",mode:"Multi",rating:"T"},
+        {name:"Shadowverse",year:2016,genre:"Card Game",platform:"Multi",developer:"Cygames",mode:"Multi",rating:"T"},
+        {name:"Dave the Diver",year:2023,genre:"Adventure",platform:"Multi",developer:"Mintrocket",mode:"Single",rating:"T"},
+        {name:"Sea of Stars",year:2023,genre:"RPG",platform:"Multi",developer:"Sabotage",mode:"Multi",rating:"E10+"},
+        {name:"Lies of P",year:2023,genre:"Action-RPG",platform:"Multi",developer:"Neowiz",mode:"Single",rating:"M"},
+        {name:"Armored Core VI: Fires of Rubicon",year:2023,genre:"Action",platform:"Multi",developer:"FromSoftware",mode:"Multi",rating:"T"},
+        {name:"Remnant II",year:2023,genre:"Action-RPG",platform:"Multi",developer:"Gunfire",mode:"Multi",rating:"M"},
+        {name:"Lords of the Fallen",year:2023,genre:"Action-RPG",platform:"Multi",developer:"Hexworks",mode:"Multi",rating:"M"},
+        {name:"Wo Long: Fallen Dynasty",year:2023,genre:"Action-RPG",platform:"Multi",developer:"Team Ninja",mode:"Multi",rating:"M"},
+        {name:"Nioh 2",year:2020,genre:"Action-RPG",platform:"Multi",developer:"Team Ninja",mode:"Multi",rating:"M"},
+        {name:"Stranger of Paradise",year:2022,genre:"Action-RPG",platform:"Multi",developer:"Team Ninja",mode:"Multi",rating:"M"},
+        {name:"Diablo II: Resurrected",year:2021,genre:"Action-RPG",platform:"Multi",developer:"Vicarious Visions",mode:"Multi",rating:"M"},
+        {name:"Path of Exile",year:2013,genre:"Action-RPG",platform:"Multi",developer:"Grinding Gear",mode:"Multi",rating:"M"},
+        {name:"Last Epoch",year:2024,genre:"Action-RPG",platform:"PC",developer:"Eleventh Hour",mode:"Multi",rating:"T"},
+        {name:"Torchlight III",year:2020,genre:"Action-RPG",platform:"Multi",developer:"Echtra",mode:"Multi",rating:"T"},
+        {name:"Grim Dawn",year:2016,genre:"Action-RPG",platform:"PC",developer:"Crate",mode:"Multi",rating:"M"},
+        {name:"Lost Ark",year:2022,genre:"MMO",platform:"PC",developer:"Smilegate",mode:"Multi",rating:"T"},
+        {name:"New World",year:2021,genre:"MMO",platform:"PC",developer:"Amazon",mode:"Multi",rating:"T"},
+        {name:"Guild Wars 2",year:2012,genre:"MMO",platform:"PC",developer:"ArenaNet",mode:"Multi",rating:"T"},
+        {name:"The Elder Scrolls Online",year:2014,genre:"MMO",platform:"Multi",developer:"ZeniMax",mode:"Multi",rating:"M"},
+        {name:"Star Wars: The Old Republic",year:2011,genre:"MMO",platform:"PC",developer:"BioWare",mode:"Multi",rating:"T"},
+        {name:"Black Desert Online",year:2015,genre:"MMO",platform:"Multi",developer:"Pearl Abyss",mode:"Multi",rating:"T"},
+        {name:"Destiny 2",year:2017,genre:"Shooter",platform:"Multi",developer:"Bungie",mode:"Multi",rating:"T"},
+        {name:"Warframe",year:2013,genre:"Shooter",platform:"Multi",developer:"Digital Extremes",mode:"Multi",rating:"M"},
+        {name:"The Division",year:2016,genre:"Shooter",platform:"Multi",developer:"Massive",mode:"Multi",rating:"M"},
+        {name:"Anthem",year:2019,genre:"Shooter",platform:"Multi",developer:"BioWare",mode:"Multi",rating:"T"},
+        {name:"Outriders",year:2021,genre:"Shooter",platform:"Multi",developer:"People Can Fly",mode:"Multi",rating:"M"},
+        {name:"Deep Rock Galactic",year:2020,genre:"Shooter",platform:"Multi",developer:"Ghost Ship",mode:"Multi",rating:"T"},
+        {name:"GTFO",year:2021,genre:"Shooter",platform:"PC",developer:"10 Chambers",mode:"Multi",rating:"M"},
+        {name:"Back 4 Blood",year:2021,genre:"Shooter",platform:"Multi",developer:"Turtle Rock",mode:"Multi",rating:"M"},
+        {name:"World War Z",year:2019,genre:"Shooter",platform:"Multi",developer:"Saber",mode:"Multi",rating:"M"},
+        {name:"Warhammer: Vermintide 2",year:2018,genre:"Action",platform:"Multi",developer:"Fatshark",mode:"Multi",rating:"M"},
+        {name:"Warhammer 40,000: Darktide",year:2022,genre:"Action",platform:"Multi",developer:"Fatshark",mode:"Multi",rating:"M"},
+        {name:"Payday 2",year:2013,genre:"Shooter",platform:"Multi",developer:"Overkill",mode:"Multi",rating:"M"},
+        {name:"Payday 3",year:2023,genre:"Shooter",platform:"Multi",developer:"Starbreeze",mode:"Multi",rating:"M"},
+        {name:"Ready or Not",year:2023,genre:"Shooter",platform:"PC",developer:"VOID Interactive",mode:"Multi",rating:"M"},
+        {name:"Squad",year:2020,genre:"Shooter",platform:"PC",developer:"Offworld",mode:"Multi",rating:"M"},
+        {name:"Hell Let Loose",year:2021,genre:"Shooter",platform:"Multi",developer:"Black Matter",mode:"Multi",rating:"M"},
+        {name:"Insurgency: Sandstorm",year:2018,genre:"Shooter",platform:"Multi",developer:"New World",mode:"Multi",rating:"M"},
+        {name:"Escape from Tarkov",year:2017,genre:"Shooter",platform:"PC",developer:"Battlestate",mode:"Multi",rating:"M"},
+        {name:"Hunt: Showdown",year:2019,genre:"Shooter",platform:"Multi",developer:"Crytek",mode:"Multi",rating:"M"},
+        {name:"DayZ",year:2018,genre:"Survival",platform:"Multi",developer:"Bohemia",mode:"Multi",rating:"M"},
+        {name:"ARMA 3",year:2013,genre:"Shooter",platform:"PC",developer:"Bohemia",mode:"Multi",rating:"M"},
+        {name:"Enlisted",year:2021,genre:"Shooter",platform:"Multi",developer:"Darkflow",mode:"Multi",rating:"T"},
+        {name:"War Thunder",year:2013,genre:"Simulation",platform:"Multi",developer:"Gaijin",mode:"Multi",rating:"T"},
+        {name:"World of Tanks",year:2010,genre:"Shooter",platform:"Multi",developer:"Wargaming",mode:"Multi",rating:"T"},
+        {name:"World of Warships",year:2015,genre:"Shooter",platform:"Multi",developer:"Wargaming",mode:"Multi",rating:"T"},
+        {name:"Warthunder",year:2013,genre:"Simulation",platform:"Multi",developer:"Gaijin",mode:"Multi",rating:"T"},
+        {name:"Star Citizen",year:2014,genre:"Simulation",platform:"PC",developer:"Cloud Imperium",mode:"Multi",rating:"T"},
+        {name:"Elite Dangerous",year:2014,genre:"Simulation",platform:"Multi",developer:"Frontier",mode:"Multi",rating:"T"},
+        {name:"X4: Foundations",year:2018,genre:"Simulation",platform:"PC",developer:"Egosoft",mode:"Single",rating:"T"},
+        {name:"Everspace 2",year:2023,genre:"Shooter",platform:"Multi",developer:"Rockfish",mode:"Single",rating:"T"},
+        {name:"Chorus",year:2021,genre:"Shooter",platform:"Multi",developer:"Deep Silver",mode:"Single",rating:"T"},
+        {name:"Star Wars Squadrons",year:2020,genre:"Simulation",platform:"Multi",developer:"EA Motive",mode:"Multi",rating:"T"},
+        {name:"Star Wars Jedi: Survivor",year:2023,genre:"Action-Adventure",platform:"Multi",developer:"Respawn",mode:"Single",rating:"T"},
+        {name:"Star Wars Jedi: Fallen Order",year:2019,genre:"Action-Adventure",platform:"Multi",developer:"Respawn",mode:"Single",rating:"T"},
+        {name:"Star Wars Battlefront II",year:2017,genre:"Shooter",platform:"Multi",developer:"DICE",mode:"Multi",rating:"T"},
+        {name:"LEGO Star Wars: The Skywalker Saga",year:2022,genre:"Action-Adventure",platform:"Multi",developer:"TT Games",mode:"Multi",rating:"E10+"},
+        {name:"Hogwarts Legacy",year:2023,genre:"Action-RPG",platform:"Multi",developer:"Avalanche",mode:"Single",rating:"T"},
+        {name:"Gotham Knights",year:2022,genre:"Action-RPG",platform:"Multi",developer:"WB Montreal",mode:"Multi",rating:"T"},
+        {name:"Suicide Squad: Kill the Justice League",year:2024,genre:"Shooter",platform:"Multi",developer:"Rocksteady",mode:"Multi",rating:"M"},
+        {name:"Batman: Arkham Knight",year:2015,genre:"Action-Adventure",platform:"Multi",developer:"Rocksteady",mode:"Single",rating:"M"},
+        {name:"Batman: Arkham City",year:2011,genre:"Action-Adventure",platform:"Multi",developer:"Rocksteady",mode:"Single",rating:"T"},
+        {name:"Middle-earth: Shadow of War",year:2017,genre:"Action-RPG",platform:"Multi",developer:"Monolith",mode:"Single",rating:"M"},
+        {name:"Mad Max",year:2015,genre:"Action-Adventure",platform:"Multi",developer:"Avalanche",mode:"Single",rating:"M"},
+        {name:"Just Cause 4",year:2018,genre:"Action-Adventure",platform:"Multi",developer:"Avalanche",mode:"Single",rating:"M"},
+        {name:"Saints Row",year:2022,genre:"Action-Adventure",platform:"Multi",developer:"Volition",mode:"Multi",rating:"M"},
+        {name:"Saints Row IV",year:2013,genre:"Action-Adventure",platform:"Multi",developer:"Volition",mode:"Multi",rating:"M"},
+        {name:"Agents of Mayhem",year:2017,genre:"Action",platform:"Multi",developer:"Volition",mode:"Single",rating:"M"},
+        {name:"Crackdown 3",year:2019,genre:"Action",platform:"Xbox",developer:"Sumo Digital",mode:"Multi",rating:"M"},
+        {name:"State of Decay 2",year:2018,genre:"Survival",platform:"Xbox",developer:"Undead Labs",mode:"Multi",rating:"M"},
+        {name:"Sunset Overdrive",year:2014,genre:"Action",platform:"Xbox",developer:"Insomniac",mode:"Multi",rating:"M"},
+        {name:"ReCore",year:2016,genre:"Action",platform:"Xbox",developer:"Comcept",mode:"Single",rating:"T"}
+    ];
+
+    let todayGame = null;
+    let guesses = [];
+    let gameOver = false;
+    const MAX_GUESSES = 6;
+
+    function getDailyGame() {
+        const today = new Date().toISOString().split('T')[0];
+        const seed = today.split('-').join('');
+        const index = parseInt(seed) % GAMES.length;
+        return GAMES[index];
+    }
+
+    function loadStats() {
+        const stats = JSON.parse(localStorage.getItem('gamedle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        document.getElementById('streak').textContent = stats.streak;
+        document.getElementById('played').textContent = stats.played;
+        document.getElementById('win-rate').textContent = stats.played ? Math.round((stats.wins/stats.played)*100) + '%' : '0%';
+        return stats;
+    }
+
+    function saveStats(won) {
+        const today = new Date().toISOString().split('T')[0];
+        let stats = JSON.parse(localStorage.getItem('gamedle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        
+        if (stats.lastPlayed !== today) {
+            stats.played++;
+            if (won) {
+                stats.wins++;
+                stats.streak = stats.lastPlayed === getYesterday() ? stats.streak + 1 : 1;
+            } else {
+                stats.streak = 0;
+            }
+            stats.lastPlayed = today;
+            localStorage.setItem('gamedle_stats', JSON.stringify(stats));
+        }
+        loadStats();
+    }
+
+    function getYesterday() {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+
+    function loadGameState() {
+        const today = new Date().toISOString().split('T')[0];
+        const saved = JSON.parse(localStorage.getItem('gamedle_state') || '{}');
+        if (saved.date === today) {
+            guesses = saved.guesses || [];
+            gameOver = saved.gameOver || false;
+            guesses.forEach(g => renderGuess(g));
+            if (gameOver) showGameOver(saved.won);
+        }
+    }
+
+    function saveGameState(won = false) {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('gamedle_state', JSON.stringify({
+            date: today,
+            guesses: guesses,
+            gameOver: gameOver,
+            won: won
+        }));
+    }
+
+    function compareAttr(guess, answer, attr) {
+        if (attr === 'year') {
+            if (guess === answer) return { status: 'correct', dir: '' };
+            return { status: 'wrong', dir: guess < answer ? 'higher' : 'lower' };
+        }
+        if (guess === answer) return { status: 'correct', dir: '' };
+        if (attr === 'genre' || attr === 'platform') {
+            if (guess.includes(answer) || answer.includes(guess)) return { status: 'partial', dir: '' };
+        }
+        return { status: 'wrong', dir: '' };
+    }
+
+    function renderGuess(game) {
+        const row = document.createElement('div');
+        row.className = 'guess-row';
+        
+        const attrs = ['year', 'genre', 'platform', 'developer', 'mode', 'rating'];
+        attrs.forEach(attr => {
+            const cell = document.createElement('div');
+            cell.className = 'guess-cell';
+            const result = compareAttr(game[attr], todayGame[attr], attr);
+            cell.classList.add(result.status);
+            if (result.dir) cell.classList.add(result.dir);
+            cell.textContent = game[attr];
+            row.appendChild(cell);
+        });
+        
+        document.getElementById('guesses').appendChild(row);
+    }
+
+    function showGameOver(won) {
+        const container = document.getElementById('game-over');
+        container.innerHTML = `
+            <div class="game-over ${won ? 'win' : 'lose'}">
+                <h2>${won ? '🎮 YOU GOT IT!' : '😔 GAME OVER'}</h2>
+                <p class="answer-reveal">The answer was <strong>${todayGame.name}</strong></p>
+                <button class="share-btn" onclick="shareResult()">Share Result</button>
+            </div>
+        `;
+        document.getElementById('search').disabled = true;
+    }
+
+    function shareResult() {
+        const won = guesses.some(g => g.name === todayGame.name);
+        const result = guesses.map(g => {
+            const attrs = ['year', 'genre', 'platform', 'developer', 'mode', 'rating'];
+            return attrs.map(attr => {
+                const r = compareAttr(g[attr], todayGame[attr], attr);
+                return r.status === 'correct' ? '🟩' : r.status === 'partial' ? '🟨' : '🟥';
+            }).join('');
+        }).join('\n');
+        
+        const text = `Gamedle ${new Date().toISOString().split('T')[0]}\n${won ? guesses.length : 'X'}/${MAX_GUESSES}\n\n${result}\n\nPlay at thegaming.co/gamedle.html`;
+        
+        if (navigator.share) {
+            navigator.share({ text });
+        } else {
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard!');
+        }
+    }
+
+    function handleGuess(game) {
+        if (gameOver || guesses.find(g => g.name === game.name)) return;
+        
+        guesses.push(game);
+        renderGuess(game);
+        
+        const won = game.name === todayGame.name;
+        if (won || guesses.length >= MAX_GUESSES) {
+            gameOver = true;
+            saveStats(won);
+            saveGameState(won);
+            setTimeout(() => showGameOver(won), 500);
+        } else {
+            saveGameState();
+        }
+        
+        document.getElementById('search').value = '';
+        document.getElementById('suggestions').classList.remove('show');
+    }
+
+    function updateTimer() {
+        const now = new Date();
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+        const diff = tomorrow - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer').textContent = `Next puzzle in: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    // Search functionality
+    const searchInput = document.getElementById('search');
+    const suggestionsEl = document.getElementById('suggestions');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 2) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        const guessedNames = guesses.map(g => g.name);
+        const matches = GAMES.filter(g => 
+            g.name.toLowerCase().includes(query) && !guessedNames.includes(g.name)
+        ).slice(0, 8);
+        
+        if (matches.length === 0) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        suggestionsEl.innerHTML = matches.map(g => 
+            `<div class="suggestion" data-name="${g.name}">${g.name}</div>`
+        ).join('');
+        suggestionsEl.classList.add('show');
+    });
+
+    suggestionsEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('suggestion')) {
+            const name = e.target.dataset.name;
+            const game = GAMES.find(g => g.name === name);
+            if (game) handleGuess(game);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-box')) {
+            suggestionsEl.classList.remove('show');
+        }
+    });
+
+    // Init
+    todayGame = getDailyGame();
+    loadStats();
+    loadGameState();
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>

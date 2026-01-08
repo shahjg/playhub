@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Jobdle - Daily Profession Guessing | TheGaming.co</title>
+    <meta name="description" content="Guess the profession from attributes. New puzzle daily!">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#0a0a0f;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--orange:#ff9f43}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;padding-top:60px;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        
+        .page{min-height:calc(100vh - 60px);position:relative}
+        .page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,107,157,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(79,172,254,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(168,85,247,0.1) 0%,transparent 50%);pointer-events:none}
+        
+        .container{max-width:900px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+        
+        .header{text-align:center;margin-bottom:40px}
+        .title{font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .subtitle{color:rgba(255,255,255,0.6);font-size:1rem}
+        
+        .stats-bar{display:flex;justify-content:center;gap:32px;margin-bottom:32px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+        .stat{text-align:center}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff}
+        .stat-label{font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+        
+        .game-area{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:24px}
+        
+        .search-box{position:relative;margin-bottom:24px}
+        .search-input{width:100%;padding:16px 20px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:1rem;font-family:'Inter',sans-serif;transition:border-color 0.2s}
+        .search-input:focus{outline:none;border-color:var(--orange)}
+        .search-input::placeholder{color:rgba(255,255,255,0.3)}
+        .search-input:disabled{opacity:0.5;cursor:not-allowed}
+        
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;margin-top:4px;max-height:240px;overflow-y:auto;display:none;z-index:100}
+        .suggestions.show{display:block}
+        .suggestion{padding:12px 16px;cursor:pointer;transition:background 0.15s;font-size:0.95rem}
+        .suggestion:hover{background:rgba(255,255,255,0.08)}
+        .suggestion:first-child{border-radius:12px 12px 0 0}
+        .suggestion:last-child{border-radius:0 0 12px 12px}
+        
+        .attributes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+        .attr-header{padding:10px 4px;text-align:center;font-size:0.65rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px}
+        
+        .guesses{display:flex;flex-direction:column;gap:8px}
+        .guess-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;animation:slideIn 0.3s ease}
+        @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+        
+        .guess-cell{padding:12px 4px;text-align:center;border-radius:8px;font-size:0.7rem;font-weight:600;transition:all 0.3s;line-height:1.3}
+        .guess-cell.correct{background:var(--green);color:#fff}
+        .guess-cell.partial{background:var(--yellow);color:#000}
+        .guess-cell.wrong{background:var(--red);color:#fff}
+        .guess-cell.higher::after{content:' ↑';font-size:0.6rem}
+        .guess-cell.lower::after{content:' ↓';font-size:0.6rem}
+        
+        .game-over{text-align:center;padding:32px;animation:fadeIn 0.5s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .game-over h2{font-size:2rem;margin-bottom:8px}
+        .game-over.win h2{color:var(--green)}
+        .game-over.lose h2{color:var(--red)}
+        .answer-reveal{font-size:1.2rem;color:rgba(255,255,255,0.8);margin-bottom:24px}
+        .answer-reveal strong{color:#fff}
+        
+        .share-btn{padding:14px 32px;background:linear-gradient(135deg,var(--orange),var(--pink));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+        .share-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,159,67,0.4)}
+        
+        .how-to-play{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px}
+        .how-to-play h3{font-size:1.3rem;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .how-to-play p{color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.7;margin-bottom:12px}
+        .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:0.85rem;color:rgba(255,255,255,0.7)}
+        .legend-box{width:20px;height:20px;border-radius:4px}
+        .legend-box.green{background:var(--green)}
+        .legend-box.yellow{background:var(--yellow)}
+        .legend-box.red{background:var(--red)}
+        
+        .timer{font-size:0.85rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:24px}
+        
+        @media(max-width:600px){
+            .container{padding:24px 12px 60px}
+            .attributes{grid-template-columns:repeat(5,1fr);gap:4px}
+            .attr-header{font-size:0.5rem;padding:8px 2px}
+            .guess-row{gap:4px}
+            .guess-cell{padding:8px 2px;font-size:0.55rem}
+            .stats-bar{gap:16px;padding:12px}
+            .stat-value{font-size:1.2rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    
+    <div class="page">
+        <div class="container">
+            <div class="header">
+                <h1 class="title">JOBDLE</h1>
+                <p class="subtitle">Guess the profession in 6 tries</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="streak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="played">0</div>
+                    <div class="stat-label">Played</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="win-rate">0%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+            
+            <div class="game-area">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="search" placeholder="Type a profession..." autocomplete="off">
+                    <div class="suggestions" id="suggestions"></div>
+                </div>
+                
+                <div class="attributes">
+                    <div class="attr-header">Salary</div>
+                    <div class="attr-header">Setting</div>
+                    <div class="attr-header">Education</div>
+                    <div class="attr-header">Industry</div>
+                    <div class="attr-header">Shift</div>
+                </div>
+                
+                <div class="guesses" id="guesses"></div>
+                <div id="game-over"></div>
+            </div>
+            
+            <div class="how-to-play">
+                <h3>HOW TO PLAY</h3>
+                <p>Guess the profession in 6 tries. After each guess, you'll see how close you are based on job attributes like salary range, work setting, and more.</p>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-box green"></div> Correct</div>
+                    <div class="legend-item"><div class="legend-box yellow"></div> Close</div>
+                    <div class="legend-item"><div class="legend-box red"></div> Wrong</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">Next puzzle in: --:--:--</div>
+        </div>
+    </div>
+    
+    <script src="/header.js"></script>
+    <script>
+    const JOBS = [
+        // Healthcare
+        {name:"Surgeon",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Variable"},
+        {name:"Anesthesiologist",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Variable"},
+        {name:"Cardiologist",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Variable"},
+        {name:"Dermatologist",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Pediatrician",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Psychiatrist",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Family Doctor",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Emergency Room Doctor",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Shift"},
+        {name:"Radiologist",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Oncologist",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Neurologist",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Orthopedic Surgeon",salary:"$300k+",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Variable"},
+        {name:"Dentist",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Orthodontist",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Pharmacist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Variable"},
+        {name:"Registered Nurse",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Healthcare",shift:"Shift"},
+        {name:"Nurse Practitioner",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Healthcare",shift:"Variable"},
+        {name:"Physician Assistant",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Healthcare",shift:"Variable"},
+        {name:"Physical Therapist",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Occupational Therapist",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Healthcare",shift:"9-5"},
+        {name:"Speech Pathologist",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Healthcare",shift:"9-5"},
+        {name:"Veterinarian",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"Variable"},
+        {name:"Paramedic",salary:"$30-50k",setting:"Outdoor",education:"Certificate",industry:"Healthcare",shift:"Shift"},
+        {name:"EMT",salary:"$30-50k",setting:"Outdoor",education:"Certificate",industry:"Healthcare",shift:"Shift"},
+        {name:"Medical Lab Technician",salary:"$50-100k",setting:"Indoor",education:"Associate's",industry:"Healthcare",shift:"Variable"},
+        {name:"Radiologic Technologist",salary:"$50-100k",setting:"Indoor",education:"Associate's",industry:"Healthcare",shift:"Variable"},
+        {name:"Surgical Technologist",salary:"$50-100k",setting:"Indoor",education:"Associate's",industry:"Healthcare",shift:"Variable"},
+        {name:"Dental Hygienist",salary:"$50-100k",setting:"Indoor",education:"Associate's",industry:"Healthcare",shift:"9-5"},
+        {name:"Optometrist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        {name:"Chiropractor",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"},
+        // Tech
+        {name:"Software Engineer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Senior Software Engineer",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Data Scientist",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Tech",shift:"Flexible"},
+        {name:"Machine Learning Engineer",salary:"$150-300k",setting:"Indoor",education:"Master's",industry:"Tech",shift:"Flexible"},
+        {name:"DevOps Engineer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Cloud Architect",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Cybersecurity Analyst",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Variable"},
+        {name:"Network Administrator",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Variable"},
+        {name:"Database Administrator",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Variable"},
+        {name:"Full Stack Developer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Frontend Developer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Backend Developer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Mobile App Developer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"iOS Developer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Android Developer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Game Developer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"QA Engineer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Product Manager",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Technical Product Manager",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"UX Designer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"UI Designer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"IT Support Specialist",salary:"$30-50k",setting:"Indoor",education:"Associate's",industry:"Tech",shift:"Variable"},
+        {name:"Systems Administrator",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Variable"},
+        {name:"Scrum Master",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Technical Writer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"AI Research Scientist",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Tech",shift:"Flexible"},
+        {name:"Blockchain Developer",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"Site Reliability Engineer",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Variable"},
+        {name:"Solutions Architect",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        {name:"CTO",salary:"$300k+",setting:"Indoor",education:"Bachelor's",industry:"Tech",shift:"Flexible"},
+        // Finance
+        {name:"Investment Banker",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"Long Hours"},
+        {name:"Financial Analyst",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Accountant",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"CPA",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"Variable"},
+        {name:"Tax Accountant",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"Variable"},
+        {name:"Auditor",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Actuary",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Financial Planner",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Wealth Manager",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Portfolio Manager",salary:"$150-300k",setting:"Indoor",education:"Master's",industry:"Finance",shift:"Long Hours"},
+        {name:"Hedge Fund Manager",salary:"$300k+",setting:"Indoor",education:"Master's",industry:"Finance",shift:"Long Hours"},
+        {name:"Venture Capitalist",salary:"$300k+",setting:"Indoor",education:"Master's",industry:"Finance",shift:"Flexible"},
+        {name:"Private Equity Analyst",salary:"$150-300k",setting:"Indoor",education:"Master's",industry:"Finance",shift:"Long Hours"},
+        {name:"Credit Analyst",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Loan Officer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Bank Teller",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Finance",shift:"9-5"},
+        {name:"Mortgage Broker",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Stock Trader",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"Market Hours"},
+        {name:"Day Trader",salary:"Variable",setting:"Indoor",education:"High School",industry:"Finance",shift:"Market Hours"},
+        {name:"Insurance Agent",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Finance",shift:"9-5"},
+        {name:"Insurance Underwriter",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Claims Adjuster",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"CFO",salary:"$300k+",setting:"Indoor",education:"Master's",industry:"Finance",shift:"Long Hours"},
+        {name:"Controller",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Finance",shift:"9-5"},
+        {name:"Bookkeeper",salary:"$30-50k",setting:"Indoor",education:"Associate's",industry:"Finance",shift:"9-5"},
+        // Law
+        {name:"Corporate Lawyer",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"Long Hours"},
+        {name:"Criminal Defense Attorney",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"Variable"},
+        {name:"Prosecutor",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Public Defender",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"Variable"},
+        {name:"Family Law Attorney",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Immigration Lawyer",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Patent Attorney",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Tax Attorney",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Real Estate Attorney",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Personal Injury Lawyer",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"Variable"},
+        {name:"Judge",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Law",shift:"9-5"},
+        {name:"Paralegal",salary:"$50-100k",setting:"Indoor",education:"Associate's",industry:"Law",shift:"9-5"},
+        {name:"Legal Secretary",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Law",shift:"9-5"},
+        {name:"Court Reporter",salary:"$50-100k",setting:"Indoor",education:"Certificate",industry:"Law",shift:"Variable"},
+        {name:"Mediator",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Law",shift:"Variable"},
+        // Education
+        {name:"Kindergarten Teacher",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"School Day"},
+        {name:"Elementary School Teacher",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"School Day"},
+        {name:"Middle School Teacher",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"School Day"},
+        {name:"High School Teacher",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"School Day"},
+        {name:"Special Education Teacher",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"School Day"},
+        {name:"ESL Teacher",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"Variable"},
+        {name:"College Professor",salary:"$50-100k",setting:"Indoor",education:"Doctorate",industry:"Education",shift:"Flexible"},
+        {name:"University Professor",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Education",shift:"Flexible"},
+        {name:"School Principal",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Education",shift:"9-5"},
+        {name:"School Counselor",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Education",shift:"School Day"},
+        {name:"Librarian",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Education",shift:"9-5"},
+        {name:"Tutor",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"Flexible"},
+        {name:"Teaching Assistant",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Education",shift:"School Day"},
+        {name:"School Bus Driver",salary:"Under $30k",setting:"Outdoor",education:"High School",industry:"Education",shift:"Split Shift"},
+        {name:"Dean",salary:"$150-300k",setting:"Indoor",education:"Doctorate",industry:"Education",shift:"9-5"},
+        {name:"Academic Advisor",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Education",shift:"9-5"},
+        // Construction/Trades
+        {name:"Electrician",salary:"$50-100k",setting:"Both",education:"Trade School",industry:"Trades",shift:"Variable"},
+        {name:"Plumber",salary:"$50-100k",setting:"Both",education:"Trade School",industry:"Trades",shift:"Variable"},
+        {name:"HVAC Technician",salary:"$50-100k",setting:"Both",education:"Trade School",industry:"Trades",shift:"Variable"},
+        {name:"Carpenter",salary:"$50-100k",setting:"Outdoor",education:"Trade School",industry:"Trades",shift:"9-5"},
+        {name:"Welder",salary:"$50-100k",setting:"Indoor",education:"Trade School",industry:"Trades",shift:"Variable"},
+        {name:"Construction Worker",salary:"$30-50k",setting:"Outdoor",education:"High School",industry:"Trades",shift:"9-5"},
+        {name:"General Contractor",salary:"$50-100k",setting:"Both",education:"Trade School",industry:"Trades",shift:"Variable"},
+        {name:"Roofer",salary:"$30-50k",setting:"Outdoor",education:"High School",industry:"Trades",shift:"9-5"},
+        {name:"Mason",salary:"$50-100k",setting:"Outdoor",education:"Trade School",industry:"Trades",shift:"9-5"},
+        {name:"Painter",salary:"$30-50k",setting:"Both",education:"High School",industry:"Trades",shift:"9-5"},
+        {name:"Flooring Installer",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Trades",shift:"9-5"},
+        {name:"Glazier",salary:"$50-100k",setting:"Both",education:"Trade School",industry:"Trades",shift:"9-5"},
+        {name:"Ironworker",salary:"$50-100k",setting:"Outdoor",education:"Trade School",industry:"Trades",shift:"9-5"},
+        {name:"Crane Operator",salary:"$50-100k",setting:"Outdoor",education:"Certificate",industry:"Trades",shift:"Variable"},
+        {name:"Heavy Equipment Operator",salary:"$50-100k",setting:"Outdoor",education:"Certificate",industry:"Trades",shift:"Variable"},
+        {name:"Surveyor",salary:"$50-100k",setting:"Outdoor",education:"Bachelor's",industry:"Trades",shift:"9-5"},
+        {name:"Civil Engineer",salary:"$100-150k",setting:"Both",education:"Bachelor's",industry:"Trades",shift:"9-5"},
+        {name:"Architect",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Trades",shift:"9-5"},
+        {name:"Interior Designer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Trades",shift:"9-5"},
+        {name:"Landscape Architect",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Trades",shift:"9-5"},
+        // Service/Hospitality
+        {name:"Chef",salary:"$50-100k",setting:"Indoor",education:"Trade School",industry:"Hospitality",shift:"Evening"},
+        {name:"Executive Chef",salary:"$100-150k",setting:"Indoor",education:"Trade School",industry:"Hospitality",shift:"Evening"},
+        {name:"Line Cook",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Evening"},
+        {name:"Pastry Chef",salary:"$50-100k",setting:"Indoor",education:"Trade School",industry:"Hospitality",shift:"Early Morning"},
+        {name:"Bartender",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Evening"},
+        {name:"Server",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Variable"},
+        {name:"Restaurant Manager",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Hospitality",shift:"Variable"},
+        {name:"Hotel Manager",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Hospitality",shift:"Variable"},
+        {name:"Concierge",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Variable"},
+        {name:"Housekeeper",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"9-5"},
+        {name:"Flight Attendant",salary:"$50-100k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Variable"},
+        {name:"Tour Guide",salary:"$30-50k",setting:"Both",education:"High School",industry:"Hospitality",shift:"Variable"},
+        {name:"Event Planner",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Hospitality",shift:"Variable"},
+        {name:"Wedding Planner",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Hospitality",shift:"Weekend"},
+        {name:"Barista",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Variable"},
+        {name:"Sommelier",salary:"$50-100k",setting:"Indoor",education:"Certificate",industry:"Hospitality",shift:"Evening"},
+        {name:"Casino Dealer",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Shift"},
+        {name:"Cruise Ship Worker",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Hospitality",shift:"Long Hours"},
+        // Public Service
+        {name:"Police Officer",salary:"$50-100k",setting:"Both",education:"High School",industry:"Public Service",shift:"Shift"},
+        {name:"Detective",salary:"$50-100k",setting:"Both",education:"Associate's",industry:"Public Service",shift:"Variable"},
+        {name:"FBI Agent",salary:"$100-150k",setting:"Both",education:"Bachelor's",industry:"Public Service",shift:"Variable"},
+        {name:"CIA Agent",salary:"$100-150k",setting:"Both",education:"Bachelor's",industry:"Public Service",shift:"Variable"},
+        {name:"Border Patrol Agent",salary:"$50-100k",setting:"Outdoor",education:"High School",industry:"Public Service",shift:"Shift"},
+        {name:"Firefighter",salary:"$50-100k",setting:"Both",education:"High School",industry:"Public Service",shift:"24-48"},
+        {name:"Paramedic",salary:"$30-50k",setting:"Both",education:"Certificate",industry:"Public Service",shift:"Shift"},
+        {name:"911 Dispatcher",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Public Service",shift:"Shift"},
+        {name:"Corrections Officer",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Public Service",shift:"Shift"},
+        {name:"Probation Officer",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Public Service",shift:"9-5"},
+        {name:"Social Worker",salary:"$50-100k",setting:"Both",education:"Master's",industry:"Public Service",shift:"9-5"},
+        {name:"City Planner",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Public Service",shift:"9-5"},
+        {name:"Postal Worker",salary:"$50-100k",setting:"Both",education:"High School",industry:"Public Service",shift:"Early Morning"},
+        {name:"Diplomat",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Public Service",shift:"Variable"},
+        {name:"Military Officer",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Public Service",shift:"Variable"},
+        {name:"Enlisted Military",salary:"$30-50k",setting:"Both",education:"High School",industry:"Public Service",shift:"Variable"},
+        {name:"Park Ranger",salary:"$30-50k",setting:"Outdoor",education:"Bachelor's",industry:"Public Service",shift:"Variable"},
+        {name:"Air Traffic Controller",salary:"$100-150k",setting:"Indoor",education:"Associate's",industry:"Public Service",shift:"Shift"},
+        // Media/Entertainment
+        {name:"Actor",salary:"Variable",setting:"Indoor",education:"High School",industry:"Entertainment",shift:"Variable"},
+        {name:"Film Director",salary:"$100-150k",setting:"Both",education:"Bachelor's",industry:"Entertainment",shift:"Long Hours"},
+        {name:"Screenwriter",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Flexible"},
+        {name:"Film Producer",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Long Hours"},
+        {name:"Cinematographer",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Entertainment",shift:"Long Hours"},
+        {name:"Video Editor",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Flexible"},
+        {name:"Sound Engineer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"Music Producer",salary:"$50-100k",setting:"Indoor",education:"High School",industry:"Entertainment",shift:"Flexible"},
+        {name:"Professional Musician",salary:"Variable",setting:"Both",education:"High School",industry:"Entertainment",shift:"Evening"},
+        {name:"Singer",salary:"Variable",setting:"Both",education:"High School",industry:"Entertainment",shift:"Evening"},
+        {name:"DJ",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Entertainment",shift:"Evening"},
+        {name:"Talent Agent",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"Stunt Performer",salary:"$50-100k",setting:"Both",education:"High School",industry:"Entertainment",shift:"Variable"},
+        {name:"Makeup Artist",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Entertainment",shift:"Variable"},
+        {name:"Costume Designer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"Set Designer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"Journalist",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"News Anchor",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"Sports Commentator",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        {name:"Podcast Host",salary:"Variable",setting:"Indoor",education:"High School",industry:"Entertainment",shift:"Flexible"},
+        {name:"YouTuber",salary:"Variable",setting:"Indoor",education:"High School",industry:"Entertainment",shift:"Flexible"},
+        {name:"Streamer",salary:"Variable",setting:"Indoor",education:"High School",industry:"Entertainment",shift:"Flexible"},
+        {name:"Social Media Manager",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Entertainment",shift:"Flexible"},
+        {name:"Photographer",salary:"$30-50k",setting:"Both",education:"High School",industry:"Entertainment",shift:"Variable"},
+        {name:"Photojournalist",salary:"$50-100k",setting:"Outdoor",education:"Bachelor's",industry:"Entertainment",shift:"Variable"},
+        // Science/Research
+        {name:"Research Scientist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Science",shift:"Flexible"},
+        {name:"Lab Technician",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Science",shift:"9-5"},
+        {name:"Biologist",salary:"$50-100k",setting:"Both",education:"Master's",industry:"Science",shift:"9-5"},
+        {name:"Marine Biologist",salary:"$50-100k",setting:"Both",education:"Master's",industry:"Science",shift:"Variable"},
+        {name:"Chemist",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Science",shift:"9-5"},
+        {name:"Physicist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Science",shift:"Flexible"},
+        {name:"Astronomer",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Science",shift:"Variable"},
+        {name:"Geologist",salary:"$100-150k",setting:"Both",education:"Master's",industry:"Science",shift:"Variable"},
+        {name:"Meteorologist",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Science",shift:"Variable"},
+        {name:"Environmental Scientist",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Science",shift:"9-5"},
+        {name:"Archaeologist",salary:"$50-100k",setting:"Outdoor",education:"Doctorate",industry:"Science",shift:"Variable"},
+        {name:"Anthropologist",salary:"$50-100k",setting:"Both",education:"Doctorate",industry:"Science",shift:"Flexible"},
+        {name:"Economist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Science",shift:"9-5"},
+        {name:"Statistician",salary:"$100-150k",setting:"Indoor",education:"Master's",industry:"Science",shift:"9-5"},
+        {name:"Epidemiologist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Science",shift:"9-5"},
+        {name:"Geneticist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Science",shift:"9-5"},
+        {name:"Zoologist",salary:"$50-100k",setting:"Both",education:"Master's",industry:"Science",shift:"Variable"},
+        {name:"Botanist",salary:"$50-100k",setting:"Both",education:"Master's",industry:"Science",shift:"9-5"},
+        {name:"Astronaut",salary:"$100-150k",setting:"Both",education:"Doctorate",industry:"Science",shift:"Variable"},
+        // Transportation
+        {name:"Commercial Pilot",salary:"$150-300k",setting:"Indoor",education:"Certificate",industry:"Transportation",shift:"Variable"},
+        {name:"Airline Pilot",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Transportation",shift:"Variable"},
+        {name:"Helicopter Pilot",salary:"$100-150k",setting:"Indoor",education:"Certificate",industry:"Transportation",shift:"Variable"},
+        {name:"Truck Driver",salary:"$50-100k",setting:"Indoor",education:"High School",industry:"Transportation",shift:"Long Hours"},
+        {name:"Bus Driver",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Transportation",shift:"Split Shift"},
+        {name:"Taxi Driver",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Transportation",shift:"Variable"},
+        {name:"Uber Driver",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Transportation",shift:"Flexible"},
+        {name:"Train Conductor",salary:"$50-100k",setting:"Indoor",education:"High School",industry:"Transportation",shift:"Variable"},
+        {name:"Ship Captain",salary:"$100-150k",setting:"Outdoor",education:"Bachelor's",industry:"Transportation",shift:"Variable"},
+        {name:"Sailor",salary:"$30-50k",setting:"Outdoor",education:"High School",industry:"Transportation",shift:"Variable"},
+        {name:"Delivery Driver",salary:"$30-50k",setting:"Both",education:"High School",industry:"Transportation",shift:"Variable"},
+        {name:"Auto Mechanic",salary:"$50-100k",setting:"Indoor",education:"Trade School",industry:"Transportation",shift:"9-5"},
+        {name:"Aircraft Mechanic",salary:"$50-100k",setting:"Indoor",education:"Certificate",industry:"Transportation",shift:"Variable"},
+        // Retail/Sales
+        {name:"Retail Sales Associate",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Retail",shift:"Variable"},
+        {name:"Store Manager",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Retail",shift:"Variable"},
+        {name:"Cashier",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Retail",shift:"Variable"},
+        {name:"Real Estate Agent",salary:"$50-100k",setting:"Both",education:"High School",industry:"Retail",shift:"Flexible"},
+        {name:"Sales Representative",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Retail",shift:"9-5"},
+        {name:"Account Executive",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Retail",shift:"9-5"},
+        {name:"Pharmaceutical Sales Rep",salary:"$100-150k",setting:"Both",education:"Bachelor's",industry:"Retail",shift:"9-5"},
+        {name:"Car Salesperson",salary:"$50-100k",setting:"Indoor",education:"High School",industry:"Retail",shift:"Variable"},
+        {name:"Telemarketer",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Retail",shift:"9-5"},
+        {name:"Buyer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Retail",shift:"9-5"},
+        {name:"Merchandiser",salary:"$30-50k",setting:"Indoor",education:"Bachelor's",industry:"Retail",shift:"9-5"},
+        {name:"Personal Shopper",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Retail",shift:"Variable"},
+        // Other
+        {name:"CEO",salary:"$300k+",setting:"Indoor",education:"Master's",industry:"Business",shift:"Long Hours"},
+        {name:"COO",salary:"$300k+",setting:"Indoor",education:"Master's",industry:"Business",shift:"Long Hours"},
+        {name:"HR Manager",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"9-5"},
+        {name:"Recruiter",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"9-5"},
+        {name:"Management Consultant",salary:"$150-300k",setting:"Indoor",education:"Master's",industry:"Business",shift:"Long Hours"},
+        {name:"Marketing Manager",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"9-5"},
+        {name:"Brand Manager",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"9-5"},
+        {name:"Public Relations Specialist",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"9-5"},
+        {name:"Graphic Designer",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"Flexible"},
+        {name:"Art Director",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"Flexible"},
+        {name:"Creative Director",salary:"$150-300k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"Flexible"},
+        {name:"Copywriter",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"Flexible"},
+        {name:"Translator",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Business",shift:"Flexible"},
+        {name:"Interpreter",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Business",shift:"Variable"},
+        {name:"Personal Trainer",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Fitness",shift:"Variable"},
+        {name:"Physical Education Teacher",salary:"$50-100k",setting:"Indoor",education:"Bachelor's",industry:"Fitness",shift:"School Day"},
+        {name:"Yoga Instructor",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Fitness",shift:"Variable"},
+        {name:"Professional Athlete",salary:"Variable",setting:"Both",education:"High School",industry:"Sports",shift:"Variable"},
+        {name:"Sports Coach",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Sports",shift:"Variable"},
+        {name:"Athletic Trainer",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Sports",shift:"Variable"},
+        {name:"Referee",salary:"$30-50k",setting:"Both",education:"High School",industry:"Sports",shift:"Weekend"},
+        {name:"Sports Agent",salary:"$100-150k",setting:"Indoor",education:"Bachelor's",industry:"Sports",shift:"Variable"},
+        {name:"Farmer",salary:"$30-50k",setting:"Outdoor",education:"High School",industry:"Agriculture",shift:"Early Morning"},
+        {name:"Rancher",salary:"$30-50k",setting:"Outdoor",education:"High School",industry:"Agriculture",shift:"Early Morning"},
+        {name:"Agricultural Engineer",salary:"$50-100k",setting:"Both",education:"Bachelor's",industry:"Agriculture",shift:"9-5"},
+        {name:"Florist",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Agriculture",shift:"9-5"},
+        {name:"Landscaper",salary:"$30-50k",setting:"Outdoor",education:"High School",industry:"Agriculture",shift:"9-5"},
+        {name:"Funeral Director",salary:"$50-100k",setting:"Indoor",education:"Associate's",industry:"Services",shift:"Variable"},
+        {name:"Hair Stylist",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Services",shift:"Variable"},
+        {name:"Barber",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Services",shift:"9-5"},
+        {name:"Esthetician",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Services",shift:"Variable"},
+        {name:"Massage Therapist",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Services",shift:"Variable"},
+        {name:"Tattoo Artist",salary:"$50-100k",setting:"Indoor",education:"High School",industry:"Services",shift:"Variable"},
+        {name:"Private Investigator",salary:"$50-100k",setting:"Both",education:"High School",industry:"Services",shift:"Variable"},
+        {name:"Security Guard",salary:"Under $30k",setting:"Both",education:"High School",industry:"Services",shift:"Shift"},
+        {name:"Janitor",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Services",shift:"Variable"},
+        {name:"Pest Control Technician",salary:"$30-50k",setting:"Both",education:"High School",industry:"Services",shift:"9-5"},
+        {name:"Dog Walker",salary:"Under $30k",setting:"Outdoor",education:"High School",industry:"Services",shift:"Flexible"},
+        {name:"Pet Groomer",salary:"$30-50k",setting:"Indoor",education:"Certificate",industry:"Services",shift:"9-5"},
+        {name:"Nanny",salary:"$30-50k",setting:"Indoor",education:"High School",industry:"Services",shift:"9-5"},
+        {name:"Babysitter",salary:"Under $30k",setting:"Indoor",education:"High School",industry:"Services",shift:"Evening"},
+        {name:"Clergy Member",salary:"$30-50k",setting:"Indoor",education:"Master's",industry:"Services",shift:"Variable"},
+        {name:"Life Coach",salary:"$50-100k",setting:"Indoor",education:"Certificate",industry:"Services",shift:"Flexible"},
+        {name:"Therapist",salary:"$50-100k",setting:"Indoor",education:"Master's",industry:"Healthcare",shift:"9-5"},
+        {name:"Psychologist",salary:"$100-150k",setting:"Indoor",education:"Doctorate",industry:"Healthcare",shift:"9-5"}
+    ];
+
+    let todayJob = null;
+    let guesses = [];
+    let gameOver = false;
+    const MAX_GUESSES = 6;
+
+    function getDailyJob() {
+        const today = new Date().toISOString().split('T')[0];
+        const seed = today.split('-').join('');
+        const index = parseInt(seed) % JOBS.length;
+        return JOBS[index];
+    }
+
+    function loadStats() {
+        const stats = JSON.parse(localStorage.getItem('jobdle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        document.getElementById('streak').textContent = stats.streak;
+        document.getElementById('played').textContent = stats.played;
+        document.getElementById('win-rate').textContent = stats.played ? Math.round((stats.wins/stats.played)*100) + '%' : '0%';
+        return stats;
+    }
+
+    function saveStats(won) {
+        const today = new Date().toISOString().split('T')[0];
+        let stats = JSON.parse(localStorage.getItem('jobdle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        
+        if (stats.lastPlayed !== today) {
+            stats.played++;
+            if (won) {
+                stats.wins++;
+                stats.streak = stats.lastPlayed === getYesterday() ? stats.streak + 1 : 1;
+            } else {
+                stats.streak = 0;
+            }
+            stats.lastPlayed = today;
+            localStorage.setItem('jobdle_stats', JSON.stringify(stats));
+        }
+        loadStats();
+    }
+
+    function getYesterday() {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+
+    function loadGameState() {
+        const today = new Date().toISOString().split('T')[0];
+        const saved = JSON.parse(localStorage.getItem('jobdle_state') || '{}');
+        if (saved.date === today) {
+            guesses = saved.guesses || [];
+            gameOver = saved.gameOver || false;
+            guesses.forEach(g => renderGuess(g));
+            if (gameOver) showGameOver(saved.won);
+        }
+    }
+
+    function saveGameState(won = false) {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('jobdle_state', JSON.stringify({
+            date: today,
+            guesses: guesses,
+            gameOver: gameOver,
+            won: won
+        }));
+    }
+
+    function compareSalary(guess, answer) {
+        const order = ["Under $30k","$30-50k","$50-100k","$100-150k","$150-300k","$300k+","Variable"];
+        const gi = order.indexOf(guess);
+        const ai = order.indexOf(answer);
+        if (guess === answer || guess === "Variable" || answer === "Variable") return { status: guess === answer ? 'correct' : 'wrong', dir: '' };
+        if (gi === ai) return { status: 'correct', dir: '' };
+        if (Math.abs(gi - ai) === 1) return { status: 'partial', dir: gi < ai ? 'higher' : 'lower' };
+        return { status: 'wrong', dir: gi < ai ? 'higher' : 'lower' };
+    }
+
+    function compareAttr(guess, answer, attr) {
+        if (attr === 'salary') return compareSalary(guess, answer);
+        if (guess === answer) return { status: 'correct', dir: '' };
+        return { status: 'wrong', dir: '' };
+    }
+
+    function renderGuess(job) {
+        const row = document.createElement('div');
+        row.className = 'guess-row';
+        
+        const attrs = ['salary', 'setting', 'education', 'industry', 'shift'];
+        attrs.forEach(attr => {
+            const cell = document.createElement('div');
+            cell.className = 'guess-cell';
+            const result = compareAttr(job[attr], todayJob[attr], attr);
+            cell.classList.add(result.status);
+            if (result.dir) cell.classList.add(result.dir);
+            cell.textContent = job[attr];
+            row.appendChild(cell);
+        });
+        
+        document.getElementById('guesses').appendChild(row);
+    }
+
+    function showGameOver(won) {
+        const container = document.getElementById('game-over');
+        container.innerHTML = `
+            <div class="game-over ${won ? 'win' : 'lose'}">
+                <h2>${won ? '💼 YOU GOT IT!' : '😔 GAME OVER'}</h2>
+                <p class="answer-reveal">The answer was <strong>${todayJob.name}</strong></p>
+                <button class="share-btn" onclick="shareResult()">Share Result</button>
+            </div>
+        `;
+        document.getElementById('search').disabled = true;
+    }
+
+    function shareResult() {
+        const won = guesses.some(g => g.name === todayJob.name);
+        const result = guesses.map(g => {
+            const attrs = ['salary', 'setting', 'education', 'industry', 'shift'];
+            return attrs.map(attr => {
+                const r = compareAttr(g[attr], todayJob[attr], attr);
+                return r.status === 'correct' ? '🟩' : r.status === 'partial' ? '🟨' : '🟥';
+            }).join('');
+        }).join('\n');
+        
+        const text = `Jobdle ${new Date().toISOString().split('T')[0]}\n${won ? guesses.length : 'X'}/${MAX_GUESSES}\n\n${result}\n\nPlay at thegaming.co/jobdle.html`;
+        
+        if (navigator.share) {
+            navigator.share({ text });
+        } else {
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard!');
+        }
+    }
+
+    function handleGuess(job) {
+        if (gameOver || guesses.find(g => g.name === job.name)) return;
+        
+        guesses.push(job);
+        renderGuess(job);
+        
+        const won = job.name === todayJob.name;
+        if (won || guesses.length >= MAX_GUESSES) {
+            gameOver = true;
+            saveStats(won);
+            saveGameState(won);
+            setTimeout(() => showGameOver(won), 500);
+        } else {
+            saveGameState();
+        }
+        
+        document.getElementById('search').value = '';
+        document.getElementById('suggestions').classList.remove('show');
+    }
+
+    function updateTimer() {
+        const now = new Date();
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+        const diff = tomorrow - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer').textContent = `Next puzzle in: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    const searchInput = document.getElementById('search');
+    const suggestionsEl = document.getElementById('suggestions');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 2) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        const guessedNames = guesses.map(g => g.name);
+        const matches = JOBS.filter(j => 
+            j.name.toLowerCase().includes(query) && !guessedNames.includes(j.name)
+        ).slice(0, 8);
+        
+        if (matches.length === 0) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        suggestionsEl.innerHTML = matches.map(j => 
+            `<div class="suggestion" data-name="${j.name}">${j.name}</div>`
+        ).join('');
+        suggestionsEl.classList.add('show');
+    });
+
+    suggestionsEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('suggestion')) {
+            const name = e.target.dataset.name;
+            const job = JOBS.find(j => j.name === name);
+            if (job) handleGuess(job);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-box')) {
+            suggestionsEl.classList.remove('show');
+        }
+    });
+
+    todayJob = getDailyJob();
+    loadStats();
+    loadGameState();
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>

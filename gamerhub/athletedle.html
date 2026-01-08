@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Athletedle - Daily Athlete Guessing | TheGaming.co</title>
+    <meta name="description" content="Guess the athlete from attributes. New puzzle daily!">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#0a0a0f;--green:#22c55e;--yellow:#eab308;--red:#ef4444}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;padding-top:60px;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        
+        .page{min-height:calc(100vh - 60px);position:relative}
+        .page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,107,157,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(79,172,254,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(168,85,247,0.1) 0%,transparent 50%);pointer-events:none}
+        
+        .container{max-width:900px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+        
+        .header{text-align:center;margin-bottom:40px}
+        .title{font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .subtitle{color:rgba(255,255,255,0.6);font-size:1rem}
+        
+        .stats-bar{display:flex;justify-content:center;gap:32px;margin-bottom:32px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+        .stat{text-align:center}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff}
+        .stat-label{font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+        
+        .game-area{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:24px}
+        
+        .search-box{position:relative;margin-bottom:24px}
+        .search-input{width:100%;padding:16px 20px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:1rem;font-family:'Inter',sans-serif;transition:border-color 0.2s}
+        .search-input:focus{outline:none;border-color:var(--blue)}
+        .search-input::placeholder{color:rgba(255,255,255,0.3)}
+        .search-input:disabled{opacity:0.5;cursor:not-allowed}
+        
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;margin-top:4px;max-height:240px;overflow-y:auto;display:none;z-index:100}
+        .suggestions.show{display:block}
+        .suggestion{padding:12px 16px;cursor:pointer;transition:background 0.15s;font-size:0.95rem}
+        .suggestion:hover{background:rgba(255,255,255,0.08)}
+        .suggestion:first-child{border-radius:12px 12px 0 0}
+        .suggestion:last-child{border-radius:0 0 12px 12px}
+        
+        .attributes{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
+        .attr-header{padding:10px 4px;text-align:center;font-size:0.65rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px}
+        
+        .guesses{display:flex;flex-direction:column;gap:8px}
+        .guess-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;animation:slideIn 0.3s ease}
+        @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+        
+        .guess-cell{padding:12px 4px;text-align:center;border-radius:8px;font-size:0.7rem;font-weight:600;transition:all 0.3s;line-height:1.3}
+        .guess-cell.correct{background:var(--green);color:#fff}
+        .guess-cell.partial{background:var(--yellow);color:#000}
+        .guess-cell.wrong{background:var(--red);color:#fff}
+        .guess-cell.higher::after{content:' ↑';font-size:0.6rem}
+        .guess-cell.lower::after{content:' ↓';font-size:0.6rem}
+        
+        .game-over{text-align:center;padding:32px;animation:fadeIn 0.5s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .game-over h2{font-size:2rem;margin-bottom:8px}
+        .game-over.win h2{color:var(--green)}
+        .game-over.lose h2{color:var(--red)}
+        .answer-reveal{font-size:1.2rem;color:rgba(255,255,255,0.8);margin-bottom:24px}
+        .answer-reveal strong{color:#fff}
+        
+        .share-btn{padding:14px 32px;background:linear-gradient(135deg,var(--blue),var(--teal));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+        .share-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,172,254,0.4)}
+        
+        .how-to-play{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px}
+        .how-to-play h3{font-size:1.3rem;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .how-to-play p{color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.7;margin-bottom:12px}
+        .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:0.85rem;color:rgba(255,255,255,0.7)}
+        .legend-box{width:20px;height:20px;border-radius:4px}
+        .legend-box.green{background:var(--green)}
+        .legend-box.yellow{background:var(--yellow)}
+        .legend-box.red{background:var(--red)}
+        
+        .timer{font-size:0.85rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:24px}
+        
+        @media(max-width:600px){
+            .container{padding:24px 12px 60px}
+            .attributes{grid-template-columns:repeat(6,1fr);gap:4px}
+            .attr-header{font-size:0.5rem;padding:8px 2px}
+            .guess-row{gap:4px}
+            .guess-cell{padding:8px 2px;font-size:0.55rem}
+            .stats-bar{gap:16px;padding:12px}
+            .stat-value{font-size:1.2rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    
+    <div class="page">
+        <div class="container">
+            <div class="header">
+                <h1 class="title">ATHLETEDLE</h1>
+                <p class="subtitle">Guess the athlete in 6 tries</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="streak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="played">0</div>
+                    <div class="stat-label">Played</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="win-rate">0%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+            
+            <div class="game-area">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="search" placeholder="Type an athlete name..." autocomplete="off">
+                    <div class="suggestions" id="suggestions"></div>
+                </div>
+                
+                <div class="attributes">
+                    <div class="attr-header">Sport</div>
+                    <div class="attr-header">Country</div>
+                    <div class="attr-header">Team</div>
+                    <div class="attr-header">Position</div>
+                    <div class="attr-header">Status</div>
+                    <div class="attr-header">Titles</div>
+                </div>
+                
+                <div class="guesses" id="guesses"></div>
+                <div id="game-over"></div>
+            </div>
+            
+            <div class="how-to-play">
+                <h3>HOW TO PLAY</h3>
+                <p>Guess the athlete in 6 tries. After each guess, you'll see how close you are based on their attributes.</p>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-box green"></div> Correct</div>
+                    <div class="legend-item"><div class="legend-box yellow"></div> Partial/Close</div>
+                    <div class="legend-item"><div class="legend-box red"></div> Wrong</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">Next puzzle in: --:--:--</div>
+        </div>
+    </div>
+    
+    <script src="/header.js"></script>
+    <script>
+    const ATHLETES = [
+        // NBA
+        {name:"LeBron James",sport:"Basketball",country:"USA",team:"Lakers",position:"Forward",status:"Active",titles:4},
+        {name:"Michael Jordan",sport:"Basketball",country:"USA",team:"Bulls",position:"Guard",status:"Retired",titles:6},
+        {name:"Stephen Curry",sport:"Basketball",country:"USA",team:"Warriors",position:"Guard",status:"Active",titles:4},
+        {name:"Kevin Durant",sport:"Basketball",country:"USA",team:"Suns",position:"Forward",status:"Active",titles:2},
+        {name:"Giannis Antetokounmpo",sport:"Basketball",country:"Greece",team:"Bucks",position:"Forward",status:"Active",titles:1},
+        {name:"Kobe Bryant",sport:"Basketball",country:"USA",team:"Lakers",position:"Guard",status:"Retired",titles:5},
+        {name:"Shaquille O'Neal",sport:"Basketball",country:"USA",team:"Lakers",position:"Center",status:"Retired",titles:4},
+        {name:"Tim Duncan",sport:"Basketball",country:"USA",team:"Spurs",position:"Forward",status:"Retired",titles:5},
+        {name:"Magic Johnson",sport:"Basketball",country:"USA",team:"Lakers",position:"Guard",status:"Retired",titles:5},
+        {name:"Larry Bird",sport:"Basketball",country:"USA",team:"Celtics",position:"Forward",status:"Retired",titles:3},
+        {name:"Kareem Abdul-Jabbar",sport:"Basketball",country:"USA",team:"Lakers",position:"Center",status:"Retired",titles:6},
+        {name:"Hakeem Olajuwon",sport:"Basketball",country:"Nigeria",team:"Rockets",position:"Center",status:"Retired",titles:2},
+        {name:"Dirk Nowitzki",sport:"Basketball",country:"Germany",team:"Mavericks",position:"Forward",status:"Retired",titles:1},
+        {name:"Dwyane Wade",sport:"Basketball",country:"USA",team:"Heat",position:"Guard",status:"Retired",titles:3},
+        {name:"Chris Paul",sport:"Basketball",country:"USA",team:"Warriors",position:"Guard",status:"Active",titles:0},
+        {name:"Russell Westbrook",sport:"Basketball",country:"USA",team:"Clippers",position:"Guard",status:"Active",titles:0},
+        {name:"James Harden",sport:"Basketball",country:"USA",team:"Clippers",position:"Guard",status:"Active",titles:0},
+        {name:"Anthony Davis",sport:"Basketball",country:"USA",team:"Lakers",position:"Forward",status:"Active",titles:1},
+        {name:"Kawhi Leonard",sport:"Basketball",country:"USA",team:"Clippers",position:"Forward",status:"Active",titles:2},
+        {name:"Paul George",sport:"Basketball",country:"USA",team:"76ers",position:"Forward",status:"Active",titles:0},
+        {name:"Jayson Tatum",sport:"Basketball",country:"USA",team:"Celtics",position:"Forward",status:"Active",titles:1},
+        {name:"Luka Doncic",sport:"Basketball",country:"Slovenia",team:"Mavericks",position:"Guard",status:"Active",titles:0},
+        {name:"Nikola Jokic",sport:"Basketball",country:"Serbia",team:"Nuggets",position:"Center",status:"Active",titles:1},
+        {name:"Joel Embiid",sport:"Basketball",country:"Cameroon",team:"76ers",position:"Center",status:"Active",titles:0},
+        {name:"Jimmy Butler",sport:"Basketball",country:"USA",team:"Heat",position:"Forward",status:"Active",titles:0},
+        {name:"Damian Lillard",sport:"Basketball",country:"USA",team:"Bucks",position:"Guard",status:"Active",titles:0},
+        {name:"Kyrie Irving",sport:"Basketball",country:"USA",team:"Mavericks",position:"Guard",status:"Active",titles:1},
+        {name:"Devin Booker",sport:"Basketball",country:"USA",team:"Suns",position:"Guard",status:"Active",titles:0},
+        {name:"Trae Young",sport:"Basketball",country:"USA",team:"Hawks",position:"Guard",status:"Active",titles:0},
+        {name:"Ja Morant",sport:"Basketball",country:"USA",team:"Grizzlies",position:"Guard",status:"Active",titles:0},
+        {name:"Zion Williamson",sport:"Basketball",country:"USA",team:"Pelicans",position:"Forward",status:"Active",titles:0},
+        {name:"Anthony Edwards",sport:"Basketball",country:"USA",team:"Timberwolves",position:"Guard",status:"Active",titles:0},
+        {name:"Victor Wembanyama",sport:"Basketball",country:"France",team:"Spurs",position:"Center",status:"Active",titles:0},
+        {name:"Allen Iverson",sport:"Basketball",country:"USA",team:"76ers",position:"Guard",status:"Retired",titles:0},
+        {name:"Charles Barkley",sport:"Basketball",country:"USA",team:"Suns",position:"Forward",status:"Retired",titles:0},
+        {name:"Karl Malone",sport:"Basketball",country:"USA",team:"Jazz",position:"Forward",status:"Retired",titles:0},
+        {name:"John Stockton",sport:"Basketball",country:"USA",team:"Jazz",position:"Guard",status:"Retired",titles:0},
+        {name:"Patrick Ewing",sport:"Basketball",country:"Jamaica",team:"Knicks",position:"Center",status:"Retired",titles:0},
+        {name:"Scottie Pippen",sport:"Basketball",country:"USA",team:"Bulls",position:"Forward",status:"Retired",titles:6},
+        {name:"Dennis Rodman",sport:"Basketball",country:"USA",team:"Bulls",position:"Forward",status:"Retired",titles:5},
+        {name:"Isiah Thomas",sport:"Basketball",country:"USA",team:"Pistons",position:"Guard",status:"Retired",titles:2},
+        {name:"David Robinson",sport:"Basketball",country:"USA",team:"Spurs",position:"Center",status:"Retired",titles:2},
+        {name:"Kevin Garnett",sport:"Basketball",country:"USA",team:"Celtics",position:"Forward",status:"Retired",titles:1},
+        {name:"Ray Allen",sport:"Basketball",country:"USA",team:"Heat",position:"Guard",status:"Retired",titles:2},
+        {name:"Paul Pierce",sport:"Basketball",country:"USA",team:"Celtics",position:"Forward",status:"Retired",titles:1},
+        {name:"Steve Nash",sport:"Basketball",country:"Canada",team:"Suns",position:"Guard",status:"Retired",titles:0},
+        {name:"Jason Kidd",sport:"Basketball",country:"USA",team:"Mavericks",position:"Guard",status:"Retired",titles:1},
+        {name:"Tony Parker",sport:"Basketball",country:"France",team:"Spurs",position:"Guard",status:"Retired",titles:4},
+        {name:"Manu Ginobili",sport:"Basketball",country:"Argentina",team:"Spurs",position:"Guard",status:"Retired",titles:4},
+        {name:"Yao Ming",sport:"Basketball",country:"China",team:"Rockets",position:"Center",status:"Retired",titles:0},
+        // NFL
+        {name:"Tom Brady",sport:"Football",country:"USA",team:"Buccaneers",position:"QB",status:"Retired",titles:7},
+        {name:"Patrick Mahomes",sport:"Football",country:"USA",team:"Chiefs",position:"QB",status:"Active",titles:3},
+        {name:"Aaron Rodgers",sport:"Football",country:"USA",team:"Jets",position:"QB",status:"Active",titles:1},
+        {name:"Josh Allen",sport:"Football",country:"USA",team:"Bills",position:"QB",status:"Active",titles:0},
+        {name:"Joe Burrow",sport:"Football",country:"USA",team:"Bengals",position:"QB",status:"Active",titles:0},
+        {name:"Lamar Jackson",sport:"Football",country:"USA",team:"Ravens",position:"QB",status:"Active",titles:0},
+        {name:"Justin Herbert",sport:"Football",country:"USA",team:"Chargers",position:"QB",status:"Active",titles:0},
+        {name:"Jalen Hurts",sport:"Football",country:"USA",team:"Eagles",position:"QB",status:"Active",titles:0},
+        {name:"Dak Prescott",sport:"Football",country:"USA",team:"Cowboys",position:"QB",status:"Active",titles:0},
+        {name:"Travis Kelce",sport:"Football",country:"USA",team:"Chiefs",position:"TE",status:"Active",titles:3},
+        {name:"Tyreek Hill",sport:"Football",country:"USA",team:"Dolphins",position:"WR",status:"Active",titles:1},
+        {name:"Davante Adams",sport:"Football",country:"USA",team:"Raiders",position:"WR",status:"Active",titles:0},
+        {name:"Justin Jefferson",sport:"Football",country:"USA",team:"Vikings",position:"WR",status:"Active",titles:0},
+        {name:"Ja'Marr Chase",sport:"Football",country:"USA",team:"Bengals",position:"WR",status:"Active",titles:0},
+        {name:"CeeDee Lamb",sport:"Football",country:"USA",team:"Cowboys",position:"WR",status:"Active",titles:0},
+        {name:"Derrick Henry",sport:"Football",country:"USA",team:"Ravens",position:"RB",status:"Active",titles:0},
+        {name:"Christian McCaffrey",sport:"Football",country:"USA",team:"49ers",position:"RB",status:"Active",titles:0},
+        {name:"Nick Bosa",sport:"Football",country:"USA",team:"49ers",position:"DE",status:"Active",titles:0},
+        {name:"Micah Parsons",sport:"Football",country:"USA",team:"Cowboys",position:"LB",status:"Active",titles:0},
+        {name:"T.J. Watt",sport:"Football",country:"USA",team:"Steelers",position:"LB",status:"Active",titles:0},
+        {name:"Aaron Donald",sport:"Football",country:"USA",team:"Rams",position:"DT",status:"Retired",titles:1},
+        {name:"Peyton Manning",sport:"Football",country:"USA",team:"Broncos",position:"QB",status:"Retired",titles:2},
+        {name:"Drew Brees",sport:"Football",country:"USA",team:"Saints",position:"QB",status:"Retired",titles:1},
+        {name:"Brett Favre",sport:"Football",country:"USA",team:"Packers",position:"QB",status:"Retired",titles:1},
+        {name:"Joe Montana",sport:"Football",country:"USA",team:"49ers",position:"QB",status:"Retired",titles:4},
+        {name:"Jerry Rice",sport:"Football",country:"USA",team:"49ers",position:"WR",status:"Retired",titles:3},
+        {name:"Randy Moss",sport:"Football",country:"USA",team:"Patriots",position:"WR",status:"Retired",titles:0},
+        {name:"Terrell Owens",sport:"Football",country:"USA",team:"Eagles",position:"WR",status:"Retired",titles:0},
+        {name:"Calvin Johnson",sport:"Football",country:"USA",team:"Lions",position:"WR",status:"Retired",titles:0},
+        {name:"Rob Gronkowski",sport:"Football",country:"USA",team:"Buccaneers",position:"TE",status:"Retired",titles:4},
+        {name:"Tony Gonzalez",sport:"Football",country:"USA",team:"Falcons",position:"TE",status:"Retired",titles:0},
+        {name:"Adrian Peterson",sport:"Football",country:"USA",team:"Vikings",position:"RB",status:"Retired",titles:0},
+        {name:"Emmitt Smith",sport:"Football",country:"USA",team:"Cowboys",position:"RB",status:"Retired",titles:3},
+        {name:"Barry Sanders",sport:"Football",country:"USA",team:"Lions",position:"RB",status:"Retired",titles:0},
+        {name:"Walter Payton",sport:"Football",country:"USA",team:"Bears",position:"RB",status:"Retired",titles:1},
+        {name:"Lawrence Taylor",sport:"Football",country:"USA",team:"Giants",position:"LB",status:"Retired",titles:2},
+        {name:"Ray Lewis",sport:"Football",country:"USA",team:"Ravens",position:"LB",status:"Retired",titles:2},
+        {name:"Ed Reed",sport:"Football",country:"USA",team:"Ravens",position:"S",status:"Retired",titles:1},
+        {name:"Deion Sanders",sport:"Football",country:"USA",team:"Cowboys",position:"CB",status:"Retired",titles:2},
+        {name:"Reggie White",sport:"Football",country:"USA",team:"Packers",position:"DE",status:"Retired",titles:1},
+        // Soccer
+        {name:"Lionel Messi",sport:"Soccer",country:"Argentina",team:"Inter Miami",position:"Forward",status:"Active",titles:4},
+        {name:"Cristiano Ronaldo",sport:"Soccer",country:"Portugal",team:"Al Nassr",position:"Forward",status:"Active",titles:5},
+        {name:"Kylian Mbappe",sport:"Soccer",country:"France",team:"Real Madrid",position:"Forward",status:"Active",titles:1},
+        {name:"Erling Haaland",sport:"Soccer",country:"Norway",team:"Man City",position:"Forward",status:"Active",titles:2},
+        {name:"Neymar Jr",sport:"Soccer",country:"Brazil",team:"Al Hilal",position:"Forward",status:"Active",titles:1},
+        {name:"Kevin De Bruyne",sport:"Soccer",country:"Belgium",team:"Man City",position:"Midfielder",status:"Active",titles:6},
+        {name:"Mohamed Salah",sport:"Soccer",country:"Egypt",team:"Liverpool",position:"Forward",status:"Active",titles:1},
+        {name:"Vinicius Jr",sport:"Soccer",country:"Brazil",team:"Real Madrid",position:"Forward",status:"Active",titles:2},
+        {name:"Jude Bellingham",sport:"Soccer",country:"England",team:"Real Madrid",position:"Midfielder",status:"Active",titles:1},
+        {name:"Harry Kane",sport:"Soccer",country:"England",team:"Bayern Munich",position:"Forward",status:"Active",titles:1},
+        {name:"Robert Lewandowski",sport:"Soccer",country:"Poland",team:"Barcelona",position:"Forward",status:"Active",titles:2},
+        {name:"Karim Benzema",sport:"Soccer",country:"France",team:"Al-Ittihad",position:"Forward",status:"Active",titles:5},
+        {name:"Luka Modric",sport:"Soccer",country:"Croatia",team:"Real Madrid",position:"Midfielder",status:"Active",titles:5},
+        {name:"Toni Kroos",sport:"Soccer",country:"Germany",team:"Real Madrid",position:"Midfielder",status:"Retired",titles:6},
+        {name:"Sergio Ramos",sport:"Soccer",country:"Spain",team:"Sevilla",position:"Defender",status:"Active",titles:4},
+        {name:"Virgil van Dijk",sport:"Soccer",country:"Netherlands",team:"Liverpool",position:"Defender",status:"Active",titles:1},
+        {name:"Thibaut Courtois",sport:"Soccer",country:"Belgium",team:"Real Madrid",position:"Goalkeeper",status:"Active",titles:2},
+        {name:"Alisson Becker",sport:"Soccer",country:"Brazil",team:"Liverpool",position:"Goalkeeper",status:"Active",titles:1},
+        {name:"Manuel Neuer",sport:"Soccer",country:"Germany",team:"Bayern Munich",position:"Goalkeeper",status:"Active",titles:2},
+        {name:"Jan Oblak",sport:"Soccer",country:"Slovenia",team:"Atletico Madrid",position:"Goalkeeper",status:"Active",titles:0},
+        {name:"Zinedine Zidane",sport:"Soccer",country:"France",team:"Real Madrid",position:"Midfielder",status:"Retired",titles:1},
+        {name:"Ronaldinho",sport:"Soccer",country:"Brazil",team:"Barcelona",position:"Forward",status:"Retired",titles:1},
+        {name:"Ronaldo Nazario",sport:"Soccer",country:"Brazil",team:"Real Madrid",position:"Forward",status:"Retired",titles:2},
+        {name:"Diego Maradona",sport:"Soccer",country:"Argentina",team:"Napoli",position:"Forward",status:"Retired",titles:0},
+        {name:"Pele",sport:"Soccer",country:"Brazil",team:"Santos",position:"Forward",status:"Retired",titles:0},
+        {name:"David Beckham",sport:"Soccer",country:"England",team:"Man United",position:"Midfielder",status:"Retired",titles:1},
+        {name:"Thierry Henry",sport:"Soccer",country:"France",team:"Arsenal",position:"Forward",status:"Retired",titles:1},
+        {name:"Andres Iniesta",sport:"Soccer",country:"Spain",team:"Barcelona",position:"Midfielder",status:"Active",titles:4},
+        {name:"Xavi Hernandez",sport:"Soccer",country:"Spain",team:"Barcelona",position:"Midfielder",status:"Retired",titles:4},
+        {name:"Andrea Pirlo",sport:"Soccer",country:"Italy",team:"Juventus",position:"Midfielder",status:"Retired",titles:2},
+        {name:"Gianluigi Buffon",sport:"Soccer",country:"Italy",team:"Juventus",position:"Goalkeeper",status:"Retired",titles:1},
+        {name:"Iker Casillas",sport:"Soccer",country:"Spain",team:"Real Madrid",position:"Goalkeeper",status:"Retired",titles:3},
+        {name:"Gerard Pique",sport:"Soccer",country:"Spain",team:"Barcelona",position:"Defender",status:"Retired",titles:4},
+        {name:"Carles Puyol",sport:"Soccer",country:"Spain",team:"Barcelona",position:"Defender",status:"Retired",titles:3},
+        {name:"Paolo Maldini",sport:"Soccer",country:"Italy",team:"AC Milan",position:"Defender",status:"Retired",titles:5},
+        // Tennis
+        {name:"Novak Djokovic",sport:"Tennis",country:"Serbia",team:"Individual",position:"Singles",status:"Active",titles:24},
+        {name:"Rafael Nadal",sport:"Tennis",country:"Spain",team:"Individual",position:"Singles",status:"Retired",titles:22},
+        {name:"Roger Federer",sport:"Tennis",country:"Switzerland",team:"Individual",position:"Singles",status:"Retired",titles:20},
+        {name:"Carlos Alcaraz",sport:"Tennis",country:"Spain",team:"Individual",position:"Singles",status:"Active",titles:4},
+        {name:"Jannik Sinner",sport:"Tennis",country:"Italy",team:"Individual",position:"Singles",status:"Active",titles:3},
+        {name:"Daniil Medvedev",sport:"Tennis",country:"Russia",team:"Individual",position:"Singles",status:"Active",titles:1},
+        {name:"Alexander Zverev",sport:"Tennis",country:"Germany",team:"Individual",position:"Singles",status:"Active",titles:0},
+        {name:"Stefanos Tsitsipas",sport:"Tennis",country:"Greece",team:"Individual",position:"Singles",status:"Active",titles:0},
+        {name:"Andy Murray",sport:"Tennis",country:"UK",team:"Individual",position:"Singles",status:"Active",titles:3},
+        {name:"Pete Sampras",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:14},
+        {name:"Andre Agassi",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:8},
+        {name:"Boris Becker",sport:"Tennis",country:"Germany",team:"Individual",position:"Singles",status:"Retired",titles:6},
+        {name:"John McEnroe",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:7},
+        {name:"Bjorn Borg",sport:"Tennis",country:"Sweden",team:"Individual",position:"Singles",status:"Retired",titles:11},
+        {name:"Serena Williams",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:23},
+        {name:"Venus Williams",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Active",titles:7},
+        {name:"Naomi Osaka",sport:"Tennis",country:"Japan",team:"Individual",position:"Singles",status:"Active",titles:4},
+        {name:"Iga Swiatek",sport:"Tennis",country:"Poland",team:"Individual",position:"Singles",status:"Active",titles:5},
+        {name:"Aryna Sabalenka",sport:"Tennis",country:"Belarus",team:"Individual",position:"Singles",status:"Active",titles:3},
+        {name:"Coco Gauff",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Active",titles:1},
+        {name:"Maria Sharapova",sport:"Tennis",country:"Russia",team:"Individual",position:"Singles",status:"Retired",titles:5},
+        {name:"Steffi Graf",sport:"Tennis",country:"Germany",team:"Individual",position:"Singles",status:"Retired",titles:22},
+        {name:"Martina Navratilova",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:18},
+        {name:"Chris Evert",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:18},
+        {name:"Billie Jean King",sport:"Tennis",country:"USA",team:"Individual",position:"Singles",status:"Retired",titles:12},
+        // Golf
+        {name:"Tiger Woods",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:15},
+        {name:"Rory McIlroy",sport:"Golf",country:"N. Ireland",team:"Individual",position:"Professional",status:"Active",titles:4},
+        {name:"Scottie Scheffler",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:2},
+        {name:"Jon Rahm",sport:"Golf",country:"Spain",team:"Individual",position:"Professional",status:"Active",titles:2},
+        {name:"Brooks Koepka",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:5},
+        {name:"Jordan Spieth",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:3},
+        {name:"Justin Thomas",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:2},
+        {name:"Dustin Johnson",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:2},
+        {name:"Phil Mickelson",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Active",titles:6},
+        {name:"Jack Nicklaus",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Retired",titles:18},
+        {name:"Arnold Palmer",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Retired",titles:7},
+        {name:"Gary Player",sport:"Golf",country:"South Africa",team:"Individual",position:"Professional",status:"Retired",titles:9},
+        {name:"Tom Watson",sport:"Golf",country:"USA",team:"Individual",position:"Professional",status:"Retired",titles:8},
+        {name:"Seve Ballesteros",sport:"Golf",country:"Spain",team:"Individual",position:"Professional",status:"Retired",titles:5},
+        {name:"Nick Faldo",sport:"Golf",country:"UK",team:"Individual",position:"Professional",status:"Retired",titles:6},
+        // Baseball
+        {name:"Shohei Ohtani",sport:"Baseball",country:"Japan",team:"Dodgers",position:"DH/P",status:"Active",titles:1},
+        {name:"Mike Trout",sport:"Baseball",country:"USA",team:"Angels",position:"OF",status:"Active",titles:0},
+        {name:"Mookie Betts",sport:"Baseball",country:"USA",team:"Dodgers",position:"OF",status:"Active",titles:2},
+        {name:"Aaron Judge",sport:"Baseball",country:"USA",team:"Yankees",position:"OF",status:"Active",titles:0},
+        {name:"Ronald Acuna Jr",sport:"Baseball",country:"Venezuela",team:"Braves",position:"OF",status:"Active",titles:0},
+        {name:"Freddie Freeman",sport:"Baseball",country:"USA",team:"Dodgers",position:"1B",status:"Active",titles:2},
+        {name:"Bryce Harper",sport:"Baseball",country:"USA",team:"Phillies",position:"1B",status:"Active",titles:0},
+        {name:"Juan Soto",sport:"Baseball",country:"Dominican Rep",team:"Yankees",position:"OF",status:"Active",titles:1},
+        {name:"Trea Turner",sport:"Baseball",country:"USA",team:"Phillies",position:"SS",status:"Active",titles:1},
+        {name:"Corey Seager",sport:"Baseball",country:"USA",team:"Rangers",position:"SS",status:"Active",titles:2},
+        {name:"Gerrit Cole",sport:"Baseball",country:"USA",team:"Yankees",position:"P",status:"Active",titles:0},
+        {name:"Clayton Kershaw",sport:"Baseball",country:"USA",team:"Dodgers",position:"P",status:"Active",titles:1},
+        {name:"Max Scherzer",sport:"Baseball",country:"USA",team:"Rangers",position:"P",status:"Active",titles:1},
+        {name:"Jacob deGrom",sport:"Baseball",country:"USA",team:"Rangers",position:"P",status:"Active",titles:0},
+        {name:"Justin Verlander",sport:"Baseball",country:"USA",team:"Astros",position:"P",status:"Active",titles:2},
+        {name:"Albert Pujols",sport:"Baseball",country:"Dominican Rep",team:"Cardinals",position:"1B",status:"Retired",titles:2},
+        {name:"Derek Jeter",sport:"Baseball",country:"USA",team:"Yankees",position:"SS",status:"Retired",titles:5},
+        {name:"Mariano Rivera",sport:"Baseball",country:"Panama",team:"Yankees",position:"P",status:"Retired",titles:5},
+        {name:"Ken Griffey Jr",sport:"Baseball",country:"USA",team:"Mariners",position:"OF",status:"Retired",titles:0},
+        {name:"Barry Bonds",sport:"Baseball",country:"USA",team:"Giants",position:"OF",status:"Retired",titles:0},
+        {name:"Alex Rodriguez",sport:"Baseball",country:"USA",team:"Yankees",position:"SS",status:"Retired",titles:1},
+        {name:"David Ortiz",sport:"Baseball",country:"Dominican Rep",team:"Red Sox",position:"DH",status:"Retired",titles:3},
+        {name:"Pedro Martinez",sport:"Baseball",country:"Dominican Rep",team:"Red Sox",position:"P",status:"Retired",titles:1},
+        {name:"Randy Johnson",sport:"Baseball",country:"USA",team:"Diamondbacks",position:"P",status:"Retired",titles:1},
+        {name:"Greg Maddux",sport:"Baseball",country:"USA",team:"Braves",position:"P",status:"Retired",titles:1},
+        {name:"Babe Ruth",sport:"Baseball",country:"USA",team:"Yankees",position:"OF",status:"Retired",titles:7},
+        {name:"Willie Mays",sport:"Baseball",country:"USA",team:"Giants",position:"OF",status:"Retired",titles:1},
+        {name:"Hank Aaron",sport:"Baseball",country:"USA",team:"Braves",position:"OF",status:"Retired",titles:1},
+        {name:"Jackie Robinson",sport:"Baseball",country:"USA",team:"Dodgers",position:"2B",status:"Retired",titles:1},
+        {name:"Lou Gehrig",sport:"Baseball",country:"USA",team:"Yankees",position:"1B",status:"Retired",titles:6},
+        // Hockey
+        {name:"Connor McDavid",sport:"Hockey",country:"Canada",team:"Oilers",position:"Center",status:"Active",titles:0},
+        {name:"Sidney Crosby",sport:"Hockey",country:"Canada",team:"Penguins",position:"Center",status:"Active",titles:3},
+        {name:"Alex Ovechkin",sport:"Hockey",country:"Russia",team:"Capitals",position:"Wing",status:"Active",titles:1},
+        {name:"Nathan MacKinnon",sport:"Hockey",country:"Canada",team:"Avalanche",position:"Center",status:"Active",titles:1},
+        {name:"Auston Matthews",sport:"Hockey",country:"USA",team:"Maple Leafs",position:"Center",status:"Active",titles:0},
+        {name:"Leon Draisaitl",sport:"Hockey",country:"Germany",team:"Oilers",position:"Center",status:"Active",titles:0},
+        {name:"Nikita Kucherov",sport:"Hockey",country:"Russia",team:"Lightning",position:"Wing",status:"Active",titles:2},
+        {name:"David Pastrnak",sport:"Hockey",country:"Czech Rep",team:"Bruins",position:"Wing",status:"Active",titles:0},
+        {name:"Cale Makar",sport:"Hockey",country:"Canada",team:"Avalanche",position:"Defense",status:"Active",titles:1},
+        {name:"Victor Hedman",sport:"Hockey",country:"Sweden",team:"Lightning",position:"Defense",status:"Active",titles:2},
+        {name:"Wayne Gretzky",sport:"Hockey",country:"Canada",team:"Oilers",position:"Center",status:"Retired",titles:4},
+        {name:"Mario Lemieux",sport:"Hockey",country:"Canada",team:"Penguins",position:"Center",status:"Retired",titles:2},
+        {name:"Gordie Howe",sport:"Hockey",country:"Canada",team:"Red Wings",position:"Wing",status:"Retired",titles:4},
+        {name:"Bobby Orr",sport:"Hockey",country:"Canada",team:"Bruins",position:"Defense",status:"Retired",titles:2},
+        {name:"Patrick Roy",sport:"Hockey",country:"Canada",team:"Avalanche",position:"Goalie",status:"Retired",titles:4},
+        {name:"Martin Brodeur",sport:"Hockey",country:"Canada",team:"Devils",position:"Goalie",status:"Retired",titles:3},
+        {name:"Jaromir Jagr",sport:"Hockey",country:"Czech Rep",team:"Penguins",position:"Wing",status:"Retired",titles:2},
+        {name:"Mark Messier",sport:"Hockey",country:"Canada",team:"Rangers",position:"Center",status:"Retired",titles:6},
+        {name:"Steve Yzerman",sport:"Hockey",country:"Canada",team:"Red Wings",position:"Center",status:"Retired",titles:3},
+        {name:"Nicklas Lidstrom",sport:"Hockey",country:"Sweden",team:"Red Wings",position:"Defense",status:"Retired",titles:4},
+        // Boxing/MMA
+        {name:"Muhammad Ali",sport:"Boxing",country:"USA",team:"Individual",position:"Heavyweight",status:"Retired",titles:3},
+        {name:"Mike Tyson",sport:"Boxing",country:"USA",team:"Individual",position:"Heavyweight",status:"Retired",titles:3},
+        {name:"Floyd Mayweather",sport:"Boxing",country:"USA",team:"Individual",position:"Welterweight",status:"Retired",titles:5},
+        {name:"Manny Pacquiao",sport:"Boxing",country:"Philippines",team:"Individual",position:"Welterweight",status:"Retired",titles:8},
+        {name:"Canelo Alvarez",sport:"Boxing",country:"Mexico",team:"Individual",position:"Middleweight",status:"Active",titles:4},
+        {name:"Tyson Fury",sport:"Boxing",country:"UK",team:"Individual",position:"Heavyweight",status:"Active",titles:2},
+        {name:"Anthony Joshua",sport:"Boxing",country:"UK",team:"Individual",position:"Heavyweight",status:"Active",titles:2},
+        {name:"Oleksandr Usyk",sport:"Boxing",country:"Ukraine",team:"Individual",position:"Heavyweight",status:"Active",titles:4},
+        {name:"Deontay Wilder",sport:"Boxing",country:"USA",team:"Individual",position:"Heavyweight",status:"Active",titles:1},
+        {name:"Oscar De La Hoya",sport:"Boxing",country:"USA",team:"Individual",position:"Welterweight",status:"Retired",titles:6},
+        {name:"Sugar Ray Leonard",sport:"Boxing",country:"USA",team:"Individual",position:"Welterweight",status:"Retired",titles:5},
+        {name:"Lennox Lewis",sport:"Boxing",country:"UK",team:"Individual",position:"Heavyweight",status:"Retired",titles:3},
+        {name:"Evander Holyfield",sport:"Boxing",country:"USA",team:"Individual",position:"Heavyweight",status:"Retired",titles:4},
+        {name:"George Foreman",sport:"Boxing",country:"USA",team:"Individual",position:"Heavyweight",status:"Retired",titles:2},
+        {name:"Joe Frazier",sport:"Boxing",country:"USA",team:"Individual",position:"Heavyweight",status:"Retired",titles:1},
+        {name:"Conor McGregor",sport:"MMA",country:"Ireland",team:"UFC",position:"Lightweight",status:"Active",titles:2},
+        {name:"Khabib Nurmagomedov",sport:"MMA",country:"Russia",team:"UFC",position:"Lightweight",status:"Retired",titles:1},
+        {name:"Jon Jones",sport:"MMA",country:"USA",team:"UFC",position:"Heavyweight",status:"Active",titles:2},
+        {name:"Israel Adesanya",sport:"MMA",country:"Nigeria",team:"UFC",position:"Middleweight",status:"Active",titles:1},
+        {name:"Amanda Nunes",sport:"MMA",country:"Brazil",team:"UFC",position:"Bantamweight",status:"Retired",titles:2},
+        {name:"Ronda Rousey",sport:"MMA",country:"USA",team:"UFC",position:"Bantamweight",status:"Retired",titles:1},
+        {name:"Georges St-Pierre",sport:"MMA",country:"Canada",team:"UFC",position:"Welterweight",status:"Retired",titles:2},
+        {name:"Anderson Silva",sport:"MMA",country:"Brazil",team:"UFC",position:"Middleweight",status:"Retired",titles:1},
+        {name:"Daniel Cormier",sport:"MMA",country:"USA",team:"UFC",position:"Heavyweight",status:"Retired",titles:2},
+        {name:"Dustin Poirier",sport:"MMA",country:"USA",team:"UFC",position:"Lightweight",status:"Active",titles:0},
+        // Track & Field / Olympics
+        {name:"Usain Bolt",sport:"Track",country:"Jamaica",team:"Individual",position:"Sprinter",status:"Retired",titles:8},
+        {name:"Carl Lewis",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Retired",titles:9},
+        {name:"Jesse Owens",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Retired",titles:4},
+        {name:"Michael Johnson",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Retired",titles:4},
+        {name:"Mo Farah",sport:"Track",country:"UK",team:"Individual",position:"Distance",status:"Retired",titles:4},
+        {name:"Eliud Kipchoge",sport:"Track",country:"Kenya",team:"Individual",position:"Marathon",status:"Active",titles:2},
+        {name:"Noah Lyles",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Active",titles:3},
+        {name:"Sha'Carri Richardson",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Active",titles:1},
+        {name:"Allyson Felix",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Retired",titles:7},
+        {name:"Florence Griffith-Joyner",sport:"Track",country:"USA",team:"Individual",position:"Sprinter",status:"Retired",titles:3},
+        {name:"Jackie Joyner-Kersee",sport:"Track",country:"USA",team:"Individual",position:"Heptathlon",status:"Retired",titles:3},
+        {name:"Michael Phelps",sport:"Swimming",country:"USA",team:"Individual",position:"Freestyle",status:"Retired",titles:23},
+        {name:"Katie Ledecky",sport:"Swimming",country:"USA",team:"Individual",position:"Freestyle",status:"Active",titles:9},
+        {name:"Caeleb Dressel",sport:"Swimming",country:"USA",team:"Individual",position:"Freestyle",status:"Active",titles:7},
+        {name:"Ryan Lochte",sport:"Swimming",country:"USA",team:"Individual",position:"Freestyle",status:"Retired",titles:6},
+        {name:"Ian Thorpe",sport:"Swimming",country:"Australia",team:"Individual",position:"Freestyle",status:"Retired",titles:5},
+        {name:"Mark Spitz",sport:"Swimming",country:"USA",team:"Individual",position:"Freestyle",status:"Retired",titles:9},
+        {name:"Simone Biles",sport:"Gymnastics",country:"USA",team:"Individual",position:"All-Around",status:"Active",titles:7},
+        {name:"Nadia Comaneci",sport:"Gymnastics",country:"Romania",team:"Individual",position:"All-Around",status:"Retired",titles:5},
+        {name:"Mary Lou Retton",sport:"Gymnastics",country:"USA",team:"Individual",position:"All-Around",status:"Retired",titles:1},
+        // F1 / Racing
+        {name:"Lewis Hamilton",sport:"F1",country:"UK",team:"Mercedes",position:"Driver",status:"Active",titles:7},
+        {name:"Max Verstappen",sport:"F1",country:"Netherlands",team:"Red Bull",position:"Driver",status:"Active",titles:4},
+        {name:"Michael Schumacher",sport:"F1",country:"Germany",team:"Ferrari",position:"Driver",status:"Retired",titles:7},
+        {name:"Ayrton Senna",sport:"F1",country:"Brazil",team:"McLaren",position:"Driver",status:"Retired",titles:3},
+        {name:"Sebastian Vettel",sport:"F1",country:"Germany",team:"Red Bull",position:"Driver",status:"Retired",titles:4},
+        {name:"Fernando Alonso",sport:"F1",country:"Spain",team:"Aston Martin",position:"Driver",status:"Active",titles:2},
+        {name:"Charles Leclerc",sport:"F1",country:"Monaco",team:"Ferrari",position:"Driver",status:"Active",titles:0},
+        {name:"Lando Norris",sport:"F1",country:"UK",team:"McLaren",position:"Driver",status:"Active",titles:0},
+        {name:"George Russell",sport:"F1",country:"UK",team:"Mercedes",position:"Driver",status:"Active",titles:0},
+        {name:"Carlos Sainz",sport:"F1",country:"Spain",team:"Ferrari",position:"Driver",status:"Active",titles:0},
+        {name:"Niki Lauda",sport:"F1",country:"Austria",team:"Ferrari",position:"Driver",status:"Retired",titles:3},
+        {name:"Alain Prost",sport:"F1",country:"France",team:"McLaren",position:"Driver",status:"Retired",titles:4},
+        {name:"Kimi Raikkonen",sport:"F1",country:"Finland",team:"Ferrari",position:"Driver",status:"Retired",titles:1},
+        {name:"Mika Hakkinen",sport:"F1",country:"Finland",team:"McLaren",position:"Driver",status:"Retired",titles:2},
+        {name:"Jenson Button",sport:"F1",country:"UK",team:"Brawn",position:"Driver",status:"Retired",titles:1},
+        // Cricket
+        {name:"Sachin Tendulkar",sport:"Cricket",country:"India",team:"India",position:"Batsman",status:"Retired",titles:1},
+        {name:"Virat Kohli",sport:"Cricket",country:"India",team:"India",position:"Batsman",status:"Active",titles:0},
+        {name:"MS Dhoni",sport:"Cricket",country:"India",team:"India",position:"Wicketkeeper",status:"Retired",titles:2},
+        {name:"Rohit Sharma",sport:"Cricket",country:"India",team:"India",position:"Batsman",status:"Active",titles:0},
+        {name:"Brian Lara",sport:"Cricket",country:"West Indies",team:"West Indies",position:"Batsman",status:"Retired",titles:0},
+        {name:"Ricky Ponting",sport:"Cricket",country:"Australia",team:"Australia",position:"Batsman",status:"Retired",titles:3},
+        {name:"Steve Smith",sport:"Cricket",country:"Australia",team:"Australia",position:"Batsman",status:"Active",titles:1},
+        {name:"Pat Cummins",sport:"Cricket",country:"Australia",team:"Australia",position:"Bowler",status:"Active",titles:2},
+        {name:"Shane Warne",sport:"Cricket",country:"Australia",team:"Australia",position:"Bowler",status:"Retired",titles:1},
+        {name:"Glenn McGrath",sport:"Cricket",country:"Australia",team:"Australia",position:"Bowler",status:"Retired",titles:3},
+        {name:"Jacques Kallis",sport:"Cricket",country:"South Africa",team:"South Africa",position:"All-Rounder",status:"Retired",titles:0},
+        {name:"AB de Villiers",sport:"Cricket",country:"South Africa",team:"South Africa",position:"Batsman",status:"Retired",titles:0},
+        {name:"Kumar Sangakkara",sport:"Cricket",country:"Sri Lanka",team:"Sri Lanka",position:"Wicketkeeper",status:"Retired",titles:1},
+        {name:"Muttiah Muralitharan",sport:"Cricket",country:"Sri Lanka",team:"Sri Lanka",position:"Bowler",status:"Retired",titles:1},
+        {name:"Kane Williamson",sport:"Cricket",country:"New Zealand",team:"New Zealand",position:"Batsman",status:"Active",titles:0},
+        {name:"Ben Stokes",sport:"Cricket",country:"England",team:"England",position:"All-Rounder",status:"Active",titles:1},
+        {name:"Joe Root",sport:"Cricket",country:"England",team:"England",position:"Batsman",status:"Active",titles:0},
+        {name:"James Anderson",sport:"Cricket",country:"England",team:"England",position:"Bowler",status:"Retired",titles:0},
+        {name:"Babar Azam",sport:"Cricket",country:"Pakistan",team:"Pakistan",position:"Batsman",status:"Active",titles:0},
+        {name:"Shaheen Afridi",sport:"Cricket",country:"Pakistan",team:"Pakistan",position:"Bowler",status:"Active",titles:0}
+    ];
+
+    let todayAthlete = null;
+    let guesses = [];
+    let gameOver = false;
+    const MAX_GUESSES = 6;
+
+    function getDailyAthlete() {
+        const today = new Date().toISOString().split('T')[0];
+        const seed = today.split('-').join('');
+        const index = parseInt(seed) % ATHLETES.length;
+        return ATHLETES[index];
+    }
+
+    function loadStats() {
+        const stats = JSON.parse(localStorage.getItem('athletedle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        document.getElementById('streak').textContent = stats.streak;
+        document.getElementById('played').textContent = stats.played;
+        document.getElementById('win-rate').textContent = stats.played ? Math.round((stats.wins/stats.played)*100) + '%' : '0%';
+        return stats;
+    }
+
+    function saveStats(won) {
+        const today = new Date().toISOString().split('T')[0];
+        let stats = JSON.parse(localStorage.getItem('athletedle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        
+        if (stats.lastPlayed !== today) {
+            stats.played++;
+            if (won) {
+                stats.wins++;
+                stats.streak = stats.lastPlayed === getYesterday() ? stats.streak + 1 : 1;
+            } else {
+                stats.streak = 0;
+            }
+            stats.lastPlayed = today;
+            localStorage.setItem('athletedle_stats', JSON.stringify(stats));
+        }
+        loadStats();
+    }
+
+    function getYesterday() {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+
+    function loadGameState() {
+        const today = new Date().toISOString().split('T')[0];
+        const saved = JSON.parse(localStorage.getItem('athletedle_state') || '{}');
+        if (saved.date === today) {
+            guesses = saved.guesses || [];
+            gameOver = saved.gameOver || false;
+            guesses.forEach(g => renderGuess(g));
+            if (gameOver) showGameOver(saved.won);
+        }
+    }
+
+    function saveGameState(won = false) {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('athletedle_state', JSON.stringify({
+            date: today,
+            guesses: guesses,
+            gameOver: gameOver,
+            won: won
+        }));
+    }
+
+    function compareAttr(guess, answer, attr) {
+        if (attr === 'titles') {
+            if (guess === answer) return { status: 'correct', dir: '' };
+            return { status: 'wrong', dir: guess < answer ? 'higher' : 'lower' };
+        }
+        if (guess === answer) return { status: 'correct', dir: '' };
+        if (attr === 'sport' && guess === answer) return { status: 'partial', dir: '' };
+        return { status: 'wrong', dir: '' };
+    }
+
+    function renderGuess(athlete) {
+        const row = document.createElement('div');
+        row.className = 'guess-row';
+        
+        const attrs = ['sport', 'country', 'team', 'position', 'status', 'titles'];
+        attrs.forEach(attr => {
+            const cell = document.createElement('div');
+            cell.className = 'guess-cell';
+            const result = compareAttr(athlete[attr], todayAthlete[attr], attr);
+            cell.classList.add(result.status);
+            if (result.dir) cell.classList.add(result.dir);
+            cell.textContent = athlete[attr];
+            row.appendChild(cell);
+        });
+        
+        document.getElementById('guesses').appendChild(row);
+    }
+
+    function showGameOver(won) {
+        const container = document.getElementById('game-over');
+        container.innerHTML = `
+            <div class="game-over ${won ? 'win' : 'lose'}">
+                <h2>${won ? '🏆 YOU GOT IT!' : '😔 GAME OVER'}</h2>
+                <p class="answer-reveal">The answer was <strong>${todayAthlete.name}</strong></p>
+                <button class="share-btn" onclick="shareResult()">Share Result</button>
+            </div>
+        `;
+        document.getElementById('search').disabled = true;
+    }
+
+    function shareResult() {
+        const won = guesses.some(g => g.name === todayAthlete.name);
+        const result = guesses.map(g => {
+            const attrs = ['sport', 'country', 'team', 'position', 'status', 'titles'];
+            return attrs.map(attr => {
+                const r = compareAttr(g[attr], todayAthlete[attr], attr);
+                return r.status === 'correct' ? '🟩' : r.status === 'partial' ? '🟨' : '🟥';
+            }).join('');
+        }).join('\n');
+        
+        const text = `Athletedle ${new Date().toISOString().split('T')[0]}\n${won ? guesses.length : 'X'}/${MAX_GUESSES}\n\n${result}\n\nPlay at thegaming.co/athletedle.html`;
+        
+        if (navigator.share) {
+            navigator.share({ text });
+        } else {
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard!');
+        }
+    }
+
+    function handleGuess(athlete) {
+        if (gameOver || guesses.find(g => g.name === athlete.name)) return;
+        
+        guesses.push(athlete);
+        renderGuess(athlete);
+        
+        const won = athlete.name === todayAthlete.name;
+        if (won || guesses.length >= MAX_GUESSES) {
+            gameOver = true;
+            saveStats(won);
+            saveGameState(won);
+            setTimeout(() => showGameOver(won), 500);
+        } else {
+            saveGameState();
+        }
+        
+        document.getElementById('search').value = '';
+        document.getElementById('suggestions').classList.remove('show');
+    }
+
+    function updateTimer() {
+        const now = new Date();
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+        const diff = tomorrow - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer').textContent = `Next puzzle in: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    const searchInput = document.getElementById('search');
+    const suggestionsEl = document.getElementById('suggestions');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 2) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        const guessedNames = guesses.map(g => g.name);
+        const matches = ATHLETES.filter(a => 
+            a.name.toLowerCase().includes(query) && !guessedNames.includes(a.name)
+        ).slice(0, 8);
+        
+        if (matches.length === 0) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        suggestionsEl.innerHTML = matches.map(a => 
+            `<div class="suggestion" data-name="${a.name}">${a.name}</div>`
+        ).join('');
+        suggestionsEl.classList.add('show');
+    });
+
+    suggestionsEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('suggestion')) {
+            const name = e.target.dataset.name;
+            const athlete = ATHLETES.find(a => a.name === name);
+            if (athlete) handleGuess(athlete);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-box')) {
+            suggestionsEl.classList.remove('show');
+        }
+    });
+
+    todayAthlete = getDailyAthlete();
+    loadStats();
+    loadGameState();
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>

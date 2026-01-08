@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Weebdle - Daily Anime Guessing | TheGaming.co</title>
+    <meta name="description" content="Guess the anime from attributes. New puzzle daily!">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#0a0a0f;--green:#22c55e;--yellow:#eab308;--red:#ef4444}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;padding-top:60px;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        
+        .page{min-height:calc(100vh - 60px);position:relative}
+        .page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,107,157,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(79,172,254,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(168,85,247,0.1) 0%,transparent 50%);pointer-events:none}
+        
+        .container{max-width:900px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+        
+        .header{text-align:center;margin-bottom:40px}
+        .title{font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .subtitle{color:rgba(255,255,255,0.6);font-size:1rem}
+        
+        .stats-bar{display:flex;justify-content:center;gap:32px;margin-bottom:32px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+        .stat{text-align:center}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff}
+        .stat-label{font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+        
+        .game-area{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:24px}
+        
+        .search-box{position:relative;margin-bottom:24px}
+        .search-input{width:100%;padding:16px 20px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:1rem;font-family:'Inter',sans-serif;transition:border-color 0.2s}
+        .search-input:focus{outline:none;border-color:var(--pink)}
+        .search-input::placeholder{color:rgba(255,255,255,0.3)}
+        .search-input:disabled{opacity:0.5;cursor:not-allowed}
+        
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;margin-top:4px;max-height:240px;overflow-y:auto;display:none;z-index:100}
+        .suggestions.show{display:block}
+        .suggestion{padding:12px 16px;cursor:pointer;transition:background 0.15s;font-size:0.95rem}
+        .suggestion:hover{background:rgba(255,255,255,0.08)}
+        .suggestion:first-child{border-radius:12px 12px 0 0}
+        .suggestion:last-child{border-radius:0 0 12px 12px}
+        
+        .attributes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+        .attr-header{padding:10px 4px;text-align:center;font-size:0.65rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px}
+        
+        .guesses{display:flex;flex-direction:column;gap:8px}
+        .guess-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;animation:slideIn 0.3s ease}
+        @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+        
+        .guess-cell{padding:12px 4px;text-align:center;border-radius:8px;font-size:0.7rem;font-weight:600;transition:all 0.3s;line-height:1.3}
+        .guess-cell.correct{background:var(--green);color:#fff}
+        .guess-cell.partial{background:var(--yellow);color:#000}
+        .guess-cell.wrong{background:var(--red);color:#fff}
+        .guess-cell.higher::after{content:' ↑';font-size:0.6rem}
+        .guess-cell.lower::after{content:' ↓';font-size:0.6rem}
+        
+        .game-over{text-align:center;padding:32px;animation:fadeIn 0.5s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .game-over h2{font-size:2rem;margin-bottom:8px}
+        .game-over.win h2{color:var(--green)}
+        .game-over.lose h2{color:var(--red)}
+        .answer-reveal{font-size:1.2rem;color:rgba(255,255,255,0.8);margin-bottom:24px}
+        .answer-reveal strong{color:#fff}
+        
+        .share-btn{padding:14px 32px;background:linear-gradient(135deg,var(--pink),var(--purple));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+        .share-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,157,0.4)}
+        
+        .how-to-play{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px}
+        .how-to-play h3{font-size:1.3rem;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .how-to-play p{color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.7;margin-bottom:12px}
+        .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:0.85rem;color:rgba(255,255,255,0.7)}
+        .legend-box{width:20px;height:20px;border-radius:4px}
+        .legend-box.green{background:var(--green)}
+        .legend-box.yellow{background:var(--yellow)}
+        .legend-box.red{background:var(--red)}
+        
+        .timer{font-size:0.85rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:24px}
+        
+        @media(max-width:600px){
+            .container{padding:24px 12px 60px}
+            .attributes{grid-template-columns:repeat(5,1fr);gap:4px}
+            .attr-header{font-size:0.5rem;padding:8px 2px}
+            .guess-row{gap:4px}
+            .guess-cell{padding:8px 2px;font-size:0.55rem}
+            .stats-bar{gap:16px;padding:12px}
+            .stat-value{font-size:1.2rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    
+    <div class="page">
+        <div class="container">
+            <div class="header">
+                <h1 class="title">WEEBDLE</h1>
+                <p class="subtitle">Guess the anime in 6 tries</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="streak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="played">0</div>
+                    <div class="stat-label">Played</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="win-rate">0%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+            
+            <div class="game-area">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="search" placeholder="Type an anime name..." autocomplete="off">
+                    <div class="suggestions" id="suggestions"></div>
+                </div>
+                
+                <div class="attributes">
+                    <div class="attr-header">Year</div>
+                    <div class="attr-header">Studio</div>
+                    <div class="attr-header">Genre</div>
+                    <div class="attr-header">Episodes</div>
+                    <div class="attr-header">Source</div>
+                </div>
+                
+                <div class="guesses" id="guesses"></div>
+                <div id="game-over"></div>
+            </div>
+            
+            <div class="how-to-play">
+                <h3>HOW TO PLAY</h3>
+                <p>Guess the anime in 6 tries. After each guess, you'll see how close you are based on attributes like year, studio, genre, and more.</p>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-box green"></div> Correct</div>
+                    <div class="legend-item"><div class="legend-box yellow"></div> Close</div>
+                    <div class="legend-item"><div class="legend-box red"></div> Wrong</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">Next puzzle in: --:--:--</div>
+        </div>
+    </div>
+    
+    <script src="/header.js"></script>
+    <script>
+    const ANIME = [
+        // Classics
+        {name:"Neon Genesis Evangelion",year:1995,studio:"Gainax",genre:"Mecha",episodes:26,source:"Original"},
+        {name:"Cowboy Bebop",year:1998,studio:"Sunrise",genre:"Sci-Fi",episodes:26,source:"Original"},
+        {name:"Trigun",year:1998,studio:"Madhouse",genre:"Action",episodes:26,source:"Manga"},
+        {name:"Berserk",year:1997,studio:"OLM",genre:"Dark Fantasy",episodes:25,source:"Manga"},
+        {name:"Serial Experiments Lain",year:1998,studio:"Triangle Staff",genre:"Psychological",episodes:13,source:"Original"},
+        {name:"Ghost in the Shell: SAC",year:2002,studio:"Production I.G",genre:"Sci-Fi",episodes:26,source:"Manga"},
+        {name:"FLCL",year:2000,studio:"Gainax",genre:"Action",episodes:6,source:"Original"},
+        {name:"Akira",year:1988,studio:"TMS Entertainment",genre:"Sci-Fi",episodes:1,source:"Manga"},
+        {name:"Perfect Blue",year:1997,studio:"Madhouse",genre:"Psychological",episodes:1,source:"Novel"},
+        {name:"Paprika",year:2006,studio:"Madhouse",genre:"Sci-Fi",episodes:1,source:"Novel"},
+        {name:"Spirited Away",year:2001,studio:"Ghibli",genre:"Fantasy",episodes:1,source:"Original"},
+        {name:"Princess Mononoke",year:1997,studio:"Ghibli",genre:"Fantasy",episodes:1,source:"Original"},
+        {name:"My Neighbor Totoro",year:1988,studio:"Ghibli",genre:"Fantasy",episodes:1,source:"Original"},
+        {name:"Howl's Moving Castle",year:2004,studio:"Ghibli",genre:"Fantasy",episodes:1,source:"Novel"},
+        {name:"Grave of the Fireflies",year:1988,studio:"Ghibli",genre:"Drama",episodes:1,source:"Novel"},
+        {name:"Nausicaä of the Valley of the Wind",year:1984,studio:"Topcraft",genre:"Fantasy",episodes:1,source:"Manga"},
+        {name:"Castle in the Sky",year:1986,studio:"Ghibli",genre:"Adventure",episodes:1,source:"Original"},
+        {name:"Kiki's Delivery Service",year:1989,studio:"Ghibli",genre:"Fantasy",episodes:1,source:"Novel"},
+        {name:"Porco Rosso",year:1992,studio:"Ghibli",genre:"Adventure",episodes:1,source:"Manga"},
+        {name:"The Wind Rises",year:2013,studio:"Ghibli",genre:"Drama",episodes:1,source:"Manga"},
+        // Shonen Big 3
+        {name:"Naruto",year:2002,studio:"Pierrot",genre:"Action",episodes:220,source:"Manga"},
+        {name:"Naruto Shippuden",year:2007,studio:"Pierrot",genre:"Action",episodes:500,source:"Manga"},
+        {name:"Bleach",year:2004,studio:"Pierrot",genre:"Action",episodes:366,source:"Manga"},
+        {name:"Bleach: TYBW",year:2022,studio:"Pierrot",genre:"Action",episodes:26,source:"Manga"},
+        {name:"One Piece",year:1999,studio:"Toei",genre:"Adventure",episodes:1000,source:"Manga"},
+        // New Gen Shonen
+        {name:"My Hero Academia",year:2016,studio:"Bones",genre:"Action",episodes:138,source:"Manga"},
+        {name:"Demon Slayer",year:2019,studio:"ufotable",genre:"Action",episodes:44,source:"Manga"},
+        {name:"Jujutsu Kaisen",year:2020,studio:"MAPPA",genre:"Action",episodes:47,source:"Manga"},
+        {name:"Chainsaw Man",year:2022,studio:"MAPPA",genre:"Action",episodes:12,source:"Manga"},
+        {name:"Spy x Family",year:2022,studio:"Wit/CloverWorks",genre:"Comedy",episodes:37,source:"Manga"},
+        {name:"Black Clover",year:2017,studio:"Pierrot",genre:"Action",episodes:170,source:"Manga"},
+        {name:"Fire Force",year:2019,studio:"David Production",genre:"Action",episodes:48,source:"Manga"},
+        {name:"Dr. Stone",year:2019,studio:"TMS Entertainment",genre:"Sci-Fi",episodes:35,source:"Manga"},
+        {name:"The Promised Neverland",year:2019,studio:"CloverWorks",genre:"Thriller",episodes:23,source:"Manga"},
+        {name:"Tokyo Revengers",year:2021,studio:"Liden Films",genre:"Action",episodes:49,source:"Manga"},
+        {name:"Blue Lock",year:2022,studio:"8bit",genre:"Sports",episodes:24,source:"Manga"},
+        {name:"Haikyuu!!",year:2014,studio:"Production I.G",genre:"Sports",episodes:85,source:"Manga"},
+        {name:"Kuroko's Basketball",year:2012,studio:"Production I.G",genre:"Sports",episodes:75,source:"Manga"},
+        {name:"Slam Dunk",year:1993,studio:"Toei",genre:"Sports",episodes:101,source:"Manga"},
+        {name:"Hajime no Ippo",year:2000,studio:"Madhouse",genre:"Sports",episodes:127,source:"Manga"},
+        // Classic Shonen
+        {name:"Dragon Ball",year:1986,studio:"Toei",genre:"Action",episodes:153,source:"Manga"},
+        {name:"Dragon Ball Z",year:1989,studio:"Toei",genre:"Action",episodes:291,source:"Manga"},
+        {name:"Dragon Ball Super",year:2015,studio:"Toei",genre:"Action",episodes:131,source:"Manga"},
+        {name:"Yu Yu Hakusho",year:1992,studio:"Pierrot",genre:"Action",episodes:112,source:"Manga"},
+        {name:"Hunter x Hunter (2011)",year:2011,studio:"Madhouse",genre:"Action",episodes:148,source:"Manga"},
+        {name:"Hunter x Hunter (1999)",year:1999,studio:"Nippon Animation",genre:"Action",episodes:62,source:"Manga"},
+        {name:"Rurouni Kenshin",year:1996,studio:"Gallop",genre:"Action",episodes:95,source:"Manga"},
+        {name:"InuYasha",year:2000,studio:"Sunrise",genre:"Fantasy",episodes:167,source:"Manga"},
+        {name:"Fullmetal Alchemist",year:2003,studio:"Bones",genre:"Action",episodes:51,source:"Manga"},
+        {name:"Fullmetal Alchemist: Brotherhood",year:2009,studio:"Bones",genre:"Action",episodes:64,source:"Manga"},
+        {name:"Soul Eater",year:2008,studio:"Bones",genre:"Action",episodes:51,source:"Manga"},
+        {name:"D.Gray-man",year:2006,studio:"TMS Entertainment",genre:"Action",episodes:103,source:"Manga"},
+        {name:"Blue Exorcist",year:2011,studio:"A-1 Pictures",genre:"Action",episodes:37,source:"Manga"},
+        {name:"Fairy Tail",year:2009,studio:"A-1 Pictures",genre:"Fantasy",episodes:328,source:"Manga"},
+        {name:"Seven Deadly Sins",year:2014,studio:"A-1 Pictures",genre:"Fantasy",episodes:100,source:"Manga"},
+        {name:"Magi",year:2012,studio:"A-1 Pictures",genre:"Fantasy",episodes:50,source:"Manga"},
+        // Seinen
+        {name:"Attack on Titan",year:2013,studio:"Wit/MAPPA",genre:"Action",episodes:88,source:"Manga"},
+        {name:"Vinland Saga",year:2019,studio:"Wit",genre:"Action",episodes:48,source:"Manga"},
+        {name:"Tokyo Ghoul",year:2014,studio:"Pierrot",genre:"Horror",episodes:48,source:"Manga"},
+        {name:"Parasyte",year:2014,studio:"Madhouse",genre:"Horror",episodes:24,source:"Manga"},
+        {name:"Monster",year:2004,studio:"Madhouse",genre:"Thriller",episodes:74,source:"Manga"},
+        {name:"Death Note",year:2006,studio:"Madhouse",genre:"Thriller",episodes:37,source:"Manga"},
+        {name:"Psycho-Pass",year:2012,studio:"Production I.G",genre:"Sci-Fi",episodes:41,source:"Original"},
+        {name:"Steins;Gate",year:2011,studio:"White Fox",genre:"Sci-Fi",episodes:24,source:"Visual Novel"},
+        {name:"Steins;Gate 0",year:2018,studio:"White Fox",genre:"Sci-Fi",episodes:23,source:"Visual Novel"},
+        {name:"Made in Abyss",year:2017,studio:"Kinema Citrus",genre:"Fantasy",episodes:25,source:"Manga"},
+        {name:"Land of the Lustrous",year:2017,studio:"Orange",genre:"Fantasy",episodes:12,source:"Manga"},
+        {name:"Dorohedoro",year:2020,studio:"MAPPA",genre:"Dark Fantasy",episodes:12,source:"Manga"},
+        {name:"Mob Psycho 100",year:2016,studio:"Bones",genre:"Action",episodes:37,source:"Manga"},
+        {name:"One Punch Man",year:2015,studio:"Madhouse",genre:"Action",episodes:24,source:"Manga"},
+        {name:"Hellsing Ultimate",year:2006,studio:"Madhouse",genre:"Horror",episodes:10,source:"Manga"},
+        {name:"Baccano!",year:2007,studio:"Brain's Base",genre:"Action",episodes:16,source:"Light Novel"},
+        {name:"Durarara!!",year:2010,studio:"Brain's Base",genre:"Action",episodes:60,source:"Light Novel"},
+        {name:"91 Days",year:2016,studio:"Shuka",genre:"Action",episodes:12,source:"Original"},
+        {name:"Banana Fish",year:2018,studio:"MAPPA",genre:"Action",episodes:24,source:"Manga"},
+        {name:"Golden Kamuy",year:2018,studio:"Geno Studio",genre:"Adventure",episodes:48,source:"Manga"},
+        {name:"Kingdom",year:2012,studio:"Pierrot",genre:"Action",episodes:100,source:"Manga"},
+        // Isekai
+        {name:"Sword Art Online",year:2012,studio:"A-1 Pictures",genre:"Isekai",episodes:96,source:"Light Novel"},
+        {name:"Re:Zero",year:2016,studio:"White Fox",genre:"Isekai",episodes:50,source:"Light Novel"},
+        {name:"Konosuba",year:2016,studio:"Studio Deen",genre:"Isekai",episodes:20,source:"Light Novel"},
+        {name:"Overlord",year:2015,studio:"Madhouse",genre:"Isekai",episodes:52,source:"Light Novel"},
+        {name:"No Game No Life",year:2014,studio:"Madhouse",genre:"Isekai",episodes:12,source:"Light Novel"},
+        {name:"That Time I Got Reincarnated as a Slime",year:2018,studio:"8bit",genre:"Isekai",episodes:48,source:"Light Novel"},
+        {name:"The Rising of the Shield Hero",year:2019,studio:"Kinema Citrus",genre:"Isekai",episodes:51,source:"Light Novel"},
+        {name:"Mushoku Tensei",year:2021,studio:"Bind",genre:"Isekai",episodes:35,source:"Light Novel"},
+        {name:"Log Horizon",year:2013,studio:"Satelight",genre:"Isekai",episodes:62,source:"Light Novel"},
+        {name:"The Devil is a Part-Timer!",year:2013,studio:"White Fox",genre:"Isekai",episodes:37,source:"Light Novel"},
+        {name:"Grimgar of Fantasy and Ash",year:2016,studio:"A-1 Pictures",genre:"Isekai",episodes:12,source:"Light Novel"},
+        {name:"Cautious Hero",year:2019,studio:"White Fox",genre:"Isekai",episodes:12,source:"Light Novel"},
+        {name:"So I'm a Spider, So What?",year:2021,studio:"Millepensee",genre:"Isekai",episodes:24,source:"Light Novel"},
+        {name:"Saga of Tanya the Evil",year:2017,studio:"NUT",genre:"Isekai",episodes:12,source:"Light Novel"},
+        {name:"In Another World with My Smartphone",year:2017,studio:"Production Reed",genre:"Isekai",episodes:24,source:"Light Novel"},
+        {name:"How Not to Summon a Demon Lord",year:2018,studio:"Ajia-Do",genre:"Isekai",episodes:22,source:"Light Novel"},
+        {name:"Arifureta",year:2019,studio:"Asread",genre:"Isekai",episodes:25,source:"Light Novel"},
+        // Romance/Drama
+        {name:"Your Name",year:2016,studio:"CoMix Wave",genre:"Romance",episodes:1,source:"Original"},
+        {name:"Weathering With You",year:2019,studio:"CoMix Wave",genre:"Romance",episodes:1,source:"Original"},
+        {name:"A Silent Voice",year:2016,studio:"Kyoto Animation",genre:"Drama",episodes:1,source:"Manga"},
+        {name:"Your Lie in April",year:2014,studio:"A-1 Pictures",genre:"Romance",episodes:22,source:"Manga"},
+        {name:"Clannad",year:2007,studio:"Kyoto Animation",genre:"Romance",episodes:23,source:"Visual Novel"},
+        {name:"Clannad: After Story",year:2008,studio:"Kyoto Animation",genre:"Drama",episodes:24,source:"Visual Novel"},
+        {name:"Toradora!",year:2008,studio:"J.C.Staff",genre:"Romance",episodes:25,source:"Light Novel"},
+        {name:"Anohana",year:2011,studio:"A-1 Pictures",genre:"Drama",episodes:11,source:"Original"},
+        {name:"Angel Beats!",year:2010,studio:"P.A.Works",genre:"Drama",episodes:13,source:"Original"},
+        {name:"Violet Evergarden",year:2018,studio:"Kyoto Animation",genre:"Drama",episodes:13,source:"Light Novel"},
+        {name:"Fruits Basket (2019)",year:2019,studio:"TMS Entertainment",genre:"Romance",episodes:63,source:"Manga"},
+        {name:"Ouran High School Host Club",year:2006,studio:"Bones",genre:"Romance",episodes:26,source:"Manga"},
+        {name:"Kaguya-sama: Love is War",year:2019,studio:"A-1 Pictures",genre:"Romance",episodes:37,source:"Manga"},
+        {name:"My Dress-Up Darling",year:2022,studio:"CloverWorks",genre:"Romance",episodes:12,source:"Manga"},
+        {name:"Horimiya",year:2021,studio:"CloverWorks",genre:"Romance",episodes:13,source:"Manga"},
+        {name:"Quintessential Quintuplets",year:2019,studio:"Tezuka Productions",genre:"Romance",episodes:36,source:"Manga"},
+        {name:"Rent-a-Girlfriend",year:2020,studio:"TMS Entertainment",genre:"Romance",episodes:37,source:"Manga"},
+        {name:"Nisekoi",year:2014,studio:"Shaft",genre:"Romance",episodes:32,source:"Manga"},
+        {name:"Bunny Girl Senpai",year:2018,studio:"CloverWorks",genre:"Romance",episodes:13,source:"Light Novel"},
+        {name:"Oregairu",year:2013,studio:"Brain's Base",genre:"Romance",episodes:38,source:"Light Novel"},
+        {name:"Plastic Memories",year:2015,studio:"Doga Kobo",genre:"Romance",episodes:13,source:"Original"},
+        {name:"ReLIFE",year:2016,studio:"TMS Entertainment",genre:"Romance",episodes:17,source:"Manga"},
+        {name:"Wotakoi",year:2018,studio:"A-1 Pictures",genre:"Romance",episodes:11,source:"Manga"},
+        {name:"Golden Time",year:2013,studio:"J.C.Staff",genre:"Romance",episodes:24,source:"Light Novel"},
+        {name:"Bloom Into You",year:2018,studio:"Troyca",genre:"Romance",episodes:13,source:"Manga"},
+        // Comedy/Slice of Life
+        {name:"Gintama",year:2006,studio:"Sunrise",genre:"Comedy",episodes:367,source:"Manga"},
+        {name:"Nichijou",year:2011,studio:"Kyoto Animation",genre:"Comedy",episodes:26,source:"Manga"},
+        {name:"K-On!",year:2009,studio:"Kyoto Animation",genre:"Slice of Life",episodes:41,source:"Manga"},
+        {name:"Lucky Star",year:2007,studio:"Kyoto Animation",genre:"Comedy",episodes:24,source:"Manga"},
+        {name:"The Melancholy of Haruhi Suzumiya",year:2006,studio:"Kyoto Animation",genre:"Sci-Fi",episodes:28,source:"Light Novel"},
+        {name:"Hyouka",year:2012,studio:"Kyoto Animation",genre:"Mystery",episodes:22,source:"Light Novel"},
+        {name:"Miss Kobayashi's Dragon Maid",year:2017,studio:"Kyoto Animation",genre:"Comedy",episodes:37,source:"Manga"},
+        {name:"Daily Lives of High School Boys",year:2012,studio:"Sunrise",genre:"Comedy",episodes:12,source:"Manga"},
+        {name:"Grand Blue",year:2018,studio:"Zero-G",genre:"Comedy",episodes:12,source:"Manga"},
+        {name:"Asobi Asobase",year:2018,studio:"Lerche",genre:"Comedy",episodes:12,source:"Manga"},
+        {name:"Hinamatsuri",year:2018,studio:"Feel",genre:"Comedy",episodes:12,source:"Manga"},
+        {name:"Aho Girl",year:2017,studio:"Diomedea",genre:"Comedy",episodes:12,source:"Manga"},
+        {name:"Konosuba",year:2016,studio:"Studio Deen",genre:"Comedy",episodes:22,source:"Light Novel"},
+        {name:"Komi Can't Communicate",year:2021,studio:"OLM",genre:"Comedy",episodes:36,source:"Manga"},
+        {name:"Bocchi the Rock!",year:2022,studio:"CloverWorks",genre:"Slice of Life",episodes:12,source:"Manga"},
+        {name:"Laid-Back Camp",year:2018,studio:"C-Station",genre:"Slice of Life",episodes:38,source:"Manga"},
+        {name:"Non Non Biyori",year:2013,studio:"Silver Link",genre:"Slice of Life",episodes:36,source:"Manga"},
+        {name:"Barakamon",year:2014,studio:"Kinema Citrus",genre:"Slice of Life",episodes:12,source:"Manga"},
+        {name:"Silver Spoon",year:2013,studio:"A-1 Pictures",genre:"Slice of Life",episodes:22,source:"Manga"},
+        {name:"March Comes in Like a Lion",year:2016,studio:"Shaft",genre:"Drama",episodes:44,source:"Manga"},
+        {name:"Sakamoto desu ga?",year:2016,studio:"Studio Deen",genre:"Comedy",episodes:12,source:"Manga"},
+        // Mecha
+        {name:"Code Geass",year:2006,studio:"Sunrise",genre:"Mecha",episodes:50,source:"Original"},
+        {name:"Gurren Lagann",year:2007,studio:"Gainax",genre:"Mecha",episodes:27,source:"Original"},
+        {name:"Mobile Suit Gundam",year:1979,studio:"Sunrise",genre:"Mecha",episodes:43,source:"Original"},
+        {name:"Mobile Suit Gundam Wing",year:1995,studio:"Sunrise",genre:"Mecha",episodes:49,source:"Original"},
+        {name:"Mobile Suit Gundam SEED",year:2002,studio:"Sunrise",genre:"Mecha",episodes:50,source:"Original"},
+        {name:"Mobile Suit Gundam 00",year:2007,studio:"Sunrise",genre:"Mecha",episodes:50,source:"Original"},
+        {name:"Iron-Blooded Orphans",year:2015,studio:"Sunrise",genre:"Mecha",episodes:50,source:"Original"},
+        {name:"The Witch from Mercury",year:2022,studio:"Sunrise",genre:"Mecha",episodes:24,source:"Original"},
+        {name:"Aldnoah.Zero",year:2014,studio:"A-1 Pictures",genre:"Mecha",episodes:24,source:"Original"},
+        {name:"Eureka Seven",year:2005,studio:"Bones",genre:"Mecha",episodes:50,source:"Original"},
+        {name:"RahXephon",year:2002,studio:"Bones",genre:"Mecha",episodes:26,source:"Original"},
+        {name:"Darling in the FranXX",year:2018,studio:"Trigger/A-1",genre:"Mecha",episodes:24,source:"Original"},
+        {name:"86",year:2021,studio:"A-1 Pictures",genre:"Mecha",episodes:23,source:"Light Novel"},
+        {name:"Macross Frontier",year:2008,studio:"Satelight",genre:"Mecha",episodes:25,source:"Original"},
+        {name:"Full Metal Panic!",year:2002,studio:"Gonzo",genre:"Mecha",episodes:52,source:"Light Novel"},
+        {name:"Knights of Sidonia",year:2014,studio:"Polygon Pictures",genre:"Mecha",episodes:24,source:"Manga"},
+        // Psychological/Thriller
+        {name:"Ergo Proxy",year:2006,studio:"Manglobe",genre:"Psychological",episodes:23,source:"Original"},
+        {name:"Paranoia Agent",year:2004,studio:"Madhouse",genre:"Psychological",episodes:13,source:"Original"},
+        {name:"The Promised Neverland",year:2019,studio:"CloverWorks",genre:"Thriller",episodes:23,source:"Manga"},
+        {name:"Terror in Resonance",year:2014,studio:"MAPPA",genre:"Thriller",episodes:11,source:"Original"},
+        {name:"Another",year:2012,studio:"P.A.Works",genre:"Horror",episodes:12,source:"Novel"},
+        {name:"Higurashi When They Cry",year:2006,studio:"Studio Deen",genre:"Horror",episodes:50,source:"Visual Novel"},
+        {name:"Higurashi: Gou",year:2020,studio:"Passione",genre:"Horror",episodes:24,source:"Visual Novel"},
+        {name:"Shiki",year:2010,studio:"Daume",genre:"Horror",episodes:22,source:"Novel"},
+        {name:"Mirai Nikki",year:2011,studio:"Asread",genre:"Thriller",episodes:26,source:"Manga"},
+        {name:"Deadman Wonderland",year:2011,studio:"Manglobe",genre:"Action",episodes:12,source:"Manga"},
+        {name:"Elfen Lied",year:2004,studio:"Arms",genre:"Horror",episodes:13,source:"Manga"},
+        {name:"School Days",year:2007,studio:"TNK",genre:"Drama",episodes:12,source:"Visual Novel"},
+        {name:"Happy Sugar Life",year:2018,studio:"Ezola",genre:"Psychological",episodes:12,source:"Manga"},
+        {name:"Talentless Nana",year:2020,studio:"Bridge",genre:"Thriller",episodes:13,source:"Manga"},
+        {name:"Odd Taxi",year:2021,studio:"OLM",genre:"Mystery",episodes:13,source:"Original"},
+        {name:"ID: Invaded",year:2020,studio:"NAZ",genre:"Sci-Fi",episodes:13,source:"Original"},
+        // Fantasy/Adventure
+        {name:"Fate/Zero",year:2011,studio:"ufotable",genre:"Fantasy",episodes:25,source:"Light Novel"},
+        {name:"Fate/Stay Night: UBW",year:2014,studio:"ufotable",genre:"Fantasy",episodes:26,source:"Visual Novel"},
+        {name:"Fate/Apocrypha",year:2017,studio:"A-1 Pictures",genre:"Fantasy",episodes:25,source:"Light Novel"},
+        {name:"Fate/Grand Order",year:2019,studio:"CloverWorks",genre:"Fantasy",episodes:21,source:"Game"},
+        {name:"Fate/Strange Fake",year:2023,studio:"A-1 Pictures",genre:"Fantasy",episodes:1,source:"Light Novel"},
+        {name:"Goblin Slayer",year:2018,studio:"White Fox",genre:"Dark Fantasy",episodes:24,source:"Light Novel"},
+        {name:"Danmachi",year:2015,studio:"J.C.Staff",genre:"Fantasy",episodes:59,source:"Light Novel"},
+        {name:"Grimgar",year:2016,studio:"A-1 Pictures",genre:"Fantasy",episodes:12,source:"Light Novel"},
+        {name:"Record of Lodoss War",year:1990,studio:"Madhouse",genre:"Fantasy",episodes:13,source:"Novel"},
+        {name:"Spice and Wolf",year:2008,studio:"Imagin",genre:"Fantasy",episodes:25,source:"Light Novel"},
+        {name:"The Ancient Magus' Bride",year:2017,studio:"Wit",genre:"Fantasy",episodes:24,source:"Manga"},
+        {name:"Frieren",year:2023,studio:"Madhouse",genre:"Fantasy",episodes:28,source:"Manga"},
+        {name:"Delicious in Dungeon",year:2024,studio:"Trigger",genre:"Fantasy",episodes:24,source:"Manga"},
+        // Action
+        {name:"Akame ga Kill!",year:2014,studio:"White Fox",genre:"Action",episodes:24,source:"Manga"},
+        {name:"Kill la Kill",year:2013,studio:"Trigger",genre:"Action",episodes:24,source:"Original"},
+        {name:"Promare",year:2019,studio:"Trigger",genre:"Action",episodes:1,source:"Original"},
+        {name:"Cyberpunk: Edgerunners",year:2022,studio:"Trigger",genre:"Sci-Fi",episodes:10,source:"Game"},
+        {name:"Samurai Champloo",year:2004,studio:"Manglobe",genre:"Action",episodes:26,source:"Original"},
+        {name:"Afro Samurai",year:2007,studio:"Gonzo",genre:"Action",episodes:5,source:"Manga"},
+        {name:"Dororo",year:2019,studio:"MAPPA/Tezuka",genre:"Action",episodes:24,source:"Manga"},
+        {name:"Drifters",year:2016,studio:"Hoods Drifters",genre:"Action",episodes:12,source:"Manga"},
+        {name:"Gangsta",year:2015,studio:"Manglobe",genre:"Action",episodes:12,source:"Manga"},
+        {name:"Black Lagoon",year:2006,studio:"Madhouse",genre:"Action",episodes:24,source:"Manga"},
+        {name:"Jormungand",year:2012,studio:"White Fox",genre:"Action",episodes:24,source:"Manga"},
+        {name:"Canaan",year:2009,studio:"P.A.Works",genre:"Action",episodes:13,source:"Visual Novel"},
+        {name:"Noragami",year:2014,studio:"Bones",genre:"Action",episodes:25,source:"Manga"},
+        {name:"Bungo Stray Dogs",year:2016,studio:"Bones",genre:"Action",episodes:49,source:"Manga"},
+        {name:"Blood+",year:2005,studio:"Production I.G",genre:"Action",episodes:50,source:"Original"},
+        {name:"Claymore",year:2007,studio:"Madhouse",genre:"Dark Fantasy",episodes:26,source:"Manga"},
+        {name:"Katanagatari",year:2010,studio:"White Fox",genre:"Action",episodes:12,source:"Light Novel"},
+        // Sci-Fi
+        {name:"Space Dandy",year:2014,studio:"Bones",genre:"Sci-Fi",episodes:26,source:"Original"},
+        {name:"Planetes",year:2003,studio:"Sunrise",genre:"Sci-Fi",episodes:26,source:"Manga"},
+        {name:"Legend of the Galactic Heroes",year:1988,studio:"Kitty Films",genre:"Sci-Fi",episodes:110,source:"Novel"},
+        {name:"Space Battleship Yamato 2199",year:2012,studio:"Xebec",genre:"Sci-Fi",episodes:26,source:"Original"},
+        {name:"Dr. Stone",year:2019,studio:"TMS Entertainment",genre:"Sci-Fi",episodes:35,source:"Manga"},
+        {name:"Vivy: Fluorite Eye's Song",year:2021,studio:"Wit",genre:"Sci-Fi",episodes:13,source:"Original"},
+        {name:"Astra Lost in Space",year:2019,studio:"Lerche",genre:"Sci-Fi",episodes:12,source:"Manga"},
+        {name:"Trigun Stampede",year:2023,studio:"Orange",genre:"Sci-Fi",episodes:12,source:"Manga"},
+        {name:"Pluto",year:2023,studio:"M2",genre:"Sci-Fi",episodes:8,source:"Manga"},
+        // Recent Hits
+        {name:"Oshi no Ko",year:2023,studio:"Doga Kobo",genre:"Drama",episodes:23,source:"Manga"},
+        {name:"Hell's Paradise",year:2023,studio:"MAPPA",genre:"Action",episodes:13,source:"Manga"},
+        {name:"Undead Unluck",year:2023,studio:"David Production",genre:"Action",episodes:24,source:"Manga"},
+        {name:"The Apothecary Diaries",year:2023,studio:"Toho/OLM",genre:"Mystery",episodes:24,source:"Light Novel"},
+        {name:"Solo Leveling",year:2024,studio:"A-1 Pictures",genre:"Action",episodes:12,source:"Manhwa"},
+        {name:"Kaiju No. 8",year:2024,studio:"Production I.G",genre:"Action",episodes:12,source:"Manga"},
+        {name:"Dandadan",year:2024,studio:"Science SARU",genre:"Action",episodes:12,source:"Manga"},
+        {name:"Call of the Night",year:2022,studio:"Liden Films",genre:"Romance",episodes:13,source:"Manga"},
+        {name:"Summer Time Rendering",year:2022,studio:"OLM",genre:"Mystery",episodes:25,source:"Manga"},
+        {name:"Ranking of Kings",year:2021,studio:"Wit",genre:"Fantasy",episodes:23,source:"Manga"},
+        {name:"To Your Eternity",year:2021,studio:"Brain's Base",genre:"Fantasy",episodes:40,source:"Manga"},
+        {name:"Wonder Egg Priority",year:2021,studio:"CloverWorks",genre:"Psychological",episodes:12,source:"Original"},
+        {name:"Sonny Boy",year:2021,studio:"Madhouse",genre:"Sci-Fi",episodes:12,source:"Original"},
+        {name:"Link Click",year:2021,studio:"Haoliners",genre:"Mystery",episodes:23,source:"Original"},
+        // Idol/Music
+        {name:"Love Live!",year:2013,studio:"Sunrise",genre:"Idol",episodes:52,source:"Original"},
+        {name:"Love Live! Sunshine!!",year:2016,studio:"Sunrise",genre:"Idol",episodes:26,source:"Original"},
+        {name:"The Idolmaster",year:2011,studio:"A-1 Pictures",genre:"Idol",episodes:25,source:"Game"},
+        {name:"Zombieland Saga",year:2018,studio:"MAPPA",genre:"Idol",episodes:24,source:"Original"},
+        {name:"Carole & Tuesday",year:2019,studio:"Bones",genre:"Music",episodes:24,source:"Original"},
+        {name:"Given",year:2019,studio:"Lerche",genre:"Music",episodes:11,source:"Manga"},
+        {name:"Beck",year:2004,studio:"Madhouse",genre:"Music",episodes:26,source:"Manga"},
+        {name:"Nana",year:2006,studio:"Madhouse",genre:"Music",episodes:47,source:"Manga"},
+        {name:"Kids on the Slope",year:2012,studio:"MAPPA/Tezuka",genre:"Music",episodes:12,source:"Manga"},
+        {name:"Your Lie in April",year:2014,studio:"A-1 Pictures",genre:"Music",episodes:22,source:"Manga"},
+        // More
+        {name:"Assassination Classroom",year:2015,studio:"Lerche",genre:"Action",episodes:47,source:"Manga"},
+        {name:"Food Wars!",year:2015,studio:"J.C.Staff",genre:"Comedy",episodes:86,source:"Manga"},
+        {name:"Prison School",year:2015,studio:"J.C.Staff",genre:"Comedy",episodes:12,source:"Manga"},
+        {name:"Classroom of the Elite",year:2017,studio:"Lerche",genre:"Psychological",episodes:37,source:"Light Novel"},
+        {name:"WorldEnd",year:2017,studio:"Satelight",genre:"Fantasy",episodes:12,source:"Light Novel"},
+        {name:"The Tatami Galaxy",year:2010,studio:"Madhouse",genre:"Psychological",episodes:11,source:"Novel"},
+        {name:"Ping Pong the Animation",year:2014,studio:"Tatsunoko",genre:"Sports",episodes:11,source:"Manga"},
+        {name:"Run with the Wind",year:2018,studio:"Production I.G",genre:"Sports",episodes:23,source:"Novel"},
+        {name:"Megalo Box",year:2018,studio:"TMS Entertainment",genre:"Sports",episodes:37,source:"Original"},
+        {name:"Sk8 the Infinity",year:2021,studio:"Bones",genre:"Sports",episodes:12,source:"Original"},
+        {name:"Yuri!!! on Ice",year:2016,studio:"MAPPA",genre:"Sports",episodes:12,source:"Original"},
+        {name:"Free!",year:2013,studio:"Kyoto Animation",genre:"Sports",episodes:37,source:"Light Novel"}
+    ];
+
+    let todayAnime = null;
+    let guesses = [];
+    let gameOver = false;
+    const MAX_GUESSES = 6;
+
+    function getDailyAnime() {
+        const today = new Date().toISOString().split('T')[0];
+        const seed = today.split('-').join('');
+        const index = parseInt(seed) % ANIME.length;
+        return ANIME[index];
+    }
+
+    function loadStats() {
+        const stats = JSON.parse(localStorage.getItem('weebdle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        document.getElementById('streak').textContent = stats.streak;
+        document.getElementById('played').textContent = stats.played;
+        document.getElementById('win-rate').textContent = stats.played ? Math.round((stats.wins/stats.played)*100) + '%' : '0%';
+        return stats;
+    }
+
+    function saveStats(won) {
+        const today = new Date().toISOString().split('T')[0];
+        let stats = JSON.parse(localStorage.getItem('weebdle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
+        
+        if (stats.lastPlayed !== today) {
+            stats.played++;
+            if (won) {
+                stats.wins++;
+                stats.streak = stats.lastPlayed === getYesterday() ? stats.streak + 1 : 1;
+            } else {
+                stats.streak = 0;
+            }
+            stats.lastPlayed = today;
+            localStorage.setItem('weebdle_stats', JSON.stringify(stats));
+        }
+        loadStats();
+    }
+
+    function getYesterday() {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+
+    function loadGameState() {
+        const today = new Date().toISOString().split('T')[0];
+        const saved = JSON.parse(localStorage.getItem('weebdle_state') || '{}');
+        if (saved.date === today) {
+            guesses = saved.guesses || [];
+            gameOver = saved.gameOver || false;
+            guesses.forEach(g => renderGuess(g));
+            if (gameOver) showGameOver(saved.won);
+        }
+    }
+
+    function saveGameState(won = false) {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('weebdle_state', JSON.stringify({
+            date: today,
+            guesses: guesses,
+            gameOver: gameOver,
+            won: won
+        }));
+    }
+
+    function compareAttr(guess, answer, attr) {
+        if (attr === 'year' || attr === 'episodes') {
+            if (guess === answer) return { status: 'correct', dir: '' };
+            const diff = Math.abs(guess - answer);
+            if (attr === 'year' && diff <= 2) return { status: 'partial', dir: guess < answer ? 'higher' : 'lower' };
+            if (attr === 'episodes' && diff <= 5) return { status: 'partial', dir: guess < answer ? 'higher' : 'lower' };
+            return { status: 'wrong', dir: guess < answer ? 'higher' : 'lower' };
+        }
+        if (guess === answer) return { status: 'correct', dir: '' };
+        return { status: 'wrong', dir: '' };
+    }
+
+    function renderGuess(anime) {
+        const row = document.createElement('div');
+        row.className = 'guess-row';
+        
+        const attrs = ['year', 'studio', 'genre', 'episodes', 'source'];
+        attrs.forEach(attr => {
+            const cell = document.createElement('div');
+            cell.className = 'guess-cell';
+            const result = compareAttr(anime[attr], todayAnime[attr], attr);
+            cell.classList.add(result.status);
+            if (result.dir) cell.classList.add(result.dir);
+            cell.textContent = anime[attr];
+            row.appendChild(cell);
+        });
+        
+        document.getElementById('guesses').appendChild(row);
+    }
+
+    function showGameOver(won) {
+        const container = document.getElementById('game-over');
+        container.innerHTML = `
+            <div class="game-over ${won ? 'win' : 'lose'}">
+                <h2>${won ? '🎌 YOU GOT IT!' : '😔 GAME OVER'}</h2>
+                <p class="answer-reveal">The answer was <strong>${todayAnime.name}</strong></p>
+                <button class="share-btn" onclick="shareResult()">Share Result</button>
+            </div>
+        `;
+        document.getElementById('search').disabled = true;
+    }
+
+    function shareResult() {
+        const won = guesses.some(g => g.name === todayAnime.name);
+        const result = guesses.map(g => {
+            const attrs = ['year', 'studio', 'genre', 'episodes', 'source'];
+            return attrs.map(attr => {
+                const r = compareAttr(g[attr], todayAnime[attr], attr);
+                return r.status === 'correct' ? '🟩' : r.status === 'partial' ? '🟨' : '🟥';
+            }).join('');
+        }).join('\n');
+        
+        const text = `Weebdle ${new Date().toISOString().split('T')[0]}\n${won ? guesses.length : 'X'}/${MAX_GUESSES}\n\n${result}\n\nPlay at thegaming.co/weebdle.html`;
+        
+        if (navigator.share) {
+            navigator.share({ text });
+        } else {
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard!');
+        }
+    }
+
+    function handleGuess(anime) {
+        if (gameOver || guesses.find(g => g.name === anime.name)) return;
+        
+        guesses.push(anime);
+        renderGuess(anime);
+        
+        const won = anime.name === todayAnime.name;
+        if (won || guesses.length >= MAX_GUESSES) {
+            gameOver = true;
+            saveStats(won);
+            saveGameState(won);
+            setTimeout(() => showGameOver(won), 500);
+        } else {
+            saveGameState();
+        }
+        
+        document.getElementById('search').value = '';
+        document.getElementById('suggestions').classList.remove('show');
+    }
+
+    function updateTimer() {
+        const now = new Date();
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+        const diff = tomorrow - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer').textContent = `Next puzzle in: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    const searchInput = document.getElementById('search');
+    const suggestionsEl = document.getElementById('suggestions');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 2) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        const guessedNames = guesses.map(g => g.name);
+        const matches = ANIME.filter(a => 
+            a.name.toLowerCase().includes(query) && !guessedNames.includes(a.name)
+        ).slice(0, 8);
+        
+        if (matches.length === 0) {
+            suggestionsEl.classList.remove('show');
+            return;
+        }
+        
+        suggestionsEl.innerHTML = matches.map(a => 
+            `<div class="suggestion" data-name="${a.name}">${a.name}</div>`
+        ).join('');
+        suggestionsEl.classList.add('show');
+    });
+
+    suggestionsEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('suggestion')) {
+            const name = e.target.dataset.name;
+            const anime = ANIME.find(a => a.name === name);
+            if (anime) handleGuess(anime);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-box')) {
+            suggestionsEl.classList.remove('show');
+        }
+    });
+
+    todayAnime = getDailyAnime();
+    loadStats();
+    loadGameState();
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
