@@ -194,7 +194,7 @@
                             <div class="result-stat"><div class="result-stat-value" id="result-accuracy">0%</div><div class="result-stat-label">Accuracy</div></div>
                         </div>
                         <button class="btn btn-primary" id="play-again-btn">PLAY AGAIN</button>
-                        <button class="btn btn-secondary" id="share-btn">SHARE</button>
+                        <button class="btn btn-secondary" onclick="document.querySelector('.leaderboard-section').scrollIntoView({behavior:'smooth'})">VIEW LEADERBOARD</button>
                     </div>
                 </div>
 
@@ -227,7 +227,6 @@ async function loadAuth(){const{data}=await supabaseClient.auth.getSession();con
 loadAuth();
 async function loadPersonalBests(){if(!currentUserId)return;const{data}=await supabaseClient.from('solo_scores').select('game_id,score').eq('user_id',currentUserId).like('game_id','stroop-%').order('score',{ascending:false});if(data)data.forEach(d=>{const m=d.game_id.replace('stroop-','');if(!personalBest[m]||d.score>personalBest[m])personalBest[m]=d.score})}
 async function loadFriends(){if(!currentUserId)return;try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}}
-let userMenuOpen=false;document.getElementById('user-menu-button')?.addEventListener('click',e=>{e.stopPropagation();userMenuOpen=!userMenuOpen;document.getElementById('user-menu').classList.toggle('open',userMenuOpen)});document.addEventListener('click',()=>{userMenuOpen=false;document.getElementById('user-menu')?.classList.remove('open')});document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
 
 document.querySelectorAll('.mode-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentMode=parseInt(btn.dataset.mode);timerEl.textContent=currentMode;fetchLeaderboard(currentTab)})});
 
@@ -243,7 +242,6 @@ async function saveScore(){if(!currentUserId)return;await supabaseClient.from('s
 
 document.getElementById('start-btn').addEventListener('click',startGame);
 document.getElementById('play-again-btn').addEventListener('click',()=>{resultScreen.style.display='none';startGame()});
-document.getElementById('share-btn').addEventListener('click',()=>{const t=`🎨 Stroop Test\n🏆 ${score} pts\n✅ ${correct} correct\n❌ ${errorCount} errors\n\nthegaming.co/games/solo/stroop-test.html`;navigator.share?navigator.share({text:t}):navigator.clipboard.writeText(t)});
 
 document.querySelectorAll('.lb-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentTab=tab.dataset.tab;fetchLeaderboard(currentTab)})});
 
