@@ -222,7 +222,7 @@
                 <div class="complete-stat"><div class="complete-stat-value" id="complete-difficulty">Easy</div><div class="complete-stat-label">Difficulty</div></div>
             </div>
             <button class="btn btn-primary" id="next-puzzle-btn">NEXT PUZZLE</button>
-            <button class="btn btn-secondary" id="share-btn">SHARE RESULT</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('complete-overlay').classList.remove('show');document.querySelector('.leaderboard-section').scrollIntoView({behavior:'smooth'})">VIEW LEADERBOARD</button>
         </div>
     </div>
 
@@ -241,7 +241,6 @@ loadAuth();
 async function loadPersonalBests(){if(!currentUserId)return;const{data}=await supabaseClient.from('solo_scores').select('game_id,score').eq('user_id',currentUserId).like('game_id','sudoku-%').order('score',{ascending:true});if(data)data.forEach(d=>{const diff=d.game_id.replace('sudoku-','');if(!personalBest[diff]||d.score<personalBest[diff])personalBest[diff]=d.score});updateBest()}
 function updateBest(){const b=personalBest[currentDifficulty];bestEl.textContent=b?formatTime(b):'--:--'}
 async function loadFriends(){if(!currentUserId)return;try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}}
-let userMenuOpen=false;document.getElementById('user-menu-button')?.addEventListener('click',e=>{e.stopPropagation();userMenuOpen=!userMenuOpen;document.getElementById('user-menu').classList.toggle('open',userMenuOpen)});document.addEventListener('click',()=>{userMenuOpen=false;document.getElementById('user-menu')?.classList.remove('open')});document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
 
 function generateSudoku(){solution=Array(9).fill(null).map(()=>Array(9).fill(0));fillGrid(solution);puzzle=solution.map(r=>[...r]);removeNumbers(puzzle,DIFFICULTY[currentDifficulty]);userBoard=puzzle.map(r=>[...r]);notes=Array(81).fill(null).map(()=>new Set());history=[]}
 function fillGrid(g){const nums=[1,2,3,4,5,6,7,8,9];for(let i=0;i<81;i++){const r=Math.floor(i/9),c=i%9;if(g[r][c]===0){shuffle(nums);for(const n of nums){if(isValid(g,r,c,n)){g[r][c]=n;if(fillGrid(g))return true;g[r][c]=0}}return false}}return true}
@@ -277,7 +276,6 @@ document.getElementById('undo-btn').addEventListener('click',undo);
 document.getElementById('hint-btn').addEventListener('click',giveHint);
 document.getElementById('new-btn').addEventListener('click',newGame);
 document.getElementById('next-puzzle-btn').addEventListener('click',()=>{completeOverlay.classList.remove('show');newGame()});
-document.getElementById('share-btn').addEventListener('click',()=>{const t=`🧩 Sudoku - TheGaming.co\n⏱️ ${formatTime(seconds)}\n❌ ${errors} errors\n📊 ${currentDifficulty.charAt(0).toUpperCase()+currentDifficulty.slice(1)}\n\nthegaming.co/games/solo/sudoku.html`;navigator.share?navigator.share({text:t}):navigator.clipboard.writeText(t)});
 document.addEventListener('keydown',e=>{if(e.key>='1'&&e.key<='9')inputNumber(parseInt(e.key));else if(e.key==='Backspace'||e.key==='Delete')eraseCell();else if(e.key==='n')notesBtn.click();else if(e.key==='z'&&(e.ctrlKey||e.metaKey))undo();else if(e.key==='ArrowUp'&&selectedCell!==null&&selectedCell>=9)selectCell(selectedCell-9);else if(e.key==='ArrowDown'&&selectedCell!==null&&selectedCell<72)selectCell(selectedCell+9);else if(e.key==='ArrowLeft'&&selectedCell!==null&&selectedCell%9>0)selectCell(selectedCell-1);else if(e.key==='ArrowRight'&&selectedCell!==null&&selectedCell%9<8)selectCell(selectedCell+1)});
 
 document.querySelectorAll('.lb-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentTab=tab.dataset.tab;fetchLeaderboard(currentTab)})});
