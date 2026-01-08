@@ -190,23 +190,25 @@ const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
 const GRID=20;
-let CELL,canvasSize;
+let CELL=20,canvasSize=400;
+
+// Game state - declare BEFORE resizeCanvas
+let snake=[],food={},direction={x:1,y:0},nextDir={x:1,y:0},score=0,gameLoop=null,gameRunning=false;
+let currentUserId=null,personalBest=0,friendIds=[],currentTab='global';
 
 // Responsive canvas sizing
 function resizeCanvas(){
     const container=canvas.parentElement;
     const maxSize=Math.min(400,container.clientWidth-20,window.innerHeight-300);
     canvasSize=Math.floor(maxSize/GRID)*GRID;
+    if(canvasSize<200)canvasSize=200;
     canvas.width=canvasSize;
     canvas.height=canvasSize;
     CELL=canvasSize/GRID;
-    if(snake.length)draw();
+    if(snake.length>0)draw();
 }
 resizeCanvas();
 window.addEventListener('resize',resizeCanvas);
-
-let snake=[],food={},direction={x:1,y:0},nextDir={x:1,y:0},score=0,gameLoop=null,gameRunning=false;
-let currentUserId=null,personalBest=0,friendIds=[],currentTab='global';
 
 async function loadAuth(){const{data}=await supabaseClient.auth.getSession();const user=data?.session?.user;document.getElementById('auth-skeleton').style.display='none';if(user){currentUserId=user.id;document.querySelector('.nav-right-logged-out').style.setProperty('display','none','important');document.querySelector('.nav-right-logged-in').style.setProperty('display','flex','important');const{data:p}=await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id',user.id).single();if(p)document.getElementById('header-username-label').textContent=(p.display_name||p.gamer_tag||'Player').slice(0,16);loadPersonalBest();loadFriends()}else{document.querySelector('.nav-right-logged-out').style.setProperty('display','flex','important');document.querySelector('.nav-right-logged-in').style.setProperty('display','none','important')}fetchLeaderboard('global')}
 loadAuth();
@@ -229,12 +231,11 @@ document.getElementById('btn-down')?.addEventListener('click',()=>{if(gameRunnin
 document.getElementById('btn-left')?.addEventListener('click',()=>{if(gameRunning&&direction.x!==1)nextDir={x:-1,y:0}});
 document.getElementById('btn-right')?.addEventListener('click',()=>{if(gameRunning&&direction.x!==-1)nextDir={x:1,y:0}});
 
-// Touch swipe controls
-const wrapper=document.querySelector('.canvas-wrapper');
+// Touch swipe controls on canvas only
 let touchStartX=0,touchStartY=0;
-wrapper.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;e.preventDefault()},{passive:false});
-wrapper.addEventListener('touchmove',e=>{e.preventDefault()},{passive:false});
-wrapper.addEventListener('touchend',e=>{if(!gameRunning)return;const dx=e.changedTouches[0].clientX-touchStartX,dy=e.changedTouches[0].clientY-touchStartY;if(Math.abs(dx)>20||Math.abs(dy)>20){if(Math.abs(dx)>Math.abs(dy)){if(dx>0&&direction.x!==1)nextDir={x:1,y:0};else if(dx<0&&direction.x!==-1)nextDir={x:-1,y:0}}else{if(dy>0&&direction.y!==1)nextDir={x:0,y:1};else if(dy<0&&direction.y!==-1)nextDir={x:0,y:-1}}}},{passive:true});
+canvas.addEventListener('touchstart',e=>{if(!gameRunning)return;touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;e.preventDefault()},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(gameRunning)e.preventDefault()},{passive:false});
+canvas.addEventListener('touchend',e=>{if(!gameRunning)return;const dx=e.changedTouches[0].clientX-touchStartX,dy=e.changedTouches[0].clientY-touchStartY;if(Math.abs(dx)>20||Math.abs(dy)>20){if(Math.abs(dx)>Math.abs(dy)){if(dx>0&&direction.x!==1)nextDir={x:1,y:0};else if(dx<0&&direction.x!==-1)nextDir={x:-1,y:0}}else{if(dy>0&&direction.y!==1)nextDir={x:0,y:1};else if(dy<0&&direction.y!==-1)nextDir={x:0,y:-1}}}},{passive:true});
 
 document.querySelectorAll('.lb-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentTab=tab.dataset.tab;fetchLeaderboard(currentTab)})});
 async function fetchLeaderboard(tab){const lbList=document.getElementById('lb-list');lbList.innerHTML='<div class="lb-empty">Loading...</div>';let query=supabaseClient.from('solo_scores').select('score,user_id,created_at').eq('game_id','snake').order('score',{ascending:false}).limit(50);if(tab==='today'){const t=new Date();t.setHours(0,0,0,0);query=query.gte('created_at',t.toISOString())}else if(tab==='friends'){if(!friendIds.length){lbList.innerHTML='<div class="lb-empty">Add friends to see scores</div>';return}query=query.in('user_id',[...friendIds,currentUserId])}const{data,error}=await query;if(error||!data?.length){lbList.innerHTML='<div class="lb-empty">No scores yet</div>';return}const best=new Map();data.forEach(e=>{if(!best.has(e.user_id)||e.score>best.get(e.user_id).score)best.set(e.user_id,e)});const deduped=Array.from(best.values()).sort((a,b)=>b.score-a.score);const userIds=[...new Set(deduped.map(e=>e.user_id))];const{data:profiles}=await supabaseClient.from('profiles').select('id,display_name,gamer_tag').in('id',userIds);const pm={};profiles?.forEach(p=>pm[p.id]=p);lbList.innerHTML='';deduped.slice(0,10).forEach((e,i)=>{const p=pm[e.user_id];const name=p?.display_name||p?.gamer_tag||'Anonymous';const topClass=i===0?'top-1':i===1?'top-2':i===2?'top-3':'';const row=document.createElement('div');row.className=`lb-row ${topClass}`;row.innerHTML=`<div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-score">${e.score}</div>`;lbList.appendChild(row)})}
