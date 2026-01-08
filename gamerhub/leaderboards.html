@@ -582,19 +582,12 @@
             data.forEach(e => { if (!best.has(e.user_id)) best.set(e.user_id, e); });
             const rows = Array.from(best.values());
             
-            // Get profiles - only select columns that exist
+            // Get profiles
             const ids = rows.map(r => r.user_id);
-            console.log('Fetching profiles for IDs:', ids);
-            
-            // Use select('*') to get whatever columns exist
-            const { data: profs, error: profErr } = await sb.from('profiles').select('*').in('id', ids);
-            
-            console.log('Profiles response:', profs);
-            if (profErr) console.log('Profiles error:', profErr);
+            const { data: profs } = await sb.from('profiles').select('*').in('id', ids);
             
             const pm = {};
             if (profs && profs.length > 0) {
-                console.log('Sample profile columns:', Object.keys(profs[0]));
                 profs.forEach(p => pm[p.id] = p);
             }
             
@@ -613,10 +606,8 @@
         }
 
         function premBadge(p) {
-            if (!p || !p.premium_tier) return '';
-            if (p.premium_tier === 'diamond') return '<span class="premium-badge diamond">💎 DIAMOND</span>';
-            if (p.premium_tier === 'gold') return '<span class="premium-badge gold">👑 GOLD</span>';
-            return '';
+            if (!p || !p.is_premium) return '';
+            return '<span class="premium-badge gold">👑 PREMIUM</span>';
         }
 
         function nameClass(p) {
@@ -669,8 +660,7 @@
                 
                 let cls = 'lb-row';
                 if (me) cls += ' you';
-                else if (p && p.premium_tier === 'diamond') cls += ' premium-diamond';
-                else if (p && p.premium_tier === 'gold') cls += ' premium-gold';
+                else if (p && p.is_premium) cls += ' premium-gold';
                 
                 const row = document.createElement('div');
                 row.className = cls;
