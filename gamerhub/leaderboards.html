@@ -582,12 +582,21 @@
             data.forEach(e => { if (!best.has(e.user_id)) best.set(e.user_id, e); });
             const rows = Array.from(best.values());
             
-            // Get profiles
+            // Get profiles - only select columns that exist
             const ids = rows.map(r => r.user_id);
-            const { data: profs } = await sb.from('profiles').select('id,display_name,gamer_tag,clan_tag,clan_color,premium_tier,name_effect').in('id', ids);
+            console.log('Fetching profiles for IDs:', ids);
+            
+            // Use select('*') to get whatever columns exist
+            const { data: profs, error: profErr } = await sb.from('profiles').select('*').in('id', ids);
+            
+            console.log('Profiles response:', profs);
+            if (profErr) console.log('Profiles error:', profErr);
             
             const pm = {};
-            if (profs) profs.forEach(p => pm[p.id] = p);
+            if (profs && profs.length > 0) {
+                console.log('Sample profile columns:', Object.keys(profs[0]));
+                profs.forEach(p => pm[p.id] = p);
+            }
             
             render(rows, pm, g);
         }
