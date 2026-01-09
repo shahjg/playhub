@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two Truths - TheGaming.co</title>
+    <meta name="description" content="Two Truths and a Lie - Guess which statement is false!">
+    <meta name="theme-color" content="#8b5cf6">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0f0a1a;--card:#1a1230;--accent:#8b5cf6;--glow:rgba(139,92,246,0.4);--green:#22c55e;--red:#ef4444;--gold:#fbbf24;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 20%,rgba(139,92,246,0.12) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(15,10,26,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:65px 16px 24px;min-height:100vh;max-width:600px;margin:0 auto}
+        .round{text-align:center;margin-bottom:16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim)}
+        .round span{color:var(--accent)}
+        .player-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;margin-bottom:20px}
+        .player-card.is-me{border-color:var(--accent);box-shadow:0 0 30px var(--glow)}
+        .player-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+        .player-name{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--accent)}
+        .status{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .status-txt{font-size:.85rem;color:var(--dim)}
+        .status-txt span{color:var(--accent);font-weight:700}
+        .timer{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold)}
+        .timer.danger{color:var(--red);animation:pulse .5s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        
+        /* Writing Phase */
+        .write-section{margin-bottom:20px}
+        .write-lbl{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+        .write-lbl .tag{font-size:.65rem;padding:2px 6px;border-radius:4px;font-family:'Inter',sans-serif}
+        .write-lbl .truth{background:rgba(34,197,94,0.2);color:var(--green)}
+        .write-lbl .lie{background:rgba(239,68,68,0.2);color:var(--red)}
+        .write-input{width:100%;padding:14px;background:var(--card);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:.95rem;font-family:inherit;transition:.2s}
+        .write-input:focus{outline:0;border-color:var(--accent)}
+        .write-input:disabled{opacity:.5}
+        
+        /* Voting Phase */
+        .statements{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+        .statement{padding:18px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:.2s}
+        .statement:hover{border-color:var(--accent);background:rgba(139,92,246,0.1)}
+        .statement.selected{border-color:var(--accent);box-shadow:0 0 20px var(--glow)}
+        .statement.disabled{pointer-events:none;opacity:.7}
+        .statement-num{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--accent);margin-bottom:4px}
+        .statement-txt{font-size:1rem;line-height:1.4}
+        .statement.revealed.truth{border-color:var(--green);background:rgba(34,197,94,0.1)}
+        .statement.revealed.lie{border-color:var(--red);background:rgba(239,68,68,0.15)}
+        .statement-result{display:none;margin-top:8px;font-size:.8rem;font-weight:700}
+        .statement.revealed .statement-result{display:block}
+        .statement.revealed.truth .statement-result{color:var(--green)}
+        .statement.revealed.lie .statement-result{color:var(--red)}
+        
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff}
+        .btn-p:hover{filter:brightness(1.1);transform:translateY(-2px)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        
+        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:24px}
+        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .score-list{display:flex;flex-direction:column;gap:8px}
+        .score-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px}
+        .score-row.top{background:rgba(139,92,246,0.15)}
+        .score-name{font-weight:600}
+        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.9rem}
+        
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px;margin-top:24px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">🤥 TWO TRUTHS</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="round">ROUND <span id="roundNum">1</span> / <span id="totalRounds">?</span></div>
+    
+    <div class="player-card" id="playerCard">
+        <div class="player-lbl" id="playerLbl">Current Player</div>
+        <div class="player-name" id="playerName">Waiting...</div>
+    </div>
+    
+    <div class="status">
+        <span class="status-txt" id="statusTxt">Waiting to start...</span>
+        <span class="timer" id="timer">60</span>
+    </div>
+    
+    <!-- Writing Phase (for current player) -->
+    <div id="writeSection" style="display:none">
+        <div class="write-section">
+            <div class="write-lbl">Statement 1 <span class="tag truth">TRUTH</span></div>
+            <input type="text" class="write-input" id="truth1" placeholder="Write a true statement about yourself..." maxlength="100">
+        </div>
+        <div class="write-section">
+            <div class="write-lbl">Statement 2 <span class="tag truth">TRUTH</span></div>
+            <input type="text" class="write-input" id="truth2" placeholder="Write another true statement..." maxlength="100">
+        </div>
+        <div class="write-section">
+            <div class="write-lbl">Statement 3 <span class="tag lie">LIE</span></div>
+            <input type="text" class="write-input" id="lie" placeholder="Write a convincing lie..." maxlength="100">
+        </div>
+    </div>
+    
+    <!-- Voting Phase (for other players) -->
+    <div id="voteSection" style="display:none">
+        <p style="text-align:center;color:var(--dim);margin-bottom:16px;font-size:.9rem">Which statement is the LIE?</p>
+        <div class="statements" id="statements"></div>
+    </div>
+    
+    <!-- Waiting Phase -->
+    <div id="waitSection">
+        <p style="text-align:center;color:var(--dim);padding:40px;font-size:.9rem">Waiting for the game to start...</p>
+    </div>
+    
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Submit</button>
+    
+    <div class="scoreboard">
+        <div class="sb-title">Scoreboard</div>
+        <div class="score-list" id="scoreList"><div class="empty">Scores appear here</div></div>
+    </div>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2>🏆 GAME OVER</h2>
+        <div class="scoreboard"><div class="sb-title">Final Scores</div><div class="score-list" id="finalScores"></div></div>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=two-truths';
+
+let state={players:[],scores:{},currentPlayer:'',phase:'waiting',statements:[],myVote:null,lieIndex:null,isMyTurn:false,isHost:localStorage.getItem('tempIsHost')==='true'};
+let timerInt=null;
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;});
+socket.on('player-joined',d=>{state.players=d.room.players||[];});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('twotruths-write',d=>{
+    state.phase='writing';state.currentPlayer=d.player;state.isMyTurn=d.player===playerName;
+    document.getElementById('roundNum').textContent=d.round;
+    document.getElementById('totalRounds').textContent=d.totalRounds;
+    document.getElementById('playerName').textContent=d.player;
+    document.getElementById('playerCard').classList.toggle('is-me',state.isMyTurn);
+    document.getElementById('playerLbl').textContent=state.isMyTurn?'Your Turn!':'Writing...';
+    
+    document.getElementById('writeSection').style.display=state.isMyTurn?'block':'none';
+    document.getElementById('voteSection').style.display='none';
+    document.getElementById('waitSection').style.display=state.isMyTurn?'none':'block';
+    document.getElementById('waitSection').innerHTML=`<p style="text-align:center;color:var(--dim);padding:40px;font-size:.9rem">${d.player} is writing their statements...</p>`;
+    
+    document.getElementById('statusTxt').textContent=state.isMyTurn?'Write 2 truths and 1 lie':'Waiting for '+d.player;
+    document.getElementById('actionBtn').textContent='Submit Statements';
+    document.getElementById('actionBtn').disabled=true;
+    
+    if(state.isMyTurn){
+        document.getElementById('truth1').value='';
+        document.getElementById('truth2').value='';
+        document.getElementById('lie').value='';
+        checkWriteInputs();
+    }
+    startTimer(60);
+});
+
+socket.on('twotruths-vote',d=>{
+    state.phase='voting';state.statements=d.statements;state.myVote=null;
+    document.getElementById('writeSection').style.display='none';
+    document.getElementById('voteSection').style.display=state.isMyTurn?'none':'block';
+    document.getElementById('waitSection').style.display=state.isMyTurn?'block':'none';
+    if(state.isMyTurn)document.getElementById('waitSection').innerHTML=`<p style="text-align:center;color:var(--dim);padding:40px;font-size:.9rem">Others are guessing which is your lie...</p>`;
+    
+    document.getElementById('statusTxt').innerHTML='<span id="voteCount">0</span> / <span id="voterCount">'+(state.players.length-1)+'</span> voted';
+    document.getElementById('actionBtn').textContent='Lock In Vote';
+    document.getElementById('actionBtn').disabled=true;
+    
+    renderStatements();
+    startTimer(30);
+});
+
+socket.on('twotruths-vote-update',d=>{
+    document.getElementById('voteCount').textContent=d.count;
+});
+
+socket.on('twotruths-results',d=>{
+    stopTimer();state.phase='results';state.lieIndex=d.lieIndex;state.scores=d.scores;
+    revealStatements(d.lieIndex,d.votes);
+    updateScoreboard();
+    document.getElementById('actionBtn').textContent=state.isHost?'Next Round':'Waiting...';
+    document.getElementById('actionBtn').disabled=!state.isHost;
+});
+
+socket.on('twotruths-game-over',d=>{state.scores=d.scores;showGameOver();});
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+// Input listeners for write phase
+['truth1','truth2','lie'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',checkWriteInputs);
+});
+
+function checkWriteInputs(){
+    const t1=document.getElementById('truth1').value.trim();
+    const t2=document.getElementById('truth2').value.trim();
+    const lie=document.getElementById('lie').value.trim();
+    document.getElementById('actionBtn').disabled=!(t1&&t2&&lie);
+}
+
+function handleAction(){
+    if(state.phase==='writing'&&state.isMyTurn){
+        const t1=document.getElementById('truth1').value.trim();
+        const t2=document.getElementById('truth2').value.trim();
+        const lie=document.getElementById('lie').value.trim();
+        socket.emit('twotruths-submit',{roomCode,truth1:t1,truth2:t2,lie});
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('actionBtn').textContent='Submitted!';
+        ['truth1','truth2','lie'].forEach(id=>document.getElementById(id).disabled=true);
+    }else if(state.phase==='voting'&&state.myVote!==null){
+        socket.emit('twotruths-vote',{roomCode,voteIndex:state.myVote});
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('actionBtn').textContent='Voted!';
+        document.querySelectorAll('.statement').forEach(el=>el.classList.add('disabled'));
+    }else if(state.phase==='results'&&state.isHost){
+        socket.emit('twotruths-next',{roomCode});
+    }
+}
+
+function renderStatements(){
+    const container=document.getElementById('statements');
+    container.innerHTML=state.statements.map((s,i)=>`
+        <div class="statement" onclick="selectStatement(${i})" data-index="${i}">
+            <div class="statement-num">Statement ${i+1}</div>
+            <div class="statement-txt">${esc(s)}</div>
+            <div class="statement-result"></div>
+        </div>
+    `).join('');
+}
+
+function selectStatement(i){
+    if(state.phase!=='voting'||state.isMyTurn)return;
+    state.myVote=i;
+    document.querySelectorAll('.statement').forEach((el,idx)=>el.classList.toggle('selected',idx===i));
+    document.getElementById('actionBtn').disabled=false;
+}
+
+function revealStatements(lieIndex,votes){
+    document.querySelectorAll('.statement').forEach((el,i)=>{
+        el.classList.add('revealed');
+        el.classList.add(i===lieIndex?'lie':'truth');
+        el.classList.remove('selected');
+        const voteCount=votes[i]||0;
+        el.querySelector('.statement-result').textContent=i===lieIndex?`THE LIE! (${voteCount} guessed correctly)`:`TRUTH (${voteCount} voted)`;
+    });
+    document.getElementById('voteSection').style.display='block';
+    document.getElementById('waitSection').style.display='none';
+}
+
+function updateScoreboard(){
+    const container=document.getElementById('scoreList');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(!sorted.length){container.innerHTML='<div class="empty">No scores yet</div>';return;}
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+}
+
+function showGameOver(){
+    stopTimer();
+    const container=document.getElementById('finalScores');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+    document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+function startTimer(secs){stopTimer();let t=secs;updTimer(t);timerInt=setInterval(()=>{t--;updTimer(t);if(t<=0)stopTimer();},1000);}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function updTimer(t){const el=document.getElementById('timer');el.textContent=t;el.classList.toggle('danger',t<=10);}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>{stopTimer();socket.disconnect();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength - TheGaming.co</title>
+    <meta name="description" content="Wavelength - Give clues to help your team guess where the target is on the spectrum!">
+    <meta name="theme-color" content="#06b6d4">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0a1520;--card:#122535;--accent:#06b6d4;--glow:rgba(6,182,212,0.4);--green:#22c55e;--red:#ef4444;--gold:#fbbf24;--purple:#a855f7;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(6,182,212,0.12) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(10,21,32,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:65px 16px 24px;min-height:100vh;max-width:600px;margin:0 auto}
+        .round{text-align:center;margin-bottom:16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim)}
+        .round span{color:var(--accent)}
+        
+        .psychic-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;margin-bottom:20px}
+        .psychic-card.is-me{border-color:var(--accent);box-shadow:0 0 30px var(--glow)}
+        .psychic-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+        .psychic-name{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--accent)}
+        
+        /* Spectrum Display */
+        .spectrum-section{margin-bottom:24px}
+        .spectrum-labels{display:flex;justify-content:space-between;margin-bottom:8px}
+        .spectrum-label{font-size:.8rem;color:var(--dim);max-width:40%;text-align:center}
+        .spectrum-label.left{text-align:left}
+        .spectrum-label.right{text-align:right}
+        
+        .spectrum-track{position:relative;height:60px;background:linear-gradient(90deg,var(--red),var(--gold),var(--green));border-radius:30px;overflow:hidden}
+        .spectrum-target{position:absolute;top:0;bottom:0;width:60px;background:rgba(255,255,255,0.3);border:3px solid #fff;border-radius:30px;transform:translateX(-50%);display:none;box-shadow:0 0 20px rgba(255,255,255,0.5)}
+        .spectrum-target.visible{display:block}
+        .spectrum-guess{position:absolute;top:50%;width:4px;height:80%;background:var(--purple);border-radius:2px;transform:translate(-50%,-50%);display:none}
+        .spectrum-guess.visible{display:block}
+        
+        .slider-wrap{margin-top:16px}
+        .slider{width:100%;height:40px;-webkit-appearance:none;background:var(--card);border-radius:20px;outline:none;cursor:pointer}
+        .slider::-webkit-slider-thumb{-webkit-appearance:none;width:50px;height:50px;background:var(--accent);border-radius:50%;cursor:grab;box-shadow:0 0 20px var(--glow)}
+        .slider::-moz-range-thumb{width:50px;height:50px;background:var(--accent);border-radius:50%;cursor:grab}
+        .slider:disabled{opacity:.5;cursor:not-allowed}
+        
+        .clue-display{background:linear-gradient(135deg,var(--card),rgba(6,182,212,0.1));border:2px solid var(--accent);border-radius:16px;padding:24px;text-align:center;margin-bottom:20px;box-shadow:0 0 30px var(--glow)}
+        .clue-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+        .clue-txt{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:3px}
+        
+        .clue-input-wrap{margin-bottom:20px}
+        .clue-input{width:100%;padding:16px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-size:1.2rem;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;text-align:center;transition:.2s}
+        .clue-input:focus{outline:0;border-color:var(--accent)}
+        .clue-input:disabled{opacity:.5}
+        
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#0891b2);color:#fff}
+        .btn-p:hover{filter:brightness(1.1);transform:translateY(-2px)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        
+        .score-display{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
+        .score-box{text-align:center;padding:12px 24px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+        .score-box-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+        .score-box-val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)}
+        
+        .result-msg{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:20px;font-size:1.1rem}
+        .result-msg.perfect{background:rgba(34,197,94,0.2);color:var(--green)}
+        .result-msg.close{background:rgba(251,191,36,0.2);color:var(--gold)}
+        .result-msg.miss{background:rgba(239,68,68,0.2);color:var(--red)}
+        
+        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:24px}
+        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .score-list{display:flex;flex-direction:column;gap:8px}
+        .score-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px}
+        .score-row.top{background:rgba(6,182,212,0.15)}
+        .score-name{font-weight:600}
+        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.9rem}
+        
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px;margin-top:24px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">📡 WAVELENGTH</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="round">ROUND <span id="roundNum">1</span> / <span id="totalRounds">?</span></div>
+    
+    <div class="psychic-card" id="psychicCard">
+        <div class="psychic-lbl" id="psychicLbl">Psychic</div>
+        <div class="psychic-name" id="psychicName">Waiting...</div>
+    </div>
+    
+    <div class="spectrum-section">
+        <div class="spectrum-labels">
+            <div class="spectrum-label left" id="labelLeft">Cold</div>
+            <div class="spectrum-label right" id="labelRight">Hot</div>
+        </div>
+        <div class="spectrum-track" id="spectrumTrack">
+            <div class="spectrum-target" id="target"></div>
+            <div class="spectrum-guess" id="guessMarker"></div>
+        </div>
+        <div class="slider-wrap" id="sliderWrap" style="display:none">
+            <input type="range" class="slider" id="slider" min="0" max="100" value="50">
+        </div>
+    </div>
+    
+    <!-- Clue Display (for guessers) -->
+    <div class="clue-display" id="clueDisplay" style="display:none">
+        <div class="clue-lbl">The Clue</div>
+        <div class="clue-txt" id="clueTxt">???</div>
+    </div>
+    
+    <!-- Clue Input (for psychic) -->
+    <div class="clue-input-wrap" id="clueInputWrap" style="display:none">
+        <input type="text" class="clue-input" id="clueInput" placeholder="Enter your clue..." maxlength="30">
+    </div>
+    
+    <div class="result-msg" id="resultMsg" style="display:none"></div>
+    
+    <div class="score-display">
+        <div class="score-box"><div class="score-box-lbl">Team Score</div><div class="score-box-val" id="teamScore">0</div></div>
+        <div class="score-box"><div class="score-box-lbl">Round</div><div class="score-box-val" id="roundScore">0</div></div>
+    </div>
+    
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Submit</button>
+    
+    <div class="scoreboard">
+        <div class="sb-title">Individual Scores</div>
+        <div class="score-list" id="scoreList"><div class="empty">Scores appear here</div></div>
+    </div>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2>🏆 GAME OVER</h2>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--accent);margin-bottom:16px" id="finalTeamScore">0</div>
+        <div style="color:var(--dim);margin-bottom:24px">Team Points</div>
+        <div class="scoreboard"><div class="sb-title">Individual Scores</div><div class="score-list" id="finalScores"></div></div>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=wavelength';
+
+let state={players:[],scores:{},teamScore:0,psychic:'',phase:'waiting',targetPos:50,guessPos:50,clue:'',isPsychic:false,isHost:localStorage.getItem('tempIsHost')==='true'};
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;});
+socket.on('player-joined',d=>{state.players=d.room.players||[];});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('wavelength-round',d=>{
+    state.phase='psychic';state.psychic=d.psychic;state.targetPos=d.target;state.isPsychic=d.psychic===playerName;state.clue='';state.guessPos=50;
+    document.getElementById('roundNum').textContent=d.round;
+    document.getElementById('totalRounds').textContent=d.totalRounds;
+    document.getElementById('psychicName').textContent=d.psychic;
+    document.getElementById('psychicCard').classList.toggle('is-me',state.isPsychic);
+    document.getElementById('psychicLbl').textContent=state.isPsychic?'You\'re the Psychic!':'Psychic';
+    document.getElementById('labelLeft').textContent=d.leftLabel;
+    document.getElementById('labelRight').textContent=d.rightLabel;
+    
+    // Show/hide target for psychic
+    const target=document.getElementById('target');
+    target.style.left=d.target+'%';
+    target.classList.toggle('visible',state.isPsychic);
+    document.getElementById('guessMarker').classList.remove('visible');
+    document.getElementById('resultMsg').style.display='none';
+    
+    if(state.isPsychic){
+        document.getElementById('clueInputWrap').style.display='block';
+        document.getElementById('clueDisplay').style.display='none';
+        document.getElementById('sliderWrap').style.display='none';
+        document.getElementById('clueInput').value='';
+        document.getElementById('clueInput').disabled=false;
+        document.getElementById('actionBtn').textContent='Submit Clue';
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('clueInput').oninput=()=>{document.getElementById('actionBtn').disabled=!document.getElementById('clueInput').value.trim();};
+    }else{
+        document.getElementById('clueInputWrap').style.display='none';
+        document.getElementById('clueDisplay').style.display='none';
+        document.getElementById('sliderWrap').style.display='none';
+        document.getElementById('actionBtn').textContent='Waiting for clue...';
+        document.getElementById('actionBtn').disabled=true;
+    }
+});
+
+socket.on('wavelength-clue',d=>{
+    state.phase='guessing';state.clue=d.clue;
+    document.getElementById('clueTxt').textContent=d.clue;
+    document.getElementById('clueDisplay').style.display='block';
+    document.getElementById('clueInputWrap').style.display='none';
+    
+    if(!state.isPsychic){
+        document.getElementById('sliderWrap').style.display='block';
+        document.getElementById('slider').disabled=false;
+        document.getElementById('slider').value=50;
+        document.getElementById('actionBtn').textContent='Lock In Guess';
+        document.getElementById('actionBtn').disabled=false;
+    }else{
+        document.getElementById('actionBtn').textContent='Waiting for guesses...';
+        document.getElementById('actionBtn').disabled=true;
+    }
+});
+
+socket.on('wavelength-results',d=>{
+    state.phase='results';state.teamScore=d.teamScore;state.scores=d.scores;
+    
+    // Show target and guess
+    document.getElementById('target').classList.add('visible');
+    const guessMarker=document.getElementById('guessMarker');
+    guessMarker.style.left=d.guess+'%';
+    guessMarker.classList.add('visible');
+    
+    // Show result message
+    const diff=Math.abs(d.guess-d.target);
+    const msg=document.getElementById('resultMsg');
+    msg.style.display='block';
+    if(diff<=5){msg.className='result-msg perfect';msg.textContent='🎯 PERFECT! +4 points';}
+    else if(diff<=15){msg.className='result-msg close';msg.textContent='👍 Close! +2 points';}
+    else{msg.className='result-msg miss';msg.textContent='😬 Miss! +0 points';}
+    
+    document.getElementById('teamScore').textContent=d.teamScore;
+    document.getElementById('roundScore').textContent=d.roundPoints;
+    updateScoreboard();
+    
+    document.getElementById('actionBtn').textContent=state.isHost?'Next Round':'Waiting...';
+    document.getElementById('actionBtn').disabled=!state.isHost;
+    document.getElementById('slider').disabled=true;
+});
+
+socket.on('wavelength-game-over',d=>{state.scores=d.scores;state.teamScore=d.teamScore;showGameOver();});
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+function handleAction(){
+    if(state.phase==='psychic'&&state.isPsychic){
+        const clue=document.getElementById('clueInput').value.trim();
+        socket.emit('wavelength-clue',{roomCode,clue});
+        document.getElementById('clueInput').disabled=true;
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('actionBtn').textContent='Clue Submitted!';
+    }else if(state.phase==='guessing'&&!state.isPsychic){
+        const guess=parseInt(document.getElementById('slider').value);
+        socket.emit('wavelength-guess',{roomCode,guess});
+        document.getElementById('slider').disabled=true;
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('actionBtn').textContent='Guess Locked!';
+    }else if(state.phase==='results'&&state.isHost){
+        socket.emit('wavelength-next',{roomCode});
+    }
+}
+
+function updateScoreboard(){
+    const container=document.getElementById('scoreList');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(!sorted.length){container.innerHTML='<div class="empty">No scores yet</div>';return;}
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+}
+
+function showGameOver(){
+    document.getElementById('finalTeamScore').textContent=state.teamScore;
+    const container=document.getElementById('finalScores');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+    document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>socket.disconnect());
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

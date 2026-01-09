@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Artist - TheGaming.co</title>
+    <meta name="description" content="Fake Artist - Draw together, but one player doesn't know what you're drawing!">
+    <meta name="theme-color" content="#ec4899">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#1a0a15;--card:#2a1525;--accent:#ec4899;--glow:rgba(236,72,153,0.4);--green:#22c55e;--red:#ef4444;--gold:#fbbf24;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(236,72,153,0.1) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(26,10,21,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:60px 12px 24px;min-height:100vh;max-width:700px;margin:0 auto}
+        .info-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:10px 16px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+        .info-item{text-align:center}
+        .info-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+        .info-val{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--accent)}
+        .role-banner{background:linear-gradient(135deg,var(--card),rgba(236,72,153,0.15));border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;box-shadow:0 0 25px var(--glow)}
+        .role-banner.faker{border-color:var(--red);background:linear-gradient(135deg,var(--card),rgba(239,68,68,0.15))}
+        .role-txt{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px}
+        .role-banner.faker .role-txt{color:var(--red)}
+        .word-hint{font-size:.85rem;color:var(--dim);margin-top:6px}
+        .canvas-wrap{position:relative;margin-bottom:16px;border-radius:12px;overflow:hidden;border:2px solid var(--border);background:#fff}
+        #canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
+        .canvas-disabled{pointer-events:none;opacity:.8}
+        .turn-indicator{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.8);padding:6px 12px;border-radius:6px;font-size:.8rem;font-weight:600}
+        .turn-indicator.your-turn{background:var(--accent);color:#fff}
+        .color-bar{display:flex;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+        .color-btn{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:.2s}
+        .color-btn:hover{transform:scale(1.1)}
+        .color-btn.selected{border-color:#fff;box-shadow:0 0 10px currentColor}
+        .players-bar{display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin-bottom:16px}
+        .player-turn{padding:8px 14px;background:var(--card);border:2px solid var(--border);border-radius:20px;font-size:.8rem;font-weight:600;white-space:nowrap;flex-shrink:0}
+        .player-turn.current{border-color:var(--accent);background:rgba(236,72,153,0.2)}
+        .player-turn.done{opacity:.5}
+        .vote-section{margin-bottom:20px;display:none}
+        .vote-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px;text-align:center}
+        .vote-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+        .vote-btn{padding:12px 8px;background:var(--card);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;text-align:center}
+        .vote-btn:hover{border-color:var(--accent)}
+        .vote-btn.selected{border-color:var(--accent);box-shadow:0 0 15px var(--glow)}
+        .vote-btn.correct{border-color:var(--green);background:rgba(34,197,94,0.2)}
+        .vote-btn.wrong{border-color:var(--red);background:rgba(239,68,68,0.2)}
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#db2777);color:#fff}
+        .btn-p:hover{filter:brightness(1.1)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        .result-box{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:20px;text-align:center;margin-bottom:16px;display:none}
+        .result-box.win{border-color:var(--green);background:rgba(34,197,94,0.1)}
+        .result-box.lose{border-color:var(--red);background:rgba(239,68,68,0.1)}
+        .result-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:6px}
+        .result-desc{font-size:.85rem;color:var(--dim)}
+        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:20px}
+        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .score-list{display:flex;flex-direction:column;gap:8px}
+        .score-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px}
+        .score-row.top{background:rgba(236,72,153,0.15)}
+        .score-name{font-weight:600}
+        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.9rem}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px;margin-top:24px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">🎨 FAKE ARTIST</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="info-bar">
+        <div class="info-item"><div class="info-lbl">Round</div><div class="info-val" id="roundNum">1/3</div></div>
+        <div class="info-item"><div class="info-lbl">Turn</div><div class="info-val" id="turnNum">1/6</div></div>
+        <div class="info-item"><div class="info-lbl">Phase</div><div class="info-val" id="phaseVal">Draw</div></div>
+    </div>
+    
+    <div class="role-banner" id="roleBanner">
+        <div class="role-txt" id="roleTxt">ARTIST</div>
+        <div class="word-hint" id="wordHint">The word is: ???</div>
+    </div>
+    
+    <div class="canvas-wrap">
+        <canvas id="canvas" width="600" height="400"></canvas>
+        <div class="turn-indicator" id="turnIndicator">Waiting...</div>
+    </div>
+    
+    <div class="color-bar" id="colorBar"></div>
+    <div class="players-bar" id="playersBar"></div>
+    
+    <div class="vote-section" id="voteSection">
+        <div class="vote-title">Who is the Fake Artist?</div>
+        <div class="vote-grid" id="voteGrid"></div>
+    </div>
+    
+    <div class="result-box" id="resultBox">
+        <div class="result-title" id="resultTitle">Result</div>
+        <div class="result-desc" id="resultDesc">Description</div>
+    </div>
+    
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Waiting...</button>
+    
+    <div class="scoreboard">
+        <div class="sb-title">Scoreboard</div>
+        <div class="score-list" id="scoreList"><div class="empty">Scores appear here</div></div>
+    </div>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2>🏆 GAME OVER</h2>
+        <div class="scoreboard"><div class="sb-title">Final Scores</div><div class="score-list" id="finalScores"></div></div>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=fake-artist';
+
+const COLORS=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#000000'];
+let state={players:[],scores:{},isFaker:false,word:'',phase:'waiting',currentTurn:0,turnOrder:[],myVote:null,selectedColor:COLORS[0],isHost:localStorage.getItem('tempIsHost')==='true',isMyTurn:false,hasDrawn:false};
+let isDrawing=false,lastX=0,lastY=0;
+
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=4;
+
+document.getElementById('colorBar').innerHTML=COLORS.map((c,i)=>`<button class="color-btn ${i===0?'selected':''}" style="background:${c}" onclick="selectColor('${c}',this)"></button>`).join('');
+
+function selectColor(c,el){state.selectedColor=c;document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');}
+
+// Canvas drawing
+function getPos(e){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width;
+    const scaleY=canvas.height/rect.height;
+    if(e.touches){
+        return{x:(e.touches[0].clientX-rect.left)*scaleX,y:(e.touches[0].clientY-rect.top)*scaleY};
+    }
+    return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
+}
+
+canvas.addEventListener('mousedown',e=>{if(state.isMyTurn&&!state.hasDrawn){isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;}});
+canvas.addEventListener('mousemove',e=>{if(isDrawing)draw(e);});
+canvas.addEventListener('mouseup',endDraw);
+canvas.addEventListener('mouseleave',endDraw);
+canvas.addEventListener('touchstart',e=>{if(state.isMyTurn&&!state.hasDrawn){e.preventDefault();isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;}},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(isDrawing){e.preventDefault();draw(e);}},{passive:false});
+canvas.addEventListener('touchend',endDraw);
+
+function draw(e){
+    if(!isDrawing||!state.isMyTurn||state.hasDrawn)return;
+    const p=getPos(e);
+    ctx.strokeStyle=state.selectedColor;
+    ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();
+    socket.emit('fakeartist-draw',{roomCode,x1:lastX,y1:lastY,x2:p.x,y2:p.y,color:state.selectedColor});
+    lastX=p.x;lastY=p.y;
+}
+
+function endDraw(){
+    if(isDrawing&&state.isMyTurn&&!state.hasDrawn){
+        isDrawing=false;
+        state.hasDrawn=true;
+        socket.emit('fakeartist-done',{roomCode});
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('actionBtn').textContent='Stroke Complete!';
+    }
+}
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;document.getElementById('actionBtn').disabled=!state.isHost;document.getElementById('actionBtn').textContent=state.isHost?'Start Game':'Waiting for host...';});
+socket.on('player-joined',d=>{state.players=d.room.players||[];});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('fakeartist-round',d=>{
+    state.phase='drawing';state.isFaker=d.isFaker;state.word=d.word||'';state.turnOrder=d.turnOrder;state.currentTurn=0;state.hasDrawn=false;
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    canvas.classList.remove('canvas-disabled');
+    
+    document.getElementById('roundNum').textContent=d.round+'/'+d.totalRounds;
+    const banner=document.getElementById('roleBanner');
+    if(d.isFaker){
+        banner.classList.add('faker');
+        document.getElementById('roleTxt').textContent='FAKE ARTIST';
+        document.getElementById('wordHint').textContent="You don't know the word! Blend in!";
+    }else{
+        banner.classList.remove('faker');
+        document.getElementById('roleTxt').textContent='ARTIST';
+        document.getElementById('wordHint').textContent='The word is: '+d.word;
+    }
+    
+    document.getElementById('voteSection').style.display='none';
+    document.getElementById('resultBox').style.display='none';
+    document.getElementById('phaseVal').textContent='Draw';
+    renderTurnOrder();
+    updateTurnUI();
+});
+
+socket.on('fakeartist-turn',d=>{
+    state.currentTurn=d.turnIndex;state.hasDrawn=false;
+    renderTurnOrder();
+    updateTurnUI();
+});
+
+socket.on('fakeartist-draw',d=>{
+    ctx.strokeStyle=d.color;
+    ctx.beginPath();ctx.moveTo(d.x1,d.y1);ctx.lineTo(d.x2,d.y2);ctx.stroke();
+});
+
+socket.on('fakeartist-vote-phase',d=>{
+    state.phase='voting';state.myVote=null;
+    document.getElementById('phaseVal').textContent='Vote';
+    document.getElementById('voteSection').style.display='block';
+    renderVoteGrid();
+    document.getElementById('actionBtn').textContent='Lock In Vote';
+    document.getElementById('actionBtn').disabled=true;
+    canvas.classList.add('canvas-disabled');
+});
+
+socket.on('fakeartist-results',d=>{
+    state.phase='results';state.scores=d.scores;
+    const box=document.getElementById('resultBox');
+    box.style.display='block';
+    box.className='result-box '+(d.fakerCaught?'win':'lose');
+    document.getElementById('resultTitle').textContent=d.fakerCaught?'Artists Win!':'Faker Wins!';
+    document.getElementById('resultDesc').textContent='The Fake Artist was '+d.faker+'. The word was "'+d.word+'".';
+    
+    document.querySelectorAll('.vote-btn').forEach(el=>{
+        if(el.dataset.name===d.faker)el.classList.add('correct');
+        else if(el.classList.contains('selected'))el.classList.add('wrong');
+    });
+    
+    updateScoreboard();
+    document.getElementById('actionBtn').textContent=state.isHost?'Next Round':'Waiting...';
+    document.getElementById('actionBtn').disabled=!state.isHost;
+});
+
+socket.on('fakeartist-game-over',d=>{state.scores=d.scores;showGameOver();});
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+function renderTurnOrder(){
+    const bar=document.getElementById('playersBar');
+    bar.innerHTML=state.turnOrder.map((name,i)=>{
+        let cls='player-turn';
+        if(i<state.currentTurn)cls+=' done';
+        else if(i===state.currentTurn)cls+=' current';
+        return`<div class="${cls}">${esc(name)}${name===playerName?' (You)':''}</div>`;
+    }).join('');
+    document.getElementById('turnNum').textContent=(state.currentTurn+1)+'/'+state.turnOrder.length;
+}
+
+function updateTurnUI(){
+    const currentPlayer=state.turnOrder[state.currentTurn];
+    state.isMyTurn=currentPlayer===playerName;
+    const indicator=document.getElementById('turnIndicator');
+    if(state.isMyTurn){
+        indicator.textContent="Your turn! Draw one stroke";
+        indicator.classList.add('your-turn');
+        document.getElementById('actionBtn').textContent='Drawing...';
+        document.getElementById('actionBtn').disabled=true;
+    }else{
+        indicator.textContent=currentPlayer+"'s turn";
+        indicator.classList.remove('your-turn');
+        document.getElementById('actionBtn').textContent='Waiting for '+currentPlayer;
+        document.getElementById('actionBtn').disabled=true;
+    }
+}
+
+function renderVoteGrid(){
+    const grid=document.getElementById('voteGrid');
+    grid.innerHTML=state.players.map(p=>`<button class="vote-btn" onclick="selectVote('${esc(p.name)}')" data-name="${esc(p.name)}">${esc(p.name)}</button>`).join('');
+}
+
+function selectVote(name){
+    if(state.phase!=='voting')return;
+    state.myVote=name;
+    document.querySelectorAll('.vote-btn').forEach(el=>el.classList.toggle('selected',el.dataset.name===name));
+    document.getElementById('actionBtn').disabled=false;
+}
+
+function handleAction(){
+    if(state.phase==='waiting'&&state.isHost){
+        socket.emit('fakeartist-start',{roomCode});
+    }else if(state.phase==='voting'&&state.myVote){
+        socket.emit('fakeartist-vote',{roomCode,votedFor:state.myVote});
+        document.getElementById('actionBtn').disabled=true;
+        document.getElementById('actionBtn').textContent='Voted!';
+        document.querySelectorAll('.vote-btn').forEach(el=>el.style.pointerEvents='none');
+    }else if(state.phase==='results'&&state.isHost){
+        socket.emit('fakeartist-next',{roomCode});
+    }
+}
+
+function updateScoreboard(){
+    const container=document.getElementById('scoreList');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(!sorted.length){container.innerHTML='<div class="empty">No scores yet</div>';return;}
+    container.innerHTML=sorted.map(([name,score],i)=>`<div class="score-row ${i===0?'top':''}"><span class="score-name">${esc(name)}</span><span class="score-val">${score}</span></div>`).join('');
+}
+
+function showGameOver(){
+    const container=document.getElementById('finalScores');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
+    container.innerHTML=sorted.map(([name,score],i)=>`<div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>`).join('');
+    document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>socket.disconnect());
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

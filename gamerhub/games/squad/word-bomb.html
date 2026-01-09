@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Bomb - TheGaming.co</title>
+    <meta name="description" content="Word Bomb - Type words containing the syllable before time runs out!">
+    <meta name="theme-color" content="#f43f5e">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#1a0a0f;--card:#2a1520;--accent:#f43f5e;--glow:rgba(244,63,94,0.5);--green:#22c55e;--gold:#fbbf24;--red:#ef4444;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(244,63,94,0.15) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(26,10,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:65px 16px 24px;min-height:100vh;max-width:600px;margin:0 auto}
+        .bomb-wrap{text-align:center;margin-bottom:20px}
+        .bomb{width:140px;height:140px;margin:0 auto;background:radial-gradient(circle at 30% 30%,#4a4a4a,#1a1a1a);border-radius:50%;position:relative;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+        .bomb.active{animation:shake .08s infinite}
+        .bomb.exploded{animation:explode .4s forwards}
+        @keyframes shake{0%,100%{transform:translateX(0)}50%{transform:translateX(-3px)}}
+        @keyframes explode{0%{transform:scale(1);opacity:1}50%{transform:scale(1.5);background:radial-gradient(circle,#ff6b35,#f43f5e);box-shadow:0 0 80px var(--accent)}100%{transform:scale(0);opacity:0}}
+        .fuse{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:6px;height:20px;background:linear-gradient(#8b4513,#654321);border-radius:3px}
+        .spark{position:absolute;top:-25px;left:50%;transform:translateX(-50%);width:12px;height:12px;background:var(--gold);border-radius:50%;box-shadow:0 0 15px var(--gold);animation:sparkle .3s infinite}
+        @keyframes sparkle{0%,100%{opacity:1;transform:translateX(-50%) scale(1)}50%{opacity:.6;transform:translateX(-50%) scale(.8)}}
+        .syl-box{background:linear-gradient(135deg,var(--card),rgba(244,63,94,0.2));border:3px solid var(--accent);border-radius:16px;padding:20px 32px;display:inline-block;margin-top:16px;box-shadow:0 0 30px var(--glow)}
+        .syl-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+        .syl{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:6px;color:var(--accent)}
+        .timer-bar{height:8px;background:var(--card);border-radius:4px;margin-bottom:20px;overflow:hidden}
+        .timer-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));transition:width .1s linear}
+        .current{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center}
+        .current.me{border-color:var(--accent);box-shadow:0 0 20px var(--glow)}
+        .cur-lbl{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+        .cur-name{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--accent)}
+        .current.me .cur-name{color:var(--gold)}
+        .last{text-align:center;margin-bottom:16px;padding:8px;font-size:.85rem;color:var(--dim)}
+        .last span{color:var(--green);font-weight:700}
+        .input-area{margin-bottom:20px}
+        .inp{width:100%;padding:16px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;text-align:center;text-transform:uppercase;transition:.2s}
+        .inp:focus{outline:0;border-color:var(--accent)}
+        .inp:disabled{opacity:.5}
+        .inp.valid{border-color:var(--green)}
+        .inp.invalid{border-color:var(--red);animation:inpShake .3s}
+        @keyframes inpShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+        .hint{text-align:center;font-size:.8rem;color:var(--dim);margin-top:8px}
+        .players{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+        .p-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .p-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+        .p-card{padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;text-align:center;border:1px solid transparent}
+        .p-card.active{border-color:var(--accent);background:var(--glow)}
+        .p-card.elim{opacity:.4;text-decoration:line-through}
+        .p-name{font-weight:600;font-size:.85rem;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .hearts{display:flex;justify-content:center;gap:2px}
+        .heart{color:var(--red);font-size:.9rem}
+        .heart.lost{opacity:.2}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:16px}
+        .winner{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent);margin-bottom:24px}
+        .btns{display:flex;justify-content:center;gap:12px}
+        .btn{padding:12px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0;flex:1}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#e11d48);color:#fff}
+        .btn-p:hover{filter:brightness(1.1)}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">💣 WORD BOMB</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="bomb-wrap">
+        <div class="bomb" id="bomb"><div class="fuse"></div><div class="spark"></div></div>
+        <div class="syl-box"><div class="syl-lbl">Type a word containing</div><div class="syl" id="syl">ING</div></div>
+    </div>
+    <div class="timer-bar"><div class="timer-fill" id="timer" style="width:100%"></div></div>
+    <div class="current" id="cur"><div class="cur-lbl">Current Turn</div><div class="cur-name" id="curName">Waiting...</div></div>
+    <div class="last" id="last"></div>
+    <div class="input-area">
+        <input type="text" class="inp" id="inp" placeholder="TYPE A WORD..." autocomplete="off" disabled>
+        <div class="hint" id="hint">Wait for your turn...</div>
+    </div>
+    <div class="players"><div class="p-title">Players</div><div class="p-grid" id="pGrid"></div></div>
+</main>
+
+<div class="overlay" id="over">
+    <div class="modal"><h2>🏆 WINNER!</h2><div class="winner" id="winName">Player</div>
+        <div class="btns"><button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button><button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button></div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=word-bomb';
+
+let state={players:[],lives:{},currentPlayer:'',syllable:'ING',timeLimit:8,timeRemaining:8,isMyTurn:false};
+let timerInt=null;
+const inp=document.getElementById('inp');
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];render()});
+socket.on('player-joined',d=>{state.players=d.room.players||[];render()});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];render()});
+
+socket.on('wordbomb-round',d=>{
+    state.currentPlayer=d.currentPlayer;state.syllable=d.syllable;state.lives=d.lives;
+    state.timeLimit=d.timeLimit||8;state.timeRemaining=state.timeLimit;
+    state.isMyTurn=d.currentPlayer===playerName;
+    document.getElementById('syl').textContent=d.syllable.toUpperCase();
+    document.getElementById('curName').textContent=d.currentPlayer;
+    document.getElementById('cur').classList.toggle('me',state.isMyTurn);
+    inp.disabled=!state.isMyTurn;inp.value='';inp.classList.remove('valid','invalid');
+    document.getElementById('hint').textContent=state.isMyTurn?'Type fast! Press Enter':'Waiting for '+d.currentPlayer+'...';
+    if(state.isMyTurn)inp.focus();
+    document.getElementById('bomb').classList.add('active');
+    document.getElementById('bomb').classList.remove('exploded');
+    render();startTimer();
+});
+
+socket.on('wordbomb-valid',d=>{
+    document.getElementById('last').innerHTML='<span>'+d.word+'</span> by '+d.player+' ✓';
+    inp.classList.add('valid');setTimeout(()=>inp.classList.remove('valid'),300);
+});
+
+socket.on('wordbomb-invalid',d=>{
+    if(d.player===playerName){inp.classList.add('invalid');setTimeout(()=>inp.classList.remove('invalid'),300);}
+});
+
+socket.on('wordbomb-timeout',d=>{
+    state.lives=d.lives;
+    document.getElementById('bomb').classList.remove('active');
+    document.getElementById('bomb').classList.add('exploded');
+    render();stopTimer();
+    setTimeout(()=>document.getElementById('bomb').classList.remove('exploded'),500);
+});
+
+socket.on('wordbomb-eliminated',d=>{document.getElementById('last').innerHTML='💀 '+d.player+' eliminated!';});
+socket.on('wordbomb-game-over',d=>{stopTimer();document.getElementById('winName').textContent=d.winner;document.getElementById('over').classList.add('active');});
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&state.isMyTurn&&inp.value.trim()){
+        socket.emit('wordbomb-submit',{roomCode,word:inp.value.trim()});inp.value='';
+    }
+});
+
+function render(){
+    const g=document.getElementById('pGrid');
+    const pd=state.players.map(p=>({name:p.name,lives:state.lives[p.name]??3,active:p.name===state.currentPlayer,elim:(state.lives[p.name]??3)<=0}));
+    g.innerHTML=pd.map(p=>`<div class="p-card ${p.active?'active':''} ${p.elim?'elim':''}"><div class="p-name">${esc(p.name)}${p.name===playerName?' (You)':''}</div><div class="hearts">${[1,2,3].map(i=>`<span class="heart ${i>p.lives?'lost':''}">❤️</span>`).join('')}</div></div>`).join('');
+}
+
+function startTimer(){stopTimer();state.timeRemaining=state.timeLimit;updTimer();timerInt=setInterval(()=>{state.timeRemaining-=0.1;updTimer();if(state.timeRemaining<=0)stopTimer();},100);}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function updTimer(){document.getElementById('timer').style.width=Math.max(0,(state.timeRemaining/state.timeLimit)*100)+'%';}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>{stopTimer();socket.disconnect();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

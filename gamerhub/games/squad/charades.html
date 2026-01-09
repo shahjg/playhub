@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charades - TheGaming.co</title>
+    <meta name="description" content="Charades - Act it out without speaking!">
+    <meta name="theme-color" content="#22c55e">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0a1a0f;--card:#122a18;--accent:#22c55e;--glow:rgba(34,197,94,0.4);--gold:#fbbf24;--red:#ef4444;--purple:#a855f7;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(34,197,94,0.12) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(10,26,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:65px 16px 24px;min-height:100vh;max-width:600px;margin:0 auto}
+        
+        .round{text-align:center;margin-bottom:16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim)}
+        .round span{color:var(--accent)}
+        
+        /* Actor Display */
+        .actor-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;margin-bottom:20px}
+        .actor-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+        .actor-name{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;color:var(--accent)}
+        .actor-card.is-me{border-color:var(--accent);box-shadow:0 0 30px var(--glow)}
+        .actor-card.is-me .actor-lbl{color:var(--gold)}
+        .actor-card.is-me .actor-name{color:var(--gold)}
+        
+        /* Word Card */
+        .word-card{background:linear-gradient(135deg,var(--card),rgba(34,197,94,0.15));border:3px solid var(--accent);border-radius:20px;padding:40px 24px;text-align:center;margin-bottom:20px;box-shadow:0 0 40px var(--glow)}
+        .word-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+        .word-txt{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px}
+        .word-hidden{filter:blur(20px);user-select:none}
+        .word-hint{font-size:.85rem;color:var(--dim);margin-top:12px}
+        
+        /* Timer */
+        .timer-bar{height:10px;background:var(--card);border-radius:5px;margin-bottom:20px;overflow:hidden}
+        .timer-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold),var(--red));transition:width .1s linear}
+        .timer-text{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent);margin-bottom:16px}
+        .timer-text.danger{color:var(--red);animation:pulse .5s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        
+        /* Score Display */
+        .round-score{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
+        .score-item{text-align:center;padding:12px 24px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+        .score-item-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+        .score-item-val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)}
+        
+        /* Actions */
+        .actions{display:flex;gap:12px;margin-bottom:20px}
+        .btn{flex:1;padding:16px 24px;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-pass{background:rgba(251,191,36,0.2);border:2px solid var(--gold);color:var(--gold)}
+        .btn-pass:hover{background:rgba(251,191,36,0.3)}
+        .btn-correct{background:var(--accent);color:#000}
+        .btn-correct:hover{filter:brightness(1.1)}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .btn-p{background:var(--accent);color:#000;width:100%}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        
+        /* Guesser Selection */
+        .guesser-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px}
+        .guesser-title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .guesser-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+        .guesser-btn{padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;cursor:pointer;transition:.2s}
+        .guesser-btn:hover{border-color:var(--accent);background:rgba(34,197,94,0.1)}
+        .guesser-btn.selected{border-color:var(--accent);background:rgba(34,197,94,0.2)}
+        
+        /* Scoreboard */
+        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .score-list{display:flex;flex-direction:column;gap:8px}
+        .score-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px}
+        .score-row.top{background:rgba(34,197,94,0.15)}
+        .score-name{font-weight:600}
+        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.9rem}
+        
+        /* Overlay */
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px;margin-top:24px}
+        .modal-btns .btn{padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">🎭 CHARADES</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="round">ROUND <span id="roundNum">1</span> / <span id="totalRounds">?</span></div>
+    
+    <div class="actor-card" id="actorCard">
+        <div class="actor-lbl" id="actorLbl">Acting</div>
+        <div class="actor-name" id="actorName">Waiting...</div>
+    </div>
+    
+    <div class="timer-text" id="timerText">60</div>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    
+    <div class="word-card">
+        <div class="word-lbl">The Word</div>
+        <div class="word-txt" id="wordTxt">?????</div>
+        <div class="word-hint" id="wordHint">Wait for your turn...</div>
+    </div>
+    
+    <div class="round-score">
+        <div class="score-item"><div class="score-item-lbl">Correct</div><div class="score-item-val" id="correctCount">0</div></div>
+        <div class="score-item"><div class="score-item-lbl">Passed</div><div class="score-item-val" id="passedCount">0</div></div>
+    </div>
+    
+    <!-- Actor Controls -->
+    <div id="actorControls" style="display:none">
+        <div class="guesser-section">
+            <div class="guesser-title">Who guessed correctly?</div>
+            <div class="guesser-grid" id="guesserGrid"></div>
+        </div>
+        <div class="actions">
+            <button class="btn btn-pass" onclick="passWord()">⏭️ Pass</button>
+            <button class="btn btn-correct" id="correctBtn" onclick="markCorrect()" disabled>✓ Correct</button>
+        </div>
+    </div>
+    
+    <!-- Non-Actor View -->
+    <div id="guesserView" style="display:none">
+        <p style="text-align:center;color:var(--dim);font-size:.9rem;padding:20px">Watch the actor and shout out your guesses!</p>
+    </div>
+    
+    <div class="scoreboard">
+        <div class="sb-title">Scoreboard</div>
+        <div class="score-list" id="scoreList"><div class="empty">Scores appear here</div></div>
+    </div>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2>🏆 GAME OVER</h2>
+        <div class="scoreboard"><div class="sb-title">Final Scores</div><div class="score-list" id="finalScores"></div></div>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=charades';
+
+let state={players:[],scores:{},actor:'',word:'',isActor:false,selectedGuesser:null,correctCount:0,passedCount:0,timeRemaining:60,timeLimit:60};
+let timerInt=null;
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];renderGuessers();});
+socket.on('player-joined',d=>{state.players=d.room.players||[];renderGuessers();});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];renderGuessers();});
+
+socket.on('charades-round',d=>{
+    state.actor=d.actor;state.word=d.word;state.isActor=d.actor===playerName;
+    state.correctCount=0;state.passedCount=0;state.selectedGuesser=null;
+    state.timeLimit=d.timeLimit||60;state.timeRemaining=state.timeLimit;
+    
+    document.getElementById('roundNum').textContent=d.round;
+    document.getElementById('totalRounds').textContent=d.totalRounds;
+    document.getElementById('actorName').textContent=d.actor;
+    document.getElementById('actorCard').classList.toggle('is-me',state.isActor);
+    document.getElementById('actorLbl').textContent=state.isActor?'You\'re Acting!':'Acting';
+    
+    if(state.isActor){
+        document.getElementById('wordTxt').textContent=d.word;
+        document.getElementById('wordTxt').classList.remove('word-hidden');
+        document.getElementById('wordHint').textContent='Act this out! No speaking!';
+        document.getElementById('actorControls').style.display='block';
+        document.getElementById('guesserView').style.display='none';
+    }else{
+        document.getElementById('wordTxt').textContent='?????';
+        document.getElementById('wordTxt').classList.add('word-hidden');
+        document.getElementById('wordHint').textContent='Guess what '+d.actor+' is acting!';
+        document.getElementById('actorControls').style.display='none';
+        document.getElementById('guesserView').style.display='block';
+    }
+    
+    document.getElementById('correctCount').textContent=0;
+    document.getElementById('passedCount').textContent=0;
+    renderGuessers();
+    startTimer();
+});
+
+socket.on('charades-correct',d=>{
+    state.correctCount++;state.scores=d.scores;state.word=d.nextWord;
+    document.getElementById('correctCount').textContent=state.correctCount;
+    if(state.isActor&&d.nextWord){
+        document.getElementById('wordTxt').textContent=d.nextWord;
+        state.selectedGuesser=null;
+        document.querySelectorAll('.guesser-btn').forEach(el=>el.classList.remove('selected'));
+        document.getElementById('correctBtn').disabled=true;
+    }
+    updateScoreboard();
+});
+
+socket.on('charades-pass',d=>{
+    state.passedCount++;state.word=d.nextWord;
+    document.getElementById('passedCount').textContent=state.passedCount;
+    if(state.isActor&&d.nextWord){
+        document.getElementById('wordTxt').textContent=d.nextWord;
+    }
+});
+
+socket.on('charades-time-up',d=>{
+    stopTimer();state.scores=d.scores;
+    updateScoreboard();
+    // Host will trigger next round
+});
+
+socket.on('charades-game-over',d=>{state.scores=d.scores;showGameOver();});
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+function renderGuessers(){
+    const grid=document.getElementById('guesserGrid');
+    const others=state.players.filter(p=>p.name!==state.actor);
+    grid.innerHTML=others.map(p=>`
+        <button class="guesser-btn ${state.selectedGuesser===p.name?'selected':''}" onclick="selectGuesser('${esc(p.name)}')">${esc(p.name)}</button>
+    `).join('');
+}
+
+function selectGuesser(name){
+    state.selectedGuesser=name;
+    document.querySelectorAll('.guesser-btn').forEach(el=>el.classList.toggle('selected',el.textContent===name));
+    document.getElementById('correctBtn').disabled=false;
+}
+
+function markCorrect(){
+    if(!state.selectedGuesser)return;
+    socket.emit('charades-correct',{roomCode,guesser:state.selectedGuesser});
+}
+
+function passWord(){
+    socket.emit('charades-pass',{roomCode});
+}
+
+function updateScoreboard(){
+    const container=document.getElementById('scoreList');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(!sorted.length){container.innerHTML='<div class="empty">No scores yet</div>';return;}
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+}
+
+function showGameOver(){
+    stopTimer();
+    const container=document.getElementById('finalScores');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+    document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+function startTimer(){stopTimer();state.timeRemaining=state.timeLimit;updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0)stopTimer();},1000);}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function updTimer(){
+    const el=document.getElementById('timerText');
+    const fill=document.getElementById('timerFill');
+    el.textContent=state.timeRemaining;
+    el.classList.toggle('danger',state.timeRemaining<=10);
+    fill.style.width=(state.timeRemaining/state.timeLimit*100)+'%';
+}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>{stopTimer();socket.disconnect();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

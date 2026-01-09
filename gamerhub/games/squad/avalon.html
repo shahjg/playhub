@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avalon - TheGaming.co</title>
+    <meta name="description" content="Avalon - A game of hidden loyalties and deduction!">
+    <meta name="theme-color" content="#1e40af">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#050a1a;--card:#101a30;--accent:#3b82f6;--glow:rgba(59,130,246,0.4);--good:#3b82f6;--evil:#dc2626;--gold:#fbbf24;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 20%,rgba(59,130,246,0.08) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(5,10,26,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(220,38,38,0.1);color:var(--evil);border-color:var(--evil)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:60px 12px 24px;min-height:100vh;max-width:700px;margin:0 auto}
+        .role-card{background:linear-gradient(135deg,var(--card),rgba(59,130,246,0.1));border:2px solid var(--accent);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;box-shadow:0 0 30px var(--glow)}
+        .role-card.evil{border-color:var(--evil);background:linear-gradient(135deg,var(--card),rgba(220,38,38,0.1));box-shadow:0 0 30px rgba(220,38,38,0.4)}
+        .role-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+        .role-name{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px}
+        .role-card.evil .role-name{color:var(--evil)}
+        .role-desc{font-size:.85rem;color:var(--dim);margin-top:8px;line-height:1.5}
+        .role-info{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:.8rem;color:var(--dim)}
+        .role-info span{color:var(--evil);font-weight:700}
+        .quest-track{display:flex;justify-content:center;gap:8px;margin-bottom:16px}
+        .quest-marker{width:50px;height:50px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;border:2px solid var(--border);background:var(--card)}
+        .quest-marker.current{border-color:var(--gold);box-shadow:0 0 15px rgba(251,191,36,0.5)}
+        .quest-marker.success{background:var(--good);border-color:var(--good)}
+        .quest-marker.fail{background:var(--evil);border-color:var(--evil)}
+        .quest-marker .team-size{font-size:.6rem;color:var(--dim);line-height:1}
+        .phase-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;margin-bottom:16px}
+        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--accent);margin-bottom:6px}
+        .phase-desc{font-size:.85rem;color:var(--dim)}
+        .leader-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;text-align:center}
+        .leader-title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
+        .leader-name{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold)}
+        .players-section{margin-bottom:16px}
+        .players-title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+        .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+        .player-btn{padding:12px 8px;background:var(--card);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;text-align:center}
+        .player-btn:hover{border-color:var(--accent)}
+        .player-btn.selected{border-color:var(--good);background:rgba(59,130,246,0.2)}
+        .player-btn.on-team{border-color:var(--gold);background:rgba(251,191,36,0.15)}
+        .player-btn:disabled{opacity:.5;cursor:not-allowed}
+        .vote-section{display:flex;gap:12px;margin-bottom:16px}
+        .vote-btn{flex:1;padding:20px;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;cursor:pointer;border:0;transition:.2s}
+        .vote-btn.approve{background:var(--good);color:#fff}
+        .vote-btn.reject{background:var(--evil);color:#fff}
+        .vote-btn:hover{filter:brightness(1.1)}
+        .vote-btn:disabled{opacity:.5;cursor:not-allowed}
+        .quest-vote-section{display:flex;gap:12px;margin-bottom:16px}
+        .quest-btn{flex:1;padding:20px;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;cursor:pointer;border:0;transition:.2s}
+        .quest-btn.success-vote{background:var(--good);color:#fff}
+        .quest-btn.fail-vote{background:var(--evil);color:#fff}
+        .quest-btn:hover{filter:brightness(1.1)}
+        .quest-btn:disabled{opacity:.5;cursor:not-allowed}
+        .results-box{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:20px;text-align:center;margin-bottom:16px}
+        .results-box.good-win{border-color:var(--good);background:rgba(59,130,246,0.1)}
+        .results-box.evil-win{border-color:var(--evil);background:rgba(220,38,38,0.1)}
+        .results-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:8px}
+        .results-desc{font-size:.9rem;color:var(--dim)}
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#1e40af);color:#fff}
+        .btn-p:hover{filter:brightness(1.1)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;margin-bottom:16px}
+        .modal.good-win h2{color:var(--good)}
+        .modal.evil-win h2{color:var(--evil)}
+        .modal p{color:var(--dim);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">⚔️ AVALON</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="role-card" id="roleCard">
+        <div class="role-lbl">Your Role</div>
+        <div class="role-name" id="roleName">???</div>
+        <div class="role-desc" id="roleDesc">Waiting for game to start...</div>
+        <div class="role-info" id="roleInfo" style="display:none"></div>
+    </div>
+    <div class="quest-track" id="questTrack"></div>
+    <div class="phase-card">
+        <div class="phase-title" id="phaseTitle">WAITING</div>
+        <div class="phase-desc" id="phaseDesc">Waiting for players...</div>
+    </div>
+    <div class="leader-section" id="leaderSection" style="display:none">
+        <div class="leader-title">Quest Leader</div>
+        <div class="leader-name" id="leaderName">Player</div>
+    </div>
+    <div class="players-section" id="playersSection" style="display:none">
+        <div class="players-title" id="playersTitle">Select Team Members</div>
+        <div class="players-grid" id="playersGrid"></div>
+    </div>
+    <div class="vote-section" id="voteSection" style="display:none">
+        <button class="vote-btn approve" onclick="vote('approve')">✓ APPROVE</button>
+        <button class="vote-btn reject" onclick="vote('reject')">✗ REJECT</button>
+    </div>
+    <div class="quest-vote-section" id="questVoteSection" style="display:none">
+        <button class="quest-btn success-vote" onclick="questVote('success')">⚔️ SUCCESS</button>
+        <button class="quest-btn fail-vote" onclick="questVote('fail')" id="failBtn">💀 FAIL</button>
+    </div>
+    <div class="results-box" id="resultsBox" style="display:none">
+        <div class="results-title" id="resultsTitle">Result</div>
+        <div class="results-desc" id="resultsDesc">Description</div>
+    </div>
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Start Game</button>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal" id="gameoverModal">
+        <h2 id="winnerTitle">GOOD WINS</h2>
+        <p id="winnerDesc">The loyal servants of Arthur have prevailed!</p>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=avalon';
+
+const QUEST_SIZES={5:[2,3,2,3,3],6:[2,3,4,3,4],7:[2,3,3,4,4],8:[3,4,4,5,5],9:[3,4,4,5,5],10:[3,4,4,5,5]};
+let state={players:[],role:'',team:'good',evilPlayers:[],phase:'waiting',quest:0,questResults:[],leader:'',selectedTeam:[],proposedTeam:[],isLeader:false,isOnTeam:false,isHost:localStorage.getItem('tempIsHost')==='true'};
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;document.getElementById('actionBtn').disabled=!state.isHost;document.getElementById('actionBtn').textContent=state.isHost?'Start Game':'Waiting for host...';renderQuestTrack();});
+socket.on('player-joined',d=>{state.players=d.room.players||[];renderQuestTrack();});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('avalon-roles',d=>{
+    state.role=d.role;state.team=d.team;state.evilPlayers=d.evilPlayers||[];
+    const card=document.getElementById('roleCard');
+    card.classList.toggle('evil',d.team==='evil');
+    document.getElementById('roleName').textContent=d.role.toUpperCase();
+    document.getElementById('roleDesc').textContent=getRoleDesc(d.role);
+    if(d.evilPlayers&&d.evilPlayers.length>0){
+        document.getElementById('roleInfo').style.display='block';
+        document.getElementById('roleInfo').innerHTML='Evil players: <span>'+d.evilPlayers.join(', ')+'</span>';
+    }
+});
+
+socket.on('avalon-team-select',d=>{
+    state.phase='team-select';state.quest=d.quest;state.leader=d.leader;state.isLeader=d.leader===playerName;state.selectedTeam=[];
+    document.getElementById('phaseTitle').textContent='TEAM SELECTION';
+    document.getElementById('phaseDesc').textContent=state.isLeader?'Select '+d.teamSize+' players':'Waiting for '+d.leader;
+    document.getElementById('leaderSection').style.display='block';
+    document.getElementById('leaderName').textContent=d.leader+(state.isLeader?' (You)':'');
+    document.getElementById('playersSection').style.display='block';
+    document.getElementById('playersTitle').textContent='Select '+d.teamSize+' Team Members';
+    document.getElementById('voteSection').style.display='none';
+    document.getElementById('questVoteSection').style.display='none';
+    document.getElementById('resultsBox').style.display='none';
+    renderPlayers(d.teamSize);
+    renderQuestTrack();
+    document.getElementById('actionBtn').textContent=state.isLeader?'Propose Team':'Waiting...';
+    document.getElementById('actionBtn').disabled=true;
+    document.getElementById('actionBtn').style.display='block';
+});
+
+socket.on('avalon-team-vote',d=>{
+    state.phase='team-vote';state.proposedTeam=d.team;
+    document.getElementById('phaseTitle').textContent='TEAM VOTE';
+    document.getElementById('phaseDesc').textContent='Vote: '+d.team.join(', ');
+    document.getElementById('playersSection').style.display='block';
+    renderProposedTeam(d.team);
+    document.getElementById('voteSection').style.display='flex';
+    document.getElementById('actionBtn').style.display='none';
+});
+
+socket.on('avalon-team-rejected',d=>{
+    document.getElementById('resultsBox').style.display='block';
+    document.getElementById('resultsBox').className='results-box evil-win';
+    document.getElementById('resultsTitle').textContent='Team Rejected';
+    document.getElementById('resultsDesc').textContent=d.approves+' approve, '+d.rejects+' reject. Rejection #'+d.rejections+'/5';
+});
+
+socket.on('avalon-quest',d=>{
+    state.phase='quest';state.isOnTeam=d.team.includes(playerName);
+    document.getElementById('phaseTitle').textContent='QUEST';
+    document.getElementById('phaseDesc').textContent=state.isOnTeam?'You are on the quest!':'Waiting for quest...';
+    document.getElementById('voteSection').style.display='none';
+    document.getElementById('resultsBox').style.display='none';
+    if(state.isOnTeam){
+        document.getElementById('questVoteSection').style.display='flex';
+        document.getElementById('failBtn').disabled=state.team==='good';
+    }else{document.getElementById('questVoteSection').style.display='none';}
+    document.getElementById('actionBtn').style.display='none';
+});
+
+socket.on('avalon-quest-result',d=>{
+    state.questResults=d.results;
+    document.getElementById('questVoteSection').style.display='none';
+    document.getElementById('resultsBox').style.display='block';
+    document.getElementById('resultsBox').className='results-box '+(d.success?'good-win':'evil-win');
+    document.getElementById('resultsTitle').textContent=d.success?'Quest Succeeded!':'Quest Failed!';
+    document.getElementById('resultsDesc').textContent='Fails: '+d.fails+' / Success: '+d.successes;
+    renderQuestTrack();
+    document.getElementById('actionBtn').style.display='block';
+    document.getElementById('actionBtn').textContent=state.isHost?'Next Quest':'Waiting...';
+    document.getElementById('actionBtn').disabled=!state.isHost;
+});
+
+socket.on('avalon-game-over',d=>{
+    const modal=document.getElementById('gameoverModal');
+    modal.className='modal '+(d.winner==='good'?'good-win':'evil-win');
+    document.getElementById('winnerTitle').textContent=d.winner==='good'?'GOOD WINS!':'EVIL WINS!';
+    document.getElementById('winnerDesc').textContent=d.winner==='good'?'The loyal servants prevailed!':'The minions of Mordred conquered!';
+    document.getElementById('gameoverOverlay').classList.add('active');
+});
+
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+function getRoleDesc(role){
+    const descs={'Merlin':'You know the evil players.','Percival':'You know who Merlin is.','Loyal Servant':'You are good.','Assassin':'If good wins, guess Merlin!','Morgana':'You appear as Merlin to Percival.','Mordred':'Hidden from Merlin.','Oberon':'Unknown to other evil.','Minion':'You are evil.'};
+    return descs[role]||'Unknown role';
+}
+
+function renderQuestTrack(){
+    const sizes=QUEST_SIZES[state.players.length]||[2,3,2,3,3];
+    document.getElementById('questTrack').innerHTML=sizes.map((size,i)=>{
+        let cls='quest-marker';
+        if(i===state.quest)cls+=' current';
+        if(state.questResults[i]==='success')cls+=' success';
+        if(state.questResults[i]==='fail')cls+=' fail';
+        return`<div class="${cls}">${i+1}<span class="team-size">${size}p</span></div>`;
+    }).join('');
+}
+
+function renderPlayers(teamSize){
+    document.getElementById('playersGrid').innerHTML=state.players.map(p=>{
+        const selected=state.selectedTeam.includes(p.name);
+        return`<button class="player-btn ${selected?'selected':''}" onclick="togglePlayer('${esc(p.name)}',${teamSize})" ${!state.isLeader?'disabled':''}>${esc(p.name)}${p.name===playerName?' (You)':''}</button>`;
+    }).join('');
+}
+
+function renderProposedTeam(team){
+    document.getElementById('playersGrid').innerHTML=state.players.map(p=>`<div class="player-btn ${team.includes(p.name)?'on-team':''}" style="cursor:default">${esc(p.name)}${team.includes(p.name)?' ⚔️':''}</div>`).join('');
+}
+
+function togglePlayer(name,teamSize){
+    if(!state.isLeader)return;
+    const idx=state.selectedTeam.indexOf(name);
+    if(idx>-1)state.selectedTeam.splice(idx,1);
+    else if(state.selectedTeam.length<teamSize)state.selectedTeam.push(name);
+    renderPlayers(teamSize);
+    document.getElementById('actionBtn').disabled=state.selectedTeam.length!==teamSize;
+}
+
+function vote(v){socket.emit('avalon-vote',{roomCode,vote:v});document.querySelectorAll('.vote-btn').forEach(b=>b.disabled=true);}
+function questVote(v){socket.emit('avalon-quest-vote',{roomCode,vote:v});document.querySelectorAll('.quest-btn').forEach(b=>b.disabled=true);}
+
+function handleAction(){
+    if(state.phase==='waiting'&&state.isHost)socket.emit('avalon-start',{roomCode});
+    else if(state.phase==='team-select'&&state.isLeader){socket.emit('avalon-propose-team',{roomCode,team:state.selectedTeam});document.getElementById('actionBtn').disabled=true;}
+    else if(state.isHost)socket.emit('avalon-next',{roomCode});
+}
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>socket.disconnect());
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

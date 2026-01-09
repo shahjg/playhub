@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punchline - TheGaming.co</title>
+    <meta name="description" content="Punchline - Write the funniest answer to absurd prompts!">
+    <meta name="theme-color" content="#fbbf24">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0f0f1a;--card:#1a1a2e;--accent:#fbbf24;--glow:rgba(251,191,36,0.4);--green:#22c55e;--red:#ef4444;--purple:#a855f7;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 20%,rgba(251,191,36,0.1) 0%,transparent 50%),radial-gradient(circle at 70% 80%,rgba(168,85,247,0.08) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(15,15,26,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:65px 16px 24px;min-height:100vh;max-width:600px;margin:0 auto}
+        .round{text-align:center;margin-bottom:16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim)}
+        .round span{color:var(--accent)}
+        .prompt-card{background:linear-gradient(135deg,var(--card),rgba(251,191,36,0.1));border:2px solid var(--accent);border-radius:20px;padding:32px 24px;text-align:center;margin-bottom:24px;box-shadow:0 0 40px var(--glow)}
+        .prompt-lbl{font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:12px}
+        .prompt-txt{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;line-height:1.3}
+        .status{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .status-txt{font-size:.85rem;color:var(--dim)}
+        .status-txt span{color:var(--accent);font-weight:700}
+        .timer{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .timer.danger{color:var(--red);animation:pulse .5s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        
+        /* Answer Phase */
+        .answer-section{margin-bottom:24px}
+        .answer-lbl{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
+        .answer-input{width:100%;padding:16px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-size:1rem;font-family:inherit;resize:none;transition:.2s}
+        .answer-input:focus{outline:0;border-color:var(--accent)}
+        .answer-input:disabled{opacity:.5}
+        .char-count{text-align:right;font-size:.75rem;color:var(--dim);margin-top:4px}
+        
+        /* Voting Phase */
+        .vote-section{display:none}
+        .vote-section.active{display:block}
+        .vote-options{display:flex;flex-direction:column;gap:12px}
+        .vote-option{padding:20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:.2s;text-align:center}
+        .vote-option:hover{border-color:var(--accent);background:rgba(251,191,36,0.1)}
+        .vote-option.selected{border-color:var(--accent);box-shadow:0 0 20px var(--glow)}
+        .vote-option.disabled{pointer-events:none;opacity:.6}
+        .vote-answer{font-size:1.1rem;font-weight:600;line-height:1.4}
+        .vote-meta{display:none;margin-top:8px;font-size:.8rem;color:var(--dim)}
+        .showing-results .vote-meta{display:block}
+        .vote-votes{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .vote-author{color:var(--purple)}
+        .vote-option.winner{border-color:var(--green);background:rgba(34,197,94,0.15)}
+        
+        /* Buttons */
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#f59e0b);color:#000}
+        .btn-p:hover{filter:brightness(1.1);transform:translateY(-2px)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        
+        /* Scoreboard */
+        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:24px}
+        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
+        .score-list{display:flex;flex-direction:column;gap:8px}
+        .score-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px}
+        .score-row.top{background:rgba(251,191,36,0.15)}
+        .score-name{font-weight:600}
+        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
+        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.9rem}
+        
+        /* Game Over */
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px;margin-top:24px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">😂 PUNCHLINE</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="round">ROUND <span id="roundNum">1</span> / <span id="totalRounds">8</span></div>
+    
+    <div class="prompt-card">
+        <div class="prompt-lbl">The Prompt</div>
+        <div class="prompt-txt" id="prompt">Waiting for game to start...</div>
+    </div>
+    
+    <div class="status">
+        <span class="status-txt" id="statusTxt"><span id="count">0</span> / <span id="total">0</span> answered</span>
+        <span class="timer" id="timer">45</span>
+    </div>
+    
+    <!-- Answer Phase -->
+    <div class="answer-section" id="answerSection">
+        <div class="answer-lbl">YOUR ANSWER</div>
+        <textarea class="answer-input" id="answerInput" placeholder="Type something funny..." maxlength="100" rows="3"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/100</div>
+    </div>
+    
+    <!-- Vote Phase -->
+    <div class="vote-section" id="voteSection">
+        <div class="answer-lbl">VOTE FOR THE FUNNIEST</div>
+        <div class="vote-options" id="voteOptions"></div>
+    </div>
+    
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Submit Answer</button>
+    
+    <div class="scoreboard">
+        <div class="sb-title">Scoreboard</div>
+        <div class="score-list" id="scoreList"><div class="empty">Scores appear after voting!</div></div>
+    </div>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2>🏆 GAME OVER</h2>
+        <div class="scoreboard"><div class="sb-title">Final Scores</div><div class="score-list" id="finalScores"></div></div>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=punchline';
+
+let state={players:[],scores:{},phase:'waiting',myAnswer:'',myVote:null,answers:[],currentRound:1,totalRounds:8,timeRemaining:45,isHost:localStorage.getItem('tempIsHost')==='true'};
+let timerInt=null;
+const answerInput=document.getElementById('answerInput');
+const actionBtn=document.getElementById('actionBtn');
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;document.getElementById('total').textContent=state.players.length;});
+socket.on('player-joined',d=>{state.players=d.room.players||[];});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('punchline-prompt',d=>{
+    state.phase='answering';state.currentRound=d.round;state.totalRounds=d.totalRounds;
+    state.myAnswer='';state.myVote=null;state.timeRemaining=45;
+    document.getElementById('prompt').textContent=d.prompt;
+    document.getElementById('roundNum').textContent=d.round;
+    document.getElementById('totalRounds').textContent=d.totalRounds;
+    document.getElementById('count').textContent=0;
+    document.getElementById('statusTxt').innerHTML='<span id="count">0</span> / <span id="total">'+state.players.length+'</span> answered';
+    document.getElementById('answerSection').style.display='block';
+    document.getElementById('voteSection').classList.remove('active');
+    answerInput.disabled=false;answerInput.value='';
+    actionBtn.disabled=true;actionBtn.textContent='Submit Answer';
+    startTimer(45);
+});
+
+socket.on('punchline-answer-received',d=>{document.getElementById('count').textContent=d.count;});
+
+socket.on('punchline-voting',d=>{
+    state.phase='voting';state.answers=d.answers;state.myVote=null;state.timeRemaining=30;
+    document.getElementById('answerSection').style.display='none';
+    document.getElementById('voteSection').classList.add('active');
+    document.getElementById('voteSection').classList.remove('showing-results');
+    document.getElementById('statusTxt').innerHTML='<span id="count">0</span> / <span id="total">'+state.players.length+'</span> voted';
+    renderVoteOptions();
+    actionBtn.disabled=true;actionBtn.textContent='Lock In Vote';
+    startTimer(30);
+});
+
+socket.on('punchline-results',d=>{
+    stopTimer();state.phase='results';state.scores=d.scores;
+    document.getElementById('voteSection').classList.add('showing-results');
+    renderResults(d.answers);
+    updateScoreboard();
+    actionBtn.textContent=state.isHost?'Next Round':'Waiting...';
+    actionBtn.disabled=!state.isHost;
+});
+
+socket.on('punchline-game-over',d=>{state.scores=d.scores;showGameOver();});
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+answerInput.addEventListener('input',()=>{
+    const len=answerInput.value.length;
+    document.getElementById('charCount').textContent=len;
+    actionBtn.disabled=len<1;
+});
+
+function handleAction(){
+    if(state.phase==='answering'&&answerInput.value.trim()){
+        socket.emit('punchline-answer',{roomCode,answer:answerInput.value.trim()});
+        answerInput.disabled=true;actionBtn.disabled=true;actionBtn.textContent='Submitted!';
+    }else if(state.phase==='voting'&&state.myVote!==null){
+        socket.emit('punchline-vote',{roomCode,votedFor:state.myVote});
+        actionBtn.disabled=true;actionBtn.textContent='Voted!';
+        document.querySelectorAll('.vote-option').forEach(el=>el.classList.add('disabled'));
+    }else if(state.phase==='results'&&state.isHost){
+        socket.emit('punchline-next',{roomCode});
+    }
+}
+
+function renderVoteOptions(){
+    const container=document.getElementById('voteOptions');
+    container.innerHTML=state.answers.map(a=>`
+        <div class="vote-option" onclick="selectVote(${a.id})" data-id="${a.id}">
+            <div class="vote-answer">${esc(a.answer)}</div>
+            <div class="vote-meta"><span class="vote-votes">0 votes</span></div>
+        </div>
+    `).join('');
+}
+
+function selectVote(id){
+    if(state.phase!=='voting')return;
+    state.myVote=id;
+    document.querySelectorAll('.vote-option').forEach(el=>el.classList.toggle('selected',parseInt(el.dataset.id)===id));
+    actionBtn.disabled=false;
+}
+
+function renderResults(answers){
+    const container=document.getElementById('voteOptions');
+    const maxVotes=Math.max(...answers.map(a=>a.votes),0);
+    container.innerHTML=answers.map(a=>`
+        <div class="vote-option ${a.votes===maxVotes&&maxVotes>0?'winner':''}" data-id="${a.id}">
+            <div class="vote-answer">${esc(a.answer)}</div>
+            <div class="vote-meta"><span class="vote-votes">${a.votes} vote${a.votes!==1?'s':''}</span> • <span class="vote-author">${esc(a.author)}</span></div>
+        </div>
+    `).join('');
+}
+
+function updateScoreboard(){
+    const container=document.getElementById('scoreList');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(!sorted.length){container.innerHTML='<div class="empty">No scores yet</div>';return;}
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+}
+
+function showGameOver(){
+    const container=document.getElementById('finalScores');
+    const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
+    container.innerHTML=sorted.map(([name,score],i)=>`
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>
+    `).join('');
+    document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+function startTimer(secs){stopTimer();state.timeRemaining=secs;updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0)stopTimer();},1000);}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function updTimer(){const el=document.getElementById('timer');el.textContent=state.timeRemaining;el.classList.toggle('danger',state.timeRemaining<=10);}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>{stopTimer();socket.disconnect();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

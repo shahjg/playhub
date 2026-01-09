@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Head 2 Head - TheGaming.co</title>
+    
+    <meta name="description" content="Head 2 Head - A free Heads Up alternative! Hold your phone to your forehead and guess the word!">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#f43f5e">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0f0a1a;
+            --bg-card: #1a1228;
+            --accent: #f43f5e;
+            --accent-glow: rgba(244, 63, 94, 0.5);
+            --accent-soft: rgba(244, 63, 94, 0.15);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.5);
+            --red: #ef4444;
+            --gold: #fbbf24;
+            --purple: #a855f7;
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Animated Background */
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .bg-effects::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(244, 63, 94, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+            animation: bgRotate 30s linear infinite;
+        }
+        
+        @keyframes bgRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            background: rgba(15, 10, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .guesser-mode header { display: none; }
+        
+        .nav-inner {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--red); border-color: var(--red); }
+        .back-btn svg { width: 14px; height: 14px; }
+        
+        .room-badge {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+        
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Main Content */
+        main {
+            position: relative;
+            z-index: 1;
+            padding: 60px 16px 24px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .guesser-mode main {
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Phase Screens */
+        .screen { display: none; }
+        .screen.active { display: flex; flex-direction: column; }
+        
+        /* ========== LOBBY SCREEN ========== */
+        .lobby-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .lobby-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .lobby-subtitle {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+        
+        /* Players List */
+        .players-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .players-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .players-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+        }
+        
+        .players-count {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        
+        .players-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .player-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .player-chip.is-guesser {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .player-chip.is-me {
+            border-color: var(--gold);
+        }
+        
+        .guesser-badge {
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            background: var(--accent);
+            color: white;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        
+        /* Scoreboard */
+        .scoreboard {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .scoreboard-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+        
+        .score-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .score-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+        
+        .score-row.top { background: var(--accent-soft); }
+        
+        .score-name { font-weight: 600; }
+        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--accent); }
+        
+        /* Round Info */
+        .round-info {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .round-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .round-number { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--accent); }
+        
+        /* Action Buttons */
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 14px 32px;
+            border-radius: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #e11d48);
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+        
+        .btn-secondary:hover { border-color: var(--accent); background: var(--accent-soft); }
+        
+        /* ========== GUESSER SCREEN (Full Screen) ========== */
+        .guesser-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            display: none;
+            flex-direction: column;
+            z-index: 200;
+        }
+        
+        .guesser-screen.active { display: flex; }
+        
+        .guesser-timer {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .guesser-timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--accent));
+            transition: width 0.1s linear;
+            width: 100%;
+        }
+        
+        .guesser-timer-fill.warning { background: var(--gold); }
+        .guesser-timer-fill.danger { background: var(--red); animation: timerPulse 0.5s ease infinite; }
+        
+        @keyframes timerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .guesser-word-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            /* Landscape mode - rotate for phone on forehead */
+        }
+        
+        .guesser-word {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(4rem, 15vw, 10rem);
+            letter-spacing: 8px;
+            text-align: center;
+            color: white;
+            text-shadow: 0 0 60px var(--accent-glow);
+            /* Upside down so guesser sees it right-side-up on forehead */
+            transform: rotate(180deg);
+            line-height: 1.1;
+            word-break: break-word;
+            max-width: 90%;
+        }
+        
+        .guesser-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            height: 120px;
+        }
+        
+        .guesser-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 3px;
+            border: none;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        
+        .guesser-btn:active { filter: brightness(0.8); }
+        
+        .guesser-btn.pass {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+        }
+        
+        .guesser-btn.correct {
+            background: linear-gradient(135deg, var(--green), #16a34a);
+            color: white;
+        }
+        
+        /* Countdown before round */
+        .countdown-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 250;
+        }
+        
+        .countdown-overlay.active { display: flex; }
+        
+        .countdown-content {
+            text-align: center;
+        }
+        
+        .countdown-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+        }
+        
+        .countdown-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 12rem;
+            color: var(--accent);
+            text-shadow: 0 0 100px var(--accent-glow);
+            animation: countPulse 1s ease infinite;
+        }
+        
+        @keyframes countPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* ========== CLUE GIVER SCREEN ========== */
+        .clue-giver-screen {
+            padding: 70px 16px 24px;
+        }
+        
+        .clue-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .clue-guesser-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+        
+        .clue-instruction {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+        
+        .current-word-display {
+            background: linear-gradient(135deg, var(--bg-card), rgba(244, 63, 94, 0.1));
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+        
+        .current-word-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .current-word {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3.5rem;
+            letter-spacing: 4px;
+            color: white;
+        }
+        
+        .timer-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .timer-icon { font-size: 1.5rem; }
+        .timer-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--gold);
+        }
+        
+        .timer-value.warning { color: var(--gold); }
+        .timer-value.danger { color: var(--red); animation: timerPulse 0.5s ease infinite; }
+        
+        .round-score-display {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .score-item {
+            text-align: center;
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .score-item-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .score-item-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; }
+        .score-item-value.correct { color: var(--green); }
+        .score-item-value.passed { color: var(--gold); }
+        
+        /* Rules Box */
+        .rules-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: auto;
+        }
+        
+        .rules-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        
+        .rules-list {
+            list-style: none;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+        
+        .rules-list li { padding-left: 16px; position: relative; }
+        .rules-list li::before { content: '•'; position: absolute; left: 0; color: var(--accent); }
+        
+        /* ========== ROUND RESULTS ========== */
+        .results-screen {
+            padding: 70px 16px 24px;
+        }
+        
+        .results-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .results-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            color: var(--accent);
+        }
+        
+        .results-guesser {
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+        
+        .results-score {
+            background: linear-gradient(135deg, var(--bg-card), var(--accent-soft));
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .results-points {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 5rem;
+            color: var(--green);
+        }
+        
+        .results-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .results-words {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .results-words-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+        
+        .word-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+        }
+        
+        .word-result.correct { background: rgba(34, 197, 94, 0.15); }
+        .word-result.passed { background: rgba(251, 191, 36, 0.15); }
+        
+        .word-result-icon { font-size: 1.2rem; }
+        .word-result-text { font-weight: 600; }
+        
+        /* ========== GAME OVER ========== */
+        .gameover-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+        }
+        
+        .gameover-overlay.active { display: flex; }
+        
+        .gameover-content {
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .gameover-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+        }
+        
+        .winner-section {
+            margin-bottom: 24px;
+        }
+        
+        .winner-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .winner-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            color: var(--gold);
+        }
+        
+        .winner-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: var(--accent);
+        }
+        
+        .final-scores {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        
+        .final-score-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .final-score-row:last-child { border-bottom: none; }
+        
+        .gameover-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .gameover-actions .btn { flex: 1; }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            .guesser-word { font-size: clamp(3rem, 12vw, 8rem); }
+            .guesser-actions { height: 100px; }
+            .guesser-btn { font-size: 1.5rem; }
+            .current-word { font-size: 2.5rem; }
+        }
+        
+        /* Landscape mode hint for guesser */
+        @media (orientation: portrait) and (max-width: 600px) {
+            .rotate-hint {
+                display: block;
+                text-align: center;
+                padding: 8px;
+                background: var(--accent-soft);
+                color: var(--accent);
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+        }
+        
+        @media (orientation: landscape) {
+            .rotate-hint { display: none; }
+            .guesser-word { transform: none; font-size: clamp(4rem, 10vh, 8rem); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects"></div>
+
+<header>
+    <nav class="nav-inner">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="/squad-games.html" class="back-btn" id="leave-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Leave
+            </a>
+            <span class="room-badge" id="room-badge">------</span>
+        </div>
+        <a href="/" class="header-logo">HEAD 2 HEAD</a>
+        <div></div>
+    </nav>
+</header>
+
+<main>
+    <!-- ========== LOBBY SCREEN ========== -->
+    <div class="screen active" id="lobby-screen">
+        <div class="container">
+            <div class="lobby-header">
+                <h1 class="lobby-title">HEAD 2 HEAD</h1>
+                <p class="lobby-subtitle">Hold your phone to your forehead and guess the word!</p>
+            </div>
+            
+            <div class="round-info">
+                <div class="round-label">Round</div>
+                <div class="round-number"><span id="current-round">1</span> / <span id="total-rounds">3</span></div>
+            </div>
+            
+            <div class="players-section">
+                <div class="players-header">
+                    <span class="players-title">Players</span>
+                    <span class="players-count"><span id="player-count">0</span> joined</span>
+                </div>
+                <div class="players-list" id="players-list">
+                    <div class="player-chip">Waiting...</div>
+                </div>
+            </div>
+            
+            <div class="scoreboard" id="scoreboard" style="display: none;">
+                <div class="scoreboard-title">Scoreboard</div>
+                <div class="score-list" id="score-list"></div>
+            </div>
+            
+            <div class="action-bar">
+                <button class="btn btn-primary" id="start-round-btn" onclick="startRound()">Start Round</button>
+            </div>
+            <p style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-top: 12px;" id="host-hint">Only the host can start the round</p>
+        </div>
+    </div>
+    
+    <!-- ========== CLUE GIVER SCREEN ========== -->
+    <div class="screen" id="clue-screen">
+        <div class="container clue-giver-screen">
+            <div class="clue-header">
+                <div class="clue-guesser-name"><span id="guesser-name">Player</span> is guessing!</div>
+                <p class="clue-instruction">Give clues to help them guess the word. No rhymes or "sounds like"!</p>
+            </div>
+            
+            <div class="current-word-display">
+                <div class="current-word-label">Current Word</div>
+                <div class="current-word" id="current-word">LOADING</div>
+                <div class="timer-display">
+                    <span class="timer-icon">⏱️</span>
+                    <span class="timer-value" id="clue-timer">60</span>
+                </div>
+            </div>
+            
+            <div class="round-score-display">
+                <div class="score-item">
+                    <div class="score-item-label">Correct</div>
+                    <div class="score-item-value correct" id="round-correct">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-item-label">Passed</div>
+                    <div class="score-item-value passed" id="round-passed">0</div>
+                </div>
+            </div>
+            
+            <div class="rules-box">
+                <div class="rules-title">Clue Rules</div>
+                <ul class="rules-list">
+                    <li>Describe the word without saying it</li>
+                    <li>No rhyming clues ("sounds like...")</li>
+                    <li>No spelling out letters</li>
+                    <li>No gestures if playing remotely</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ========== GUESSER FULLSCREEN ========== -->
+<div class="guesser-screen" id="guesser-screen">
+    <div class="rotate-hint">📱 Rotate your phone for best experience!</div>
+    <div class="guesser-timer">
+        <div class="guesser-timer-fill" id="guesser-timer-fill"></div>
+    </div>
+    <div class="guesser-word-area">
+        <div class="guesser-word" id="guesser-word">WORD</div>
+    </div>
+    <div class="guesser-actions">
+        <button class="guesser-btn pass" onclick="passWord()">PASS ⏭️</button>
+        <button class="guesser-btn correct" onclick="correctWord()">CORRECT ✓</button>
+    </div>
+</div>
+
+<!-- ========== COUNTDOWN OVERLAY ========== -->
+<div class="countdown-overlay" id="countdown-overlay">
+    <div class="countdown-content">
+        <div class="countdown-label" id="countdown-label">GET READY</div>
+        <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+</div>
+
+<!-- ========== ROUND RESULTS ========== -->
+<div class="screen" id="results-screen">
+    <div class="container results-screen">
+        <div class="results-header">
+            <h2 class="results-title">ROUND COMPLETE!</h2>
+            <p class="results-guesser"><span id="results-guesser-name">Player</span>'s turn</p>
+        </div>
+        
+        <div class="results-score">
+            <div class="results-points" id="results-points">0</div>
+            <div class="results-label">Points Scored</div>
+        </div>
+        
+        <div class="results-words">
+            <div class="results-words-title">Words This Round</div>
+            <div id="results-words-list"></div>
+        </div>
+        
+        <div class="action-bar">
+            <button class="btn btn-primary" id="continue-btn" onclick="continueGame()">Continue</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== GAME OVER ========== -->
+<div class="gameover-overlay" id="gameover-overlay">
+    <div class="gameover-content">
+        <h2 class="gameover-title">🏆 GAME OVER</h2>
+        
+        <div class="winner-section">
+            <div class="winner-label">Winner</div>
+            <div class="winner-name" id="winner-name">Player</div>
+            <div class="winner-score" id="winner-score">0 pts</div>
+        </div>
+        
+        <div class="final-scores" id="final-scores"></div>
+        
+        <div class="gameover-actions">
+            <button class="btn btn-secondary" onclick="leaveGame()">Leave</button>
+            <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== CONFIG ==========
+    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Game Config
+    const ROUND_TIME = 60; // seconds per round
+    const TOTAL_ROUNDS_PER_PLAYER = 1; // Each player gets 1 turn as guesser
+    
+    // ========== STATE ==========
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
+    const playerName = localStorage.getItem('tempPlayerName');
+    
+    let state = {
+        players: [],
+        scores: {},
+        currentRound: 1,
+        totalRounds: 1,
+        currentGuesser: null,
+        currentWord: '',
+        words: [],
+        wordIndex: 0,
+        roundWords: [], // {word, result: 'correct'|'passed'}
+        timeRemaining: ROUND_TIME,
+        isHost: localStorage.getItem('tempIsHost') === 'true',
+        phase: 'lobby' // lobby, countdown, playing, results, gameover
+    };
+    
+    let timerInterval = null;
+    
+    // Init
+    document.getElementById('room-badge').textContent = roomCode || '------';
+    
+    if (!roomCode || !playerName) {
+        window.location.href = '/lobby.html?game=head2head';
+    }
+    
+    // ========== SOCKET HANDLERS ==========
+    socket.on('connect', () => {
+        console.log('Connected to server');
+        socket.emit('rejoin-room', { 
+            roomCode, 
+            playerName,
+            isPremium: localStorage.getItem('tempIsPremium') === 'true',
+            cosmetics: JSON.parse(localStorage.getItem('tempCosmetics') || 'null'),
+            userId: localStorage.getItem('tempUserId')
+        });
+    });
+    
+    socket.on('room-joined', (data) => {
+        updateState(data.room);
+    });
+    
+    socket.on('room-state', (data) => {
+        if (data.success) updateState(data.room);
+    });
+    
+    socket.on('player-joined', (data) => updateState(data.room));
+    socket.on('player-disconnected', (data) => updateState(data.room));
+    
+    // Game events
+    socket.on('head2head-round-start', (data) => {
+        state.currentGuesser = data.guesser;
+        state.words = data.words || [];
+        state.wordIndex = 0;
+        state.roundWords = [];
+        state.timeRemaining = ROUND_TIME;
+        state.currentRound = data.round || state.currentRound;
+        
+        showCountdown(() => {
+            startPlaying();
+        });
+    });
+    
+    socket.on('head2head-word-update', (data) => {
+        state.currentWord = data.word;
+        state.wordIndex = data.index;
+        updateWordDisplay();
+    });
+    
+    socket.on('head2head-word-result', (data) => {
+        state.roundWords.push({ word: data.word, result: data.result });
+        updateRoundScore();
+        
+        // Move to next word
+        if (data.nextWord) {
+            state.currentWord = data.nextWord;
+            state.wordIndex = data.nextIndex;
+            updateWordDisplay();
+        }
+    });
+    
+    socket.on('head2head-round-end', (data) => {
+        stopTimer();
+        state.scores = data.scores || state.scores;
+        state.roundWords = data.words || state.roundWords;
+        showResults(data);
+    });
+    
+    socket.on('head2head-game-over', (data) => {
+        state.scores = data.scores;
+        showGameOver(data);
+    });
+    
+    socket.on('error', (data) => {
+        console.error('Error:', data.message);
+        alert(data.message);
+    });
+    
+    socket.on('host-left', () => {
+        alert('Host left the game');
+        window.location.href = '/squad-games.html';
+    });
+    
+    // ========== STATE UPDATES ==========
+    function updateState(room) {
+        if (!room) return;
+        
+        state.players = room.players || [];
+        state.totalRounds = state.players.length;
+        
+        // Check if I'm host
+        const me = state.players.find(p => p.name === playerName);
+        if (me) {
+            state.isHost = me.isHost;
+        }
+        
+        updateUI();
+    }
+    
+    function updateUI() {
+        // Update player count
+        document.getElementById('player-count').textContent = state.players.length;
+        document.getElementById('total-rounds').textContent = state.totalRounds;
+        document.getElementById('current-round').textContent = state.currentRound;
+        
+        // Update players list
+        const list = document.getElementById('players-list');
+        if (state.players.length === 0) {
+            list.innerHTML = '<div class="player-chip">Waiting for players...</div>';
+        } else {
+            list.innerHTML = state.players.map(p => {
+                const isMe = p.name === playerName;
+                const isGuesser = state.currentGuesser === p.name;
+                return `
+                    <div class="player-chip ${isGuesser ? 'is-guesser' : ''} ${isMe ? 'is-me' : ''}">
+                        ${escapeHtml(p.name)}
+                        ${isMe ? ' (You)' : ''}
+                        ${isGuesser ? '<span class="guesser-badge">Guesser</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Update scoreboard
+        if (Object.keys(state.scores).length > 0) {
+            document.getElementById('scoreboard').style.display = 'block';
+            const scoreList = document.getElementById('score-list');
+            const sorted = Object.entries(state.scores).sort((a, b) => b[1] - a[1]);
+            scoreList.innerHTML = sorted.map(([name, score], i) => `
+                <div class="score-row ${i === 0 ? 'top' : ''}">
+                    <span class="score-name">${escapeHtml(name)}</span>
+                    <span class="score-value">${score}</span>
+                </div>
+            `).join('');
+        }
+        
+        // Update host button
+        const startBtn = document.getElementById('start-round-btn');
+        const hostHint = document.getElementById('host-hint');
+        
+        if (state.isHost) {
+            startBtn.disabled = state.players.length < 2;
+            startBtn.style.display = 'block';
+            hostHint.textContent = state.players.length < 2 ? 'Need at least 2 players' : '';
+        } else {
+            startBtn.style.display = 'none';
+            hostHint.textContent = 'Waiting for host to start...';
+        }
+    }
+    
+    // ========== GAME ACTIONS ==========
+    function startRound() {
+        if (!state.isHost) return;
+        socket.emit('head2head-start-round', { roomCode });
+    }
+    
+    function showCountdown(callback) {
+        const overlay = document.getElementById('countdown-overlay');
+        const number = document.getElementById('countdown-number');
+        const label = document.getElementById('countdown-label');
+        
+        const isGuesser = state.currentGuesser === playerName;
+        label.textContent = isGuesser ? 'YOUR TURN TO GUESS!' : `${state.currentGuesser} IS GUESSING`;
+        
+        overlay.classList.add('active');
+        
+        let count = 3;
+        number.textContent = count;
+        
+        const countInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                number.textContent = count;
+            } else {
+                clearInterval(countInterval);
+                overlay.classList.remove('active');
+                callback();
+            }
+        }, 1000);
+    }
+    
+    function startPlaying() {
+        state.phase = 'playing';
+        
+        const isGuesser = state.currentGuesser === playerName;
+        
+        // Show appropriate screen
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        
+        if (isGuesser) {
+            document.body.classList.add('guesser-mode');
+            document.getElementById('guesser-screen').classList.add('active');
+            state.currentWord = state.words[0] || 'LOADING';
+            updateWordDisplay();
+        } else {
+            document.body.classList.remove('guesser-mode');
+            document.getElementById('clue-screen').classList.add('active');
+            document.getElementById('guesser-name').textContent = state.currentGuesser;
+            state.currentWord = state.words[0] || 'LOADING';
+            updateWordDisplay();
+        }
+        
+        startTimer();
+    }
+    
+    function updateWordDisplay() {
+        const isGuesser = state.currentGuesser === playerName;
+        
+        if (isGuesser) {
+            document.getElementById('guesser-word').textContent = state.currentWord;
+        } else {
+            document.getElementById('current-word').textContent = state.currentWord;
+        }
+    }
+    
+    function updateRoundScore() {
+        const correct = state.roundWords.filter(w => w.result === 'correct').length;
+        const passed = state.roundWords.filter(w => w.result === 'passed').length;
+        
+        document.getElementById('round-correct').textContent = correct;
+        document.getElementById('round-passed').textContent = passed;
+    }
+    
+    function startTimer() {
+        state.timeRemaining = ROUND_TIME;
+        updateTimerDisplay();
+        
+        timerInterval = setInterval(() => {
+            state.timeRemaining--;
+            updateTimerDisplay();
+            
+            if (state.timeRemaining <= 0) {
+                stopTimer();
+                // Server will handle round end
+            }
+        }, 1000);
+    }
+    
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+    
+    function updateTimerDisplay() {
+        const isGuesser = state.currentGuesser === playerName;
+        const time = state.timeRemaining;
+        const percent = (time / ROUND_TIME) * 100;
+        
+        if (isGuesser) {
+            const fill = document.getElementById('guesser-timer-fill');
+            fill.style.width = `${percent}%`;
+            fill.classList.remove('warning', 'danger');
+            if (time <= 10) fill.classList.add('danger');
+            else if (time <= 20) fill.classList.add('warning');
+        } else {
+            const timer = document.getElementById('clue-timer');
+            timer.textContent = time;
+            timer.classList.remove('warning', 'danger');
+            if (time <= 10) timer.classList.add('danger');
+            else if (time <= 20) timer.classList.add('warning');
+        }
+    }
+    
+    // Guesser actions
+    function passWord() {
+        socket.emit('head2head-word-action', { roomCode, action: 'pass' });
+    }
+    
+    function correctWord() {
+        socket.emit('head2head-word-action', { roomCode, action: 'correct' });
+    }
+    
+    function showResults(data) {
+        state.phase = 'results';
+        document.body.classList.remove('guesser-mode');
+        document.getElementById('guesser-screen').classList.remove('active');
+        
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('results-screen').classList.add('active');
+        
+        const correct = state.roundWords.filter(w => w.result === 'correct').length;
+        document.getElementById('results-guesser-name').textContent = state.currentGuesser;
+        document.getElementById('results-points').textContent = correct;
+        
+        const wordsList = document.getElementById('results-words-list');
+        wordsList.innerHTML = state.roundWords.map(w => `
+            <div class="word-result ${w.result}">
+                <span class="word-result-icon">${w.result === 'correct' ? '✅' : '⏭️'}</span>
+                <span class="word-result-text">${escapeHtml(w.word)}</span>
+            </div>
+        `).join('');
+    }
+    
+    function continueGame() {
+        // Return to lobby, server will handle next round
+        state.phase = 'lobby';
+        state.currentRound++;
+        
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('lobby-screen').classList.add('active');
+        
+        updateUI();
+        
+        // Tell server we're ready
+        socket.emit('head2head-ready', { roomCode });
+    }
+    
+    function showGameOver(data) {
+        state.phase = 'gameover';
+        document.body.classList.remove('guesser-mode');
+        
+        const sorted = Object.entries(data.scores).sort((a, b) => b[1] - a[1]);
+        const winner = sorted[0];
+        
+        document.getElementById('winner-name').textContent = winner[0];
+        document.getElementById('winner-score').textContent = `${winner[1]} pts`;
+        
+        const finalScores = document.getElementById('final-scores');
+        finalScores.innerHTML = sorted.map(([name, score]) => `
+            <div class="final-score-row">
+                <span>${escapeHtml(name)}</span>
+                <span style="color: var(--accent); font-weight: 700;">${score}</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('gameover-overlay').classList.add('active');
+    }
+    
+    function playAgain() {
+        window.location.href = `/waiting-room.html?room=${roomCode}`;
+    }
+    
+    function leaveGame() {
+        window.location.href = '/squad-games.html';
+    }
+    
+    // ========== HELPERS ==========
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Cleanup
+    window.addEventListener('beforeunload', () => {
+        stopTimer();
+        socket.disconnect();
+    });
+</script>
+
+<script src="/header.js"></script>
+</body>
+</html>

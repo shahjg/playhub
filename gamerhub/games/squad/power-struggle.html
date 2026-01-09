@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Struggle - TheGaming.co</title>
+    <meta name="description" content="Power Struggle - Bluff, scheme, and eliminate your opponents in this game of deception!">
+    <meta name="theme-color" content="#dc2626">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#1a0505;--card:#2a1010;--accent:#dc2626;--glow:rgba(220,38,38,0.4);--green:#22c55e;--gold:#fbbf24;--blue:#3b82f6;--purple:#8b5cf6;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(220,38,38,0.08) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(26,5,5,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--accent);border-color:var(--accent)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:60px 12px 24px;min-height:100vh;max-width:700px;margin:0 auto}
+        
+        .turn-banner{background:linear-gradient(135deg,var(--card),rgba(220,38,38,0.15));border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center;margin-bottom:16px;box-shadow:0 0 25px var(--glow)}
+        .turn-banner.my-turn{animation:turnPulse 2s ease infinite}
+        @keyframes turnPulse{0%,100%{box-shadow:0 0 25px var(--glow)}50%{box-shadow:0 0 40px var(--glow)}}
+        .turn-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+        .turn-name{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--accent)}
+        
+        /* My Cards & Coins */
+        .my-status{display:flex;gap:12px;margin-bottom:16px}
+        .my-coins{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+        .coins-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+        .coins-val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold)}
+        .my-cards{flex:2;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+        .cards-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+        .cards-row{display:flex;gap:8px}
+        .card{flex:1;padding:10px 8px;border-radius:8px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;border:2px solid}
+        .card.duke{background:rgba(139,92,246,0.2);border-color:var(--purple);color:var(--purple)}
+        .card.assassin{background:rgba(220,38,38,0.2);border-color:var(--accent);color:var(--accent)}
+        .card.captain{background:rgba(59,130,246,0.2);border-color:var(--blue);color:var(--blue)}
+        .card.ambassador{background:rgba(34,197,94,0.2);border-color:var(--green);color:var(--green)}
+        .card.contessa{background:rgba(251,191,36,0.2);border-color:var(--gold);color:var(--gold)}
+        .card.dead{opacity:.3;text-decoration:line-through}
+        
+        /* Players */
+        .players-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+        .players-title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+        .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+        .player-card{padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px}
+        .player-card.current{border-color:var(--accent);background:rgba(220,38,38,0.1)}
+        .player-card.eliminated{opacity:.4}
+        .player-name{font-weight:600;font-size:.85rem;margin-bottom:4px;display:flex;justify-content:space-between}
+        .player-coins{font-family:'Bebas Neue',sans-serif;color:var(--gold)}
+        .player-cards{display:flex;gap:4px;margin-top:6px}
+        .player-card-icon{width:20px;height:20px;border-radius:4px;font-size:.6rem;display:flex;align-items:center;justify-content:center}
+        .player-card-icon.alive{background:var(--card);border:1px solid var(--dim)}
+        .player-card-icon.dead{background:rgba(220,38,38,0.3);border:1px solid var(--accent)}
+        
+        /* Actions */
+        .actions-section{margin-bottom:16px}
+        .actions-title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+        .actions-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        .action-btn{padding:14px 10px;background:var(--card);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;text-align:center}
+        .action-btn:hover:not(:disabled){border-color:var(--accent);background:rgba(220,38,38,0.1)}
+        .action-btn:disabled{opacity:.4;cursor:not-allowed}
+        .action-btn .cost{font-size:.7rem;color:var(--gold);display:block;margin-top:2px}
+        .action-btn.full-width{grid-column:span 2}
+        
+        /* Target Selection */
+        .target-section{display:none;margin-bottom:16px}
+        .target-title{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+        .target-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+        .target-btn{padding:12px;background:var(--card);border:2px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;font-weight:600;cursor:pointer;transition:.2s}
+        .target-btn:hover{border-color:var(--accent)}
+        .target-btn.selected{border-color:var(--accent);box-shadow:0 0 15px var(--glow)}
+        
+        /* Challenge/Block */
+        .response-section{display:none;margin-bottom:16px}
+        .response-box{background:linear-gradient(135deg,var(--card),rgba(220,38,38,0.1));border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center}
+        .response-txt{font-size:.95rem;margin-bottom:12px;line-height:1.5}
+        .response-btns{display:flex;gap:8px;justify-content:center}
+        .response-btn{padding:10px 20px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;border:0;transition:.2s}
+        .response-btn.challenge{background:var(--accent);color:#fff}
+        .response-btn.block{background:var(--blue);color:#fff}
+        .response-btn.allow{background:var(--card);border:2px solid var(--border);color:var(--text)}
+        
+        /* Log */
+        .log-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;max-height:150px;overflow-y:auto}
+        .log-title{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
+        .log-item{font-size:.75rem;color:var(--dim);padding:4px 0;border-bottom:1px solid var(--border)}
+        .log-item:last-child{border-bottom:0}
+        .log-item span{color:var(--accent)}
+        
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0;margin-top:16px}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#b91c1c);color:#fff}
+        .btn-p:hover{filter:brightness(1.1)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed}
+        
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:16px}
+        .modal p{color:var(--dim);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem;margin-top:0}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">👑 POWER STRUGGLE</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="turn-banner" id="turnBanner">
+        <div class="turn-lbl" id="turnLbl">Current Turn</div>
+        <div class="turn-name" id="turnName">Waiting...</div>
+    </div>
+    
+    <div class="my-status">
+        <div class="my-coins">
+            <div class="coins-lbl">Your Coins</div>
+            <div class="coins-val" id="myCoins">2</div>
+        </div>
+        <div class="my-cards">
+            <div class="cards-lbl">Your Influence</div>
+            <div class="cards-row" id="myCards"></div>
+        </div>
+    </div>
+    
+    <div class="players-section">
+        <div class="players-title">All Players</div>
+        <div class="players-grid" id="playersGrid"></div>
+    </div>
+    
+    <div class="actions-section" id="actionsSection">
+        <div class="actions-title">Choose Action</div>
+        <div class="actions-grid" id="actionsGrid"></div>
+    </div>
+    
+    <div class="target-section" id="targetSection">
+        <div class="target-title">Select Target</div>
+        <div class="target-grid" id="targetGrid"></div>
+    </div>
+    
+    <div class="response-section" id="responseSection">
+        <div class="response-box">
+            <div class="response-txt" id="responseTxt">Action pending...</div>
+            <div class="response-btns" id="responseBtns"></div>
+        </div>
+    </div>
+    
+    <div class="log-section">
+        <div class="log-title">Game Log</div>
+        <div id="logContent"></div>
+    </div>
+    
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" style="display:none">Confirm</button>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2>👑 WINNER</h2>
+        <p id="winnerText">Player wins!</p>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=power-struggle';
+
+const ROLES=['Duke','Assassin','Captain','Ambassador','Contessa'];
+const ACTIONS=[
+    {id:'income',name:'Income',cost:0,desc:'+1 coin',needsTarget:false},
+    {id:'foreign-aid',name:'Foreign Aid',cost:0,desc:'+2 coins',needsTarget:false},
+    {id:'coup',name:'Coup',cost:7,desc:'Eliminate influence',needsTarget:true,forced:true},
+    {id:'tax',name:'Tax (Duke)',cost:0,desc:'+3 coins',needsTarget:false,role:'Duke'},
+    {id:'assassinate',name:'Assassinate',cost:3,desc:'Kill influence',needsTarget:true,role:'Assassin'},
+    {id:'steal',name:'Steal (Captain)',cost:0,desc:'Take 2 coins',needsTarget:true,role:'Captain'},
+    {id:'exchange',name:'Exchange (Amb)',cost:0,desc:'Swap cards',needsTarget:false,role:'Ambassador'}
+];
+
+let state={players:[],myCards:[],myCoins:2,currentTurn:'',phase:'waiting',selectedAction:null,selectedTarget:null,isHost:localStorage.getItem('tempIsHost')==='true',isMyTurn:false,logs:[]};
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;});
+socket.on('player-joined',d=>{state.players=d.room.players||[];});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('ps-state',d=>{
+    state.players=d.players;state.currentTurn=d.currentTurn;state.myCards=d.myCards||[];state.myCoins=d.myCoins;state.phase=d.phase;
+    state.isMyTurn=d.currentTurn===playerName;
+    renderAll();
+});
+
+socket.on('ps-action-pending',d=>{
+    state.phase='response';
+    showResponse(d);
+});
+
+socket.on('ps-choose-influence',d=>{
+    state.phase='lose-influence';
+    showLoseInfluence(d.reason);
+});
+
+socket.on('ps-log',d=>{
+    state.logs.unshift(d.message);
+    if(state.logs.length>20)state.logs.pop();
+    renderLog();
+});
+
+socket.on('ps-game-over',d=>{
+    document.getElementById('winnerText').textContent=d.winner+' wins!';
+    document.getElementById('gameoverOverlay').classList.add('active');
+});
+
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+function renderAll(){
+    // Turn banner
+    const banner=document.getElementById('turnBanner');
+    banner.classList.toggle('my-turn',state.isMyTurn);
+    document.getElementById('turnLbl').textContent=state.isMyTurn?'Your Turn!':'Current Turn';
+    document.getElementById('turnName').textContent=state.currentTurn;
+    
+    // My status
+    document.getElementById('myCoins').textContent=state.myCoins;
+    document.getElementById('myCards').innerHTML=state.myCards.map(c=>`<div class="card ${c.role.toLowerCase()} ${c.dead?'dead':''}">${c.role}</div>`).join('');
+    
+    // Players
+    const grid=document.getElementById('playersGrid');
+    grid.innerHTML=state.players.map(p=>{
+        const isCurrent=p.name===state.currentTurn;
+        const isElim=p.influence<=0;
+        return`<div class="player-card ${isCurrent?'current':''} ${isElim?'eliminated':''}">
+            <div class="player-name">${esc(p.name)}${p.name===playerName?' (You)':''} <span class="player-coins">💰${p.coins}</span></div>
+            <div class="player-cards">${Array(2).fill(0).map((_,i)=>`<div class="player-card-icon ${i<p.influence?'alive':'dead'}">?</div>`).join('')}</div>
+        </div>`;
+    }).join('');
+    
+    // Actions
+    if(state.isMyTurn&&state.phase==='action'){
+        renderActions();
+        document.getElementById('actionsSection').style.display='block';
+    }else{
+        document.getElementById('actionsSection').style.display='none';
+    }
+    
+    document.getElementById('targetSection').style.display='none';
+    document.getElementById('responseSection').style.display='none';
+}
+
+function renderActions(){
+    const mustCoup=state.myCoins>=10;
+    const grid=document.getElementById('actionsGrid');
+    grid.innerHTML=ACTIONS.map(a=>{
+        let disabled=false;
+        if(mustCoup&&a.id!=='coup')disabled=true;
+        if(a.cost>state.myCoins)disabled=true;
+        return`<button class="action-btn ${a.id==='coup'&&mustCoup?'full-width':''}" onclick="selectAction('${a.id}')" ${disabled?'disabled':''}>
+            ${a.name}${a.cost?`<span class="cost">${a.cost} coins</span>`:''}
+        </button>`;
+    }).join('');
+}
+
+function selectAction(id){
+    const action=ACTIONS.find(a=>a.id===id);
+    state.selectedAction=action;
+    
+    if(action.needsTarget){
+        showTargetSelection();
+    }else{
+        socket.emit('ps-action',{roomCode,action:id});
+    }
+}
+
+function showTargetSelection(){
+    const targets=state.players.filter(p=>p.name!==playerName&&p.influence>0);
+    document.getElementById('targetSection').style.display='block';
+    document.getElementById('targetGrid').innerHTML=targets.map(p=>`<button class="target-btn" onclick="selectTarget('${esc(p.name)}')">${esc(p.name)}</button>`).join('');
+}
+
+function selectTarget(name){
+    state.selectedTarget=name;
+    document.querySelectorAll('.target-btn').forEach(el=>el.classList.toggle('selected',el.textContent===name));
+    socket.emit('ps-action',{roomCode,action:state.selectedAction.id,target:name});
+    document.getElementById('targetSection').style.display='none';
+}
+
+function showResponse(d){
+    document.getElementById('responseSection').style.display='block';
+    document.getElementById('responseTxt').innerHTML=`<span>${d.actor}</span> wants to use <span>${d.action}</span>${d.target?' on <span>'+d.target+'</span>':''}`;
+    
+    let btns='';
+    if(d.canChallenge)btns+=`<button class="response-btn challenge" onclick="respond('challenge')">Challenge</button>`;
+    if(d.canBlock)btns+=`<button class="response-btn block" onclick="respond('block')">Block</button>`;
+    btns+=`<button class="response-btn allow" onclick="respond('allow')">Allow</button>`;
+    document.getElementById('responseBtns').innerHTML=btns;
+}
+
+function respond(type){
+    socket.emit('ps-respond',{roomCode,response:type});
+    document.getElementById('responseSection').style.display='none';
+}
+
+function showLoseInfluence(reason){
+    const aliveCards=state.myCards.filter(c=>!c.dead);
+    if(aliveCards.length===1){
+        socket.emit('ps-lose-influence',{roomCode,cardIndex:state.myCards.findIndex(c=>!c.dead)});
+        return;
+    }
+    
+    document.getElementById('targetSection').style.display='block';
+    document.getElementById('targetGrid').innerHTML=state.myCards.map((c,i)=>c.dead?'':`<button class="target-btn" onclick="loseInfluence(${i})">${c.role}</button>`).join('');
+}
+
+function loseInfluence(idx){
+    socket.emit('ps-lose-influence',{roomCode,cardIndex:idx});
+    document.getElementById('targetSection').style.display='none';
+}
+
+function renderLog(){
+    document.getElementById('logContent').innerHTML=state.logs.map(l=>`<div class="log-item">${l}</div>`).join('');
+}
+
+function handleAction(){}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>socket.disconnect());
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

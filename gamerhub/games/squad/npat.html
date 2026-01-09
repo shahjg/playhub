@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPAT - TheGaming.co</title>
+    
+    <meta name="description" content="Name Place Animal Thing - The classic word game! Race to fill categories starting with a random letter.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#10b981">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0a1a15;
+            --bg-card: #0f2920;
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --accent-soft: rgba(16, 185, 129, 0.15);
+            --gold: #fbbf24;
+            --red: #ef4444;
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(251, 191, 36, 0.08) 0%, transparent 50%);
+        }
+        
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            background: rgba(10, 26, 21, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .nav-inner {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--red); border-color: var(--red); }
+        .back-btn svg { width: 14px; height: 14px; }
+        
+        .room-badge {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        
+        .header-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            color: white;
+            text-decoration: none;
+        }
+        
+        main {
+            position: relative;
+            z-index: 1;
+            padding: 60px 16px 24px;
+            min-height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Letter Display */
+        .letter-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .round-info {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .letter-display {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, var(--bg-card), var(--accent-soft));
+            border: 3px solid var(--accent);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+        
+        .letter-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        .timer-bar {
+            margin-top: 16px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--gold));
+            transition: width 0.1s linear;
+        }
+        
+        .timer-fill.danger { background: var(--red); }
+        
+        .timer-text {
+            text-align: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: var(--gold);
+            margin-top: 8px;
+        }
+        
+        /* Answer Form */
+        .answer-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .category-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: all 0.2s;
+        }
+        
+        .category-input:focus-within {
+            border-color: var(--accent);
+        }
+        
+        .category-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            min-width: 80px;
+        }
+        
+        .category-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-size: 1.1rem;
+            font-family: inherit;
+        }
+        
+        .category-field::placeholder { color: var(--text-dim); }
+        .category-field:disabled { opacity: 0.5; }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent), #059669);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        /* Scoreboard */
+        .scoreboard {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .scoreboard-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+        
+        .score-list { display: flex; flex-direction: column; gap: 8px; }
+        
+        .score-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+        
+        .score-row.top { background: var(--accent-soft); }
+        
+        .score-rank {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: var(--gold);
+            width: 30px;
+        }
+        
+        .score-name { font-weight: 600; flex: 1; }
+        .score-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--accent); }
+        
+        /* Results Phase */
+        .results-section {
+            display: none;
+        }
+        
+        .results-section.active { display: block; }
+        
+        .results-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+        
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .result-category {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        
+        .result-category-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .result-answers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .result-answer {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .result-answer.unique { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
+        .result-answer.common { background: rgba(251, 191, 36, 0.2); color: var(--gold); }
+        .result-answer.invalid { background: rgba(239, 68, 68, 0.2); color: var(--red); text-decoration: line-through; }
+        
+        .result-points {
+            font-size: 0.7rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+        
+        .next-btn {
+            width: 100%;
+            padding: 14px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--accent), #059669);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .next-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Game Over */
+        .gameover-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+        
+        .gameover-overlay.active { display: flex; }
+        
+        .gameover-content {
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .gameover-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            color: var(--gold);
+            margin-bottom: 24px;
+        }
+        
+        .gameover-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .gameover-actions button { flex: 1; padding: 12px; font-size: 1rem; }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects"></div>
+
+<header>
+    <nav class="nav-inner">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="/squad-games.html" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Leave
+            </a>
+            <span class="room-badge" id="room-badge">------</span>
+        </div>
+        <a href="/" class="header-logo">N·P·A·T</a>
+        <div></div>
+    </nav>
+</header>
+
+<main>
+    <!-- Playing Phase -->
+    <div id="playing-section">
+        <div class="letter-section">
+            <div class="round-info">ROUND <span id="round-num">1</span> / <span id="total-rounds">5</span></div>
+            <div class="letter-display">
+                <span class="letter-value" id="current-letter">S</span>
+            </div>
+            <div class="timer-bar">
+                <div class="timer-fill" id="timer-fill" style="width: 100%;"></div>
+            </div>
+            <div class="timer-text" id="timer-text">30</div>
+        </div>
+        
+        <form class="answer-form" id="answer-form" onsubmit="return submitAnswers(event)">
+            <div class="category-input">
+                <span class="category-label">NAME</span>
+                <input type="text" class="category-field" id="input-name" placeholder="Enter a name..." autocomplete="off">
+            </div>
+            <div class="category-input">
+                <span class="category-label">PLACE</span>
+                <input type="text" class="category-field" id="input-place" placeholder="Enter a place..." autocomplete="off">
+            </div>
+            <div class="category-input">
+                <span class="category-label">ANIMAL</span>
+                <input type="text" class="category-field" id="input-animal" placeholder="Enter an animal..." autocomplete="off">
+            </div>
+            <div class="category-input">
+                <span class="category-label">THING</span>
+                <input type="text" class="category-field" id="input-thing" placeholder="Enter a thing..." autocomplete="off">
+            </div>
+            <button type="submit" class="submit-btn" id="submit-btn">Submit Answers</button>
+        </form>
+    </div>
+    
+    <!-- Results Phase -->
+    <div class="results-section" id="results-section">
+        <h2 class="results-title">ROUND RESULTS</h2>
+        <div class="results-grid" id="results-grid"></div>
+        <button class="next-btn" id="next-btn" onclick="nextRound()">Next Round</button>
+    </div>
+    
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+        <div class="scoreboard-title">SCOREBOARD</div>
+        <div class="score-list" id="score-list">
+            <div style="text-align: center; color: var(--text-dim); padding: 12px;">Waiting for players...</div>
+        </div>
+    </div>
+</main>
+
+<div class="gameover-overlay" id="gameover-overlay">
+    <div class="gameover-content">
+        <h2 class="gameover-title">🏆 GAME OVER</h2>
+        <div class="scoreboard">
+            <div class="scoreboard-title">Final Scores</div>
+            <div class="score-list" id="final-scores"></div>
+        </div>
+        <div class="gameover-actions">
+            <button class="btn-secondary" onclick="leaveGame()">Leave</button>
+            <button class="submit-btn" onclick="playAgain()">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode');
+    const playerName = localStorage.getItem('tempPlayerName');
+    
+    document.getElementById('room-badge').textContent = roomCode || '------';
+    
+    if (!roomCode || !playerName) {
+        window.location.href = '/lobby.html?game=npat';
+    }
+    
+    let state = {
+        players: [],
+        scores: {},
+        currentRound: 1,
+        totalRounds: 5,
+        currentLetter: 'S',
+        timeRemaining: 30,
+        phase: 'playing',
+        submitted: false,
+        isHost: localStorage.getItem('tempIsHost') === 'true'
+    };
+    
+    let timerInterval = null;
+    const ROUND_TIME = 30;
+    
+    // Socket handlers
+    socket.on('connect', () => {
+        socket.emit('rejoin-room', { roomCode, playerName });
+    });
+    
+    socket.on('room-joined', (data) => {
+        state.players = data.room.players || [];
+        const me = state.players.find(p => p.name === playerName);
+        if (me) state.isHost = me.isHost;
+        initScores();
+        updateScoreboard();
+    });
+    
+    socket.on('room-state', (data) => {
+        if (data.success && data.room) {
+            state.players = data.room.players || [];
+            const me = state.players.find(p => p.name === playerName);
+            if (me) state.isHost = me.isHost;
+        }
+    });
+    
+    socket.on('npat-round', (data) => {
+        state.currentLetter = data.letter;
+        state.currentRound = data.round;
+        state.timeRemaining = ROUND_TIME;
+        state.phase = 'playing';
+        state.submitted = false;
+        
+        document.getElementById('current-letter').textContent = data.letter;
+        document.getElementById('round-num').textContent = data.round;
+        
+        // Reset form
+        ['name', 'place', 'animal', 'thing'].forEach(cat => {
+            const input = document.getElementById(`input-${cat}`);
+            input.value = '';
+            input.disabled = false;
+        });
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('submit-btn').textContent = 'Submit Answers';
+        
+        // Show playing, hide results
+        document.getElementById('playing-section').style.display = 'block';
+        document.getElementById('results-section').classList.remove('active');
+        
+        startTimer();
+    });
+    
+    socket.on('npat-results', (data) => {
+        stopTimer();
+        state.phase = 'results';
+        state.scores = data.scores;
+        
+        showResults(data.answers, data.roundScores);
+        updateScoreboard();
+    });
+    
+    socket.on('npat-gameover', (data) => {
+        stopTimer();
+        state.scores = data.scores;
+        showGameOver();
+    });
+    
+    socket.on('player-joined', (data) => {
+        state.players = data.room.players || [];
+        initScores();
+        updateScoreboard();
+    });
+    
+    socket.on('player-disconnected', (data) => {
+        state.players = data.room.players || [];
+    });
+    
+    socket.on('error', (data) => console.error('Error:', data.message));
+    socket.on('host-left', () => { alert('Host left'); window.location.href = '/squad-games.html'; });
+    
+    // Functions
+    function initScores() {
+        state.players.forEach(p => {
+            if (state.scores[p.name] === undefined) {
+                state.scores[p.name] = 0;
+            }
+        });
+    }
+    
+    function submitAnswers(e) {
+        e.preventDefault();
+        if (state.submitted) return false;
+        
+        const answers = {
+            name: document.getElementById('input-name').value.trim(),
+            place: document.getElementById('input-place').value.trim(),
+            animal: document.getElementById('input-animal').value.trim(),
+            thing: document.getElementById('input-thing').value.trim()
+        };
+        
+        socket.emit('npat-submit', { roomCode, answers });
+        
+        state.submitted = true;
+        ['name', 'place', 'animal', 'thing'].forEach(cat => {
+            document.getElementById(`input-${cat}`).disabled = true;
+        });
+        document.getElementById('submit-btn').disabled = true;
+        document.getElementById('submit-btn').textContent = 'Submitted ✓';
+        
+        return false;
+    }
+    
+    function showResults(allAnswers, roundScores) {
+        document.getElementById('playing-section').style.display = 'none';
+        document.getElementById('results-section').classList.add('active');
+        
+        const categories = ['name', 'place', 'animal', 'thing'];
+        const grid = document.getElementById('results-grid');
+        
+        grid.innerHTML = categories.map(cat => {
+            const catAnswers = allAnswers[cat] || {};
+            const answersHtml = Object.entries(catAnswers).map(([player, data]) => {
+                const answer = data.answer || '';
+                const points = data.points || 0;
+                let className = 'invalid';
+                if (points === 10) className = 'unique';
+                else if (points === 5) className = 'common';
+                
+                return answer ? `
+                    <span class="result-answer ${className}">
+                        ${escapeHtml(answer)}
+                        <span class="result-points">(${points}pts - ${escapeHtml(player)})</span>
+                    </span>
+                ` : '';
+            }).filter(Boolean).join('');
+            
+            return `
+                <div class="result-category">
+                    <div class="result-category-name">${cat.toUpperCase()}</div>
+                    <div class="result-answers">${answersHtml || '<span style="color: var(--text-dim);">No answers</span>'}</div>
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('next-btn').disabled = !state.isHost;
+        document.getElementById('next-btn').textContent = state.isHost ? 'Next Round' : 'Waiting for host...';
+    }
+    
+    function nextRound() {
+        if (!state.isHost) return;
+        socket.emit('npat-next', { roomCode });
+    }
+    
+    function startTimer() {
+        stopTimer();
+        state.timeRemaining = ROUND_TIME;
+        updateTimerDisplay();
+        
+        timerInterval = setInterval(() => {
+            state.timeRemaining--;
+            updateTimerDisplay();
+            
+            if (state.timeRemaining <= 0) {
+                stopTimer();
+                if (!state.submitted) {
+                    submitAnswers(new Event('submit'));
+                }
+            }
+        }, 1000);
+    }
+    
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+    
+    function updateTimerDisplay() {
+        const fill = document.getElementById('timer-fill');
+        const text = document.getElementById('timer-text');
+        const percent = (state.timeRemaining / ROUND_TIME) * 100;
+        
+        fill.style.width = `${percent}%`;
+        fill.classList.toggle('danger', state.timeRemaining <= 10);
+        text.textContent = state.timeRemaining;
+    }
+    
+    function updateScoreboard() {
+        const container = document.getElementById('score-list');
+        const sorted = Object.entries(state.scores).sort((a, b) => b[1] - a[1]);
+        
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 12px;">Waiting for game to start...</div>';
+            return;
+        }
+        
+        container.innerHTML = sorted.map(([name, score], i) => `
+            <div class="score-row ${i === 0 ? 'top' : ''}">
+                <span class="score-rank">#${i + 1}</span>
+                <span class="score-name">${escapeHtml(name)}${name === playerName ? ' (You)' : ''}</span>
+                <span class="score-value">${score}</span>
+            </div>
+        `).join('');
+    }
+    
+    function showGameOver() {
+        const container = document.getElementById('final-scores');
+        const sorted = Object.entries(state.scores).sort((a, b) => b[1] - a[1]);
+        
+        container.innerHTML = sorted.map(([name, score], i) => `
+            <div class="score-row ${i === 0 ? 'top' : ''}">
+                <span class="score-rank">${i === 0 ? '👑' : '#' + (i + 1)}</span>
+                <span class="score-name">${escapeHtml(name)}</span>
+                <span class="score-value">${score}</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('gameover-overlay').classList.add('active');
+    }
+    
+    function playAgain() {
+        window.location.href = `/waiting-room.html?room=${roomCode}`;
+    }
+    
+    function leaveGame() {
+        window.location.href = '/squad-games.html';
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    window.addEventListener('beforeunload', () => {
+        stopTimer();
+        socket.disconnect();
+    });
+</script>
+
+<script src="/header.js"></script>
+</body>
+</html>
