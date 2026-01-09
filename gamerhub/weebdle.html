@@ -17,10 +17,10 @@
         body{font-family:'Inter',system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;padding-top:60px;overflow-x:hidden}
         h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
         
-        .page{min-height:calc(100vh - 60px);position:relative}
+        .page{min-height:calc(100vh - 60px);position:relative;display:flex;flex-direction:column}
         .page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,107,157,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(79,172,254,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(168,85,247,0.1) 0%,transparent 50%);pointer-events:none}
         
-        .container{max-width:900px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+        .container{max-width:900px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1;flex:1}
         
         .header{text-align:center;margin-bottom:40px}
         .title{font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -83,6 +83,33 @@
         
         .timer{font-size:0.85rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:24px}
         
+        .hint-area{margin-top:20px;text-align:center}
+        .hint-btn{padding:12px 24px;background:linear-gradient(135deg,var(--yellow),#f59e0b);border:none;border-radius:10px;color:#000;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s}
+        .hint-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(234,179,8,0.4)}
+        .hint-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+        .hint-display{margin-top:16px;padding:16px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:10px;color:rgba(255,255,255,0.9);font-size:0.95rem}
+        
+        footer{background:#000;position:relative;overflow:hidden;margin-top:40px}
+        .footer-border{height:3px;background:linear-gradient(90deg,var(--pink),var(--blue),var(--purple),var(--pink));background-size:300% 100%;animation:gradientSlide 6s linear infinite}
+        @keyframes gradientSlide{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+        .footer-bg{position:absolute;inset:0;overflow:hidden;opacity:0.15;pointer-events:none}
+        .footer-blob{position:absolute;border-radius:50%;filter:blur(80px)}
+        .footer-blob:nth-child(1){width:400px;height:400px;background:var(--pink);top:-200px;left:-100px}
+        .footer-blob:nth-child(2){width:350px;height:350px;background:var(--blue);bottom:-150px;right:-80px}
+        .footer-blob:nth-child(3){width:300px;height:300px;background:var(--purple);top:50%;left:50%;transform:translate(-50%,-50%)}
+        .footer-main{max-width:1100px;margin:0 auto;padding:50px 20px 30px;position:relative;z-index:1}
+        .footer-links{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto}
+        .footer-column{text-align:center}
+        .footer-column h5{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .footer-column ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+        .footer-column a{color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.9rem;transition:color 0.2s}
+        .footer-column a:hover{color:var(--pink)}
+        .footer-bottom{padding-top:30px;border-top:1px solid rgba(255,255,255,0.08);text-align:center}
+        .footer-copyright{font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:16px}
+        .footer-legal{display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+        .footer-legal a{color:rgba(255,255,255,0.4);text-decoration:none;font-size:0.8rem;transition:color 0.2s}
+        .footer-legal a:hover{color:#fff}
+        
         @media(max-width:600px){
             .container{padding:24px 12px 60px}
             .attributes{grid-template-columns:repeat(5,1fr);gap:4px}
@@ -91,6 +118,7 @@
             .guess-cell{padding:8px 2px;font-size:0.55rem}
             .stats-bar{gap:16px;padding:12px}
             .stat-value{font-size:1.2rem}
+            .footer-links{grid-template-columns:1fr;gap:30px}
         }
     </style>
 </head>
@@ -134,6 +162,10 @@
                 </div>
                 
                 <div class="guesses" id="guesses"></div>
+                <div class="hint-area" id="hintArea">
+                    <button class="hint-btn" id="hintBtn">💡 Use Hint (3 left)</button>
+                    <div class="hint-display" id="hintDisplay" style="display:none"></div>
+                </div>
                 <div id="game-over"></div>
             </div>
             
@@ -149,6 +181,49 @@
             
             <div class="timer" id="timer">Next puzzle in: --:--:--</div>
         </div>
+        
+        <footer>
+            <div class="footer-border"></div>
+            <div class="footer-bg" aria-hidden="true">
+                <div class="footer-blob"></div>
+                <div class="footer-blob"></div>
+                <div class="footer-blob"></div>
+            </div>
+            <div class="footer-main">
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h5>GAMES</h5>
+                        <ul>
+                            <li><a href="solo.html">Solo</a></li>
+                            <li><a href="duos.html">Duos</a></li>
+                            <li><a href="squad-games.html">Squad</a></li>
+                            <li><a href="party-games.html">Party</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h5>COMMUNITY</h5>
+                        <ul>
+                            <li><a href="leaderboards.html">Leaderboards</a></li>
+                            <li><a href="supporters.html">Hall of Champions</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h5>COMPANY</h5>
+                        <ul>
+                            <li><a href="about.html">About</a></li>
+                            <li><a href="mailto:hello@thegaming.co">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
+                    <div class="footer-legal">
+                        <a href="privacy.html">Privacy</a>
+                        <a href="terms.html">Terms</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
     
     <script src="/header.js"></script>
@@ -422,7 +497,9 @@
     let todayAnime = null;
     let guesses = [];
     let gameOver = false;
+    let hintsUsed = 0;
     const MAX_GUESSES = 6;
+    const MAX_HINTS = 3;
 
     function getDailyAnime() {
         const today = new Date().toISOString().split('T')[0];
@@ -430,6 +507,37 @@
         const index = parseInt(seed) % ANIME.length;
         return ANIME[index];
     }
+    
+    function updateHintButton() {
+        const btn = document.getElementById('hintBtn');
+        const remaining = MAX_HINTS - hintsUsed;
+        btn.textContent = `💡 Use Hint (${remaining} left)`;
+        btn.disabled = remaining <= 0 || gameOver;
+    }
+    
+    function useHint() {
+        if (hintsUsed >= MAX_HINTS || gameOver || !todayAnime) return;
+        
+        hintsUsed++;
+        updateHintButton();
+        
+        const hints = [
+            `The anime aired in <strong>${todayAnime.year}</strong>`,
+            `The genre is <strong>${todayAnime.genre}</strong>`,
+            `Made by <strong>${todayAnime.studio}</strong>`
+        ];
+        
+        const hintDisplay = document.getElementById('hintDisplay');
+        hintDisplay.innerHTML = hints.slice(0, hintsUsed).join('<br>');
+        hintDisplay.style.display = 'block';
+        
+        const today = new Date().toISOString().split('T')[0];
+        const saved = JSON.parse(localStorage.getItem('weebdle_state') || '{}');
+        saved.hintsUsed = hintsUsed;
+        localStorage.setItem('weebdle_state', JSON.stringify(saved));
+    }
+    
+    document.getElementById('hintBtn').addEventListener('click', useHint);
 
     function loadStats() {
         const stats = JSON.parse(localStorage.getItem('weebdle_stats') || '{"played":0,"wins":0,"streak":0,"lastPlayed":""}');
@@ -469,8 +577,20 @@
         if (saved.date === today) {
             guesses = saved.guesses || [];
             gameOver = saved.gameOver || false;
+            hintsUsed = saved.hintsUsed || 0;
             guesses.forEach(g => renderGuess(g));
             if (gameOver) showGameOver(saved.won);
+            if (hintsUsed > 0) {
+                const hints = [
+                    `The anime aired in <strong>${todayAnime.year}</strong>`,
+                    `The genre is <strong>${todayAnime.genre}</strong>`,
+                    `Made by <strong>${todayAnime.studio}</strong>`
+                ];
+                const hintDisplay = document.getElementById('hintDisplay');
+                hintDisplay.innerHTML = hints.slice(0, hintsUsed).join('<br>');
+                hintDisplay.style.display = 'block';
+            }
+            updateHintButton();
         }
     }
 

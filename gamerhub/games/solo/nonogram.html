@@ -197,7 +197,7 @@
                 <div class="complete-stat"><div class="complete-stat-value" id="complete-errors">0</div><div class="complete-stat-label">Errors</div></div>
             </div>
             <button class="btn btn-primary" id="next-btn">NEXT PUZZLE</button>
-            <button class="btn btn-secondary" id="share-btn">SHARE</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('complete-overlay').classList.remove('show');document.querySelector('.leaderboard-section').scrollIntoView({behavior:'smooth'})">VIEW LEADERBOARD</button>
         </div>
     </div>
 
@@ -215,7 +215,6 @@ loadAuth();
 async function loadPersonalBests(){if(!currentUserId)return;const{data}=await supabaseClient.from('solo_scores').select('game_id,score').eq('user_id',currentUserId).like('game_id','nonogram-%').order('score',{ascending:true});if(data)data.forEach(d=>{const s=d.game_id.replace('nonogram-','');if(!personalBest[s]||d.score<personalBest[s])personalBest[s]=d.score});updateBest()}
 function updateBest(){const b=personalBest[gridSize];bestEl.textContent=b?formatTime(b):'--:--'}
 async function loadFriends(){if(!currentUserId)return;try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}}
-let userMenuOpen=false;document.getElementById('user-menu-button')?.addEventListener('click',e=>{e.stopPropagation();userMenuOpen=!userMenuOpen;document.getElementById('user-menu').classList.toggle('open',userMenuOpen)});document.addEventListener('click',()=>{userMenuOpen=false;document.getElementById('user-menu')?.classList.remove('open')});document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
 
 function generatePuzzle(){solution=[];const density=gridSize===5?0.5:gridSize===10?0.45:0.4;for(let r=0;r<gridSize;r++){solution[r]=[];for(let c=0;c<gridSize;c++){solution[r][c]=Math.random()<density?1:0}}rowClues=solution.map(row=>{const clues=[];let count=0;row.forEach(cell=>{if(cell)count++;else if(count){clues.push(count);count=0}});if(count)clues.push(count);return clues.length?clues:[0]});colClues=[];for(let c=0;c<gridSize;c++){const clues=[];let count=0;for(let r=0;r<gridSize;r++){if(solution[r][c])count++;else if(count){clues.push(count);count=0}}if(count)clues.push(count);colClues.push(clues.length?clues:[0])}userGrid=Array(gridSize).fill(null).map(()=>Array(gridSize).fill(0))}
 
@@ -234,7 +233,6 @@ document.querySelectorAll('.size-btn').forEach(btn=>{btn.addEventListener('click
 document.getElementById('mark-btn').addEventListener('click',function(){markMode=!markMode;this.classList.toggle('active',markMode)});
 document.getElementById('new-btn').addEventListener('click',newPuzzle);
 document.getElementById('next-btn').addEventListener('click',newPuzzle);
-document.getElementById('share-btn').addEventListener('click',()=>{const t=`🎨 Nonogram ${gridSize}×${gridSize}\n⏱️ ${formatTime(seconds)}\n❌ ${errors} errors\n\nthegaming.co/games/solo/nonogram.html`;navigator.share?navigator.share({text:t}):navigator.clipboard.writeText(t)});
 
 document.querySelectorAll('.lb-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentTab=tab.dataset.tab;fetchLeaderboard(currentTab)})});
 

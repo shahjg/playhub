@@ -2,878 +2,911 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Connections - Daily Word Puzzle | TheGaming.co</title>
+    <meta name="description" content="Group 16 words into 4 secret categories. New puzzle daily!">
     <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="/header.css">
-    <title>Daily Challenge – Connections | TheGaming.co</title>
-    <meta name="description" content="Play today's Connections puzzle. Group 16 words into 4 secret categories. New puzzle every day.">
-    <link rel="icon" href="/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --pink:#ff6b9d;--purple:#a855f7;--blue:#4facfe;--teal:#00d9a5;
-            --gold:#ffd700;--silver:#c0c0c0;--bronze:#cd7f32;
-            --dark:#0a0a0f;
-            --cat-yellow:#f9df6d;--cat-green:#a0c35a;--cat-blue:#b0c4ef;--cat-purple:#ba81c5;
-        }
-        body{
-            font-family:'Inter',system-ui,sans-serif;
-            background:var(--dark);color:#fff;
-            min-height:100vh;min-height:100dvh;
-            overflow-x:hidden;
-            -webkit-font-smoothing:antialiased;
-        }
+        :root{--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#0a0a0f;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--cat1:#f9df6d;--cat2:#a0c35a;--cat3:#b0c4ef;--cat4:#ba81c5}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;padding-top:60px;overflow-x:hidden}
         h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
-        a{color:inherit;text-decoration:none}
-        button{font-family:'Inter',sans-serif;cursor:pointer}
-
-        /* Background */
-        .page-bg{
-            position:fixed;inset:0;z-index:0;pointer-events:none;
-            background:
-                radial-gradient(ellipse 100% 70% at 50% -20%,rgba(168,85,247,0.18) 0%,transparent 50%),
-                radial-gradient(ellipse 80% 50% at 10% 50%,rgba(255,107,157,0.1) 0%,transparent 50%),
-                radial-gradient(ellipse 60% 40% at 90% 80%,rgba(79,172,254,0.08) 0%,transparent 50%),
-                linear-gradient(180deg,#0c0c14 0%,#08080c 100%);
-        }
-
-        /* Particles */
-        .particles{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1}
-        .particle{
-            position:absolute;width:3px;height:3px;
-            border-radius:50%;opacity:0.4;
-            animation:float 20s infinite linear;
-        }
-        .particle:nth-child(1){left:8%;background:var(--pink);animation-delay:0s}
-        .particle:nth-child(2){left:22%;background:var(--purple);animation-delay:-3s;width:4px;height:4px}
-        .particle:nth-child(3){left:38%;background:var(--blue);animation-delay:-7s}
-        .particle:nth-child(4){left:55%;background:var(--pink);animation-delay:-2s}
-        .particle:nth-child(5){left:70%;background:var(--purple);animation-delay:-5s;width:2px;height:2px}
-        .particle:nth-child(6){left:85%;background:var(--blue);animation-delay:-9s}
-        @keyframes float{
-            0%{transform:translateY(100vh);opacity:0}
-            10%{opacity:0.5}
-            90%{opacity:0.5}
-            100%{transform:translateY(-100vh);opacity:0}
-        }
-
-        .page-wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column}
-
-        /* Header */
-        header{
-            position:fixed;top:0;left:0;right:0;z-index:100;
-            height:60px;display:flex;align-items:center;
-            padding:0 max(18px,env(safe-area-inset-left));
-            background:rgba(10,10,15,0.9);
-            backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-            border-bottom:1px solid rgba(168,85,247,0.1);
-        }
-        .nav-inner{
-            width:100%;max-width:1100px;margin:0 auto;
-            display:grid;grid-template-columns:1fr auto 1fr;
-            align-items:center;gap:20px;
-        }
-        .header-logo{
-            font-family:'Bebas Neue',sans-serif;font-size:1.5rem;
-            letter-spacing:4px;color:#fff;justify-self:center;position:relative;
-        }
-        .header-logo::after{
-            content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;
-            background:linear-gradient(90deg,var(--pink),var(--purple),var(--blue));
-        }
-        .nav-right{justify-self:flex-end;display:flex;align-items:center;gap:12px}
-        .nav-right-logged-out,.nav-right-logged-in{display:none!important}
-        .auth-link{font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.5px}
-        .auth-link:hover{color:#fff}
-        .user-menu-wrapper{position:relative}
-        .user-pill{
-            width:36px;height:36px;border-radius:50%;border:none;
-            background:linear-gradient(135deg,var(--pink),var(--purple));
-            color:#fff;font-weight:700;font-size:0.9rem;
-            display:flex;align-items:center;justify-content:center;
-            transition:transform 0.15s,box-shadow 0.15s;
-        }
-        .user-pill:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(168,85,247,0.4)}
-        .user-pill-skeleton{
-            width:36px;height:36px;border-radius:50%;
-            background:linear-gradient(90deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 100%);
-            background-size:200% 100%;animation:shimmer 1.5s infinite;
-        }
-        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        .user-menu{
-            position:absolute;top:calc(100% + 8px);right:0;min-width:160px;padding:6px;
-            border-radius:12px;background:rgba(10,10,15,0.98);
-            border:1px solid rgba(168,85,247,0.15);
-            box-shadow:0 20px 50px rgba(0,0,0,0.8);
-            opacity:0;transform:translateY(-4px);pointer-events:none;
-            transition:all 0.15s;z-index:120;
-        }
-        .user-menu.open{opacity:1;transform:translateY(0);pointer-events:auto}
-        .user-menu-item{
-            display:block;width:100%;padding:8px 12px;border-radius:8px;
-            font-size:0.85rem;color:rgba(255,255,255,0.85);
-            background:none;border:none;text-align:left;
-        }
-        .user-menu-item:hover{background:rgba(168,85,247,0.1);color:var(--purple)}
-
-        /* Main */
-        main{
-            flex:1;
-            padding:80px 16px 40px;
-            padding-top:max(80px,calc(60px + env(safe-area-inset-top)));
-            display:flex;flex-direction:column;align-items:center;
-        }
-        .game-wrap{width:100%;max-width:520px;display:flex;flex-direction:column;gap:20px}
-
-        /* Game Header */
-        .game-header{text-align:center;margin-bottom:6px}
-        .game-title{
-            font-size:clamp(2.2rem,8vw,3rem);letter-spacing:4px;
-            background:linear-gradient(135deg,#fff 30%,var(--purple) 100%);
-            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-            background-clip:text;margin-bottom:6px;
-        }
-        .game-subtitle{font-size:0.9rem;color:rgba(255,255,255,0.45);margin-bottom:14px}
-        .game-meta{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
-        .meta-pill{
-            display:inline-flex;align-items:center;gap:6px;
-            padding:6px 12px;border-radius:20px;
-            background:rgba(255,255,255,0.04);
-            border:1px solid rgba(255,255,255,0.08);
-            font-size:0.75rem;color:rgba(255,255,255,0.5);
-        }
-        .meta-pill svg{width:14px;height:14px;opacity:0.6}
-        .meta-pill strong{color:#fff;font-weight:700}
-        .meta-pill.clickable{cursor:pointer;transition:all 0.2s}
-        .meta-pill.clickable:hover{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.2)}
-
-        /* Mistakes */
-        .mistakes-bar{
-            display:flex;align-items:center;justify-content:center;gap:12px;
-            padding:10px 18px;
-            background:linear-gradient(135deg,rgba(168,85,247,0.06) 0%,rgba(255,107,157,0.04) 100%);
-            border-radius:12px;border:1px solid rgba(168,85,247,0.1);
-        }
-        .mistakes-label{font-size:0.7rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
-        .mistakes-dots{display:flex;gap:8px}
-        .dot{
-            width:14px;height:14px;border-radius:50%;
-            background:rgba(255,255,255,0.1);
-            border:2px solid rgba(255,255,255,0.15);
-            transition:all 0.3s;
-        }
-        .dot.used{
-            background:var(--pink);border-color:var(--pink);
-            box-shadow:0 0 12px rgba(255,107,157,0.5);
-            animation:dotPop 0.3s ease-out;
-        }
-        @keyframes dotPop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
-
-        /* Solved */
-        .solved-area{display:flex;flex-direction:column;gap:6px}
-        .solved-row{
-            padding:14px 16px;border-radius:12px;text-align:center;
-            animation:solveIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        @keyframes solveIn{0%{opacity:0;transform:scale(0.85) translateY(-8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
-        .solved-row.yellow{background:var(--cat-yellow);color:#1a1a1a}
-        .solved-row.green{background:var(--cat-green);color:#1a1a1a}
-        .solved-row.blue{background:var(--cat-blue);color:#1a1a1a}
-        .solved-row.purple{background:var(--cat-purple);color:#1a1a1a}
-        .solved-cat{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:2px}
-        .solved-words{font-size:0.78rem;font-weight:600;opacity:0.8}
-
-        /* Grid */
-        .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-        .tile{
-            aspect-ratio:1.55;
-            display:flex;align-items:center;justify-content:center;
-            padding:6px 4px;
-            background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.03) 100%);
-            border:2px solid rgba(255,255,255,0.1);
-            border-radius:10px;
-            font-size:clamp(0.6rem,2.3vw,0.85rem);
-            font-weight:700;text-transform:uppercase;
-            letter-spacing:0.3px;text-align:center;line-height:1.2;
-            color:#fff;cursor:pointer;
-            transition:all 0.15s ease;
-            user-select:none;-webkit-user-select:none;
-            -webkit-tap-highlight-color:transparent;
-        }
-        .tile:hover{
-            background:rgba(168,85,247,0.12);
-            border-color:rgba(168,85,247,0.25);
-            transform:translateY(-2px);
-        }
-        .tile.selected{
-            background:linear-gradient(135deg,var(--pink),var(--purple));
-            border-color:transparent;
-            transform:scale(1.03);
-            box-shadow:0 6px 20px rgba(168,85,247,0.35);
-        }
-        .tile.wrong{animation:shake 0.4s ease-out}
-        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
-        .tile.correct{animation:pop 0.35s ease-out forwards}
-        @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12);background:var(--teal)}100%{transform:scale(0);opacity:0}}
-
-        /* Actions */
-        .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-        .btn{
-            padding:12px 22px;border-radius:10px;
-            font-size:0.8rem;font-weight:700;
-            letter-spacing:0.8px;text-transform:uppercase;
-            border:none;transition:all 0.2s;
-            display:inline-flex;align-items:center;gap:8px;
-        }
-        .btn:disabled{opacity:0.35;cursor:not-allowed;transform:none!important}
-        .btn-ghost{
-            background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.1);
-            color:#fff;
-        }
-        .btn-ghost:hover:not(:disabled){background:rgba(255,255,255,0.1)}
-        .btn-primary{
-            background:linear-gradient(135deg,var(--pink),var(--purple));
-            color:#fff;box-shadow:0 6px 20px rgba(168,85,247,0.3);
-        }
-        .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 30px rgba(168,85,247,0.4)}
-
-        /* Result */
-        .result{
-            text-align:center;padding:28px;
-            background:linear-gradient(135deg,rgba(168,85,247,0.08) 0%,rgba(255,107,157,0.05) 100%);
-            border:1px solid rgba(168,85,247,0.15);
-            border-radius:20px;animation:fadeUp 0.4s ease-out;
-        }
-        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        .result-icon{font-size:3.5rem;margin-bottom:10px}
-        .result-title{font-size:2rem;letter-spacing:3px;margin-bottom:6px}
-        .result-title.win{color:var(--teal)}
-        .result-title.lose{color:var(--pink)}
-        .result-stats{display:flex;justify-content:center;gap:28px;margin:18px 0;flex-wrap:wrap}
+        
+        .page{min-height:calc(100vh - 60px);position:relative;display:flex;flex-direction:column}
+        .page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,107,157,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(79,172,254,0.15) 0%,transparent 50%),radial-gradient(circle at 40% 40%,rgba(168,85,247,0.1) 0%,transparent 50%);pointer-events:none}
+        
+        .container{max-width:600px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1;flex:1}
+        
+        .header{text-align:center;margin-bottom:32px}
+        .title{font-size:clamp(2.5rem,8vw,4rem);margin-bottom:8px;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .subtitle{color:rgba(255,255,255,0.6);font-size:1rem}
+        
+        .stats-bar{display:flex;justify-content:center;gap:32px;margin-bottom:24px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
         .stat{text-align:center}
-        .stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;color:#fff}
-        .stat-label{font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
-        .share-grid{display:flex;flex-direction:column;align-items:center;gap:3px;margin:14px 0;font-size:1.1rem;line-height:1}
-        .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
-        .btn-share{background:linear-gradient(135deg,var(--teal),#00b386);box-shadow:0 6px 20px rgba(0,217,165,0.3)}
-
-        /* Leaderboard */
-        .leaderboard{
-            margin-top:28px;
-            background:rgba(12,12,18,0.6);
-            border:1px solid rgba(255,215,0,0.1);
-            border-radius:18px;overflow:hidden;
-            backdrop-filter:blur(10px);
-            box-shadow:0 0 60px rgba(255,215,0,0.03),0 25px 50px rgba(0,0,0,0.4);
-        }
-        .lb-header{
-            display:flex;align-items:center;justify-content:space-between;
-            padding:16px 20px;
-            background:linear-gradient(180deg,rgba(255,215,0,0.06) 0%,transparent 100%);
-            border-bottom:1px solid rgba(255,215,0,0.08);
-            flex-wrap:wrap;gap:12px;
-        }
-        .lb-title{font-size:1.2rem;letter-spacing:2px;display:flex;align-items:center;gap:10px}
-        .lb-tabs{display:flex;gap:4px;background:rgba(0,0,0,0.3);padding:4px;border-radius:8px}
-        .lb-tab{
-            padding:7px 12px;border-radius:6px;
-            font-size:0.68rem;font-weight:700;
-            text-transform:uppercase;letter-spacing:0.5px;
-            cursor:pointer;color:rgba(255,255,255,0.4);
-            background:none;border:none;transition:all 0.2s;
-        }
-        .lb-tab:hover{color:#fff}
-        .lb-tab.active{
-            background:linear-gradient(135deg,var(--gold),#c9a800);
-            color:#0a0a0f;box-shadow:0 4px 12px rgba(255,215,0,0.25);
-        }
-        .lb-body{padding:16px}
-
-        /* Podium */
-        .podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;align-items:end}
-        .podium-spot{
-            text-align:center;padding:14px 8px;border-radius:12px;
-            transition:transform 0.2s;
-        }
-        .podium-spot:hover{transform:translateY(-3px)}
-        .podium-spot.gold{
-            background:linear-gradient(180deg,rgba(255,215,0,0.12) 0%,rgba(255,215,0,0.02) 100%);
-            border:2px solid var(--gold);order:2;
-            padding:18px 8px;min-height:140px;
-            box-shadow:0 0 40px rgba(255,215,0,0.1);
-            animation:goldPulse 4s ease-in-out infinite;
-        }
-        @keyframes goldPulse{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.08)}50%{box-shadow:0 0 50px rgba(255,215,0,0.15)}}
-        .podium-spot.silver{
-            background:linear-gradient(180deg,rgba(192,192,192,0.08) 0%,transparent 100%);
-            border:2px solid var(--silver);order:1;min-height:115px;
-        }
-        .podium-spot.bronze{
-            background:linear-gradient(180deg,rgba(205,127,50,0.08) 0%,transparent 100%);
-            border:2px solid var(--bronze);order:3;min-height:100px;
-        }
-        .podium-rank{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1}
-        .podium-spot.gold .podium-rank{color:var(--gold);font-size:1.8rem;text-shadow:0 0 15px rgba(255,215,0,0.4)}
-        .podium-spot.silver .podium-rank{color:var(--silver)}
-        .podium-spot.bronze .podium-rank{color:var(--bronze)}
-        .podium-label{font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;opacity:0.7}
-        .podium-name{font-weight:700;font-size:0.72rem;color:#fff;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .podium-spot.gold .podium-name{font-size:0.82rem}
-        .podium-score{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.5px}
-        .podium-spot.gold .podium-score{color:var(--gold);font-size:1.1rem}
-        .podium-spot.silver .podium-score{color:var(--silver)}
-        .podium-spot.bronze .podium-score{color:var(--bronze)}
-
-        /* List */
-        .lb-list{display:flex;flex-direction:column;gap:5px}
-        .lb-row{
-            display:grid;grid-template-columns:30px 1fr auto;
-            align-items:center;gap:10px;
-            padding:10px 12px;
-            background:rgba(255,215,0,0.015);
-            border-radius:8px;transition:all 0.2s;
-            border:1px solid transparent;
-        }
-        .lb-row:hover{background:rgba(255,215,0,0.04);border-color:rgba(255,215,0,0.08);transform:translateX(3px)}
-        .lb-row.you{
-            background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(168,85,247,0.04));
-            border:1px solid rgba(168,85,247,0.25);
-        }
-        .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;color:rgba(255,215,0,0.4);text-align:center}
-        .lb-name{font-weight:600;font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .lb-you{font-size:0.58rem;background:var(--purple);padding:2px 5px;border-radius:4px;margin-left:5px}
-        .lb-score{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;color:var(--gold)}
-        .lb-empty{text-align:center;padding:28px;color:rgba(255,255,255,0.4);font-size:0.82rem}
-        .lb-loading{display:flex;flex-direction:column;gap:5px}
-        .lb-skel{height:42px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,0.02) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.02) 100%);background-size:200% 100%;animation:shimmer 1.5s infinite}
-
-        /* Modal */
-        .modal-overlay{
-            position:fixed;inset:0;
-            background:rgba(0,0,0,0.85);
-            backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-            display:none;align-items:center;justify-content:center;
-            z-index:500;padding:20px;
-        }
-        .modal-overlay.open{display:flex}
-        .modal{
-            background:linear-gradient(135deg,#14141f 0%,#0f0f18 100%);
-            border:1px solid rgba(168,85,247,0.15);
-            border-radius:20px;padding:32px;
-            max-width:360px;width:100%;
-            text-align:center;animation:modalPop 0.3s ease-out;
-            position:relative;
-        }
-        @keyframes modalPop{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
-        .modal-close{
-            position:absolute;top:12px;right:12px;
-            width:32px;height:32px;border-radius:8px;
-            background:rgba(255,255,255,0.05);border:none;
-            color:rgba(255,255,255,0.5);cursor:pointer;
-            display:flex;align-items:center;justify-content:center;
-        }
-        .modal-close:hover{background:rgba(255,255,255,0.1);color:#fff}
-        .modal-title{font-size:1.7rem;letter-spacing:3px;margin-bottom:8px}
-        .modal-desc{font-size:0.88rem;color:rgba(255,255,255,0.5);margin-bottom:22px;line-height:1.5}
-        .modal-rules{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;text-align:left}
-        .rule{display:flex;align-items:flex-start;gap:12px}
-        .rule-num{
-            width:24px;height:24px;border-radius:7px;
-            background:linear-gradient(135deg,var(--pink),var(--purple));
-            display:flex;align-items:center;justify-content:center;
-            font-family:'Bebas Neue',sans-serif;font-size:0.85rem;flex-shrink:0;
-        }
-        .rule p{font-size:0.82rem;color:rgba(255,255,255,0.75);line-height:1.4;padding-top:2px}
-        .modal-note{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-bottom:18px}
-        .modal-btn{
-            width:100%;padding:14px;border:none;border-radius:10px;
-            background:linear-gradient(135deg,var(--pink),var(--purple));
-            font-family:'Bebas Neue',sans-serif;font-size:1.1rem;
-            letter-spacing:2px;color:#fff;transition:all 0.2s;
-        }
-        .modal-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(168,85,247,0.4)}
-
-        /* Toast */
-        .toast{
-            position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
-            background:var(--teal);color:#0a0a0f;
-            padding:12px 24px;border-radius:50px;
-            font-weight:700;font-size:0.85rem;
-            opacity:0;transition:opacity 0.3s;z-index:300;
-        }
-        .toast.show{opacity:1}
-
-        /* Footer */
-        footer{background:#050508;margin-top:auto}
-        .footer-border{height:1px;background:linear-gradient(90deg,transparent,rgba(168,85,247,0.3),transparent)}
-        .footer-main{max-width:1100px;margin:0 auto;padding:32px 20px 22px;text-align:center}
-        .footer-links{display:flex;justify-content:center;gap:22px;margin-bottom:14px;flex-wrap:wrap}
-        .footer-links a{color:rgba(255,255,255,0.4);font-size:0.78rem;transition:color 0.2s}
-        .footer-links a:hover{color:var(--purple)}
-        .footer-copy{font-size:0.72rem;color:rgba(255,255,255,0.25)}
-
-        /* Responsive */
-        @media(max-width:600px){
-            header{height:56px}
-            .header-logo{font-size:1.3rem;letter-spacing:3px}
-            main{padding:68px 12px 30px}
-            .game-wrap{gap:16px}
-            .game-title{font-size:2rem}
-            .grid{gap:5px}
-            .tile{aspect-ratio:1.4;font-size:clamp(0.52rem,2vw,0.72rem);border-radius:8px}
-            .btn{padding:10px 18px;font-size:0.75rem}
-            .leaderboard{border-radius:14px}
-            .lb-header{padding:12px 14px}
-            .lb-body{padding:12px}
-            .podium{gap:6px}
-            .podium-spot{padding:10px 6px}
-            .podium-spot.gold{min-height:120px;padding:14px 6px}
-            .modal{padding:26px 20px}
-        }
-        @media(max-width:380px){
-            .grid{gap:4px}
-            .tile{aspect-ratio:1.3;font-size:0.48rem}
-            .meta-pill{padding:5px 8px;font-size:0.68rem}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff}
+        .stat-label{font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+        
+        .mistakes-display{display:flex;justify-content:center;gap:8px;margin-bottom:24px}
+        .mistake-dot{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s}
+        .mistake-dot.used{background:var(--red)}
+        
+        .game-area{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:20px;margin-bottom:24px}
+        
+        .solved-categories{margin-bottom:16px}
+        .solved-category{padding:16px;border-radius:12px;margin-bottom:8px;text-align:center;animation:solveReveal 0.5s ease}
+        @keyframes solveReveal{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+        .solved-category.cat1{background:var(--cat1);color:#000}
+        .solved-category.cat2{background:var(--cat2);color:#000}
+        .solved-category.cat3{background:var(--cat3);color:#000}
+        .solved-category.cat4{background:var(--cat4);color:#000}
+        .solved-category-name{font-weight:700;font-size:0.9rem;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+        .solved-category-words{font-size:0.85rem}
+        
+        .word-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+        .word-tile{padding:20px 8px;background:rgba(255,255,255,0.08);border:2px solid transparent;border-radius:10px;text-align:center;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.5px;user-select:none;color:#fff}
+        .word-tile:hover{background:rgba(255,255,255,0.12)}
+        .word-tile.selected{background:rgba(168,85,247,0.3);border-color:var(--purple);color:#fff}
+        .word-tile.shake{animation:shake 0.4s ease}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+        .word-tile:disabled{opacity:0.5;cursor:not-allowed}
+        
+        .controls{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+        .btn{padding:12px 24px;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;border:none;text-transform:uppercase;letter-spacing:1px}
+        .btn-secondary{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+        .btn-secondary:hover{background:rgba(255,255,255,0.15)}
+        .btn-secondary:disabled{opacity:0.4;cursor:not-allowed}
+        .btn-primary{background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(168,85,247,0.4)}
+        .btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none}
+        .btn-hint{background:linear-gradient(135deg,var(--yellow),#f59e0b);color:#000}
+        .btn-hint:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(234,179,8,0.4)}
+        
+        .hint-display{background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:10px;padding:16px;margin-top:16px;text-align:center;animation:fadeIn 0.3s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .hint-display p{color:rgba(255,255,255,0.9);font-size:0.95rem}
+        .hint-label{font-size:0.75rem;color:var(--yellow);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+        
+        .game-over{text-align:center;padding:32px;animation:fadeIn 0.5s}
+        .game-over h2{font-size:2rem;margin-bottom:8px}
+        .game-over.win h2{color:var(--green)}
+        .game-over.lose h2{color:var(--red)}
+        .game-over p{color:rgba(255,255,255,0.7);margin-bottom:24px}
+        
+        .share-btn{padding:14px 32px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s}
+        .share-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(168,85,247,0.4)}
+        
+        .how-to-play{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:24px}
+        .how-to-play h3{font-size:1.3rem;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .how-to-play p{color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.7;margin-bottom:12px}
+        .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:rgba(255,255,255,0.7)}
+        .legend-box{width:20px;height:20px;border-radius:4px}
+        
+        .timer{font-size:0.85rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:24px}
+        
+        footer{background:#000;position:relative;overflow:hidden}
+        .footer-border{height:3px;background:linear-gradient(90deg,var(--pink),var(--blue),var(--purple),var(--pink));background-size:300% 100%;animation:gradientSlide 6s linear infinite}
+        @keyframes gradientSlide{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+        .footer-bg{position:absolute;inset:0;overflow:hidden;opacity:0.15;pointer-events:none}
+        .footer-blob{position:absolute;border-radius:50%;filter:blur(80px)}
+        .footer-blob:nth-child(1){width:400px;height:400px;background:var(--pink);top:-200px;left:-100px}
+        .footer-blob:nth-child(2){width:350px;height:350px;background:var(--blue);bottom:-150px;right:-80px}
+        .footer-blob:nth-child(3){width:300px;height:300px;background:var(--purple);top:50%;left:50%;transform:translate(-50%,-50%)}
+        .footer-main{max-width:1100px;margin:0 auto;padding:50px 20px 30px;position:relative;z-index:1}
+        .footer-links{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto}
+        .footer-column{text-align:center}
+        .footer-column h5{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:16px;color:rgba(255,255,255,0.9)}
+        .footer-column ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+        .footer-column a{color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.9rem;transition:color 0.2s}
+        .footer-column a:hover{color:var(--pink)}
+        .footer-bottom{padding-top:30px;border-top:1px solid rgba(255,255,255,0.08);text-align:center}
+        .footer-copyright{font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:16px}
+        .footer-legal{display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+        .footer-legal a{color:rgba(255,255,255,0.4);text-decoration:none;font-size:0.8rem;transition:color 0.2s}
+        .footer-legal a:hover{color:#fff}
+        
+        @media(max-width:500px){
+            .container{padding:20px 12px 60px}
+            .word-tile{padding:16px 4px;font-size:0.7rem}
+            .controls{gap:8px}
+            .btn{padding:10px 16px;font-size:0.8rem}
+            .stats-bar{gap:16px;padding:12px}
+            .footer-links{grid-template-columns:1fr;gap:30px}
         }
     </style>
 </head>
 <body>
-    <div class="page-bg"></div>
-    <div class="particles"><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div></div>
-
-    <div class="page-wrap">
-        <div id="site-header"></div>
-
-        <main>
-            <div class="game-wrap">
-                <div class="game-header">
-                    <h1 class="game-title">DAILY CHALLENGE</h1>
-                    <p class="game-subtitle">Find 4 groups of 4 words that share a connection</p>
-                    <div class="game-meta">
-                        <div class="meta-pill">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            <span id="puzzle-date">--</span>
-                        </div>
-                        <div class="meta-pill">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Next: <strong id="countdown">--:--:--</strong>
-                        </div>
-                        <div class="meta-pill clickable" id="help-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            Help
-                        </div>
-                    </div>
+    <div id="site-header"></div>
+    
+    <div class="page">
+        <div class="container">
+            <div class="header">
+                <h1 class="title">CONNECTIONS</h1>
+                <p class="subtitle">Group 16 words into 4 categories</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="played">0</div>
+                    <div class="stat-label">Played</div>
                 </div>
-
-                <div class="mistakes-bar">
-                    <span class="mistakes-label">Mistakes</span>
-                    <div class="mistakes-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="stat">
+                    <div class="stat-value" id="winRate">0%</div>
+                    <div class="stat-label">Win Rate</div>
                 </div>
-
-                <div class="solved-area" id="solved"></div>
-                <div class="grid" id="grid"></div>
-
-                <div class="actions" id="actions">
-                    <button class="btn btn-ghost" id="shuffle-btn">Shuffle</button>
-                    <button class="btn btn-ghost" id="deselect-btn" disabled>Deselect</button>
-                    <button class="btn btn-primary" id="submit-btn" disabled>Submit</button>
+                <div class="stat">
+                    <div class="stat-value" id="streak">0</div>
+                    <div class="stat-label">Streak 🔥</div>
                 </div>
-
-                <div class="result" id="result" style="display:none"></div>
-
-                <div class="leaderboard">
-                    <div class="lb-header">
-                        <h2 class="lb-title">🏆 LEADERBOARD</h2>
-                        <div class="lb-tabs">
-                            <button class="lb-tab active" data-tab="today">Today</button>
-                            <button class="lb-tab" data-tab="week">Week</button>
-                            <button class="lb-tab" data-tab="all">All Time</button>
-                        </div>
-                    </div>
-                    <div class="lb-body">
-                        <div class="podium" id="podium">
-                            <div class="podium-spot silver"><div class="podium-rank">2</div><div class="podium-label">Silver</div><div class="podium-name">—</div><div class="podium-score">—</div></div>
-                            <div class="podium-spot gold"><div class="podium-rank">1</div><div class="podium-label">Champion</div><div class="podium-name">—</div><div class="podium-score">—</div></div>
-                            <div class="podium-spot bronze"><div class="podium-rank">3</div><div class="podium-label">Bronze</div><div class="podium-name">—</div><div class="podium-score">—</div></div>
-                        </div>
-                        <div class="lb-list" id="lb-list"></div>
-                    </div>
+                <div class="stat">
+                    <div class="stat-value" id="maxStreak">0</div>
+                    <div class="stat-label">Best</div>
                 </div>
             </div>
-        </main>
-
+            
+            <div class="mistakes-display" id="mistakesDisplay">
+                <div class="mistake-dot"></div>
+                <div class="mistake-dot"></div>
+                <div class="mistake-dot"></div>
+                <div class="mistake-dot"></div>
+            </div>
+            
+            <div class="game-area" id="gameArea">
+                <div class="solved-categories" id="solvedCategories"></div>
+                <div class="word-grid" id="wordGrid"></div>
+                <div class="controls" id="controls">
+                    <button class="btn btn-secondary" id="shuffleBtn">Shuffle</button>
+                    <button class="btn btn-secondary" id="deselectBtn" disabled>Deselect All</button>
+                    <button class="btn btn-hint" id="hintBtn">Hint (3)</button>
+                    <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+                </div>
+                <div class="hint-display" id="hintDisplay" style="display:none">
+                    <div class="hint-label">💡 Hint</div>
+                    <p id="hintText"></p>
+                </div>
+            </div>
+            
+            <div class="game-over" id="gameOver" style="display:none">
+                <h2 id="resultTitle">You Won!</h2>
+                <p id="resultText">You found all 4 categories!</p>
+                <button class="share-btn" id="shareBtn">Share Results 📋</button>
+            </div>
+            
+            <div class="how-to-play">
+                <h3>HOW TO PLAY</h3>
+                <p>Find groups of four words that share something in common.</p>
+                <p>Select 4 words and tap Submit to check if your guess is correct.</p>
+                <p>You have 4 mistakes allowed. Use hints if you're stuck!</p>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-box" style="background:var(--cat1)"></div>Easiest</div>
+                    <div class="legend-item"><div class="legend-box" style="background:var(--cat2)"></div>Easy</div>
+                    <div class="legend-item"><div class="legend-box" style="background:var(--cat3)"></div>Medium</div>
+                    <div class="legend-item"><div class="legend-box" style="background:var(--cat4)"></div>Hardest</div>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">Next puzzle in --:--:--</div>
+        </div>
+        
         <footer>
             <div class="footer-border"></div>
+            <div class="footer-bg" aria-hidden="true">
+                <div class="footer-blob"></div>
+                <div class="footer-blob"></div>
+                <div class="footer-blob"></div>
+            </div>
             <div class="footer-main">
                 <div class="footer-links">
-                    <a href="/">Home</a>
-                    <a href="/solo.html">Solo</a>
-                    <a href="/duos.html">Duos</a>
-                    <a href="/squad-games.html">Squad</a>
-                    <a href="/party-games.html">Party</a>
+                    <div class="footer-column">
+                        <h5>GAMES</h5>
+                        <ul>
+                            <li><a href="solo.html">Solo</a></li>
+                            <li><a href="duos.html">Duos</a></li>
+                            <li><a href="squad-games.html">Squad</a></li>
+                            <li><a href="party-games.html">Party</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h5>COMMUNITY</h5>
+                        <ul>
+                            <li><a href="leaderboards.html">Leaderboards</a></li>
+                            <li><a href="supporters.html">Hall of Champions</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h5>COMPANY</h5>
+                        <ul>
+                            <li><a href="about.html">About</a></li>
+                            <li><a href="mailto:hello@thegaming.co">Contact</a></li>
+                        </ul>
+                    </div>
                 </div>
-                <p class="footer-copy">© 2025 TheGaming.co — Free games, forever.</p>
+                <div class="footer-bottom">
+                    <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
+                    <div class="footer-legal">
+                        <a href="privacy.html">Privacy</a>
+                        <a href="terms.html">Terms</a>
+                    </div>
+                </div>
             </div>
         </footer>
     </div>
-
-    <div class="toast" id="toast">Copied to clipboard!</div>
-
-    <div class="modal-overlay" id="modal">
-        <div class="modal">
-            <button class="modal-close" id="modal-close">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <h3 class="modal-title">HOW TO PLAY</h3>
-            <p class="modal-desc">Find groups of 4 items that share something in common.</p>
-            <div class="modal-rules">
-                <div class="rule"><div class="rule-num">1</div><p>Select <strong>4 words</strong> you think belong together</p></div>
-                <div class="rule"><div class="rule-num">2</div><p>Tap <strong>Submit</strong> to check your guess</p></div>
-                <div class="rule"><div class="rule-num">3</div><p>Find all 4 groups without <strong>4 mistakes</strong></p></div>
-            </div>
-            <p class="modal-note">Same puzzle for everyone. New puzzle at midnight UTC.</p>
-            <button class="modal-btn" id="modal-start">Let's Play</button>
-        </div>
-    </div>
-
-<script>
-// ==================== SUPABASE ====================
-const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ==================== 60 PUZZLES ====================
-const PUZZLES = [
-{c:[{n:"PROGRAMMING LANGUAGES",w:["PYTHON","JAVA","SWIFT","RUST"],d:0},{n:"PLANETS",w:["MARS","VENUS","EARTH","NEPTUNE"],d:1},{n:"INSTRUMENTS",w:["DRUM","PIANO","GUITAR","VIOLIN"],d:2},{n:"FISH",w:["BASS","SALMON","TUNA","TROUT"],d:3}]},
-{c:[{n:"CARD GAMES",w:["POKER","BRIDGE","HEARTS","SPADES"],d:0},{n:"APPLE PRODUCTS",w:["MACBOOK","IPHONE","AIRPODS","IPAD"],d:1},{n:"COFFEE DRINKS",w:["LATTE","MOCHA","ESPRESSO","AMERICANO"],d:2},{n:"DANCE STYLES",w:["SALSA","TANGO","WALTZ","SWING"],d:3}]},
-{c:[{n:"SUPERPOWERS",w:["FLIGHT","STRENGTH","SPEED","INVISIBILITY"],d:0},{n:"PASTA SHAPES",w:["PENNE","RIGATONI","FUSILLI","FARFALLE"],d:1},{n:"WEATHER",w:["THUNDER","LIGHTNING","TORNADO","HURRICANE"],d:2},{n:"GREEK LETTERS",w:["ALPHA","BETA","GAMMA","DELTA"],d:3}]},
-{c:[{n:"SOCIAL MEDIA",w:["TWITTER","INSTAGRAM","TIKTOK","SNAPCHAT"],d:0},{n:"GEMSTONES",w:["RUBY","EMERALD","SAPPHIRE","DIAMOND"],d:1},{n:"CHESS PIECES",w:["KNIGHT","BISHOP","ROOK","QUEEN"],d:2},{n:"POKER TERMS",w:["FOLD","BLUFF","RAISE","CALL"],d:3}]},
-{c:[{n:"STREAMING",w:["NETFLIX","HULU","DISNEY","PRIME"],d:0},{n:"CAR BRANDS",w:["TOYOTA","HONDA","FORD","TESLA"],d:1},{n:"PIZZA TOPPINGS",w:["PEPPERONI","MUSHROOM","OLIVE","ANCHOVY"],d:2},{n:"SHAKESPEARE",w:["HAMLET","MACBETH","OTHELLO","TEMPEST"],d:3}]},
-{c:[{n:"CONSOLES",w:["PLAYSTATION","XBOX","SWITCH","DREAMCAST"],d:0},{n:"ZODIAC SIGNS",w:["ARIES","LEO","VIRGO","PISCES"],d:1},{n:"BREAKFAST",w:["WAFFLE","PANCAKE","OMELET","BAGEL"],d:2},{n:"CLOUD TYPES",w:["CIRRUS","CUMULUS","STRATUS","NIMBUS"],d:3}]},
-{c:[{n:"MUSIC GENRES",w:["JAZZ","ROCK","BLUES","PUNK"],d:0},{n:"OLYMPIC SPORTS",w:["FENCING","ARCHERY","DIVING","ROWING"],d:1},{n:"DESSERTS",w:["TIRAMISU","BROWNIE","CHEESECAKE","MOUSSE"],d:2},{n:"GREEK GODS",w:["ZEUS","APOLLO","HERMES","ARES"],d:3}]},
-{c:[{n:"PIZZA CHAINS",w:["DOMINOS","PAPAJOHNS","PIZZAHUT","CAESARS"],d:0},{n:"CURRENCIES",w:["DOLLAR","EURO","YEN","PESO"],d:1},{n:"HARRY POTTER",w:["HOGWARTS","QUIDDITCH","MUGGLE","HORCRUX"],d:2},{n:"ELEMENTS",w:["OXYGEN","CARBON","NITROGEN","HELIUM"],d:3}]},
-{c:[{n:"FAST FOOD",w:["MCDONALDS","WENDYS","BURGERKING","TACOBELL"],d:0},{n:"SHOE BRANDS",w:["NIKE","ADIDAS","PUMA","REEBOK"],d:1},{n:"STAR WARS",w:["JEDI","SITH","WOOKIEE","DROID"],d:2},{n:"BONES",w:["FEMUR","TIBIA","FIBULA","HUMERUS"],d:3}]},
-{c:[{n:"BROWSERS",w:["CHROME","FIREFOX","SAFARI","EDGE"],d:0},{n:"NUTS",w:["ALMOND","CASHEW","WALNUT","PISTACHIO"],d:1},{n:"MARVEL HEROES",w:["IRONMAN","THOR","HULK","SPIDERMAN"],d:2},{n:"DANCES",w:["BALLET","HIPHOP","TAP","JAZZ"],d:3}]},
-{c:[{n:"PHONE BRANDS",w:["APPLE","SAMSUNG","GOOGLE","ONEPLUS"],d:0},{n:"BERRIES",w:["STRAWBERRY","BLUEBERRY","RASPBERRY","BLACKBERRY"],d:1},{n:"BOND FILMS",w:["SKYFALL","SPECTRE","CASINO","GOLDFINGER"],d:2},{n:"MUSCLES",w:["BICEP","TRICEP","DELTOID","TRAPEZIUS"],d:3}]},
-{c:[{n:"SODA BRANDS",w:["COKE","PEPSI","SPRITE","FANTA"],d:0},{n:"TREES",w:["OAK","MAPLE","PINE","BIRCH"],d:1},{n:"DISNEY FILMS",w:["FROZEN","MOANA","TANGLED","ENCANTO"],d:2},{n:"ORGANS",w:["HEART","LIVER","KIDNEY","LUNG"],d:3}]},
-{c:[{n:"SEARCH ENGINES",w:["GOOGLE","BING","YAHOO","DUCKDUCKGO"],d:0},{n:"FLOWERS",w:["ROSE","TULIP","DAISY","LILY"],d:1},{n:"PIXAR FILMS",w:["COCO","BRAVE","CARS","WALLE"],d:2},{n:"JOINTS",w:["KNEE","ELBOW","WRIST","ANKLE"],d:3}]},
-{c:[{n:"AIRLINES",w:["DELTA","UNITED","AMERICAN","SOUTHWEST"],d:0},{n:"VEGETABLES",w:["CARROT","BROCCOLI","SPINACH","CELERY"],d:1},{n:"NINTENDO",w:["ZELDA","MARIO","POKEMON","KIRBY"],d:2},{n:"VITAMINS",w:["VITAMIN A","VITAMIN B","VITAMIN C","VITAMIN D"],d:3}]},
-{c:[{n:"HOTELS",w:["MARRIOTT","HILTON","HYATT","SHERATON"],d:0},{n:"FRUITS",w:["APPLE","BANANA","ORANGE","GRAPE"],d:1},{n:"ANIME",w:["NARUTO","BLEACH","ONEPIECE","DRAGONBALL"],d:2},{n:"GAS GIANTS",w:["SATURN","JUPITER","URANUS","NEPTUNE"],d:3}]},
-{c:[{n:"BANKS",w:["CHASE","WELLS","CITI","CAPITAL"],d:0},{n:"CHEESES",w:["CHEDDAR","BRIE","GOUDA","SWISS"],d:1},{n:"SITCOMS",w:["FRIENDS","OFFICE","SEINFELD","BROOKLYN"],d:2},{n:"METALS",w:["GOLD","SILVER","COPPER","BRONZE"],d:3}]},
-{c:[{n:"TECH GIANTS",w:["MICROSOFT","AMAZON","META","NVIDIA"],d:0},{n:"BREADS",w:["SOURDOUGH","BAGUETTE","CIABATTA","FOCACCIA"],d:1},{n:"HORROR FILMS",w:["SCREAM","SAW","RING","GRUDGE"],d:2},{n:"SEAS",w:["CARIBBEAN","MEDITERRANEAN","BALTIC","ADRIATIC"],d:3}]},
-{c:[{n:"MESSAGING APPS",w:["WHATSAPP","TELEGRAM","SIGNAL","IMESSAGE"],d:0},{n:"SPICES",w:["CINNAMON","PEPPER","OREGANO","BASIL"],d:1},{n:"SPORTS LEAGUES",w:["NBA","NFL","NHL","MLB"],d:2},{n:"RIVERS",w:["NILE","AMAZON","MISSISSIPPI","DANUBE"],d:3}]},
-{c:[{n:"GAMING COMPANIES",w:["SONY","NINTENDO","SEGA","ATARI"],d:0},{n:"MEATS",w:["CHICKEN","BEEF","PORK","LAMB"],d:1},{n:"SUPERHERO TEAMS",w:["AVENGERS","XMEN","JUSTICE","FANTASTIC"],d:2},{n:"MOUNTAINS",w:["EVEREST","DENALI","FUJI","MATTERHORN"],d:3}]},
-{c:[{n:"PAYMENT APPS",w:["VENMO","PAYPAL","CASHAPP","ZELLE"],d:0},{n:"SEAFOOD",w:["SHRIMP","LOBSTER","CRAB","OYSTER"],d:1},{n:"AWARDS",w:["OSCAR","EMMY","GRAMMY","TONY"],d:2},{n:"DESERTS",w:["SAHARA","GOBI","MOJAVE","ATACAMA"],d:3}]},
-{c:[{n:"RIDE APPS",w:["UBER","LYFT","GRAB","BOLT"],d:0},{n:"GRAINS",w:["RICE","WHEAT","BARLEY","QUINOA"],d:1},{n:"CARD GAMES",w:["UNO","SKIPBO","PHASE10","EXPLODING"],d:2},{n:"OCEANS",w:["PACIFIC","ATLANTIC","INDIAN","ARCTIC"],d:3}]},
-{c:[{n:"DATING APPS",w:["TINDER","BUMBLE","HINGE","MATCH"],d:0},{n:"LEGUMES",w:["LENTIL","CHICKPEA","BLACKBEAN","KIDNEY"],d:1},{n:"BOARD GAMES",w:["MONOPOLY","SCRABBLE","CLUE","RISK"],d:2},{n:"CONTINENTS",w:["AFRICA","ASIA","EUROPE","AUSTRALIA"],d:3}]},
-{c:[{n:"DELIVERY APPS",w:["DOORDASH","GRUBHUB","UBEREATS","POSTMATES"],d:0},{n:"DAIRY",w:["MILK","YOGURT","BUTTER","CREAM"],d:1},{n:"MONOPOLY PIECES",w:["THIMBLE","BOOT","CAR","DOG"],d:2},{n:"US STATES",w:["TEXAS","CALIFORNIA","FLORIDA","NEWYORK"],d:3}]},
-{c:[{n:"MUSIC APPS",w:["SPOTIFY","APPLE","PANDORA","TIDAL"],d:0},{n:"CONDIMENTS",w:["KETCHUP","MUSTARD","MAYO","RELISH"],d:1},{n:"CANDY BARS",w:["SNICKERS","TWIX","KITKAT","MILKYWAY"],d:2},{n:"COUNTRIES",w:["JAPAN","BRAZIL","EGYPT","CANADA"],d:3}]},
-{c:[{n:"VIDEO PLATFORMS",w:["YOUTUBE","VIMEO","TWITCH","RUMBLE"],d:0},{n:"ASIAN SAUCES",w:["SOY","TERIYAKI","HOISIN","SRIRACHA"],d:1},{n:"ICE CREAM",w:["VANILLA","CHOCOLATE","STRAWBERRY","MINT"],d:2},{n:"CITIES",w:["TOKYO","PARIS","LONDON","DUBAI"],d:3}]},
-{c:[{n:"NEWS OUTLETS",w:["CNN","FOX","BBC","NBC"],d:0},{n:"HERBS",w:["MINT","THYME","SAGE","ROSEMARY"],d:1},{n:"COOKIES",w:["OREO","CHIPS","SNICKERDOODLE","MACARON"],d:2},{n:"ISLANDS",w:["HAWAII","BALI","MALDIVES","FIJI"],d:3}]},
-{c:[{n:"FITNESS APPS",w:["PELOTON","STRAVA","NIKE","FITBIT"],d:0},{n:"PEPPERS",w:["JALAPENO","HABANERO","SERRANO","CAYENNE"],d:1},{n:"CEREALS",w:["CHEERIOS","FROSTED","LUCKY","CAPTAIN"],d:2},{n:"LANGUAGES",w:["SPANISH","MANDARIN","ARABIC","HINDI"],d:3}]},
-{c:[{n:"CLOUD SERVICES",w:["AWS","AZURE","GOOGLE","ORACLE"],d:0},{n:"SQUASH",w:["ZUCCHINI","BUTTERNUT","ACORN","SPAGHETTI"],d:1},{n:"CHIP BRANDS",w:["LAYS","DORITOS","PRINGLES","RUFFLES"],d:2},{n:"RELIGIONS",w:["CHRISTIANITY","ISLAM","BUDDHISM","HINDUISM"],d:3}]},
-{c:[{n:"EMAIL PROVIDERS",w:["GMAIL","OUTLOOK","YAHOO","PROTON"],d:0},{n:"GREENS",w:["KALE","ARUGULA","LETTUCE","CABBAGE"],d:1},{n:"SODA TYPES",w:["COLA","ROOTBEER","GINGER","LEMON"],d:2},{n:"ZODIAC",w:["SCORPIO","AQUARIUS","GEMINI","CAPRICORN"],d:3}]},
-{c:[{n:"ANTIVIRUS",w:["NORTON","MCAFEE","AVAST","KASPERSKY"],d:0},{n:"CITRUS",w:["LEMON","LIME","GRAPEFRUIT","TANGERINE"],d:1},{n:"BEER TYPES",w:["LAGER","STOUT","PILSNER","IPA"],d:2},{n:"MONTHS",w:["JANUARY","MARCH","JULY","OCTOBER"],d:3}]},
-{c:[{n:"OFFICE APPS",w:["WORD","EXCEL","POWERPOINT","OUTLOOK"],d:0},{n:"MELONS",w:["WATERMELON","CANTALOUPE","HONEYDEW","CASABA"],d:1},{n:"WINE TYPES",w:["MERLOT","CHARDONNAY","CABERNET","PINOT"],d:2},{n:"DAYS",w:["MONDAY","WEDNESDAY","FRIDAY","SUNDAY"],d:3}]},
-{c:[{n:"DESIGN TOOLS",w:["FIGMA","SKETCH","ADOBE","CANVA"],d:0},{n:"TROPICAL FRUITS",w:["MANGO","PAPAYA","PINEAPPLE","COCONUT"],d:1},{n:"COCKTAILS",w:["MARTINI","MARGARITA","MOJITO","COSMOPOLITAN"],d:2},{n:"SEASONS",w:["SPRING","SUMMER","FALL","WINTER"],d:3}]},
-{c:[{n:"CODE EDITORS",w:["VSCODE","SUBLIME","ATOM","VIM"],d:0},{n:"STONE FRUITS",w:["PEACH","PLUM","CHERRY","APRICOT"],d:1},{n:"SPIRITS",w:["VODKA","WHISKEY","RUM","GIN"],d:2},{n:"DIRECTIONS",w:["NORTH","SOUTH","EAST","WEST"],d:3}]},
-{c:[{n:"VERSION CONTROL",w:["GIT","SVN","MERCURIAL","PERFORCE"],d:0},{n:"APPLE VARIETIES",w:["FUJI","GALA","HONEYCRISP","GRANNY"],d:1},{n:"LIQUEURS",w:["BAILEYS","KAHLUA","AMARETTO","COINTREAU"],d:2},{n:"CARD SUITS",w:["HEARTS","DIAMONDS","CLUBS","SPADES"],d:3}]},
-{c:[{n:"DATABASES",w:["MYSQL","POSTGRES","MONGO","REDIS"],d:0},{n:"POTATOES",w:["RUSSET","YUKON","FINGERLING","SWEET"],d:1},{n:"TEA TYPES",w:["GREEN","BLACK","OOLONG","WHITE"],d:2},{n:"CLASSICAL ELEMENTS",w:["FIRE","WATER","EARTH","AIR"],d:3}]},
-{c:[{n:"FRAMEWORKS",w:["REACT","ANGULAR","VUE","SVELTE"],d:0},{n:"ONION TYPES",w:["RED","WHITE","YELLOW","SHALLOT"],d:1},{n:"COFFEE BEANS",w:["ARABICA","ROBUSTA","LIBERICA","EXCELSA"],d:2},{n:"NINJA TURTLES",w:["LEONARDO","DONATELLO","RAPHAEL","MICHELANGELO"],d:3}]},
-{c:[{n:"CSS FRAMEWORKS",w:["TAILWIND","BOOTSTRAP","BULMA","FOUNDATION"],d:0},{n:"TOMATO TYPES",w:["ROMA","CHERRY","BEEFSTEAK","HEIRLOOM"],d:1},{n:"COFFEE ROASTS",w:["LIGHT","MEDIUM","DARK","FRENCH"],d:2},{n:"HOGWARTS HOUSES",w:["GRYFFINDOR","SLYTHERIN","RAVENCLAW","HUFFLEPUFF"],d:3}]},
-{c:[{n:"JS RUNTIMES",w:["NODE","DENO","BUN","BROWSER"],d:0},{n:"LETTUCE TYPES",w:["ROMAINE","ICEBERG","BUTTERHEAD","ARUGULA"],d:1},{n:"MILK TYPES",w:["WHOLE","SKIM","OAT","ALMOND"],d:2},{n:"THE BEATLES",w:["JOHN","PAUL","GEORGE","RINGO"],d:3}]},
-{c:[{n:"PACKAGE MANAGERS",w:["NPM","YARN","PNPM","BOWER"],d:0},{n:"MUSHROOMS",w:["PORTOBELLO","SHIITAKE","CREMINI","OYSTER"],d:1},{n:"SUGAR TYPES",w:["WHITE","BROWN","RAW","POWDERED"],d:2},{n:"FRIENDS CHARS",w:["ROSS","RACHEL","MONICA","CHANDLER"],d:3}]},
-{c:[{n:"TESTING TOOLS",w:["JEST","MOCHA","CYPRESS","PLAYWRIGHT"],d:0},{n:"BEAN TYPES",w:["BLACK","PINTO","NAVY","LIMA"],d:1},{n:"SALT TYPES",w:["TABLE","SEA","KOSHER","HIMALAYAN"],d:2},{n:"OFFICE CHARS",w:["MICHAEL","DWIGHT","JIM","PAM"],d:3}]},
-{c:[{n:"API TYPES",w:["REST","GRAPHQL","GRPC","SOAP"],d:0},{n:"PEA TYPES",w:["GREEN","SNOW","SUGAR","SPLIT"],d:1},{n:"FLOUR TYPES",w:["ALL","BREAD","CAKE","WHOLE"],d:2},{n:"SIMPSONS",w:["HOMER","MARGE","BART","LISA"],d:3}]},
-{c:[{n:"AUTH METHODS",w:["OAUTH","JWT","SAML","BASIC"],d:0},{n:"CORN TYPES",w:["SWEET","FIELD","POPCORN","DENT"],d:1},{n:"COOKING OILS",w:["OLIVE","CANOLA","COCONUT","SESAME"],d:2},{n:"SEINFELD CHARS",w:["JERRY","GEORGE","ELAINE","KRAMER"],d:3}]},
-{c:[{n:"HTTP METHODS",w:["GET","POST","PUT","DELETE"],d:0},{n:"WHEAT TYPES",w:["WINTER","SPRING","DURUM","SPELT"],d:1},{n:"VINEGARS",w:["BALSAMIC","APPLE","RED","WHITE"],d:2},{n:"AVENGERS",w:["CAPTAIN","IRON","BLACK","SCARLET"],d:3}]},
-{c:[{n:"STATUS CODES",w:["200","404","500","301"],d:0},{n:"OAT TYPES",w:["ROLLED","STEEL","INSTANT","SCOTTISH"],d:1},{n:"NUT BUTTERS",w:["PEANUT","ALMOND","CASHEW","SUNFLOWER"],d:2},{n:"XMEN",w:["WOLVERINE","CYCLOPS","STORM","JEAN"],d:3}]},
-{c:[{n:"DATA STRUCTURES",w:["ARRAY","STACK","QUEUE","TREE"],d:0},{n:"RICE TYPES",w:["WHITE","BROWN","JASMINE","BASMATI"],d:1},{n:"JAM FLAVORS",w:["STRAWBERRY","GRAPE","APRICOT","RASPBERRY"],d:2},{n:"GUARDIANS",w:["STARLORD","GAMORA","DRAX","ROCKET"],d:3}]},
-{c:[{n:"ALGORITHMS",w:["SORT","SEARCH","MERGE","BINARY"],d:0},{n:"NOODLE TYPES",w:["RAMEN","UDON","SOBA","RICE"],d:1},{n:"HONEY TYPES",w:["CLOVER","MANUKA","WILDFLOWER","BUCKWHEAT"],d:2},{n:"JUSTICE LEAGUE",w:["BATMAN","SUPERMAN","WONDER","FLASH"],d:3}]},
-{c:[{n:"DESIGN PATTERNS",w:["SINGLETON","FACTORY","OBSERVER","DECORATOR"],d:0},{n:"CRACKER TYPES",w:["SALTINE","GRAHAM","RITZ","TRISCUIT"],d:1},{n:"SYRUPS",w:["MAPLE","CORN","AGAVE","MOLASSES"],d:2},{n:"FANTASTIC FOUR",w:["MISTER","INVISIBLE","HUMAN","THING"],d:3}]},
-{c:[{n:"SORTING ALGOS",w:["BUBBLE","QUICK","MERGE","HEAP"],d:0},{n:"PRETZEL TYPES",w:["SOFT","HARD","STICK","NUGGET"],d:1},{n:"EXTRACTS",w:["VANILLA","ALMOND","LEMON","PEPPERMINT"],d:2},{n:"POWERPUFF GIRLS",w:["BLOSSOM","BUBBLES","BUTTERCUP","MOJO"],d:3}]},
-{c:[{n:"CRYPTOCURRENCIES",w:["BITCOIN","ETHEREUM","SOLANA","CARDANO"],d:0},{n:"PASTA SAUCES",w:["MARINARA","ALFREDO","PESTO","BOLOGNESE"],d:1},{n:"DOG BREEDS",w:["LABRADOR","POODLE","BULLDOG","BEAGLE"],d:2},{n:"LOTR CHARS",w:["FRODO","GANDALF","ARAGORN","LEGOLAS"],d:3}]},
-{c:[{n:"SOCIAL PLATFORMS",w:["FACEBOOK","LINKEDIN","REDDIT","PINTEREST"],d:0},{n:"SALAD TYPES",w:["CAESAR","GREEK","COBB","CAPRESE"],d:1},{n:"CAT BREEDS",w:["PERSIAN","SIAMESE","MAINE","BENGAL"],d:2},{n:"DISNEY PRINCESSES",w:["CINDERELLA","ARIEL","BELLE","JASMINE"],d:3}]},
-{c:[{n:"ECOMMERCE",w:["AMAZON","EBAY","ETSY","SHOPIFY"],d:0},{n:"SANDWICH TYPES",w:["BLT","CLUB","REUBEN","CUBAN"],d:1},{n:"BIRD TYPES",w:["EAGLE","HAWK","OWL","FALCON"],d:2},{n:"MARIO CHARS",w:["MARIO","LUIGI","PEACH","BOWSER"],d:3}]},
-{c:[{n:"PRODUCTIVITY",w:["NOTION","ASANA","TRELLO","SLACK"],d:0},{n:"SOUP TYPES",w:["TOMATO","CHICKEN","MINESTRONE","CHOWDER"],d:1},{n:"REPTILES",w:["SNAKE","LIZARD","TURTLE","CROCODILE"],d:2},{n:"SONIC CHARS",w:["SONIC","TAILS","KNUCKLES","AMY"],d:3}]},
-{c:[{n:"AI COMPANIES",w:["OPENAI","ANTHROPIC","GOOGLE","META"],d:0},{n:"BURGER TYPES",w:["CLASSIC","BACON","MUSHROOM","VEGGIE"],d:1},{n:"MAMMALS",w:["ELEPHANT","GIRAFFE","LION","TIGER"],d:2},{n:"ZELDA CHARS",w:["LINK","ZELDA","GANON","IMPA"],d:3}]},
-{c:[{n:"GPU BRANDS",w:["NVIDIA","AMD","INTEL","ARM"],d:0},{n:"TACO TYPES",w:["BEEF","CHICKEN","FISH","CARNITAS"],d:1},{n:"INSECTS",w:["ANT","BEE","BUTTERFLY","BEETLE"],d:2},{n:"POKEMON",w:["PIKACHU","CHARIZARD","MEWTWO","BULBASAUR"],d:3}]},
-{c:[{n:"GAME ENGINES",w:["UNITY","UNREAL","GODOT","GAMEMAKER"],d:0},{n:"SUSHI TYPES",w:["SALMON","TUNA","EEL","SHRIMP"],d:1},{n:"MARINE LIFE",w:["WHALE","DOLPHIN","SHARK","OCTOPUS"],d:2},{n:"STREET FIGHTER",w:["RYU","KEN","CHUN","GUILE"],d:3}]},
-{c:[{n:"VPN SERVICES",w:["NORD","EXPRESS","SURFSHARK","PROTON"],d:0},{n:"CURRY TYPES",w:["THAI","INDIAN","JAPANESE","JAMAICAN"],d:1},{n:"AMPHIBIANS",w:["FROG","TOAD","SALAMANDER","NEWT"],d:2},{n:"MORTAL KOMBAT",w:["SCORPION","SUBZERO","RAIDEN","LIUKANG"],d:3}]},
-{c:[{n:"STORAGE",w:["DROPBOX","GDRIVE","ONEDRIVE","ICLOUD"],d:0},{n:"NAAN TYPES",w:["PLAIN","GARLIC","BUTTER","CHEESE"],d:1},{n:"PRIMATES",w:["GORILLA","CHIMPANZEE","ORANGUTAN","BABOON"],d:2},{n:"TEKKEN",w:["JIN","KAZUYA","HEIHACHI","NINA"],d:3}]},
-{c:[{n:"PHOTO APPS",w:["INSTAGRAM","VSCO","SNAPSEED","LIGHTROOM"],d:0},{n:"DIM SUM",w:["DUMPLING","BAOZI","SHUMAI","HARGOW"],d:1},{n:"FARM ANIMALS",w:["COW","PIG","CHICKEN","SHEEP"],d:2},{n:"SMASH BROS",w:["MARIO","LINK","KIRBY","PIKACHU"],d:3}]}
-];
-
-const COLORS = ['yellow','green','blue','purple'];
-const EMOJIS = ['🟨','🟩','🟦','🟪'];
-
-// ==================== STATE ====================
-let puzzle,selected=[],solved=[],mistakes=0,over=false,won=false,start,guesses=[],currentUser=null;
-
-// ==================== DOM ====================
-const grid=document.getElementById('grid'),solvedEl=document.getElementById('solved'),
-shuffleBtn=document.getElementById('shuffle-btn'),deselectBtn=document.getElementById('deselect-btn'),
-submitBtn=document.getElementById('submit-btn'),actionsEl=document.getElementById('actions'),
-resultEl=document.getElementById('result'),dateEl=document.getElementById('puzzle-date'),
-countdownEl=document.getElementById('countdown'),modal=document.getElementById('modal'),
-toast=document.getElementById('toast'),lbList=document.getElementById('lb-list');
-
-// ==================== HELPERS ====================
-const today=()=>new Date().toISOString().split('T')[0];
-const fmtDate=d=>new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-const fmtTime=s=>`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
-const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const esc=t=>{const d=document.createElement('div');d.textContent=t;return d.innerHTML};
-
-// ==================== PUZZLE ====================
-function getPuzzle(){
-    const d=new Date(),s=new Date('2025-01-01');
-    return PUZZLES[Math.floor((d-s)/86400000)%PUZZLES.length];
-}
-
-// ==================== GAME ====================
-function init(){
-    const saved=loadState();
-    if(saved?.date===today()){restore(saved);return}
-    puzzle=getPuzzle();selected=[];solved=[];mistakes=0;over=false;won=false;start=Date.now();guesses=[];
-    const words=puzzle.c.flatMap(c=>c.w.map(w=>({w,cat:c.n,d:c.d})));
-    shuffle(words);puzzle.words=words;
-    render();updateMistakes();dateEl.textContent=fmtDate(today());
-}
-
-function render(){
-    grid.innerHTML='';
-    const remaining=puzzle.words.filter(x=>!solved.some(s=>s.words.includes(x.w)));
-    remaining.forEach(({w})=>{
-        const t=document.createElement('div');
-        t.className='tile';t.textContent=w;t.dataset.word=w;
-        t.onclick=()=>clickTile(t,w);
-        grid.appendChild(t);
-    });
-    updateBtns();
-}
-
-function clickTile(t,w){
-    if(over)return;
-    if(selected.includes(w)){selected=selected.filter(x=>x!==w);t.classList.remove('selected')}
-    else if(selected.length<4){selected.push(w);t.classList.add('selected')}
-    updateBtns();
-}
-
-function updateBtns(){deselectBtn.disabled=!selected.length;submitBtn.disabled=selected.length!==4}
-function updateMistakes(){document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('used',i<mistakes))}
-
-function doShuffle(){
-    if(over)return;
-    const remaining=puzzle.words.filter(x=>!solved.some(s=>s.words.includes(x.w)));
-    shuffle(remaining);
-    puzzle.words=[...puzzle.words.filter(x=>solved.some(s=>s.words.includes(x.w))),...remaining];
-    selected=[];render();
-}
-
-function doDeselect(){
-    selected=[];
-    document.querySelectorAll('.tile.selected').forEach(t=>t.classList.remove('selected'));
-    updateBtns();
-}
-
-function doSubmit(){
-    if(selected.length!==4||over)return;
-    const match=puzzle.c.find(c=>{const set=new Set(c.w);return selected.every(w=>set.has(w))&&selected.length===c.w.length});
-    guesses.push({words:[...selected],correct:!!match,d:match?.d});
-    if(match){
-        document.querySelectorAll('.tile.selected').forEach(t=>t.classList.add('correct'));
-        setTimeout(()=>{
-            solved.push({name:match.n,words:match.w,d:match.d});
-            renderSolved(match);selected=[];render();
-            if(solved.length===4){won=true;over=true;endGame(true)}
-            saveState();
-        },350);
-    }else{
-        mistakes++;updateMistakes();
-        document.querySelectorAll('.tile.selected').forEach(t=>t.classList.add('wrong'));
-        setTimeout(()=>{
-            document.querySelectorAll('.tile.wrong').forEach(t=>t.classList.remove('wrong','selected'));
-            selected=[];updateBtns();
-            if(mistakes>=4){over=true;endGame(false)}
-            saveState();
-        },400);
-    }
-}
-
-function renderSolved(c){
-    const row=document.createElement('div');
-    row.className=`solved-row ${COLORS[c.d]}`;
-    row.innerHTML=`<div class="solved-cat">${c.n}</div><div class="solved-words">${c.w.join(', ')}</div>`;
-    solvedEl.appendChild(row);
-}
-
-function endGame(win){
-    const time=Math.floor((Date.now()-start)/1000);
-    actionsEl.style.display='none';
-    if(!win)puzzle.c.forEach(c=>{if(!solved.some(s=>s.name===c.n)){solved.push({name:c.n,words:c.w,d:c.d});renderSolved(c)}});
-    const shareGrid=guesses.filter(g=>g.correct).map(g=>EMOJIS[g.d].repeat(4)).join('<br>');
-    const score=win?mistakes*100+time:9999;
-    resultEl.style.display='block';
-    resultEl.innerHTML=`
-        <div class="result-icon">${win?'🎉':'😔'}</div>
-        <h2 class="result-title ${win?'win':'lose'}">${win?'NICE!':'GAME OVER'}</h2>
-        <div class="result-stats">
-            <div class="stat"><div class="stat-val">${mistakes}/4</div><div class="stat-label">Mistakes</div></div>
-            <div class="stat"><div class="stat-val">${fmtTime(time)}</div><div class="stat-label">Time</div></div>
-            ${win?`<div class="stat"><div class="stat-val">${getStreak()+1}🔥</div><div class="stat-label">Streak</div></div>`:''}
-        </div>
-        <div class="share-grid">${shareGrid}</div>
-        <div class="result-actions">
-            <button class="btn btn-share" onclick="share()">Share</button>
-            <button class="btn btn-ghost" onclick="location.href='/'">Home</button>
-        </div>
-    `;
-    win?updateStreak():resetStreak();
-    saveScore(win,mistakes,time,score);
-    saveState();
-    setTimeout(()=>loadLB('today'),500);
-}
-
-function share(){
-    const txt=`TheGaming.co Daily Challenge\n${fmtDate(today())}\n\n${guesses.filter(g=>g.correct).map(g=>EMOJIS[g.d].repeat(4)).join('\n')}\n\nMistakes: ${mistakes}/4\n\nthegaming.co/gamerhub`;
-    if(navigator.share)navigator.share({text:txt});
-    else{navigator.clipboard.writeText(txt);toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000)}
-}
-
-// ==================== STORAGE ====================
-function saveState(){localStorage.setItem('tgco_conn',JSON.stringify({date:today(),solved:solved.map(s=>s.name),mistakes,over,won,guesses,start}))}
-function loadState(){try{return JSON.parse(localStorage.getItem('tgco_conn'))}catch{return null}}
-function restore(s){
-    puzzle=getPuzzle();mistakes=s.mistakes;over=s.over;won=s.won;guesses=s.guesses||[];start=s.start||Date.now();
-    solved=puzzle.c.filter(c=>s.solved.includes(c.n)).map(c=>({name:c.n,words:c.w,d:c.d}));
-    const words=puzzle.c.flatMap(c=>c.w.map(w=>({w,cat:c.n,d:c.d})));shuffle(words);puzzle.words=words;
-    solved.forEach(c=>renderSolved(c));render();updateMistakes();dateEl.textContent=fmtDate(today());
-    if(over)endGame(won);
-}
-
-function getStreak(){try{return parseInt(localStorage.getItem('tgco_streak')||'0')}catch{return 0}}
-function updateStreak(){
-    const last=localStorage.getItem('tgco_last_win'),t=today(),y=new Date(Date.now()-86400000).toISOString().split('T')[0];
-    let streak=getStreak();
-    if(last===y)streak++;else if(last!==t)streak=1;
-    localStorage.setItem('tgco_streak',streak);localStorage.setItem('tgco_last_win',t);
-}
-function resetStreak(){localStorage.setItem('tgco_streak','0')}
-
-// ==================== SUPABASE ====================
-async function saveScore(win,mistakes,time,score){
-    try{
-        const {data:{session}}=await sb.auth.getSession();
-        await sb.from('daily_scores').insert({
-            puzzle_date:today(),game_type:'connections',
-            won:win,mistakes,time_seconds:time,score,
-            user_id:session?.user?.id||null,
-            display_name:session?.user?.user_metadata?.display_name||localStorage.getItem('tgco_header_full')||'Anonymous'
-        });
-    }catch(e){console.error(e)}
-}
-
-async function loadLB(tab='today'){
-    lbList.innerHTML='<div class="lb-loading"><div class="lb-skel"></div><div class="lb-skel"></div><div class="lb-skel"></div></div>';
-    try{
-        let q=sb.from('daily_scores').select('*').eq('game_type','connections').eq('won',true).order('score',{ascending:true}).limit(20);
-        if(tab==='today')q=q.eq('puzzle_date',today());
-        else if(tab==='week'){const week=new Date(Date.now()-7*86400000).toISOString().split('T')[0];q=q.gte('puzzle_date',week)}
-        const {data,error}=await q;
-        if(error)throw error;
-        if(!data?.length){clearPodium();lbList.innerHTML='<div class="lb-empty">No scores yet. Be the first!</div>';return}
-        const {data:{session}}=await sb.auth.getSession();
-        const uid=session?.user?.id;
-        ['gold','silver','bronze'].forEach((cls,i)=>{
-            const spot=document.querySelector(`.podium-spot.${cls}`);
-            const e=data[i];
-            if(e){spot.querySelector('.podium-name').textContent=e.display_name||'Anonymous';spot.querySelector('.podium-score').textContent=`${e.mistakes} err · ${fmtTime(e.time_seconds)}`}
-            else{spot.querySelector('.podium-name').textContent='—';spot.querySelector('.podium-score').textContent='—'}
-        });
-        lbList.innerHTML=data.slice(3).map((e,i)=>`
-            <div class="lb-row ${uid&&e.user_id===uid?'you':''}">
-                <div class="lb-rank">${i+4}</div>
-                <div class="lb-name">${esc(e.display_name||'Anonymous')}${uid&&e.user_id===uid?'<span class="lb-you">YOU</span>':''}</div>
-                <div class="lb-score">${e.mistakes} err</div>
-            </div>
-        `).join('');
-    }catch(e){console.error(e);lbList.innerHTML='<div class="lb-empty">Failed to load</div>'}
-}
-
-function clearPodium(){['gold','silver','bronze'].forEach(cls=>{const s=document.querySelector(`.podium-spot.${cls}`);s.querySelector('.podium-name').textContent='—';s.querySelector('.podium-score').textContent='—'})}
-
-// ==================== COUNTDOWN ====================
-function updateCountdown(){
-    const now=new Date(),tmr=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1));
-    const diff=tmr-now,h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
-    countdownEl.textContent=`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-}
-
-// ==================== AUTH ====================
-const authSkel=document.getElementById('auth-skeleton'),loggedOut=document.querySelector('.nav-right-logged-out'),
-loggedIn=document.querySelector('.nav-right-logged-in'),userLabel=document.getElementById('user-label'),
-userMenuBtn=document.getElementById('user-menu-btn'),userMenu=document.getElementById('user-menu'),signoutBtn=document.getElementById('signout-btn');
-
-(function(){const l=localStorage.getItem('tgco_header_label');if(l){userLabel.textContent=l;authSkel.style.display='none';loggedIn.style.setProperty('display','flex','important')}else{authSkel.style.display='none';loggedOut.style.setProperty('display','flex','important')}})();
-
-async function loadAuth(){
-    const {data:{session}}=await sb.auth.getSession();
-    authSkel.style.display='none';
-    if(session?.user){
-        loggedOut.style.setProperty('display','none','important');
-        loggedIn.style.setProperty('display','flex','important');
-        const {data:p}=await sb.from('profiles').select('display_name,gamer_tag').eq('id',session.user.id).single();
-        const n=p?.display_name||p?.gamer_tag||session.user.email?.split('@')[0]||'P';
-        userLabel.textContent=n.charAt(0).toUpperCase();
-        localStorage.setItem('tgco_header_label',n.charAt(0).toUpperCase());
-        localStorage.setItem('tgco_header_full',n);
-        currentUser=session.user;
-    }else{loggedOut.style.setProperty('display','flex','important');loggedIn.style.setProperty('display','none','important')}
-}
-
-let menuOpen=false;
-userMenuBtn?.addEventListener('click',e=>{e.stopPropagation();menuOpen=!menuOpen;userMenu.classList.toggle('open',menuOpen)});
-document.addEventListener('click',()=>{menuOpen=false;userMenu?.classList.remove('open')});
-signoutBtn?.addEventListener('click',async()=>{localStorage.removeItem('tgco_header_label');localStorage.removeItem('tgco_header_full');await sb.auth.signOut();location.reload()});
-
-// ==================== MODAL ====================
-const helpBtn=document.getElementById('help-btn'),modalClose=document.getElementById('modal-close'),modalStart=document.getElementById('modal-start');
-function openModal(){modal.classList.add('open');document.body.style.overflow='hidden'}
-function closeModal(){modal.classList.remove('open');document.body.style.overflow=''}
-helpBtn.addEventListener('click',openModal);
-modalClose.addEventListener('click',closeModal);
-modalStart.addEventListener('click',closeModal);
-modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-if(!localStorage.getItem('tgco_conn_tut')){setTimeout(openModal,400);localStorage.setItem('tgco_conn_tut','1')}
-
-// ==================== LB TABS ====================
-document.querySelectorAll('.lb-tab').forEach(t=>{
-    t.addEventListener('click',()=>{
-        document.querySelectorAll('.lb-tab').forEach(x=>x.classList.remove('active'));
-        t.classList.add('active');loadLB(t.dataset.tab);
-    });
-});
-
-// ==================== EVENTS ====================
-shuffleBtn.addEventListener('click',doShuffle);
-deselectBtn.addEventListener('click',doDeselect);
-submitBtn.addEventListener('click',doSubmit);
-
-// ==================== INIT ====================
-init();loadAuth();loadLB('today');updateCountdown();setInterval(updateCountdown,1000);
-</script>
-<link rel="stylesheet" href="/social.css">
-<script src="/social.js" defer></script>
+    
     <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+    <script>
+    const PUZZLES = [
+        {
+            categories: [
+                { name: "Programming Languages", words: ["PYTHON", "JAVA", "SWIFT", "RUST"], difficulty: 1 },
+                { name: "Planets", words: ["MARS", "VENUS", "EARTH", "SATURN"], difficulty: 2 },
+                { name: "Musical Instruments", words: ["PIANO", "GUITAR", "VIOLIN", "DRUMS"], difficulty: 3 },
+                { name: "Types of Candy", words: ["SNICKERS", "TWIX", "SKITTLES", "STARBURST"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Card Games", words: ["POKER", "BLACKJACK", "BRIDGE", "SOLITAIRE"], difficulty: 1 },
+                { name: "Coffee Drinks", words: ["LATTE", "ESPRESSO", "MOCHA", "CAPPUCCINO"], difficulty: 2 },
+                { name: "Greek Letters", words: ["ALPHA", "BETA", "DELTA", "OMEGA"], difficulty: 3 },
+                { name: "Things That Are Blue", words: ["SKY", "OCEAN", "SAPPHIRE", "BLUEBERRY"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Board Games", words: ["CHESS", "MONOPOLY", "SCRABBLE", "RISK"], difficulty: 1 },
+                { name: "Types of Trees", words: ["OAK", "MAPLE", "PINE", "BIRCH"], difficulty: 2 },
+                { name: "Parts of a Car", words: ["ENGINE", "BRAKES", "CLUTCH", "STEERING"], difficulty: 3 },
+                { name: "Words Before 'Ball'", words: ["BASKET", "FOOT", "BASE", "VOLLEY"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Social Media Platforms", words: ["TWITTER", "INSTAGRAM", "TIKTOK", "SNAPCHAT"], difficulty: 1 },
+                { name: "Zodiac Signs", words: ["ARIES", "LEO", "VIRGO", "PISCES"], difficulty: 2 },
+                { name: "Pasta Shapes", words: ["PENNE", "RIGATONI", "FUSILLI", "FARFALLE"], difficulty: 3 },
+                { name: "Types of Dances", words: ["SALSA", "TANGO", "WALTZ", "FOXTROT"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Breakfast Foods", words: ["PANCAKES", "WAFFLES", "OMELETTE", "BACON"], difficulty: 1 },
+                { name: "Video Game Consoles", words: ["PLAYSTATION", "XBOX", "NINTENDO", "ATARI"], difficulty: 2 },
+                { name: "Shades of Red", words: ["CRIMSON", "SCARLET", "MAROON", "BURGUNDY"], difficulty: 3 },
+                { name: "Things in Space", words: ["COMET", "ASTEROID", "NEBULA", "QUASAR"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Dog Breeds", words: ["BEAGLE", "POODLE", "BULLDOG", "LABRADOR"], difficulty: 1 },
+                { name: "Pizza Toppings", words: ["PEPPERONI", "MUSHROOM", "OLIVE", "ANCHOVY"], difficulty: 2 },
+                { name: "Fabric Types", words: ["COTTON", "SILK", "DENIM", "VELVET"], difficulty: 3 },
+                { name: "Shakespeare Plays", words: ["HAMLET", "OTHELLO", "MACBETH", "TEMPEST"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Fruits", words: ["APPLE", "BANANA", "ORANGE", "MANGO"], difficulty: 1 },
+                { name: "Elements", words: ["GOLD", "SILVER", "IRON", "COPPER"], difficulty: 2 },
+                { name: "Movie Genres", words: ["COMEDY", "HORROR", "THRILLER", "WESTERN"], difficulty: 3 },
+                { name: "Types of Clouds", words: ["CUMULUS", "STRATUS", "CIRRUS", "NIMBUS"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Kitchen Utensils", words: ["SPATULA", "WHISK", "LADLE", "TONGS"], difficulty: 1 },
+                { name: "Types of Cheese", words: ["CHEDDAR", "BRIE", "GOUDA", "FETA"], difficulty: 2 },
+                { name: "Olympic Sports", words: ["FENCING", "ARCHERY", "JAVELIN", "ROWING"], difficulty: 3 },
+                { name: "Words That Follow 'Black'", words: ["SMITH", "BERRY", "BOARD", "JACK"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Vegetables", words: ["CARROT", "BROCCOLI", "SPINACH", "CELERY"], difficulty: 1 },
+                { name: "Types of Shoes", words: ["SNEAKERS", "BOOTS", "SANDALS", "LOAFERS"], difficulty: 2 },
+                { name: "Poker Terms", words: ["FOLD", "RAISE", "BLUFF", "ANTE"], difficulty: 3 },
+                { name: "Bond Villains", words: ["BLOFELD", "GOLDFINGER", "JAWS", "ODDJOB"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Ice Cream Flavors", words: ["VANILLA", "CHOCOLATE", "STRAWBERRY", "PISTACHIO"], difficulty: 1 },
+                { name: "Rivers", words: ["AMAZON", "NILE", "THAMES", "DANUBE"], difficulty: 2 },
+                { name: "Types of Bridges", words: ["ARCH", "BEAM", "SUSPENSION", "TRUSS"], difficulty: 3 },
+                { name: "Silent Letters", words: ["KNIGHT", "HONEST", "ISLAND", "LISTEN"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Superheroes", words: ["BATMAN", "SUPERMAN", "SPIDERMAN", "IRONMAN"], difficulty: 1 },
+                { name: "Musical Terms", words: ["TEMPO", "CRESCENDO", "ALLEGRO", "FORTE"], difficulty: 2 },
+                { name: "Computer Parts", words: ["PROCESSOR", "MOTHERBOARD", "GRAPHICS", "MEMORY"], difficulty: 3 },
+                { name: "Anagram of Each Other", words: ["LISTEN", "SILENT", "ENLIST", "TINSEL"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Flowers", words: ["ROSE", "TULIP", "DAISY", "LILY"], difficulty: 1 },
+                { name: "Currencies", words: ["DOLLAR", "EURO", "POUND", "YEN"], difficulty: 2 },
+                { name: "Types of Whales", words: ["BLUE", "HUMPBACK", "ORCA", "BELUGA"], difficulty: 3 },
+                { name: "Ends With 'TION'", words: ["NATION", "STATION", "MOTION", "PORTION"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Breakfast Cereals", words: ["CHEERIOS", "FROSTED", "CORNFLAKES", "WHEATIES"], difficulty: 1 },
+                { name: "Gemstones", words: ["DIAMOND", "RUBY", "EMERALD", "TOPAZ"], difficulty: 2 },
+                { name: "Weather Terms", words: ["HURRICANE", "TORNADO", "BLIZZARD", "MONSOON"], difficulty: 3 },
+                { name: "Rhymes With 'ATE'", words: ["GREAT", "PLATE", "LATE", "SKATE"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Continents", words: ["AFRICA", "ASIA", "EUROPE", "ANTARCTICA"], difficulty: 1 },
+                { name: "Martial Arts", words: ["KARATE", "JUDO", "TAEKWONDO", "AIKIDO"], difficulty: 2 },
+                { name: "Poker Hands", words: ["FLUSH", "STRAIGHT", "FULL", "ROYAL"], difficulty: 3 },
+                { name: "Words With Double Letters", words: ["BALLOON", "COFFEE", "COMMITTEE", "SCISSORS"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Fast Food Chains", words: ["MCDONALDS", "WENDYS", "SUBWAY", "CHIPOTLE"], difficulty: 1 },
+                { name: "Mythical Creatures", words: ["DRAGON", "UNICORN", "PHOENIX", "GRIFFIN"], difficulty: 2 },
+                { name: "Types of Knots", words: ["BOWLINE", "REEF", "CLOVE", "HITCH"], difficulty: 3 },
+                { name: "Compound Words With 'FIRE'", words: ["FIGHTER", "WORKS", "PLACE", "FLY"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Sports Equipment", words: ["RACKET", "BAT", "PUCK", "HELMET"], difficulty: 1 },
+                { name: "Desserts", words: ["TIRAMISU", "BROWNIE", "CHEESECAKE", "SOUFFLE"], difficulty: 2 },
+                { name: "Ancient Civilizations", words: ["ROMAN", "GREEK", "EGYPTIAN", "MAYAN"], difficulty: 3 },
+                { name: "Words Before 'HOUSE'", words: ["GREEN", "LIGHT", "FIRE", "POWER"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Tropical Fruits", words: ["PAPAYA", "GUAVA", "COCONUT", "PINEAPPLE"], difficulty: 1 },
+                { name: "Types of Jazz", words: ["BEBOP", "SWING", "FUSION", "COOL"], difficulty: 2 },
+                { name: "Chemistry Terms", words: ["CATALYST", "ISOTOPE", "MOLECULE", "ELECTRON"], difficulty: 3 },
+                { name: "Silent Movie Stars", words: ["CHAPLIN", "KEATON", "LLOYD", "VALENTINO"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Winter Activities", words: ["SKIING", "SKATING", "SLEDDING", "SNOWBOARD"], difficulty: 1 },
+                { name: "Spices", words: ["CINNAMON", "PAPRIKA", "TURMERIC", "CUMIN"], difficulty: 2 },
+                { name: "Architectural Styles", words: ["GOTHIC", "BAROQUE", "MODERN", "COLONIAL"], difficulty: 3 },
+                { name: "Words After 'HEAD'", words: ["PHONES", "ACHE", "QUARTERS", "LINE"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Berries", words: ["RASPBERRY", "BLACKBERRY", "CRANBERRY", "BOYSENBERRY"], difficulty: 1 },
+                { name: "Wind Instruments", words: ["FLUTE", "CLARINET", "SAXOPHONE", "OBOE"], difficulty: 2 },
+                { name: "Card Suits", words: ["HEARTS", "DIAMONDS", "CLUBS", "SPADES"], difficulty: 3 },
+                { name: "Famous Artists First Names", words: ["PABLO", "LEONARDO", "VINCENT", "MICHELANGELO"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Nuts", words: ["ALMOND", "WALNUT", "CASHEW", "PECAN"], difficulty: 1 },
+                { name: "Car Brands", words: ["TOYOTA", "HONDA", "FORD", "TESLA"], difficulty: 2 },
+                { name: "Magic Words", words: ["ABRACADABRA", "PRESTO", "ALAKAZAM", "HOCUS"], difficulty: 3 },
+                { name: "Ends With 'ISM'", words: ["REALISM", "CAPITALISM", "OPTIMISM", "HEROISM"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Sea Creatures", words: ["SHARK", "DOLPHIN", "OCTOPUS", "SEAHORSE"], difficulty: 1 },
+                { name: "Types of Bread", words: ["BAGUETTE", "SOURDOUGH", "CIABATTA", "FOCACCIA"], difficulty: 2 },
+                { name: "Philosophy Branches", words: ["ETHICS", "LOGIC", "AESTHETICS", "METAPHYSICS"], difficulty: 3 },
+                { name: "Words Spelled Same Backwards", words: ["LEVEL", "RADAR", "CIVIC", "KAYAK"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Herbs", words: ["BASIL", "OREGANO", "THYME", "PARSLEY"], difficulty: 1 },
+                { name: "Mountain Ranges", words: ["ALPS", "ANDES", "ROCKIES", "HIMALAYAS"], difficulty: 2 },
+                { name: "Types of Poems", words: ["SONNET", "HAIKU", "LIMERICK", "BALLAD"], difficulty: 3 },
+                { name: "Beatles Songs", words: ["YESTERDAY", "HELP", "IMAGINE", "REVOLUTION"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Citrus Fruits", words: ["LEMON", "LIME", "GRAPEFRUIT", "TANGERINE"], difficulty: 1 },
+                { name: "Dance Styles", words: ["BALLET", "HIPHOP", "JAZZ", "CONTEMPORARY"], difficulty: 2 },
+                { name: "Chess Pieces", words: ["KING", "QUEEN", "BISHOP", "KNIGHT"], difficulty: 3 },
+                { name: "Words With 'QU'", words: ["QUEEN", "QUIET", "QUEST", "QUILT"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Soft Drinks", words: ["COKE", "PEPSI", "SPRITE", "FANTA"], difficulty: 1 },
+                { name: "Bodies of Water", words: ["LAKE", "RIVER", "OCEAN", "POND"], difficulty: 2 },
+                { name: "Art Movements", words: ["CUBISM", "IMPRESSIONISM", "SURREALISM", "DADAISM"], difficulty: 3 },
+                { name: "Homophones of Numbers", words: ["WON", "TOO", "FORE", "ATE"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Wild Cats", words: ["LION", "TIGER", "LEOPARD", "CHEETAH"], difficulty: 1 },
+                { name: "Types of Hats", words: ["FEDORA", "BERET", "BEANIE", "SOMBRERO"], difficulty: 2 },
+                { name: "Scientific Units", words: ["NEWTON", "JOULE", "WATT", "KELVIN"], difficulty: 3 },
+                { name: "Brands That Are Verbed", words: ["GOOGLE", "XEROX", "PHOTOSHOP", "UBER"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Root Vegetables", words: ["POTATO", "TURNIP", "BEET", "RADISH"], difficulty: 1 },
+                { name: "Types of Bags", words: ["TOTE", "CLUTCH", "SATCHEL", "DUFFEL"], difficulty: 2 },
+                { name: "Game Show Terms", words: ["JACKPOT", "BONUS", "LIFELINE", "FINAL"], difficulty: 3 },
+                { name: "Double Meaning Words", words: ["BARK", "WAVE", "BANK", "WATCH"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Dairy Products", words: ["MILK", "BUTTER", "YOGURT", "CREAM"], difficulty: 1 },
+                { name: "Gemstone Colors", words: ["RUBY", "SAPPHIRE", "EMERALD", "AMETHYST"], difficulty: 2 },
+                { name: "Film Directors", words: ["SPIELBERG", "SCORSESE", "TARANTINO", "NOLAN"], difficulty: 3 },
+                { name: "Portmanteau Words", words: ["BRUNCH", "SMOG", "MOTEL", "SPORK"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Office Supplies", words: ["STAPLER", "PENCIL", "ERASER", "SCISSORS"], difficulty: 1 },
+                { name: "Types of Sushi", words: ["NIGIRI", "MAKI", "SASHIMI", "TEMAKI"], difficulty: 2 },
+                { name: "Constellations", words: ["ORION", "CASSIOPEIA", "URSA", "DRACO"], difficulty: 3 },
+                { name: "Onomatopoeia Words", words: ["BUZZ", "SPLASH", "BANG", "WHISPER"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Leafy Greens", words: ["LETTUCE", "KALE", "ARUGULA", "CABBAGE"], difficulty: 1 },
+                { name: "Percussion Instruments", words: ["DRUMS", "XYLOPHONE", "TAMBOURINE", "TRIANGLE"], difficulty: 2 },
+                { name: "Math Terms", words: ["COSINE", "TANGENT", "SINE", "SECANT"], difficulty: 3 },
+                { name: "Words From Japanese", words: ["KARAOKE", "TSUNAMI", "ORIGAMI", "EMOJI"], difficulty: 4 }
+            ]
+        },
+        {
+            categories: [
+                { name: "Summer Activities", words: ["SWIMMING", "CAMPING", "HIKING", "SURFING"], difficulty: 1 },
+                { name: "Types of Coffee", words: ["ARABICA", "ROBUSTA", "DECAF", "INSTANT"], difficulty: 2 },
+                { name: "Greek Gods", words: ["ZEUS", "APOLLO", "HERMES", "POSEIDON"], difficulty: 3 },
+                { name: "Words With All Vowels", words: ["EDUCATION", "SEQUOIA", "CAULIFLOWER", "PRECARIOUS"], difficulty: 4 }
+            ]
+        }
+    ];
+
+    const STORAGE_KEY = 'connections_stats';
+    const GAME_STATE_KEY = 'connections_game_state';
+    
+    let gameState = {
+        puzzleIndex: 0,
+        words: [],
+        selected: [],
+        solved: [],
+        mistakes: 0,
+        hintsUsed: 0,
+        maxHints: 3,
+        gameOver: false,
+        won: false,
+        startTime: null,
+        guessHistory: []
+    };
+    
+    function getDailyPuzzleIndex() {
+        const start = new Date('2025-01-01').getTime();
+        const now = new Date();
+        const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const daysSinceStart = Math.floor((utcNow - start) / (1000 * 60 * 60 * 24));
+        return daysSinceStart % PUZZLES.length;
+    }
+    
+    function getTodayKey() {
+        const now = new Date();
+        return `${now.getUTCFullYear()}-${now.getUTCMonth()+1}-${now.getUTCDate()}`;
+    }
+    
+    function loadStats() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : { played: 0, won: 0, streak: 0, maxStreak: 0, lastPlayed: null };
+    }
+    
+    function saveStats(stats) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    }
+    
+    function loadGameState() {
+        const saved = localStorage.getItem(GAME_STATE_KEY);
+        if (saved) {
+            const state = JSON.parse(saved);
+            if (state.dateKey === getTodayKey()) {
+                return state;
+            }
+        }
+        return null;
+    }
+    
+    function saveGameState() {
+        const state = { ...gameState, dateKey: getTodayKey() };
+        localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
+    }
+    
+    function updateStatsDisplay() {
+        const stats = loadStats();
+        document.getElementById('played').textContent = stats.played;
+        document.getElementById('winRate').textContent = stats.played > 0 ? Math.round((stats.won / stats.played) * 100) + '%' : '0%';
+        document.getElementById('streak').textContent = stats.streak;
+        document.getElementById('maxStreak').textContent = stats.maxStreak;
+    }
+    
+    function shuffleArray(array) {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    }
+    
+    function initGame() {
+        const savedState = loadGameState();
+        
+        if (savedState && savedState.gameOver) {
+            gameState = savedState;
+            renderGame();
+            showGameOver();
+            updateStatsDisplay();
+            return;
+        }
+        
+        if (savedState) {
+            gameState = savedState;
+        } else {
+            gameState.puzzleIndex = getDailyPuzzleIndex();
+            const puzzle = PUZZLES[gameState.puzzleIndex];
+            gameState.words = shuffleArray(puzzle.categories.flatMap(c => c.words));
+            gameState.selected = [];
+            gameState.solved = [];
+            gameState.mistakes = 0;
+            gameState.hintsUsed = 0;
+            gameState.gameOver = false;
+            gameState.won = false;
+            gameState.startTime = Date.now();
+            gameState.guessHistory = [];
+        }
+        
+        renderGame();
+        updateStatsDisplay();
+        saveGameState();
+    }
+    
+    function renderGame() {
+        renderSolvedCategories();
+        renderWordGrid();
+        renderMistakes();
+        updateControls();
+        updateHintButton();
+    }
+    
+    function renderSolvedCategories() {
+        const container = document.getElementById('solvedCategories');
+        const puzzle = PUZZLES[gameState.puzzleIndex];
+        
+        container.innerHTML = gameState.solved.map(categoryName => {
+            const category = puzzle.categories.find(c => c.name === categoryName);
+            return `
+                <div class="solved-category cat${category.difficulty}">
+                    <div class="solved-category-name">${category.name}</div>
+                    <div class="solved-category-words">${category.words.join(', ')}</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function renderWordGrid() {
+        const container = document.getElementById('wordGrid');
+        const remainingWords = gameState.words.filter(word => {
+            const puzzle = PUZZLES[gameState.puzzleIndex];
+            return !gameState.solved.some(catName => {
+                const cat = puzzle.categories.find(c => c.name === catName);
+                return cat.words.includes(word);
+            });
+        });
+        
+        container.innerHTML = remainingWords.map(word => `
+            <button class="word-tile ${gameState.selected.includes(word) ? 'selected' : ''}" 
+                    data-word="${word}" 
+                    ${gameState.gameOver ? 'disabled' : ''}>
+                ${word}
+            </button>
+        `).join('');
+        
+        container.querySelectorAll('.word-tile').forEach(tile => {
+            tile.addEventListener('click', () => toggleWord(tile.dataset.word));
+        });
+    }
+    
+    function renderMistakes() {
+        const dots = document.querySelectorAll('.mistake-dot');
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('used', i < gameState.mistakes);
+        });
+    }
+    
+    function updateControls() {
+        document.getElementById('deselectBtn').disabled = gameState.selected.length === 0;
+        document.getElementById('submitBtn').disabled = gameState.selected.length !== 4;
+    }
+    
+    function updateHintButton() {
+        const remaining = gameState.maxHints - gameState.hintsUsed;
+        const btn = document.getElementById('hintBtn');
+        btn.textContent = `Hint (${remaining})`;
+        btn.disabled = remaining <= 0 || gameState.gameOver;
+    }
+    
+    function toggleWord(word) {
+        if (gameState.gameOver) return;
+        
+        const index = gameState.selected.indexOf(word);
+        if (index > -1) {
+            gameState.selected.splice(index, 1);
+        } else if (gameState.selected.length < 4) {
+            gameState.selected.push(word);
+        }
+        
+        renderWordGrid();
+        updateControls();
+        saveGameState();
+    }
+    
+    function shuffle() {
+        const puzzle = PUZZLES[gameState.puzzleIndex];
+        const remainingWords = gameState.words.filter(word => {
+            return !gameState.solved.some(catName => {
+                const cat = puzzle.categories.find(c => c.name === catName);
+                return cat.words.includes(word);
+            });
+        });
+        
+        gameState.words = [
+            ...gameState.words.filter(w => !remainingWords.includes(w)),
+            ...shuffleArray(remainingWords)
+        ];
+        
+        renderWordGrid();
+        saveGameState();
+    }
+    
+    function deselectAll() {
+        gameState.selected = [];
+        renderWordGrid();
+        updateControls();
+        saveGameState();
+    }
+    
+    function useHint() {
+        if (gameState.hintsUsed >= gameState.maxHints || gameState.gameOver) return;
+        
+        const puzzle = PUZZLES[gameState.puzzleIndex];
+        const unsolvedCategories = puzzle.categories.filter(c => !gameState.solved.includes(c.name));
+        
+        if (unsolvedCategories.length === 0) return;
+        
+        // Sort by difficulty and give hint for easiest unsolved
+        unsolvedCategories.sort((a, b) => a.difficulty - b.difficulty);
+        const hintCategory = unsolvedCategories[0];
+        
+        gameState.hintsUsed++;
+        updateHintButton();
+        
+        const hintDisplay = document.getElementById('hintDisplay');
+        const hintText = document.getElementById('hintText');
+        
+        // Different hint types based on how many hints used for this category
+        const hintLevel = gameState.hintsUsed;
+        let hint = '';
+        
+        if (hintLevel === 1) {
+            hint = `Look for words related to: "${hintCategory.name}"`;
+        } else if (hintLevel === 2) {
+            hint = `One of the words in "${hintCategory.name}" is: ${hintCategory.words[0]}`;
+        } else {
+            hint = `"${hintCategory.name}" contains: ${hintCategory.words[0]}, ${hintCategory.words[1]}`;
+        }
+        
+        hintText.textContent = hint;
+        hintDisplay.style.display = 'block';
+        
+        saveGameState();
+    }
+    
+    function submit() {
+        if (gameState.selected.length !== 4 || gameState.gameOver) return;
+        
+        const puzzle = PUZZLES[gameState.puzzleIndex];
+        const selectedSet = new Set(gameState.selected);
+        
+        // Check if selection matches any category
+        let matchedCategory = null;
+        for (const category of puzzle.categories) {
+            const categorySet = new Set(category.words);
+            if ([...selectedSet].every(w => categorySet.has(w)) && 
+                [...categorySet].every(w => selectedSet.has(w))) {
+                matchedCategory = category;
+                break;
+            }
+        }
+        
+        if (matchedCategory) {
+            // Correct!
+            gameState.solved.push(matchedCategory.name);
+            gameState.guessHistory.push({ words: [...gameState.selected], correct: true, category: matchedCategory.difficulty });
+            gameState.selected = [];
+            
+            if (gameState.solved.length === 4) {
+                // Won!
+                gameState.gameOver = true;
+                gameState.won = true;
+                endGame(true);
+            }
+            
+            renderGame();
+        } else {
+            // Wrong
+            // Check for "one away"
+            let oneAway = false;
+            for (const category of puzzle.categories) {
+                if (gameState.solved.includes(category.name)) continue;
+                const overlap = gameState.selected.filter(w => category.words.includes(w)).length;
+                if (overlap === 3) {
+                    oneAway = true;
+                    break;
+                }
+            }
+            
+            gameState.guessHistory.push({ words: [...gameState.selected], correct: false, oneAway });
+            gameState.mistakes++;
+            
+            // Shake animation
+            document.querySelectorAll('.word-tile.selected').forEach(tile => {
+                tile.classList.add('shake');
+                setTimeout(() => tile.classList.remove('shake'), 400);
+            });
+            
+            if (oneAway) {
+                showToast('One away!');
+            }
+            
+            if (gameState.mistakes >= 4) {
+                gameState.gameOver = true;
+                gameState.won = false;
+                endGame(false);
+            }
+            
+            renderMistakes();
+        }
+        
+        saveGameState();
+    }
+    
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;top:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:12px 24px;border-radius:8px;z-index:1000;font-weight:600;';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+    
+    function endGame(won) {
+        const stats = loadStats();
+        const todayKey = getTodayKey();
+        
+        if (stats.lastPlayed !== todayKey) {
+            stats.played++;
+            if (won) {
+                stats.won++;
+                stats.streak++;
+                stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+            } else {
+                stats.streak = 0;
+            }
+            stats.lastPlayed = todayKey;
+            saveStats(stats);
+        }
+        
+        updateStatsDisplay();
+        
+        // Reveal all categories if lost
+        if (!won) {
+            const puzzle = PUZZLES[gameState.puzzleIndex];
+            gameState.solved = puzzle.categories.map(c => c.name);
+            renderSolvedCategories();
+            document.getElementById('wordGrid').innerHTML = '';
+        }
+        
+        showGameOver();
+    }
+    
+    function showGameOver() {
+        document.getElementById('controls').style.display = 'none';
+        document.getElementById('hintDisplay').style.display = 'none';
+        
+        const gameOverEl = document.getElementById('gameOver');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultText = document.getElementById('resultText');
+        
+        if (gameState.won) {
+            gameOverEl.className = 'game-over win';
+            resultTitle.textContent = 'Perfect!';
+            resultText.textContent = `You found all 4 categories with ${gameState.mistakes} mistake${gameState.mistakes !== 1 ? 's' : ''}!`;
+        } else {
+            gameOverEl.className = 'game-over lose';
+            resultTitle.textContent = 'Game Over';
+            resultText.textContent = 'Better luck tomorrow!';
+        }
+        
+        gameOverEl.style.display = 'block';
+    }
+    
+    function shareResults() {
+        const puzzle = PUZZLES[gameState.puzzleIndex];
+        const emojis = { 1: '🟨', 2: '🟩', 3: '🟦', 4: '🟪' };
+        
+        let result = `Connections #${gameState.puzzleIndex + 1}\n\n`;
+        
+        gameState.guessHistory.forEach(guess => {
+            if (guess.correct) {
+                result += emojis[guess.category].repeat(4) + '\n';
+            } else {
+                // Show what was guessed
+                const colors = guess.words.map(word => {
+                    for (const cat of puzzle.categories) {
+                        if (cat.words.includes(word)) return emojis[cat.difficulty];
+                    }
+                    return '⬜';
+                });
+                result += colors.join('') + '\n';
+            }
+        });
+        
+        result += `\nPlay at thegaming.co/connections.html`;
+        
+        navigator.clipboard.writeText(result).then(() => {
+            showToast('Copied to clipboard!');
+        });
+    }
+    
+    function updateTimer() {
+        const now = new Date();
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+        const diff = tomorrow - now;
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        document.getElementById('timer').textContent = 
+            `Next puzzle in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    
+    // Event listeners
+    document.getElementById('shuffleBtn').addEventListener('click', shuffle);
+    document.getElementById('deselectBtn').addEventListener('click', deselectAll);
+    document.getElementById('hintBtn').addEventListener('click', useHint);
+    document.getElementById('submitBtn').addEventListener('click', submit);
+    document.getElementById('shareBtn').addEventListener('click', shareResults);
+    
+    // Initialize
+    initGame();
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    </script>
 </body>
 </html>
