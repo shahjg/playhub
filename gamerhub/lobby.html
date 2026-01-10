@@ -427,8 +427,8 @@ btnCreate.addEventListener('click',function(){var n=nameInput.value.trim();if(!n
 btnJoin.addEventListener('click',function(){var n=nameInput.value.trim(),c=codeInput.value.trim();if(!n||n.length<2){showMsg('Name must be at least 2 characters',true);return}if(!c||c.length!==6){showMsg('Enter a 6-character room code',true);return}msgBox.textContent='';btnJoin.classList.add('btn-loading');btnJoin.disabled=true;localStorage.setItem('tempPlayerName',n);localStorage.setItem('tempGameType',game.type);localStorage.setItem('tempGameId',gameId);socket.emit('join-room',{roomCode:c,playerName:n,isPremium:premium,cosmetics:profile?profile.cosmetics:null,userId:user?user.id:null})});
 nameInput.addEventListener('keypress',function(e){if(e.key==='Enter'){codeInput.value.trim()?btnJoin.click():btnCreate.click()}});
 codeInput.addEventListener('keypress',function(e){if(e.key==='Enter')btnJoin.click()});
-socket.on('room-created',function(d){showMsg('Room created!',false);setTimeout(function(){window.location.href='/play/'+gameId+'/'+d.roomCode},500)});
-socket.on('room-joined',function(d){showMsg('Joining...',false);setTimeout(function(){window.location.href='/play/'+gameId+'/'+d.roomCode},500)});
+socket.on('room-created',function(d){showMsg('Room created!',false);localStorage.setItem('tempRoomCode',d.roomCode);localStorage.setItem('tempIsHost','true');setTimeout(function(){window.location.href='/waiting-room.html?room='+d.roomCode},500)});
+socket.on('room-joined',function(d){showMsg('Joining...',false);localStorage.setItem('tempRoomCode',d.roomCode);localStorage.setItem('tempIsHost','false');setTimeout(function(){window.location.href='/waiting-room.html?room='+d.roomCode},500)});
 socket.on('error',function(d){showMsg(d.message||'Error',true);btnCreate.classList.remove('btn-loading');btnCreate.disabled=false;btnJoin.classList.remove('btn-loading');btnJoin.disabled=false});
 socket.on('join-error',function(d){showMsg(d.message||'Cannot join',true);btnJoin.classList.remove('btn-loading');btnJoin.disabled=false});
 function showMsg(t,e){msgBox.textContent=t;msgBox.className='message '+(e?'error':'success')}
