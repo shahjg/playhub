@@ -4,948 +4,451 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join Game - TheGaming.co</title>
-    
-    <meta name="description" content="Create or join a game room. Play free multiplayer party games with friends.">
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="description" content="Create or join a game room.">
     <link rel="stylesheet" href="/header.css">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --accent: #14b8a6; --accent-glow: rgba(20,184,166,0.4); --accent-soft: rgba(20,184,166,0.12); --bg: #0a0a0f; --border: rgba(255,255,255,0.08); --text: #fff; --muted: rgba(255,255,255,0.5); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 
-        :root {
-            --accent: #14b8a6;
-            --accent-glow: rgba(20, 184, 166, 0.4);
-            --accent-soft: rgba(20, 184, 166, 0.12);
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-card: rgba(255, 255, 255, 0.02);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-accent: rgba(20, 184, 166, 0.3);
-            --text: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.5);
-            --gold: #fbbf24;
-            --green: #22c55e;
-            --red: #ef4444;
-        }
+        .bg-container { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .bg-base { position: absolute; inset: 0; }
+        .bg-scene { position: absolute; inset: 0; }
+        .bg-scene::before, .bg-scene::after { content: ''; position: absolute; }
 
-        /* Game Themes */
-        .theme-spyfall { --accent: #14b8a6; --accent-glow: rgba(20, 184, 166, 0.4); --accent-soft: rgba(20, 184, 166, 0.12); --border-accent: rgba(20, 184, 166, 0.3); }
-        .theme-word-bomb { --accent: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.4); --accent-soft: rgba(244, 63, 94, 0.12); --border-accent: rgba(244, 63, 94, 0.3); }
-        .theme-codenames { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.4); --accent-soft: rgba(34, 197, 94, 0.12); --border-accent: rgba(34, 197, 94, 0.3); }
-        .theme-werewolf { --accent: #a855f7; --accent-glow: rgba(168, 85, 247, 0.4); --accent-soft: rgba(168, 85, 247, 0.12); --border-accent: rgba(168, 85, 247, 0.3); }
-        .theme-fake-artist { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
-        .theme-herd-mentality { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.4); --accent-soft: rgba(59, 130, 246, 0.12); --border-accent: rgba(59, 130, 246, 0.3); }
-        .theme-avalon { --accent: #eab308; --accent-glow: rgba(234, 179, 8, 0.4); --accent-soft: rgba(234, 179, 8, 0.12); --border-accent: rgba(234, 179, 8, 0.3); }
-        .theme-imposter { --accent: #ef4444; --accent-glow: rgba(239, 68, 68, 0.4); --accent-soft: rgba(239, 68, 68, 0.12); --border-accent: rgba(239, 68, 68, 0.3); }
-        .theme-insider { --accent: #6366f1; --accent-glow: rgba(99, 102, 241, 0.4); --accent-soft: rgba(99, 102, 241, 0.12); --border-accent: rgba(99, 102, 241, 0.3); }
-        .theme-wavelength { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-npat { --accent: #f59e0b; --accent-glow: rgba(245, 158, 11, 0.4); --accent-soft: rgba(245, 158, 11, 0.12); --border-accent: rgba(245, 158, 11, 0.3); }
-        .theme-categories { --accent: #00d9ff; --accent-glow: rgba(0, 217, 255, 0.4); --accent-soft: rgba(0, 217, 255, 0.12); --border-accent: rgba(0, 217, 255, 0.3); }
-        .theme-word-association { --accent: #a855f7; --accent-glow: rgba(168, 85, 247, 0.4); --accent-soft: rgba(168, 85, 247, 0.12); --border-accent: rgba(168, 85, 247, 0.3); }
-        .theme-charades { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.4); --accent-soft: rgba(16, 185, 129, 0.12); --border-accent: rgba(16, 185, 129, 0.3); }
-        .theme-celebrity { --accent: #f472b6; --accent-glow: rgba(244, 114, 182, 0.4); --accent-soft: rgba(244, 114, 182, 0.12); --border-accent: rgba(244, 114, 182, 0.3); }
-        .theme-fishbowl { --accent: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.4); --accent-soft: rgba(6, 182, 212, 0.12); --border-accent: rgba(6, 182, 212, 0.3); }
-        .theme-most-likely-to { --accent: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.4); --accent-soft: rgba(244, 63, 94, 0.12); --border-accent: rgba(244, 63, 94, 0.3); }
-        .theme-trivia-royale { --accent: #8b5cf6; --accent-glow: rgba(139, 92, 246, 0.4); --accent-soft: rgba(139, 92, 246, 0.12); --border-accent: rgba(139, 92, 246, 0.3); }
-        .theme-this-or-that-party { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-hot-takes-party { --accent: #ef4444; --accent-glow: rgba(239, 68, 68, 0.4); --accent-soft: rgba(239, 68, 68, 0.12); --border-accent: rgba(239, 68, 68, 0.3); }
-        .theme-never-ever-party { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
-        .theme-bet-or-bluff { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.4); --accent-soft: rgba(16, 185, 129, 0.12); --border-accent: rgba(16, 185, 129, 0.3); }
-        .theme-sketch-guess { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-fools-gold { --accent: #fbbf24; --accent-glow: rgba(251, 191, 36, 0.4); --accent-soft: rgba(251, 191, 36, 0.12); --border-accent: rgba(251, 191, 36, 0.3); }
-        .theme-power-struggle { --accent: #eab308; --accent-glow: rgba(234, 179, 8, 0.4); --accent-soft: rgba(234, 179, 8, 0.12); --border-accent: rgba(234, 179, 8, 0.3); }
-        .theme-punchline { --accent: #fbbf24; --accent-glow: rgba(251, 191, 36, 0.4); --accent-soft: rgba(251, 191, 36, 0.12); --border-accent: rgba(251, 191, 36, 0.3); }
-        .theme-broken-pictionary { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
-        .theme-doodle-duel { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-two-truths { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.4); --accent-soft: rgba(59, 130, 246, 0.12); --border-accent: rgba(59, 130, 246, 0.3); }
-        .theme-ludo { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.4); --accent-soft: rgba(34, 197, 94, 0.12); --border-accent: rgba(34, 197, 94, 0.3); }
+        /* SPYFALL */
+        .theme-spyfall { --accent: #14b8a6; --accent-glow: rgba(20,184,166,0.4); --accent-soft: rgba(20,184,166,0.12); }
+        .theme-spyfall .bg-base { background: linear-gradient(180deg, #061515, #0a0a0f); }
+        .theme-spyfall .bg-scene::before { inset: 0; background: repeating-linear-gradient(90deg, transparent 0 80px, rgba(20,184,166,0.03) 80px 81px), repeating-linear-gradient(0deg, transparent 0 80px, rgba(20,184,166,0.03) 80px 81px); }
+        .theme-spyfall .bg-scene::after { top: 5%; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(20,184,166,0.3), transparent 70%); border-radius: 50%; filter: blur(60px); animation: pulse 4s ease-in-out infinite; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
+        /* AVALON */
+        .theme-avalon { --accent: #fbbf24; --accent-glow: rgba(251,191,36,0.4); --accent-soft: rgba(251,191,36,0.12); }
+        .theme-avalon .bg-base { background: linear-gradient(180deg, #15120a, #0a0a0f); }
+        .theme-avalon .bg-scene::before { bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(0deg, rgba(251,191,36,0.1), transparent); }
+        .theme-avalon .bg-scene::after { top: 8%; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; font-size: 80px; content: '👑'; opacity: 0.15; animation: float 4s ease-in-out infinite; }
 
-        /* ========== ANIMATED BACKGROUND ========== */
-        .bg-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-        .bg-gradient { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse 80% 50% at 20% 0%, var(--accent-soft) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 90% 100%, var(--accent-soft) 0%, transparent 50%), var(--bg-primary); }
-        .glow-orb { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); border-radius: 50%; filter: blur(80px); opacity: 0.3; animation: orbFloat 25s ease-in-out infinite; }
-        .glow-orb:nth-child(2) { width: 300px; height: 300px; animation-delay: -12s; animation-duration: 30s; }
-        @keyframes orbFloat { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(60vw, 20vh); } 66% { transform: translate(30vw, 60vh); } }
-        .grid-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; }
+        /* WEREWOLF */
+        .theme-werewolf { --accent: #a855f7; --accent-glow: rgba(168,85,247,0.4); --accent-soft: rgba(168,85,247,0.12); }
+        .theme-werewolf .bg-base { background: linear-gradient(180deg, #0f0818, #0a0a0f); }
+        .theme-werewolf .bg-scene::before { top: 8%; right: 12%; width: 100px; height: 100px; background: radial-gradient(circle, rgba(255,255,220,0.9), rgba(255,255,220,0.2) 40%, transparent 70%); border-radius: 50%; box-shadow: 0 0 80px rgba(168,85,247,0.5); animation: float 8s ease-in-out infinite; }
 
-        /* ========== GAME ICON ========== */
-        .game-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1.5rem;
-            color: var(--accent);
-            position: relative;
-        }
-        .game-icon svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 20px var(--accent-glow));
-        }
-        .game-icon::before {
-            content: '';
-            position: absolute;
-            inset: -15px;
-            background: radial-gradient(circle, var(--accent-soft) 0%, transparent 70%);
-            border-radius: 50%;
-            animation: iconPulse 3s ease-in-out infinite;
-            z-index: -1;
-        }
-        @keyframes iconPulse {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.15); }
-        }
+        /* IMPOSTER */
+        .theme-imposter { --accent: #ef4444; --accent-glow: rgba(239,68,68,0.4); --accent-soft: rgba(239,68,68,0.12); }
+        .theme-imposter .bg-base { background: linear-gradient(180deg, #150808, #0a0a0f); }
+        .theme-imposter .bg-scene::before { inset: 0; background: repeating-linear-gradient(45deg, transparent 0 30px, rgba(239,68,68,0.03) 30px 32px); animation: alertPulse 2s ease-in-out infinite; }
+        .theme-imposter .bg-scene::after { top: 10%; left: 50%; transform: translateX(-50%); font-size: 100px; content: '⚠'; opacity: 0.1; color: #ef4444; animation: blink 1.5s ease-in-out infinite; }
 
-        /* ========== MAIN CONTENT ========== */
+        /* FAKE ARTIST */
+        .theme-fake-artist { --accent: #ec4899; --accent-glow: rgba(236,72,153,0.4); --accent-soft: rgba(236,72,153,0.12); }
+        .theme-fake-artist .bg-base { background: linear-gradient(135deg, #150a12, #0a0a0f 50%, #0a1015); }
+        .theme-fake-artist .bg-scene::before { inset: 0; background: radial-gradient(circle at 15% 20%, rgba(236,72,153,0.15), transparent 25%), radial-gradient(circle at 85% 30%, rgba(168,85,247,0.12), transparent 25%), radial-gradient(circle at 70% 80%, rgba(59,130,246,0.1), transparent 20%); }
+
+        /* CODENAMES */
+        .theme-codenames { --accent: #22c55e; --accent-glow: rgba(34,197,94,0.4); --accent-soft: rgba(34,197,94,0.12); }
+        .theme-codenames .bg-base { background: linear-gradient(180deg, #08120a, #0a0a0f); }
+        .theme-codenames .bg-scene::before { inset: 0; background: repeating-linear-gradient(90deg, transparent 0 60px, rgba(34,197,94,0.04) 60px 61px), repeating-linear-gradient(0deg, transparent 0 60px, rgba(34,197,94,0.04) 60px 61px); }
+        .theme-codenames .bg-scene::after { top: 10%; left: 50%; transform: translateX(-50%); width: 200px; height: 200px; border: 2px solid rgba(34,197,94,0.2); border-radius: 50%; animation: radarScan 3s linear infinite; }
+
+        /* WORD BOMB */
+        .theme-word-bomb { --accent: #f43f5e; --accent-glow: rgba(244,63,94,0.4); --accent-soft: rgba(244,63,94,0.12); }
+        .theme-word-bomb .bg-base { background: radial-gradient(circle at 50% 40%, #1a0a0f, #0a0a0f); }
+        .theme-word-bomb .bg-scene::before { top: 12%; left: 50%; transform: translateX(-50%); font-size: 90px; content: '💣'; opacity: 0.2; animation: shake 0.3s ease-in-out infinite; }
+        .theme-word-bomb .bg-scene::after { top: 8%; left: 50%; transform: translateX(-50%); width: 250px; height: 250px; background: radial-gradient(circle, rgba(244,63,94,0.3), transparent 60%); animation: bombPulse 0.8s ease-in-out infinite; }
+
+        /* WAVELENGTH */
+        .theme-wavelength { --accent: #f97316; --accent-glow: rgba(249,115,22,0.4); --accent-soft: rgba(249,115,22,0.12); }
+        .theme-wavelength .bg-base { background: linear-gradient(180deg, #15100a, #0a0a0f); }
+        .theme-wavelength .bg-scene::before { top: 0; left: 0; right: 0; height: 50%; background: linear-gradient(90deg, rgba(239,68,68,0.1), rgba(249,115,22,0.12), rgba(234,179,8,0.1), rgba(34,197,94,0.1), rgba(59,130,246,0.1), rgba(168,85,247,0.1)); mask: linear-gradient(180deg, rgba(0,0,0,0.6), transparent); -webkit-mask: linear-gradient(180deg, rgba(0,0,0,0.6), transparent); }
+
+        /* LUDO */
+        .theme-ludo { --accent: #22c55e; --accent-glow: rgba(34,197,94,0.4); --accent-soft: rgba(34,197,94,0.12); }
+        .theme-ludo .bg-base { background: #0a0a0f; }
+        .theme-ludo .bg-scene::before { top: 5%; left: 50%; transform: translateX(-50%); width: 220px; height: 220px; background: conic-gradient(rgba(239,68,68,0.15) 0deg 90deg, rgba(59,130,246,0.15) 90deg 180deg, rgba(34,197,94,0.15) 180deg 270deg, rgba(234,179,8,0.15) 270deg 360deg); border-radius: 12px; }
+        .theme-ludo .bg-scene::after { top: 10%; left: 50%; transform: translateX(-50%); font-size: 60px; content: '🎲'; opacity: 0.2; animation: float 3s ease-in-out infinite; }
+
+        /* HERD MENTALITY */
+        .theme-herd-mentality { --accent: #3b82f6; --accent-glow: rgba(59,130,246,0.4); --accent-soft: rgba(59,130,246,0.12); }
+        .theme-herd-mentality .bg-base { background: linear-gradient(180deg, #080a15, #0a0a0f); }
+        .theme-herd-mentality .bg-scene::before { inset: 0; background: radial-gradient(circle at 30% 60%, rgba(59,130,246,0.12), transparent 20%), radial-gradient(circle at 50% 55%, rgba(59,130,246,0.15), transparent 22%), radial-gradient(circle at 70% 62%, rgba(59,130,246,0.12), transparent 18%); }
+
+        /* PUNCHLINE */
+        .theme-punchline { --accent: #fbbf24; --accent-glow: rgba(251,191,36,0.4); --accent-soft: rgba(251,191,36,0.12); }
+        .theme-punchline .bg-base { background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a1508, #0a0a0f); }
+        .theme-punchline .bg-scene::before { top: 0; left: 50%; transform: translateX(-50%); width: 50%; height: 100%; background: linear-gradient(180deg, rgba(251,191,36,0.1), transparent 50%); clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); }
+        .theme-punchline .bg-scene::after { top: 12%; left: 50%; transform: translateX(-50%); font-size: 70px; content: '🎤'; opacity: 0.15; }
+
+        /* HOT TAKES */
+        .theme-hot-takes-party { --accent: #ef4444; --accent-glow: rgba(239,68,68,0.4); --accent-soft: rgba(239,68,68,0.12); }
+        .theme-hot-takes-party .bg-base { background: linear-gradient(180deg, #150808, #0a0a0f); }
+        .theme-hot-takes-party .bg-scene::before { top: 10%; left: 50%; transform: translateX(-50%); font-size: 80px; content: '🔥'; opacity: 0.2; animation: fireFlicker 0.4s ease-in-out infinite alternate; }
+
+        /* TRIVIA ROYALE */
+        .theme-trivia-royale { --accent: #8b5cf6; --accent-glow: rgba(139,92,246,0.4); --accent-soft: rgba(139,92,246,0.12); }
+        .theme-trivia-royale .bg-base { background: radial-gradient(ellipse 100% 80% at 50% 0%, #12081a, #0a0a0f); }
+        .theme-trivia-royale .bg-scene::before { top: 8%; left: 50%; transform: translateX(-50%); font-size: 70px; content: '🏆'; opacity: 0.2; animation: float 3s ease-in-out infinite; }
+
+        /* OTHER THEMES - simpler versions */
+        .theme-insider { --accent: #6366f1; --accent-glow: rgba(99,102,241,0.4); --accent-soft: rgba(99,102,241,0.12); }
+        .theme-insider .bg-base { background: radial-gradient(circle at 50% 30%, #0a0a18, #0a0a0f); }
+        .theme-power-struggle { --accent: #eab308; --accent-glow: rgba(234,179,8,0.4); --accent-soft: rgba(234,179,8,0.12); }
+        .theme-power-struggle .bg-base { background: linear-gradient(135deg, #151208, #0a0a0f); }
+        .theme-categories { --accent: #06b6d4; --accent-glow: rgba(6,182,212,0.4); --accent-soft: rgba(6,182,212,0.12); }
+        .theme-categories .bg-base { background: linear-gradient(180deg, #081215, #0a0a0f); }
+        .theme-npat { --accent: #f59e0b; --accent-glow: rgba(245,158,11,0.4); --accent-soft: rgba(245,158,11,0.12); }
+        .theme-npat .bg-base { background: linear-gradient(180deg, #15120a, #0a0a0f); }
+        .theme-word-association { --accent: #a855f7; --accent-glow: rgba(168,85,247,0.4); --accent-soft: rgba(168,85,247,0.12); }
+        .theme-word-association .bg-base { background: linear-gradient(180deg, #100815, #0a0a0f); }
+        .theme-charades { --accent: #10b981; --accent-glow: rgba(16,185,129,0.4); --accent-soft: rgba(16,185,129,0.12); }
+        .theme-charades .bg-base { background: linear-gradient(180deg, #0a1210, #0a0a0f); }
+        .theme-celebrity { --accent: #f472b6; --accent-glow: rgba(244,114,182,0.4); --accent-soft: rgba(244,114,182,0.12); }
+        .theme-celebrity .bg-base { background: radial-gradient(ellipse at 50% 0%, #150a12, #0a0a0f); }
+        .theme-fishbowl { --accent: #06b6d4; --accent-glow: rgba(6,182,212,0.4); --accent-soft: rgba(6,182,212,0.12); }
+        .theme-fishbowl .bg-base { background: radial-gradient(ellipse at 50% 100%, #081518, #0a0a0f); }
+        .theme-most-likely-to { --accent: #f43f5e; --accent-glow: rgba(244,63,94,0.4); --accent-soft: rgba(244,63,94,0.12); }
+        .theme-most-likely-to .bg-base { background: radial-gradient(circle at 50% 50%, #150a0f, #0a0a0f); }
+        .theme-sketch-guess { --accent: #f97316; --accent-glow: rgba(249,115,22,0.4); --accent-soft: rgba(249,115,22,0.12); }
+        .theme-sketch-guess .bg-base { background: linear-gradient(180deg, #15100a, #0a0a0f); }
+        .theme-fools-gold { --accent: #fbbf24; --accent-glow: rgba(251,191,36,0.4); --accent-soft: rgba(251,191,36,0.12); }
+        .theme-fools-gold .bg-base { background: linear-gradient(180deg, #151008, #0a0a0f); }
+        .theme-broken-pictionary { --accent: #ec4899; --accent-glow: rgba(236,72,153,0.4); --accent-soft: rgba(236,72,153,0.12); }
+        .theme-broken-pictionary .bg-base { background: linear-gradient(135deg, #150a12, #0a0a0f); }
+        .theme-doodle-duel { --accent: #f97316; --accent-glow: rgba(249,115,22,0.4); --accent-soft: rgba(249,115,22,0.12); }
+        .theme-doodle-duel .bg-base { background: linear-gradient(180deg, #15100a, #0a0a0f); }
+        .theme-two-truths { --accent: #3b82f6; --accent-glow: rgba(59,130,246,0.4); --accent-soft: rgba(59,130,246,0.12); }
+        .theme-two-truths .bg-base { background: linear-gradient(180deg, #080a15, #0a0a0f); }
+        .theme-this-or-that-party { --accent: #f97316; --accent-glow: rgba(249,115,22,0.4); --accent-soft: rgba(249,115,22,0.12); }
+        .theme-this-or-that-party .bg-base { background: linear-gradient(90deg, rgba(59,130,246,0.08), transparent 40%, transparent 60%, rgba(249,115,22,0.08)), #0a0a0f; }
+        .theme-never-ever-party { --accent: #ec4899; --accent-glow: rgba(236,72,153,0.4); --accent-soft: rgba(236,72,153,0.12); }
+        .theme-never-ever-party .bg-base { background: radial-gradient(ellipse at 50% 100%, #150a12, #0a0a0f); }
+        .theme-bet-or-bluff { --accent: #10b981; --accent-glow: rgba(16,185,129,0.4); --accent-soft: rgba(16,185,129,0.12); }
+        .theme-bet-or-bluff .bg-base { background: linear-gradient(180deg, #081510, #0a0a0f); }
+
+        /* ANIMATIONS */
+        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(1); } 50% { opacity: 0.5; transform: translateX(-50%) scale(1.1); } }
+        @keyframes float { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-15px); } }
+        @keyframes blink { 0%, 100% { opacity: 0.05; } 50% { opacity: 0.15; } }
+        @keyframes alertPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+        @keyframes shake { 0%, 100% { transform: translateX(-50%) rotate(-2deg); } 50% { transform: translateX(-50%) rotate(2deg); } }
+        @keyframes bombPulse { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.2; } 50% { transform: translateX(-50%) scale(1.15); opacity: 0.4; } }
+        @keyframes radarScan { 0% { transform: translateX(-50%) scale(0.5); opacity: 0.6; } 100% { transform: translateX(-50%) scale(2); opacity: 0; } }
+        @keyframes fireFlicker { 0% { transform: translateX(-50%) scale(1); } 100% { transform: translateX(-50%) scale(1.08); } }
+        @keyframes iconPulse { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
+
+        /* ICON */
+        .game-icon { width: 90px; height: 90px; margin: 0 auto 1.5rem; color: var(--accent); position: relative; display: flex; align-items: center; justify-content: center; }
+        .game-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 25px var(--accent-glow)); }
+        .game-icon::before { content: ''; position: absolute; inset: -20px; background: radial-gradient(circle, var(--accent-soft), transparent 70%); border-radius: 50%; z-index: -1; animation: iconPulse 3s ease-in-out infinite; }
+
+        /* LAYOUT */
         main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 80px 20px 40px; position: relative; z-index: 1; }
         .lobby-container { width: 100%; max-width: 420px; }
         .game-header { text-align: center; margin-bottom: 2rem; }
-        .game-title { font-family: 'Bebas Neue', sans-serif; font-size: 4.5rem; letter-spacing: 8px; line-height: 1; margin-bottom: 0.5rem; color: var(--text); text-shadow: 0 0 80px var(--accent-glow); }
+        .game-title { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 6px; line-height: 1; margin-bottom: 0.5rem; text-shadow: 0 0 60px var(--accent-glow); }
         .game-tagline { color: var(--accent); font-size: 1rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; }
-        .game-players { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; }
+        .game-players { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
 
-        /* How to Play Preview */
-        .htp-card { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+        /* HTP CARD */
+        .htp-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
         .htp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
         .htp-title { font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; }
-        .htp-expand { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; transition: color 0.2s; }
+        .htp-expand { background: none; border: none; color: var(--muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
         .htp-expand:hover { color: var(--accent); }
-        .htp-expand svg { width: 14px; height: 14px; }
-        .htp-summary { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+        .htp-summary { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
 
-        /* Main Card */
-        .lobby-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; position: relative; }
+        /* MAIN CARD */
+        .lobby-card { background: rgba(18,18,26,0.85); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; position: relative; backdrop-filter: blur(20px); }
         .lobby-card::before { content: ''; position: absolute; top: 0; left: 30px; right: 30px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
 
-        /* Input Group */
+        /* INPUTS */
         .input-group { margin-bottom: 1.5rem; }
-        .input-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
-        .input-field { width: 100%; padding: 0.9rem 1rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1rem; font-family: inherit; transition: all 0.2s ease; }
-        .input-field::placeholder { color: var(--text-muted); }
+        .input-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .input-field { width: 100%; padding: 0.9rem 1rem; background: rgba(10,10,15,0.8); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1rem; font-family: inherit; }
         .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-        .input-field:disabled { opacity: 0.5; cursor: not-allowed; }
-        .input-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
-        .input-hint a { color: var(--accent); font-weight: 600; text-decoration: none; }
-        .input-hint a:hover { text-decoration: underline; }
-
-        /* Premium Preview */
-        .name-preview { margin-top: 0.75rem; padding: 0.6rem 0.9rem; background: rgba(251, 191, 36, 0.08); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.25); }
-        .name-preview-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.25rem; }
-        .name-preview-value { font-weight: 700; font-size: 1rem; }
-        .name-preview-value.premium { background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold)); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: goldShimmer 3s linear infinite; }
-        @keyframes goldShimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-
-        /* Buttons */
-        .btn { width: 100%; padding: 1rem; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 2px; cursor: pointer; transition: all 0.2s ease; border: none; position: relative; overflow: hidden; }
-        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 20px var(--accent-glow); }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 30px var(--accent-glow); filter: brightness(1.1); }
-        .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
-        .btn-secondary:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-        .btn-loading::after { content: ''; width: 16px; height: 16px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.7s linear infinite; margin-left: 8px; display: inline-block; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Divider */
-        .divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; }
-        .divider-line { flex: 1; height: 1px; background: var(--border); }
-        .divider-text { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
-
-        /* Room Code Input */
+        .input-field:disabled { opacity: 0.5; }
+        .input-hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+        .input-hint a { color: var(--accent); text-decoration: none; }
         .room-code-input { text-transform: uppercase; font-family: 'Bebas Neue', sans-serif; font-size: 1.75rem; letter-spacing: 10px; text-align: center; }
 
-        /* Messages */
+        /* BUTTONS */
+        .btn { width: 100%; padding: 1rem; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 2px; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 20px var(--accent-glow); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-loading::after { content: ''; width: 16px; height: 16px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.7s linear infinite; margin-left: 8px; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* DIVIDER */
+        .divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; }
+        .divider-line { flex: 1; height: 1px; background: var(--border); }
+        .divider-text { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+
+        /* MESSAGES */
         .message { padding: 0.9rem; border-radius: 8px; margin-top: 1rem; font-size: 0.85rem; font-weight: 600; display: none; text-align: center; }
-        .message.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
-        .message.success { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #86efac; }
+        .message.error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+        .message.success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
         .message.visible { display: block; }
 
-        /* ========== MODAL ========== */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; overflow-y: auto; }
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
         .modal-overlay.visible { display: flex; }
-        .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 480px; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; animation: modalIn 0.25s ease; box-shadow: 0 0 60px var(--accent-glow); margin: auto; }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .modal { background: #12121a; border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--accent); }
-        .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0; transition: color 0.2s; }
-        .modal-close:hover { color: var(--text); }
-        .modal-body { padding: 1.5rem; color: var(--text-muted); line-height: 1.7; overflow-y: auto; flex: 1; }
-        .modal-body h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--accent); margin-top: 1.25rem; margin-bottom: 0.4rem; letter-spacing: 1px; }
+        .modal-close { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+        .modal-body { padding: 1.5rem; color: var(--muted); line-height: 1.7; overflow-y: auto; }
+        .modal-body h3 { font-family: 'Bebas Neue', sans-serif; color: var(--accent); margin: 1rem 0 0.4rem; }
         .modal-body h3:first-child { margin-top: 0; }
-        .modal-body p { margin-bottom: 0.75rem; }
-        .modal-body ul { margin-left: 1.25rem; margin-bottom: 0.75rem; }
-        .modal-body li { margin-bottom: 0.35rem; color: var(--text); }
+        .modal-body ul { margin-left: 1.25rem; }
+        .modal-body li { color: var(--text); margin-bottom: 0.35rem; }
         .modal-body strong { color: var(--accent); }
-        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; }
-        .modal-btn { width: 100%; padding: 0.8rem; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; cursor: pointer; transition: all 0.2s ease; }
-        .modal-btn:hover { filter: brightness(1.1); }
+        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
+        .modal-btn { width: 100%; padding: 0.8rem; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; cursor: pointer; }
 
-        /* ========== FOOTER ========== */
-        footer { background: #000; position: relative; z-index: 10; margin-top: auto; }
+        /* FOOTER */
+        footer { background: #000; position: relative; z-index: 10; }
         .footer-border { height: 3px; background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7, #ff6b9d); background-size: 300% 100%; animation: gradientSlide 6s linear infinite; }
         @keyframes gradientSlide { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
         .footer-main { max-width: 1100px; margin: 0 auto; padding: 40px 20px 25px; }
         .footer-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; }
         .footer-column { text-align: center; }
-        .footer-column h5 { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 12px; color: rgba(255, 255, 255, 0.8); }
+        .footer-column h5 { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 12px; color: rgba(255,255,255,0.8); }
         .footer-column ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-        .footer-column a { color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; transition: color 0.2s ease; text-decoration: none; }
-        .footer-column a:hover { color: var(--accent); }
-        .footer-bottom { padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; }
-        .footer-copyright { font-size: 0.8rem; color: rgba(255, 255, 255, 0.35); margin-bottom: 10px; }
+        .footer-column a { color: rgba(255,255,255,0.4); font-size: 0.85rem; text-decoration: none; }
+        .footer-bottom { padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; }
+        .footer-copyright { font-size: 0.8rem; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
         .footer-legal { display: flex; justify-content: center; gap: 20px; }
-        .footer-legal a { color: rgba(255, 255, 255, 0.35); font-size: 0.75rem; text-decoration: none; transition: color 0.2s; }
-        .footer-legal a:hover { color: white; }
+        .footer-legal a { color: rgba(255,255,255,0.35); font-size: 0.75rem; text-decoration: none; }
 
-        /* ========== RESPONSIVE ========== */
         @media (max-width: 600px) {
             main { padding: 70px 16px 30px; }
-            .game-title { font-size: 3.2rem; letter-spacing: 5px; }
-            .game-tagline { font-size: 0.85rem; letter-spacing: 2px; }
-            .lobby-card { padding: 1.5rem; border-radius: 16px; }
-            .btn { padding: 0.9rem; font-size: 1.15rem; }
-            .modal { max-height: calc(100vh - 1rem); border-radius: 16px; }
-            .footer-links { grid-template-columns: 1fr; gap: 20px; }
-            .footer-main { padding: 30px 20px 20px; }
+            .game-icon { width: 70px; height: 70px; }
+            .game-title { font-size: 2.8rem; }
+            .lobby-card { padding: 1.5rem; }
+            .footer-links { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body class="theme-spyfall">
-
-<div class="bg-container">
-    <div class="bg-gradient"></div>
-    <div class="bg-pattern"></div>
-    <div class="glow-orb"></div>
-    <div class="glow-orb"></div>
-</div>
-
+<div class="bg-container"><div class="bg-base"></div><div class="bg-scene"></div></div>
 <div id="site-header"></div>
-
 <main>
     <div class="lobby-container">
         <div class="game-header">
             <div class="game-icon" id="game-icon"></div>
-            <h1 class="game-title" id="game-title">SPY HUNT</h1>
-            <p class="game-tagline" id="game-tagline">Trust No One</p>
-            <p class="game-players" id="game-players">4-20 Players</p>
+            <h1 class="game-title" id="game-title">LOADING</h1>
+            <p class="game-tagline" id="game-tagline">...</p>
+            <p class="game-players" id="game-players">...</p>
         </div>
-
         <div class="htp-card">
             <div class="htp-header">
                 <span class="htp-title">How to Play</span>
-                <button class="htp-expand" onclick="showFullRules()">
-                    Full Rules
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
+                <button class="htp-expand" onclick="showFullRules()">Full Rules →</button>
             </div>
-            <p class="htp-summary" id="htp-summary">
-                One player is secretly the Spy. Everyone else knows the location. Ask questions to find the Spy — but don't reveal the location!
-            </p>
+            <p class="htp-summary" id="htp-summary"></p>
         </div>
-
         <div class="lobby-card">
             <div class="input-group">
                 <label class="input-label" for="player-name">Your Name</label>
                 <input type="text" id="player-name" class="input-field" placeholder="Loading..." maxlength="20" autocomplete="off">
                 <p class="input-hint" id="name-hint">Loading...</p>
-                <div class="name-preview" id="name-preview" style="display: none;">
-                    <div class="name-preview-label">Display Name</div>
-                    <div class="name-preview-value" id="name-preview-value">Name</div>
-                </div>
             </div>
-
             <button class="btn btn-primary" id="btn-create" onclick="createRoom()">Create Room</button>
-
-            <div class="divider">
-                <div class="divider-line"></div>
-                <span class="divider-text">Or Join</span>
-                <div class="divider-line"></div>
-            </div>
-
+            <div class="divider"><div class="divider-line"></div><span class="divider-text">Or Join</span><div class="divider-line"></div></div>
             <div class="input-group">
                 <label class="input-label" for="room-code">Room Code</label>
                 <input type="text" id="room-code" class="input-field room-code-input" placeholder="ABC123" maxlength="6" autocomplete="off">
             </div>
-
             <button class="btn btn-secondary" id="btn-join" onclick="joinRoom()">Join Room</button>
-
             <div class="message error" id="error-message"></div>
             <div class="message success" id="success-message"></div>
         </div>
     </div>
 </main>
-
 <div class="modal-overlay" id="rules-modal">
     <div class="modal">
         <div class="modal-header">
             <h2 class="modal-title" id="modal-title">How to Play</h2>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <button class="modal-close" onclick="closeModal()">×</button>
         </div>
         <div class="modal-body" id="modal-body"></div>
-        <div class="modal-footer">
-            <button class="modal-btn" onclick="closeModal()">Got It</button>
-        </div>
+        <div class="modal-footer"><button class="modal-btn" onclick="closeModal()">Got It</button></div>
     </div>
 </div>
-
 <footer>
     <div class="footer-border"></div>
     <div class="footer-main">
         <div class="footer-links">
-            <div class="footer-column">
-                <h5>GAMES</h5>
-                <ul>
-                    <li><a href="/solo.html">Solo</a></li>
-                    <li><a href="/squad-games.html">Squad</a></li>
-                    <li><a href="/party-games.html">Party</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h5>COMMUNITY</h5>
-                <ul>
-                    <li><a href="/leaderboards.html">Leaderboards</a></li>
-                    <li><a href="/supporters.html">Supporters</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h5>COMPANY</h5>
-                <ul>
-                    <li><a href="/about.html">About</a></li>
-                    <li><a href="/contact.html">Contact</a></li>
-                </ul>
-            </div>
+            <div class="footer-column"><h5>GAMES</h5><ul><li><a href="/solo">Solo</a></li><li><a href="/squad-games.html">Squad</a></li><li><a href="/party">Party</a></li></ul></div>
+            <div class="footer-column"><h5>COMMUNITY</h5><ul><li><a href="/leaderboards">Leaderboards</a></li><li><a href="/supporters">Supporters</a></li></ul></div>
+            <div class="footer-column"><h5>COMPANY</h5><ul><li><a href="/about">About</a></li><li><a href="/contact">Contact</a></li></ul></div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal">
-                <a href="/privacy.html">Privacy</a>
-                <a href="/terms.html">Terms</a>
-            </div>
+            <p class="footer-copyright">© 2025 TheGaming.co</p>
+            <div class="footer-legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div>
         </div>
     </div>
 </footer>
-
 <script>
-    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-    
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ========== ALL GAMES ==========
-    const GAMES = {
-        // ==================== DECEPTION & DEDUCTION ====================
-        'spyfall': {
-            displayName: 'SPY HUNT',
-            backendType: 'spyfall',
-            theme: 'theme-spyfall',
-            tagline: 'Trust No One',
-            players: '4-20 Players',
-            minPlayers: 4,
-            maxPlayers: 20,
-            icon: 'spy',
-            summary: 'One player is secretly the Spy. Everyone else knows the location. Ask questions to find the Spy — but don\'t reveal the location!',
-            howToPlay: `<h3>The Setup</h3><p>One player is randomly chosen as the <strong>Spy</strong>. Everyone else sees a secret location and their role at that location.</p><h3>How to Play</h3><p>Players take turns asking each other questions to identify the Spy without revealing the location.</p><h3>Winning</h3><ul><li><strong>Players win</strong> by correctly voting out the Spy</li><li><strong>Spy wins</strong> by guessing the location OR surviving the vote</li></ul>`
-        },
-        'avalon': {
-            displayName: 'SECRET ROLES',
-            backendType: 'avalon',
-            theme: 'theme-avalon',
-            tagline: 'Loyalty & Betrayal',
-            players: '5-15 Players',
-            minPlayers: 5,
-            maxPlayers: 15,
-            icon: 'crown',
-            summary: 'Knights vs traitors in King Arthur\'s court. Vote on quests, debate loyalties, and uncover the hidden evil.',
-            howToPlay: `<h3>The Setup</h3><p>Players are secretly assigned to either the <strong>Loyal Servants of Arthur</strong> or the <strong>Minions of Mordred</strong>.</p><h3>Winning</h3><ul><li><strong>Good wins</strong> if 3 quests succeed</li><li><strong>Evil wins</strong> if 3 quests fail OR Assassin kills Merlin</li></ul>`
-        },
-        'werewolf': {
-            displayName: 'MAFIA',
-            backendType: 'werewolf',
-            theme: 'theme-werewolf',
-            tagline: 'Survive The Night',
-            players: '6-20 Players',
-            minPlayers: 6,
-            maxPlayers: 20,
-            summary: 'Villagers hunt the killers by day while the mafia strikes by night. Who can you trust?',
-            howToPlay: `<h3>Roles</h3><ul><li><strong>Mafia</strong> — Eliminate one villager each night</li><li><strong>Seer</strong> — Check one player's identity each night</li><li><strong>Doctor</strong> — Protect one player each night</li></ul>`
-        },
-        'imposter': {
-            displayName: 'IMPOSTER',
-            backendType: 'imposter',
-            theme: 'theme-imposter',
-            tagline: 'Blend In Or Be Found',
-            players: '4-10 Players',
-            minPlayers: 4,
-            maxPlayers: 10,
-            summary: 'Everyone knows the secret word except one player. Give subtle clues to find the imposter!',
-            howToPlay: `<h3>The Setup</h3><p>Everyone except the <strong>Imposter</strong> sees a secret word. The Imposter must figure out the word while blending in.</p>`
-        },
-        'fake-artist': {
-            displayName: 'FAKE ARTIST',
-            backendType: 'fake-artist',
-            theme: 'theme-fake-artist',
-            tagline: 'Draw Together. Trust No Brush.',
-            players: '4-10 Players',
-            minPlayers: 4,
-            maxPlayers: 10,
-            summary: 'Everyone draws the same thing — except the Fake Artist who doesn\'t know what it is!',
-            howToPlay: `<h3>Drawing</h3><ul><li>Players take turns adding ONE stroke to the drawing</li><li>The Fake Artist must blend in without knowing the subject</li></ul>`
-        },
-        'insider': {
-            displayName: 'INSIDER',
-            backendType: 'insider',
-            theme: 'theme-insider',
-            tagline: 'The Secret Guide',
-            players: '4-8 Players',
-            minPlayers: 4,
-            maxPlayers: 8,
-            summary: 'Play 20 Questions with a twist — one player secretly knows the answer and subtly guides the group.',
-            howToPlay: `<h3>The Setup</h3><p>One player is the <strong>Master</strong> who knows the word. Another is the secret <strong>Insider</strong> who also knows it.</p>`
-        },
-        'power-struggle': {
-            displayName: 'POWER STRUGGLE',
-            backendType: 'power-struggle',
-            theme: 'theme-power-struggle',
-            tagline: 'Bluff Your Way Up',
-            players: '3-10 Players',
-            minPlayers: 3,
-            maxPlayers: 10,
-            summary: 'Bluff, bribe, and backstab your way to corporate dominance. Claim powerful roles and be the last standing!',
-            howToPlay: `<h3>The Setup</h3><p>Each player starts with 2 role cards and 2 coins.</p><h3>Actions</h3><ul><li><strong>Income</strong> — Take 1 coin</li><li><strong>Foreign Aid</strong> — Take 2 coins (blockable)</li><li><strong>Coup</strong> — Pay 7 coins to eliminate</li><li><strong>Use Role Power</strong> — Claim any role (bluff allowed!)</li></ul><h3>Challenging</h3><p>Anyone can call your bluff. Wrong challenger loses a card. Caught bluffer loses a card.</p>`
-        },
-        // ==================== WORD & TEAM GAMES ====================
-        'codenames': {
-            displayName: 'CODEWORDS',
-            backendType: 'codenames',
-            theme: 'theme-codenames',
-            tagline: 'Give Clues. Find Agents.',
-            players: '4-16 Players',
-            minPlayers: 4,
-            maxPlayers: 16,
-            summary: 'Two spymasters give one-word clues to help teammates find their agents. Just don\'t hit the assassin!',
-            howToPlay: `<h3>Teams</h3><p>Split into two teams. Each team has one Spymaster and the rest are Operatives.</p>`
-        },
-        'categories': {
-            displayName: 'CATEGORIES',
-            backendType: 'categories',
-            theme: 'theme-categories',
-            tagline: 'Think Fast',
-            players: '2-20 Players',
-            minPlayers: 2,
-            maxPlayers: 20,
-            summary: 'A category appears and everyone races to type a valid answer. First to answer scores!',
-            howToPlay: `<h3>The Game</h3><p>Each round, a category appears. Race to type a valid answer first!</p>`
-        },
-        'word-association': {
-            displayName: 'WORD ASSOCIATION',
-            backendType: 'word-association',
-            theme: 'theme-word-association',
-            tagline: 'Chain Reaction',
-            players: '3-12 Players',
-            minPlayers: 3,
-            maxPlayers: 12,
-            summary: 'Say a word related to the previous one! Hesitate and you\'re out!',
-            howToPlay: `<h3>The Game</h3><p>Players take turns saying words related to the previous word.</p>`
-        },
-        'wavelength': {
-            displayName: 'SPECTRUM',
-            backendType: 'wavelength',
-            theme: 'theme-wavelength',
-            tagline: 'Find The Target',
-            players: '4-12 Players',
-            minPlayers: 4,
-            maxPlayers: 12,
-            summary: 'One player knows where the target is on a spectrum. Give a clue to help your team guess!',
-            howToPlay: `<h3>The Setup</h3><p>A spectrum appears with two opposites. A hidden target is placed somewhere on the spectrum.</p>`
-        },
-        'herd-mentality': {
-            displayName: 'THINK ALIKE',
-            backendType: 'herd-mentality',
-            theme: 'theme-herd-mentality',
-            tagline: 'Think Like Everyone Else',
-            players: '4-20 Players',
-            minPlayers: 4,
-            maxPlayers: 20,
-            summary: 'Answer questions to match the majority. Be unique and you\'re stuck with the Pink Cow!',
-            howToPlay: `<h3>The Game</h3><p>Each round, everyone answers the same question secretly. Match the majority to score!</p>`
-        },
-        'word-bomb': {
-            displayName: 'WORD BOMB',
-            backendType: 'word-bomb',
-            theme: 'theme-word-bomb',
-            tagline: 'Think Fast',
-            players: '2-16 Players',
-            minPlayers: 2,
-            maxPlayers: 16,
-            summary: 'Type a word containing the given letters before the bomb explodes!',
-            howToPlay: `<h3>The Game</h3><p>Type a valid word containing the given letter combination before time runs out.</p>`
-        },
-        'npat': {
-            displayName: 'NAME PLACE ANIMAL THING',
-            backendType: 'npat',
-            theme: 'theme-npat',
-            tagline: 'Race The Clock',
-            players: '2-20 Players',
-            minPlayers: 2,
-            maxPlayers: 20,
-            summary: 'A random letter appears — race to fill Name, Place, Animal, Thing before time runs out!',
-            howToPlay: `<h3>The Game</h3><p>Fill in words starting with the random letter for each category!</p>`
-        },
-        // ==================== DRAWING & WRITING ====================
-        'punchline': {
-            displayName: 'PUNCHLINE',
-            backendType: 'punchline',
-            theme: 'theme-punchline',
-            tagline: 'Write The Funny',
-            players: '3-16 Players',
-            minPlayers: 3,
-            maxPlayers: 16,
-            summary: 'Write the funniest answer to absurd prompts. Everyone votes, best punchline wins!',
-            howToPlay: `<h3>The Game</h3><p>Each round shows a prompt. Everyone writes their funniest answer.</p><h3>Voting</h3><p>All answers shown anonymously. Vote for your favorite!</p>`
-        },
-        'fools-gold': {
-            displayName: 'FOOLS GOLD',
-            backendType: 'fools-gold',
-            theme: 'theme-fools-gold',
-            tagline: 'Lie Your Way to Victory',
-            players: '3-12 Players',
-            minPlayers: 3,
-            maxPlayers: 12,
-            summary: 'Fill in the blank with a convincing lie! Fool others to score, or spot the truth to win big.',
-            howToPlay: `<h3>The Game</h3><p>Each round shows a trivia fact with a blank. Everyone writes a fake answer — except the truth is also hidden among the options!</p><h3>Scoring</h3><ul><li><strong>Fool Someone</strong> — 100 points per player fooled</li><li><strong>Find the Truth</strong> — 200 points</li></ul>`
-        },
-        'broken-pictionary': {
-            displayName: 'BROKEN PICTIONARY',
-            backendType: 'broken-pictionary',
-            theme: 'theme-broken-pictionary',
-            tagline: 'Draw. Guess. Repeat.',
-            players: '4-16 Players',
-            minPlayers: 4,
-            maxPlayers: 16,
-            summary: 'Draw, guess, repeat — watch your phrase transform through hilarious chains!',
-            howToPlay: `<h3>The Chain</h3><p>Start with a phrase → Draw it → Next person guesses → They draw their guess → Repeat!</p><h3>The Reveal</h3><p>See how "Birthday Party" became "Sad Clown Funeral"</p>`
-        },
-        'doodle-duel': {
-            displayName: 'DOODLE DUEL',
-            backendType: 'doodle-duel',
-            theme: 'theme-doodle-duel',
-            tagline: 'Draw & Deceive',
-            players: '3-12 Players',
-            minPlayers: 3,
-            maxPlayers: 12,
-            summary: 'Draw absurd prompts, others make up fake titles. Vote for the real answer!',
-            howToPlay: `<h3>Drawing</h3><p>One player draws a secret prompt.</p><h3>Faking</h3><p>Everyone else writes a fake title.</p><h3>Voting</h3><p>All titles shown — vote for the REAL one!</p>`
-        },
-        'two-truths': {
-            displayName: 'TWO TRUTHS',
-            backendType: 'two-truths',
-            theme: 'theme-two-truths',
-            tagline: 'Spot The Lie',
-            players: '3-16 Players',
-            minPlayers: 3,
-            maxPlayers: 16,
-            summary: 'Write two truths and one lie about yourself. Others vote on which is fake!',
-            howToPlay: `<h3>Writing</h3><p>Write 2 true statements and 1 lie about yourself.</p><h3>Voting</h3><p>Others try to spot your lie!</p>`
-        },
-        'sketch-guess': {
-            displayName: 'SKETCH & GUESS',
-            backendType: 'sketch-guess',
-            theme: 'theme-sketch-guess',
-            tagline: 'Draw & Guess',
-            players: '3-20 Players',
-            minPlayers: 3,
-            maxPlayers: 20,
-            summary: 'One player draws while others guess the word! Fast guessing = more points.',
-            howToPlay: '<h3>Play</h3><p>One player draws, others guess!</p><h3>Scoring</h3><ul><li>Guesser: Faster = more points</li><li>Drawer: Points per correct guess</li></ul>'
-        },
-        // ==================== PARTY & PERFORMANCE ====================
-        'charades': {
-            displayName: 'CHARADES',
-            backendType: 'charades',
-            theme: 'theme-charades',
-            tagline: 'Act It Out',
-            players: '4-20 Players',
-            minPlayers: 4,
-            maxPlayers: 20,
-            summary: 'Act out words or phrases without speaking. Your team races to guess!',
-            howToPlay: `<h3>Acting Rules</h3><ul><li>No speaking, sounds, or lip movements</li><li>Use gestures and body language</li></ul>`
-        },
-        'celebrity': {
-            displayName: 'CELEBRITY',
-            backendType: 'celebrity',
-            theme: 'theme-celebrity',
-            tagline: 'Three Rounds of Mayhem',
-            players: '4-16 Players',
-            minPlayers: 4,
-            maxPlayers: 16,
-            summary: 'Guess names through three rounds: describe freely, use one word, then act it out!',
-            howToPlay: `<h3>Rounds</h3><p>Round 1: Describe. Round 2: One Word. Round 3: Charades!</p>`
-        },
-        'fishbowl': {
-            displayName: 'FISHBOWL',
-            backendType: 'fishbowl',
-            theme: 'theme-fishbowl',
-            tagline: 'Three Games In One',
-            players: '6-20 Players',
-            minPlayers: 6,
-            maxPlayers: 20,
-            summary: 'Teams race through three rounds: Taboo-style, one-word clues, and charades.',
-            howToPlay: `<h3>Rounds</h3><p>Taboo → Password → Charades</p>`
-        },
-        'most-likely-to': {
-            displayName: 'MOST LIKELY TO',
-            backendType: 'most-likely-to',
-            theme: 'theme-most-likely-to',
-            tagline: 'Vote On Your Friends',
-            players: '3-20 Players',
-            minPlayers: 3,
-            maxPlayers: 20,
-            summary: 'Vote on who is most likely to do hilarious scenarios. No winners, just laughs!',
-            howToPlay: `<h3>The Game</h3><p>A scenario appears. Vote for who best fits!</p>`
-        },
-        // ==================== CLASSIC BOARD GAMES ====================
-        'ludo': {
-            displayName: 'LUDO',
-            backendType: 'ludo',
-            theme: 'theme-ludo',
-            tagline: 'Race Home',
-            players: '2-6 Players',
-            minPlayers: 2,
-            maxPlayers: 6,
-            summary: 'Classic race-to-home board game! Roll dice, move pawns, get all four home first.',
-            howToPlay: `<h3>Setup</h3><p>Each player has 4 pawns in their base.</p><h3>Playing</h3><ul><li>Roll 6 to enter the board</li><li>Move clockwise around the track</li><li>Land on opponents to send them home</li><li>Get all 4 pawns to your home column to win</li></ul>`
-        },
-        // ==================== PARTY GAMES (Large Scale) ====================
-        'trivia-royale': {
-            displayName: 'TRIVIA ROYALE',
-            backendType: 'trivia-royale',
-            theme: 'theme-trivia-royale',
-            tagline: 'Battle of Brains',
-            players: '2-100 Players',
-            minPlayers: 2,
-            maxPlayers: 100,
-            isPartyGame: true,
-            summary: 'Fast-paced trivia where speed matters! Answer quickly for bonus points and build streaks.',
-            howToPlay: `<h3>The Game</h3><p>10 rounds of trivia. Faster answers = more points! Build streaks for multipliers.</p>`
-        },
-        'this-or-that-party': {
-            displayName: 'THIS OR THAT',
-            backendType: 'this-or-that-party',
-            theme: 'theme-this-or-that-party',
-            tagline: 'Pick Your Side',
-            players: '2-100 Players',
-            minPlayers: 2,
-            maxPlayers: 100,
-            isPartyGame: true,
-            summary: 'Choose between two options and see how the crowd splits! Match the majority to score.',
-            howToPlay: `<h3>The Game</h3><p>Pick one of two options. Match the majority to score!</p>`
-        },
-        'hot-takes-party': {
-            displayName: 'HOT TAKES',
-            backendType: 'hot-takes-party',
-            theme: 'theme-hot-takes-party',
-            tagline: 'Controversial Opinions',
-            players: '2-100 Players',
-            minPlayers: 2,
-            maxPlayers: 100,
-            isPartyGame: true,
-            summary: 'Rate spicy statements from 1-5 and see if the crowd agrees with your hot takes!',
-            howToPlay: `<h3>The Game</h3><p>Rate statements 1-5. Match the average to score!</p>`
-        },
-        'never-ever-party': {
-            displayName: 'NEVER HAVE I EVER',
-            backendType: 'never-ever-party',
-            theme: 'theme-never-ever-party',
-            tagline: 'Confess or Deny',
-            players: '2-100 Players',
-            minPlayers: 2,
-            maxPlayers: 100,
-            isPartyGame: true,
-            summary: 'Have you done it? Vote honestly and see what percentage of the crowd shares your experience!',
-            howToPlay: `<h3>The Game</h3><p>Vote HAVE or HAVE NOT. Minority experiences score more!</p>`
-        },
-        'bet-or-bluff': {
-            displayName: 'BET OR BLUFF',
-            backendType: 'bet-or-bluff',
-            theme: 'theme-bet-or-bluff',
-            tagline: 'Risk It All',
-            players: '2-100 Players',
-            minPlayers: 2,
-            maxPlayers: 100,
-            isPartyGame: true,
-            summary: 'Answer trivia then bet on whether others got it right! High risk, high reward.',
-            howToPlay: `<h3>The Game</h3><p>Answer trivia, then bet on the results. Strategic betting wins!</p>`
-        }
-    };
+const ICONS = {
+    spy: '<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="28" r="16" stroke="currentColor" stroke-width="2.5"/><path d="M24 28h32" stroke="currentColor" stroke-width="2.5"/><ellipse cx="40" cy="28" rx="7" ry="4" fill="currentColor" opacity="0.3"/><circle cx="40" cy="28" r="3" fill="currentColor"/><path d="M40 44v6M34 68c0-8 2.5-12 6-12s6 4 6 12" stroke="currentColor" stroke-width="2.5"/></svg>',
+    crown: '<svg viewBox="0 0 80 80" fill="none"><path d="M12 52l12-28 16 16 16-16 12 28H12z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.15"/><circle cx="12" cy="24" r="5" fill="currentColor"/><circle cx="40" cy="12" r="5" fill="currentColor"/><circle cx="68" cy="24" r="5" fill="currentColor"/></svg>',
+    moon: '<svg viewBox="0 0 80 80" fill="none"><path d="M52 12c-18 0-32 14-32 32s14 32 32 32c4 0 7-.5 10-1.5-8-6-13-16-13-26.5s5-20.5 13-26.5c-3-1-6-1.5-10-1.5z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.15"/></svg>',
+    alert: '<svg viewBox="0 0 80 80" fill="none"><path d="M40 10L70 65H10L40 10z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.15"/><line x1="40" y1="28" x2="40" y2="45" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="54" r="3" fill="currentColor"/></svg>',
+    palette: '<svg viewBox="0 0 80 80" fill="none"><ellipse cx="40" cy="44" rx="30" ry="26" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><circle cx="28" cy="36" r="6" fill="currentColor" opacity="0.7"/><circle cx="44" cy="30" r="5" fill="currentColor" opacity="0.5"/><circle cx="56" cy="40" r="5" fill="currentColor" opacity="0.6"/></svg>',
+    grid: '<svg viewBox="0 0 80 80" fill="none"><rect x="10" y="10" width="26" height="26" rx="4" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.2"/><rect x="44" y="10" width="26" height="26" rx="4" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><rect x="10" y="44" width="26" height="26" rx="4" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><rect x="44" y="44" width="26" height="26" rx="4" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.15"/></svg>',
+    spectrum: '<svg viewBox="0 0 80 80" fill="none"><rect x="8" y="32" width="64" height="16" rx="8" stroke="currentColor" stroke-width="2.5"/><rect x="12" y="36" width="56" height="8" rx="4" fill="currentColor" fill-opacity="0.3"/><circle cx="48" cy="40" r="10" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.4"/></svg>',
+    users: '<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="26" r="14" stroke="currentColor" stroke-width="2.5"/><path d="M16 68c0-14 10-22 24-22s24 8 24 22" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/></svg>',
+    bomb: '<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="48" r="24" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.15"/><path d="M40 24v-10M34 18l6-6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
+    lightning: '<svg viewBox="0 0 80 80" fill="none"><path d="M46 8L22 42h18L34 72 58 38H40L46 8z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.2"/></svg>',
+    theater: '<svg viewBox="0 0 80 80" fill="none"><circle cx="26" cy="36" r="20" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><circle cx="54" cy="36" r="20" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><path d="M16 42c0 6 4 10 10 10s10-4 10-10" stroke="currentColor" stroke-width="2.5"/><path d="M44 32c0-4 4-6 10-6s10 2 10 6" stroke="currentColor" stroke-width="2.5"/></svg>',
+    star: '<svg viewBox="0 0 80 80" fill="none"><path d="M40 8l10 22 24 2-18 16 5 24-21-12-21 12 5-24-18-16 24-2z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.2"/></svg>',
+    fish: '<svg viewBox="0 0 80 80" fill="none"><ellipse cx="36" cy="40" rx="28" ry="20" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><path d="M64 40c10-12 10 24 0 12" stroke="currentColor" stroke-width="2.5"/><circle cx="22" cy="38" r="4" fill="currentColor"/></svg>',
+    pencil: '<svg viewBox="0 0 80 80" fill="none"><path d="M56 12L68 24 28 64H16V52L56 12z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><path d="M50 18l12 12" stroke="currentColor" stroke-width="2.5"/></svg>',
+    gold: '<svg viewBox="0 0 80 80" fill="none"><path d="M22 52h36l6-18H16l6 18z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.2"/><circle cx="40" cy="26" r="10" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.3"/></svg>',
+    cards: '<svg viewBox="0 0 80 80" fill="none"><rect x="16" y="12" width="32" height="46" rx="4" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1" transform="rotate(-12 32 35)"/><rect x="32" y="18" width="32" height="46" rx="4" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.2" transform="rotate(8 48 41)"/></svg>',
+    laugh: '<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="28" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><circle cx="28" cy="34" r="4" fill="currentColor"/><circle cx="52" cy="34" r="4" fill="currentColor"/><path d="M24 50c8 10 24 10 32 0" stroke="currentColor" stroke-width="2.5"/></svg>',
+    dice: '<svg viewBox="0 0 80 80" fill="none"><rect x="14" y="14" width="52" height="52" rx="8" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><circle cx="28" cy="28" r="5" fill="currentColor"/><circle cx="52" cy="28" r="5" fill="currentColor"/><circle cx="40" cy="40" r="5" fill="currentColor"/><circle cx="28" cy="52" r="5" fill="currentColor"/><circle cx="52" cy="52" r="5" fill="currentColor"/></svg>',
+    question: '<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="28" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><path d="M30 30c0-8 5-12 12-12s12 4 12 12c0 6-5 8-8 10-2 2-4 4-4 6v3" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="40" cy="58" r="3.5" fill="currentColor"/></svg>',
+    chain: '<svg viewBox="0 0 80 80" fill="none"><ellipse cx="26" cy="40" rx="16" ry="12" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><ellipse cx="54" cy="40" rx="16" ry="12" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><path d="M36 40h8" stroke="currentColor" stroke-width="5"/></svg>',
+    fire: '<svg viewBox="0 0 80 80" fill="none"><path d="M40 12c-4 14 4 20 0 32-3 10-14 14-14 24 0 7 9 11 14 9-3-5-2-9 3-14 5 7 11 9 11 16 5-3 9-9 9-18 0-14-9-18-9-32-5 9-14 5-14-17z" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.2"/></svg>',
+    brain: '<svg viewBox="0 0 80 80" fill="none"><circle cx="24" cy="28" r="14" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><circle cx="56" cy="28" r="14" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><circle cx="40" cy="22" r="12" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.15"/></svg>',
+    pointing: '<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="28" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/><path d="M40 22v24M28 34l12-12 12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="40" cy="56" r="4" fill="currentColor"/></svg>'
+};
 
-    // Random names
-    const ADJECTIVES = ['Swift', 'Clever', 'Bold', 'Silent', 'Quick', 'Sly', 'Sharp', 'Cool', 'Wild', 'Rapid', 'Sneaky', 'Mighty', 'Lucky', 'Epic', 'Shadow'];
-    const NOUNS = ['Fox', 'Wolf', 'Eagle', 'Tiger', 'Hawk', 'Bear', 'Lion', 'Shark', 'Falcon', 'Panther', 'Dragon', 'Phoenix', 'Viper', 'Raven', 'Ghost'];
-    
-    function generateRandomName() {
-        const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-        const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-        const num = Math.floor(Math.random() * 99) + 1;
-        return `${adj}${noun}${num}`;
-    }
+const GAMES = {
+    'spyfall': { displayName: 'SPY HUNT', backendType: 'spyfall', theme: 'theme-spyfall', tagline: 'Trust No One', players: '4-20 Players', icon: 'spy', summary: 'One player is the Spy who does not know the location. Ask questions to find them!', howToPlay: '<h3>Setup</h3><p>One player is the <strong>Spy</strong>. Everyone else knows the location.</p><h3>Win</h3><ul><li>Players: Vote out the Spy</li><li>Spy: Guess the location</li></ul>' },
+    'avalon': { displayName: 'SECRET ROLES', backendType: 'avalon', theme: 'theme-avalon', tagline: 'Loyalty & Betrayal', players: '5-15 Players', icon: 'crown', summary: 'Knights vs traitors. Vote on quests and uncover the hidden evil.', howToPlay: '<h3>Teams</h3><p>Good vs Evil.</p><h3>Win</h3><ul><li>Good: 3 successful quests</li><li>Evil: 3 failed quests</li></ul>' },
+    'werewolf': { displayName: 'MAFIA', backendType: 'werewolf', theme: 'theme-werewolf', tagline: 'Survive The Night', players: '6-20 Players', icon: 'moon', summary: 'Villagers hunt killers by day. Mafia strikes by night.', howToPlay: '<h3>Roles</h3><ul><li><strong>Mafia</strong>: Eliminate villagers</li><li><strong>Seer</strong>: Check identities</li></ul>' },
+    'imposter': { displayName: 'IMPOSTER', backendType: 'imposter', theme: 'theme-imposter', tagline: 'Blend In Or Be Found', players: '4-10 Players', icon: 'alert', summary: 'Everyone knows the word except one. Find the imposter!', howToPlay: '<h3>Game</h3><p>Give clues without revealing the word to the Imposter!</p>' },
+    'fake-artist': { displayName: 'FAKE ARTIST', backendType: 'fake-artist', theme: 'theme-fake-artist', tagline: 'Draw Together', players: '4-10 Players', icon: 'palette', summary: 'Everyone draws the same thing except the Fake Artist!', howToPlay: '<h3>Rules</h3><p>Add ONE stroke per turn.</p>' },
+    'insider': { displayName: 'INSIDER', backendType: 'insider', theme: 'theme-insider', tagline: 'The Secret Guide', players: '4-8 Players', icon: 'question', summary: '20 Questions with a twist.', howToPlay: '<h3>Roles</h3><p>One player secretly knows the answer.</p>' },
+    'power-struggle': { displayName: 'POWER STRUGGLE', backendType: 'power-struggle', theme: 'theme-power-struggle', tagline: 'Bluff Your Way Up', players: '3-10 Players', icon: 'cards', summary: 'Bluff and backstab to win!', howToPlay: '<h3>Actions</h3><p>Income, Coup, Bluff roles!</p>' },
+    'codenames': { displayName: 'CODEWORDS', backendType: 'codenames', theme: 'theme-codenames', tagline: 'Give Clues', players: '4-16 Players', icon: 'grid', summary: 'Spymasters give one-word clues.', howToPlay: '<h3>Teams</h3><p>Spymasters give clues, others guess.</p>' },
+    'wavelength': { displayName: 'SPECTRUM', backendType: 'wavelength', theme: 'theme-wavelength', tagline: 'Find The Target', players: '4-12 Players', icon: 'spectrum', summary: 'Find the hidden target on a spectrum.', howToPlay: '<h3>Game</h3><p>Give clues for the target position!</p>' },
+    'herd-mentality': { displayName: 'THINK ALIKE', backendType: 'herd-mentality', theme: 'theme-herd-mentality', tagline: 'Match The Crowd', players: '4-20 Players', icon: 'users', summary: 'Match the majority to score!', howToPlay: '<h3>Scoring</h3><p>Match majority = points!</p>' },
+    'word-bomb': { displayName: 'WORD BOMB', backendType: 'word-bomb', theme: 'theme-word-bomb', tagline: 'Think Fast', players: '2-16 Players', icon: 'bomb', summary: 'Type a word before the bomb explodes!', howToPlay: '<h3>Speed</h3><p>Type fast or lose!</p>' },
+    'categories': { displayName: 'CATEGORIES', backendType: 'categories', theme: 'theme-categories', tagline: 'Race to Answer', players: '2-20 Players', icon: 'lightning', summary: 'Race to type a valid answer first!', howToPlay: '<h3>Speed</h3><p>First answer wins!</p>' },
+    'npat': { displayName: 'NAME PLACE ANIMAL THING', backendType: 'npat', theme: 'theme-npat', tagline: 'Race The Clock', players: '2-20 Players', icon: 'lightning', summary: 'Fill categories with a random letter!', howToPlay: '<h3>Categories</h3><p>Name, Place, Animal, Thing!</p>' },
+    'word-association': { displayName: 'WORD ASSOCIATION', backendType: 'word-association', theme: 'theme-word-association', tagline: 'Chain Reaction', players: '3-12 Players', icon: 'chain', summary: 'Say a related word or lose!', howToPlay: '<h3>Chain</h3><p>Each word relates to the last.</p>' },
+    'charades': { displayName: 'CHARADES', backendType: 'charades', theme: 'theme-charades', tagline: 'Act It Out', players: '4-20 Players', icon: 'theater', summary: 'Act without speaking!', howToPlay: '<h3>Rules</h3><p>No speaking! Gestures only.</p>' },
+    'celebrity': { displayName: 'CELEBRITY', backendType: 'celebrity', theme: 'theme-celebrity', tagline: 'Three Rounds', players: '4-16 Players', icon: 'star', summary: 'Describe, one word, then act!', howToPlay: '<h3>Rounds</h3><p>1: Describe. 2: One Word. 3: Act!</p>' },
+    'fishbowl': { displayName: 'FISHBOWL', backendType: 'fishbowl', theme: 'theme-fishbowl', tagline: 'Three Games In One', players: '6-20 Players', icon: 'fish', summary: 'Taboo, One Word, Charades!', howToPlay: '<h3>Rounds</h3><p>Same words, three ways!</p>' },
+    'most-likely-to': { displayName: 'MOST LIKELY TO', backendType: 'most-likely-to', theme: 'theme-most-likely-to', tagline: 'Vote On Friends', players: '3-20 Players', icon: 'pointing', summary: 'Vote on who fits the scenario!', howToPlay: '<h3>Voting</h3><p>Who is most likely to...?</p>' },
+    'sketch-guess': { displayName: 'SKETCH & GUESS', backendType: 'sketch-guess', theme: 'theme-sketch-guess', tagline: 'Draw & Guess', players: '3-20 Players', icon: 'pencil', summary: 'Draw it, guess it!', howToPlay: '<h3>Scoring</h3><p>Faster = more points!</p>' },
+    'fools-gold': { displayName: 'FOOLS GOLD', backendType: 'fools-gold', theme: 'theme-fools-gold', tagline: 'Lie To Win', players: '3-12 Players', icon: 'gold', summary: 'Write convincing lies!', howToPlay: '<h3>Bluffing</h3><p>Trick others to score!</p>' },
+    'punchline': { displayName: 'PUNCHLINE', backendType: 'punchline', theme: 'theme-punchline', tagline: 'Write The Funny', players: '3-16 Players', icon: 'laugh', summary: 'Funniest answer wins!', howToPlay: '<h3>Comedy</h3><p>Write and vote!</p>' },
+    'broken-pictionary': { displayName: 'BROKEN PICTIONARY', backendType: 'broken-pictionary', theme: 'theme-broken-pictionary', tagline: 'Draw Guess Repeat', players: '4-16 Players', icon: 'pencil', summary: 'Watch phrases transform!', howToPlay: '<h3>Chain</h3><p>Draw, Guess, Repeat!</p>' },
+    'doodle-duel': { displayName: 'DOODLE DUEL', backendType: 'doodle-duel', theme: 'theme-doodle-duel', tagline: 'Draw & Deceive', players: '3-12 Players', icon: 'pencil', summary: 'Fake titles, spot the real one!', howToPlay: '<h3>Bluffing</h3><p>Write fake titles!</p>' },
+    'two-truths': { displayName: 'TWO TRUTHS', backendType: 'two-truths', theme: 'theme-two-truths', tagline: 'Spot The Lie', players: '3-16 Players', icon: 'question', summary: 'Two truths, one lie!', howToPlay: '<h3>Deception</h3><p>Make truths unbelievable!</p>' },
+    'ludo': { displayName: 'LUDO', backendType: 'ludo', theme: 'theme-ludo', tagline: 'Race Home', players: '2-6 Players', icon: 'dice', summary: 'Classic board game!', howToPlay: '<h3>Rules</h3><p>Roll 6 to start!</p>' },
+    'trivia-royale': { displayName: 'TRIVIA ROYALE', backendType: 'trivia-royale', theme: 'theme-trivia-royale', tagline: 'Battle of Brains', players: '2-100 Players', icon: 'brain', summary: 'Fast trivia!', howToPlay: '<h3>Speed</h3><p>Faster = more points!</p>' },
+    'this-or-that-party': { displayName: 'THIS OR THAT', backendType: 'this-or-that-party', theme: 'theme-this-or-that-party', tagline: 'Pick Your Side', players: '2-100 Players', icon: 'question', summary: 'Match the majority!', howToPlay: '<h3>Voting</h3><p>Match majority to score!</p>' },
+    'hot-takes-party': { displayName: 'HOT TAKES', backendType: 'hot-takes-party', theme: 'theme-hot-takes-party', tagline: 'Spicy Opinions', players: '2-100 Players', icon: 'fire', summary: 'Rate spicy statements!', howToPlay: '<h3>Rating</h3><p>Match average to score!</p>' },
+    'never-ever-party': { displayName: 'NEVER HAVE I EVER', backendType: 'never-ever-party', theme: 'theme-never-ever-party', tagline: 'Confess or Deny', players: '2-100 Players', icon: 'question', summary: 'Rare experiences score more!', howToPlay: '<h3>Confess</h3><p>Minority = more points!</p>' },
+    'bet-or-bluff': { displayName: 'BET OR BLUFF', backendType: 'bet-or-bluff', theme: 'theme-bet-or-bluff', tagline: 'Risk It All', players: '2-100 Players', icon: 'cards', summary: 'Answer trivia, bet on results!', howToPlay: '<h3>Betting</h3><p>Strategic betting wins!</p>' }
+};
 
-    // Get game from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const gameId = urlParams.get('game') || 'spyfall';
-    const joinCode = urlParams.get('join');
-    const currentGame = GAMES[gameId] || GAMES['spyfall'];
-    
-    // Apply theme
-    document.body.className = currentGame.theme;
+var urlParams = new URLSearchParams(window.location.search);
+var gameId = urlParams.get('game') || 'spyfall';
+var joinCode = urlParams.get('join');
+var currentGame = GAMES[gameId] || GAMES['spyfall'];
 
-    // Update page
-    document.getElementById('game-title').textContent = currentGame.displayName;
-    document.getElementById('game-tagline').textContent = currentGame.tagline;
-    document.getElementById('game-players').textContent = currentGame.players;
-    document.getElementById('htp-summary').textContent = currentGame.summary;
-    document.getElementById('modal-title').textContent = `How to Play ${currentGame.displayName}`;
-    document.getElementById('modal-body').innerHTML = currentGame.howToPlay;
-    document.title = `${currentGame.displayName} - TheGaming.co`;
+document.body.className = currentGame.theme;
+document.getElementById('game-title').textContent = currentGame.displayName;
+document.getElementById('game-tagline').textContent = currentGame.tagline;
+document.getElementById('game-players').textContent = currentGame.players;
+document.getElementById('htp-summary').textContent = currentGame.summary;
+document.getElementById('modal-title').textContent = 'How to Play ' + currentGame.displayName;
+document.getElementById('modal-body').innerHTML = currentGame.howToPlay;
+document.getElementById('game-icon').innerHTML = ICONS[currentGame.icon] || ICONS.question;
+document.title = currentGame.displayName + ' - TheGaming.co';
 
-    if (joinCode) document.getElementById('room-code').value = joinCode.toUpperCase();
+if (joinCode) document.getElementById('room-code').value = joinCode.toUpperCase();
 
-    // Socket
-    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+var socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+var currentUser = null, userProfile = null, isPremium = false;
+var nameInput = document.getElementById('player-name');
+var nameHint = document.getElementById('name-hint');
+var ADJECTIVES = ['Swift','Clever','Bold','Silent','Quick','Sly','Sharp','Cool','Wild','Rapid'];
+var NOUNS = ['Fox','Wolf','Eagle','Tiger','Hawk','Bear','Lion','Shark','Falcon','Panther'];
 
-    // State
-    let currentUser = null;
-    let userProfile = null;
-    let isPremium = false;
+function generateRandomName() {
+    return ADJECTIVES[Math.floor(Math.random()*ADJECTIVES.length)] + NOUNS[Math.floor(Math.random()*NOUNS.length)] + (Math.floor(Math.random()*99)+1);
+}
 
-    const nameInput = document.getElementById('player-name');
-    const nameHint = document.getElementById('name-hint');
-
-    async function initAuth() {
-        const { data } = await supabaseClient.auth.getSession();
-        if (data?.session?.user) {
-            currentUser = data.session.user;
-            await loadProfile();
-            showLoggedInName();
-        } else {
-            showGuestName();
-        }
-    }
-
-    async function loadProfile() {
-        if (!currentUser) return;
-        const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('display_name, gamer_tag, account_type, cosmetics')
-            .eq('id', currentUser.id)
-            .single();
-        
-        if (profile) {
-            userProfile = profile;
-            isPremium = profile.account_type === 'premium';
-        }
-    }
-
-    function showLoggedInName() {
-        const displayName = userProfile?.display_name || userProfile?.gamer_tag || currentUser.email.split('@')[0];
-        nameInput.value = displayName;
+async function initAuth() {
+    var session = await supabaseClient.auth.getSession();
+    if (session.data && session.data.session && session.data.session.user) {
+        currentUser = session.data.session.user;
+        var profileResult = await supabaseClient.from('profiles').select('display_name, gamer_tag, account_type, cosmetics').eq('id', currentUser.id).single();
+        if (profileResult.data) { userProfile = profileResult.data; isPremium = profileResult.data.account_type === 'premium'; }
+        nameInput.value = (userProfile && userProfile.display_name) || (userProfile && userProfile.gamer_tag) || currentUser.email.split('@')[0];
         nameInput.disabled = false;
         nameInput.placeholder = 'Enter your name';
-        
-        if (isPremium) {
-            nameHint.innerHTML = 'Premium styling active';
-            showNamePreview(displayName);
-        } else {
-            nameHint.innerHTML = 'Change in <a href="/profile.html">Profile</a>';
-        }
-    }
-
-    function showGuestName() {
-        const randomName = generateRandomName();
-        nameInput.value = randomName;
+        nameHint.innerHTML = isPremium ? 'Premium styling active' : 'Change in <a href="/profile">Profile</a>';
+    } else {
+        nameInput.value = generateRandomName();
         nameInput.disabled = true;
-        nameHint.innerHTML = '<a href="/login.html">Sign in</a> to choose your name';
+        nameHint.innerHTML = '<a href="/login">Sign in</a> to choose your name';
     }
+}
 
-    function showNamePreview(name) {
-        const preview = document.getElementById('name-preview');
-        const value = document.getElementById('name-preview-value');
-        preview.style.display = 'block';
-        value.textContent = name;
-        value.className = 'name-preview-value' + (isPremium ? ' premium' : '');
-    }
+document.getElementById('room-code').addEventListener('input', function(e) { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
 
-    nameInput.addEventListener('input', () => {
-        if (isPremium && nameInput.value.trim()) showNamePreview(nameInput.value.trim());
-    });
+function showFullRules() { document.getElementById('rules-modal').classList.add('visible'); }
+function closeModal() { document.getElementById('rules-modal').classList.remove('visible'); }
+document.getElementById('rules-modal').addEventListener('click', function(e) { if (e.target.id === 'rules-modal') closeModal(); });
 
-    const roomCodeInput = document.getElementById('room-code');
-    roomCodeInput.addEventListener('input', (e) => {
-        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    });
+function createRoom() {
+    var name = nameInput.value.trim();
+    if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
+    hideMessages(); setLoading('btn-create', true);
+    localStorage.setItem('tempPlayerName', name);
+    localStorage.setItem('tempGameType', currentGame.backendType);
+    localStorage.setItem('tempGameId', gameId);
+    socket.emit('create-room', { playerName: name, gameType: currentGame.backendType, isPremium: isPremium, cosmetics: (userProfile && userProfile.cosmetics) || null, userId: currentUser ? currentUser.id : null });
+}
 
-    // Modals
-    function showFullRules() { document.getElementById('rules-modal').classList.add('visible'); }
-    function closeModal() { document.getElementById('rules-modal').classList.remove('visible'); }
-    document.getElementById('rules-modal').addEventListener('click', (e) => { if (e.target.id === 'rules-modal') closeModal(); });
+function joinRoom() {
+    var name = nameInput.value.trim();
+    var code = document.getElementById('room-code').value.trim();
+    if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
+    if (!code || code.length !== 6) { showError('Enter a 6-character room code'); return; }
+    hideMessages(); setLoading('btn-join', true);
+    localStorage.setItem('tempPlayerName', name);
+    localStorage.setItem('tempGameType', currentGame.backendType);
+    localStorage.setItem('tempGameId', gameId);
+    socket.emit('join-room', { roomCode: code, playerName: name, isPremium: isPremium, cosmetics: (userProfile && userProfile.cosmetics) || null, userId: currentUser ? currentUser.id : null });
+}
 
-    // Create/Join
-    function createRoom() {
-        const name = nameInput.value.trim();
-        if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
-        
-        hideMessages();
-        setLoading('btn-create', true);
-        
-        const cosmetics = userProfile?.cosmetics || null;
-        const userId = currentUser?.id || null;
-        
-        localStorage.setItem('tempPlayerName', name);
-        localStorage.setItem('tempGameType', currentGame.backendType);
-        localStorage.setItem('tempGameId', gameId);
-        localStorage.setItem('tempIsPremium', isPremium.toString());
-        localStorage.setItem('tempCosmetics', JSON.stringify(cosmetics));
-        localStorage.setItem('tempUserId', userId || '');
-        
-        socket.emit('create-room', { 
-            playerName: name, 
-            gameType: currentGame.backendType,
-            isPremium: isPremium,
-            cosmetics: cosmetics,
-            userId: userId
-        });
-    }
+socket.on('room-created', function(data) { showSuccess('Room created!'); setTimeout(function() { window.location.href = '/play/' + gameId + '/' + data.roomCode; }, 500); });
+socket.on('room-joined', function(data) { showSuccess('Joining...'); setTimeout(function() { window.location.href = '/play/' + gameId + '/' + data.roomCode; }, 500); });
+socket.on('error', function(data) { showError(data.message || 'Error'); setLoading('btn-create', false); setLoading('btn-join', false); });
+socket.on('join-error', function(data) { showError(data.message || 'Cannot join'); setLoading('btn-join', false); });
 
-    function joinRoom() {
-        const name = nameInput.value.trim();
-        const code = roomCodeInput.value.trim();
-        
-        if (!name || name.length < 2) { showError('Name must be at least 2 characters'); return; }
-        if (!code || code.length !== 6) { showError('Enter a valid 6-character room code'); return; }
-        
-        hideMessages();
-        setLoading('btn-join', true);
-        
-        const cosmetics = userProfile?.cosmetics || null;
-        const userId = currentUser?.id || null;
-        
-        localStorage.setItem('tempPlayerName', name);
-        localStorage.setItem('tempRoomCode', code);
-        localStorage.setItem('tempIsPremium', isPremium.toString());
-        localStorage.setItem('tempCosmetics', JSON.stringify(cosmetics));
-        localStorage.setItem('tempUserId', userId || '');
-        
-        socket.emit('join-room', { 
-            roomCode: code, 
-            playerName: name,
-            isPremium: isPremium,
-            cosmetics: cosmetics,
-            userId: userId
-        });
-    }
+function showError(msg) { var el = document.getElementById('error-message'); el.textContent = msg; el.classList.add('visible'); }
+function showSuccess(msg) { var el = document.getElementById('success-message'); el.textContent = msg; el.classList.add('visible'); }
+function hideMessages() { document.getElementById('error-message').classList.remove('visible'); document.getElementById('success-message').classList.remove('visible'); }
+function setLoading(id, loading) { var btn = document.getElementById(id); if (loading) { btn.classList.add('btn-loading'); btn.disabled = true; } else { btn.classList.remove('btn-loading'); btn.disabled = false; } }
 
-    // Socket events
-    socket.on('connect', () => console.log('Connected'));
+nameInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { document.getElementById('room-code').value.trim() ? joinRoom() : createRoom(); } });
+document.getElementById('room-code').addEventListener('keypress', function(e) { if (e.key === 'Enter') joinRoom(); });
 
-    socket.on('room-created', (data) => {
-        showSuccess(`Room created!`);
-        localStorage.setItem('tempRoomCode', data.roomCode);
-        localStorage.setItem('tempIsHost', 'true');
-        setTimeout(() => { window.location.href = `waiting-room.html?room=${data.roomCode}`; }, 300);
-    });
-
-    socket.on('room-joined', (data) => {
-        showSuccess('Joined!');
-        if (data.room?.gameType) {
-            localStorage.setItem('tempGameType', data.room.gameType);
-            const gameEntry = Object.entries(GAMES).find(([k, v]) => v.backendType === data.room.gameType);
-            if (gameEntry) localStorage.setItem('tempGameId', gameEntry[0]);
-        }
-        setTimeout(() => { window.location.href = `waiting-room.html?room=${data.roomCode}`; }, 300);
-    });
-
-    socket.on('error', (data) => { showError(data.message || 'Something went wrong'); setLoading('btn-create', false); setLoading('btn-join', false); });
-    socket.on('join-error', (data) => { showError(data.message || 'Could not join room'); setLoading('btn-join', false); });
-
-    // Helpers
-    function showError(msg) { const el = document.getElementById('error-message'); el.textContent = msg; el.classList.add('visible'); }
-    function showSuccess(msg) { const el = document.getElementById('success-message'); el.textContent = msg; el.classList.add('visible'); }
-    function hideMessages() { document.getElementById('error-message').classList.remove('visible'); document.getElementById('success-message').classList.remove('visible'); }
-    function setLoading(btnId, loading) { const btn = document.getElementById(btnId); btn.classList.toggle('btn-loading', loading); btn.disabled = loading; }
-
-    nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { roomCodeInput.value.trim() ? joinRoom() : createRoom(); } });
-    roomCodeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') joinRoom(); });
-
-    // ========== ICONS ==========
-    const ICONS = {
-        spy: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="30" r="18" stroke="currentColor" stroke-width="2"/><path d="M22 30h36" stroke="currentColor" stroke-width="2"/><ellipse cx="40" cy="30" rx="8" ry="5" fill="currentColor" opacity="0.3"/><circle cx="40" cy="30" r="3" fill="currentColor"/><path d="M40 48v8M32 70c0-8 3-14 8-14s8 6 8 14" stroke="currentColor" stroke-width="2"/></svg>`,
-        crown: `<svg viewBox="0 0 80 80" fill="none"><path d="M15 55l10-25 15 15 15-15 10 25H15z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/><circle cx="15" cy="30" r="4" fill="currentColor"/><circle cx="40" cy="20" r="4" fill="currentColor"/><circle cx="65" cy="30" r="4" fill="currentColor"/><rect x="12" y="55" width="56" height="8" rx="2" stroke="currentColor" stroke-width="2"/></svg>`,
-        moon: `<svg viewBox="0 0 80 80" fill="none"><path d="M50 15c-15 0-27 12-27 27s12 27 27 27c3 0 6-.5 9-1.4-6-5-10-13-10-22s4-17 10-22c-3-.9-6-1.4-9-1.4z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/><circle cx="55" cy="25" r="2" fill="currentColor"/><circle cx="62" cy="35" r="1.5" fill="currentColor"/></svg>`,
-        alert: `<svg viewBox="0 0 80 80" fill="none"><path d="M40 15L65 60H15L40 15z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/><line x1="40" y1="30" x2="40" y2="45" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="40" cy="52" r="2.5" fill="currentColor"/></svg>`,
-        palette: `<svg viewBox="0 0 80 80" fill="none"><ellipse cx="40" cy="42" rx="28" ry="24" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="30" cy="35" r="5" fill="currentColor" opacity="0.6"/><circle cx="45" cy="30" r="4" fill="currentColor" opacity="0.8"/><circle cx="55" cy="40" r="4" fill="currentColor" opacity="0.5"/><circle cx="35" cy="50" r="3" fill="currentColor" opacity="0.7"/></svg>`,
-        question: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="28" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M32 32c0-6 4-10 10-10s10 4 10 10c0 5-4 7-7 9-2 1-3 3-3 5v2" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="40" cy="55" r="3" fill="currentColor"/></svg>`,
-        grid: `<svg viewBox="0 0 80 80" fill="none"><rect x="12" y="12" width="24" height="24" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/><rect x="44" y="12" width="24" height="24" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><rect x="12" y="44" width="24" height="24" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><rect x="44" y="44" width="24" height="24" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/></svg>`,
-        spectrum: `<svg viewBox="0 0 80 80" fill="none"><rect x="10" y="35" width="60" height="10" rx="5" stroke="currentColor" stroke-width="2"/><rect x="12" y="37" width="56" height="6" rx="3" fill="currentColor" fill-opacity="0.3"/><circle cx="45" cy="40" r="8" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.5"/></svg>`,
-        users: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="28" r="12" stroke="currentColor" stroke-width="2"/><path d="M20 65c0-12 9-20 20-20s20 8 20 20" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="60" cy="30" r="8" stroke="currentColor" stroke-width="1.5" opacity="0.5"/><circle cx="20" cy="30" r="8" stroke="currentColor" stroke-width="1.5" opacity="0.5"/></svg>`,
-        bomb: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="45" r="22" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/><path d="M40 23v-8M35 18l5-5 5 5" stroke="currentColor" stroke-width="2"/><path d="M50 15c5 0 10 3 10 8" stroke="currentColor" stroke-width="2"/><circle cx="33" cy="38" r="4" fill="currentColor" opacity="0.3"/></svg>`,
-        lightning: `<svg viewBox="0 0 80 80" fill="none"><path d="M45 10L25 42h15L35 70 55 38H40L45 10z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/></svg>`,
-        letter: `<svg viewBox="0 0 80 80" fill="none"><rect x="15" y="20" width="50" height="40" rx="4" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><text x="40" y="52" text-anchor="middle" fill="currentColor" font-family="serif" font-size="28" font-weight="bold">A</text></svg>`,
-        theater: `<svg viewBox="0 0 80 80" fill="none"><circle cx="28" cy="35" r="18" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="52" cy="35" r="18" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M20 40c0 5 3 8 8 8s8-3 8-8" stroke="currentColor" stroke-width="2"/><path d="M44 32c0-3 3-5 8-5s8 2 8 5" stroke="currentColor" stroke-width="2"/></svg>`,
-        star: `<svg viewBox="0 0 80 80" fill="none"><path d="M40 12l8 18 20 2-15 13 4 19-17-10-17 10 4-19-15-13 20-2z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/></svg>`,
-        fish: `<svg viewBox="0 0 80 80" fill="none"><ellipse cx="38" cy="40" rx="25" ry="18" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M63 40c8-10 8 20 0 10" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="25" cy="38" r="3" fill="currentColor"/></svg>`,
-        pointing: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="25" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M40 25v20M30 35l10-10 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="40" cy="52" r="3" fill="currentColor"/></svg>`,
-        pencil: `<svg viewBox="0 0 80 80" fill="none"><path d="M55 15L65 25 30 60H20V50L55 15z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M50 20l10 10" stroke="currentColor" stroke-width="2"/></svg>`,
-        gold: `<svg viewBox="0 0 80 80" fill="none"><path d="M25 50h30l5-15H20l5 15z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/><path d="M30 50v12h20V50" stroke="currentColor" stroke-width="2"/><circle cx="40" cy="28" r="8" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.3"/></svg>`,
-        cards: `<svg viewBox="0 0 80 80" fill="none"><rect x="20" y="15" width="30" height="42" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1" transform="rotate(-10 35 36)"/><rect x="30" y="20" width="30" height="42" rx="3" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2" transform="rotate(5 45 41)"/></svg>`,
-        laugh: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="25" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="30" cy="35" r="3" fill="currentColor"/><circle cx="50" cy="35" r="3" fill="currentColor"/><path d="M28 48c6 8 18 8 24 0" stroke="currentColor" stroke-width="2"/></svg>`,
-        chain: `<svg viewBox="0 0 80 80" fill="none"><ellipse cx="28" cy="40" rx="14" ry="10" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><ellipse cx="52" cy="40" rx="14" ry="10" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M38 40h4" stroke="currentColor" stroke-width="4"/></svg>`,
-        doodle: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="22" stroke="currentColor" stroke-width="2" stroke-dasharray="5 5" fill="currentColor" fill-opacity="0.05"/><path d="M25 50Q35 25 55 40" stroke="currentColor" stroke-width="2"/><circle cx="30" cy="35" r="4" fill="currentColor" opacity="0.5"/></svg>`,
-        truth: `<svg viewBox="0 0 80 80" fill="none"><path d="M20 40l12 12 28-28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M52 55l8 8M52 63l8-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.5"/></svg>`,
-        dice: `<svg viewBox="0 0 80 80" fill="none"><rect x="18" y="18" width="44" height="44" rx="6" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="30" cy="30" r="4" fill="currentColor"/><circle cx="50" cy="30" r="4" fill="currentColor"/><circle cx="40" cy="40" r="4" fill="currentColor"/><circle cx="30" cy="50" r="4" fill="currentColor"/><circle cx="50" cy="50" r="4" fill="currentColor"/></svg>`,
-        brain: `<svg viewBox="0 0 80 80" fill="none"><circle cx="25" cy="30" r="12" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="55" cy="30" r="12" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="40" cy="25" r="10" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/><path d="M40 55V40" stroke="currentColor" stroke-width="2"/></svg>`,
-) { showError('Enter a 6-character room code'); return; }
-        hideMessages(); setLoading('btn-join', true);
-        localStorage.setItem('tempPlayerName', name);
-        localStorage.setItem('tempGameType', currentGame.backendType);
-        localStorage.setItem('tempGameId', gameId);
-        localStorage.setItem('tempIsPremium', isPremium.toString());
-        localStorage.setItem('tempCosmetics', JSON.stringify(userProfile?.cosmetics || null));
-        localStorage.setItem('tempUserId', currentUser?.id || '');
-        socket.emit('join-room', { roomCode: code, playerName: name, isPremium, cosmetics: userProfile?.cosmetics || null, userId: currentUser?.id || null });
-    }
-
-    socket.on('room-created', (data) => { showSuccess('Room created!'); setTimeout(() => { window.location.href = `/play/${gameId}/${data.roomCode}`; }, 500); });
-    socket.on('room-joined', (data) => { showSuccess('Joining room...'); setTimeout(() => { window.location.href = `/play/${gameId}/${data.roomCode}`; }, 500); });
-    socket.on('error', (data) => { showError(data.message || 'Something went wrong'); setLoading('btn-create', false); setLoading('btn-join', false); });
-    socket.on('join-error', (data) => { showError(data.message || 'Could not join room'); setLoading('btn-join', false); });
-
-    function showError(msg) { const el = document.getElementById('error-message'); el.textContent = msg; el.classList.add('visible'); }
-    function showSuccess(msg) { const el = document.getElementById('success-message'); el.textContent = msg; el.classList.add('visible'); }
-    function hideMessages() { document.getElementById('error-message').classList.remove('visible'); document.getElementById('success-message').classList.remove('visible'); }
-    function setLoading(btnId, loading) { const btn = document.getElementById(btnId); btn.classList.toggle('btn-loading', loading); btn.disabled = loading; }
-
-    nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { document.getElementById('room-code').value.trim() ? joinRoom() : createRoom(); } });
-    document.getElementById('room-code').addEventListener('keypress', (e) => { if (e.key === 'Enter') joinRoom(); });
-
-    initAuth();
+initAuth();
 </script>
-
 <script src="/header.js"></script>
 </body>
 </html>
