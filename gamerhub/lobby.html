@@ -919,29 +919,29 @@
         truth: `<svg viewBox="0 0 80 80" fill="none"><path d="M20 40l12 12 28-28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M52 55l8 8M52 63l8-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.5"/></svg>`,
         dice: `<svg viewBox="0 0 80 80" fill="none"><rect x="18" y="18" width="44" height="44" rx="6" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="30" cy="30" r="4" fill="currentColor"/><circle cx="50" cy="30" r="4" fill="currentColor"/><circle cx="40" cy="40" r="4" fill="currentColor"/><circle cx="30" cy="50" r="4" fill="currentColor"/><circle cx="50" cy="50" r="4" fill="currentColor"/></svg>`,
         brain: `<svg viewBox="0 0 80 80" fill="none"><circle cx="25" cy="30" r="12" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="55" cy="30" r="12" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="40" cy="25" r="10" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.15"/><path d="M40 55V40" stroke="currentColor" stroke-width="2"/></svg>`,
-        fire: `<svg viewBox="0 0 80 80" fill="none"><path d="M40 15c-3 12 3 18 0 28-2 8-12 12-12 20 0 6 8 10 12 8-2-4-1-8 2-12 4 6 10 8 10 14 4-2 8-8 8-16 0-12-8-16-8-28-4 8-12 4-12-14z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/></svg>`,
-        heart: `<svg viewBox="0 0 80 80" fill="none"><path d="M40 65L22 47c-7-7-7-18 0-25s18-7 25 0l-7 7 7-7c7-7 18-7 25 0s7 18 0 25L40 65z" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/></svg>`,
-        chip: `<svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="22" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><circle cx="40" cy="40" r="12" stroke="currentColor" stroke-width="2"/><text x="40" y="45" text-anchor="middle" fill="currentColor" font-size="14" font-weight="bold">$</text></svg>`,
-        split: `<svg viewBox="0 0 80 80" fill="none"><rect x="12" y="20" width="24" height="40" rx="4" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2"/><rect x="44" y="20" width="24" height="40" rx="4" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.1"/><path d="M40 15v50" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4"/></svg>`
-    };
+) { showError('Enter a 6-character room code'); return; }
+        hideMessages(); setLoading('btn-join', true);
+        localStorage.setItem('tempPlayerName', name);
+        localStorage.setItem('tempGameType', currentGame.backendType);
+        localStorage.setItem('tempGameId', gameId);
+        localStorage.setItem('tempIsPremium', isPremium.toString());
+        localStorage.setItem('tempCosmetics', JSON.stringify(userProfile?.cosmetics || null));
+        localStorage.setItem('tempUserId', currentUser?.id || '');
+        socket.emit('join-room', { roomCode: code, playerName: name, isPremium, cosmetics: userProfile?.cosmetics || null, userId: currentUser?.id || null });
+    }
 
-    // Game icon mapping
-    const GAME_ICONS = {
-        'spyfall': 'spy', 'avalon': 'crown', 'werewolf': 'moon', 'imposter': 'alert',
-        'fake-artist': 'palette', 'insider': 'question', 'power-struggle': 'cards',
-        'codenames': 'grid', 'wavelength': 'spectrum', 'herd-mentality': 'users',
-        'word-bomb': 'bomb', 'categories': 'lightning', 'npat': 'letter',
-        'word-association': 'chain', 'charades': 'theater', 'celebrity': 'star',
-        'fishbowl': 'fish', 'most-likely-to': 'pointing', 'sketch-guess': 'pencil',
-        'fools-gold': 'gold', 'punchline': 'laugh', 'broken-pictionary': 'doodle',
-        'doodle-duel': 'pencil', 'two-truths': 'truth', 'ludo': 'dice',
-        'trivia-royale': 'brain', 'this-or-that-party': 'split', 'hot-takes-party': 'fire',
-        'never-ever-party': 'heart', 'bet-or-bluff': 'chip'
-    };
+    socket.on('room-created', (data) => { showSuccess('Room created!'); setTimeout(() => { window.location.href = `/play/${gameId}/${data.roomCode}`; }, 500); });
+    socket.on('room-joined', (data) => { showSuccess('Joining room...'); setTimeout(() => { window.location.href = `/play/${gameId}/${data.roomCode}`; }, 500); });
+    socket.on('error', (data) => { showError(data.message || 'Something went wrong'); setLoading('btn-create', false); setLoading('btn-join', false); });
+    socket.on('join-error', (data) => { showError(data.message || 'Could not join room'); setLoading('btn-join', false); });
 
-    // Set game icon
-    const iconKey = GAME_ICONS[gameId] || 'question';
-    document.getElementById('game-icon').innerHTML = ICONS[iconKey] || ICONS.question;
+    function showError(msg) { const el = document.getElementById('error-message'); el.textContent = msg; el.classList.add('visible'); }
+    function showSuccess(msg) { const el = document.getElementById('success-message'); el.textContent = msg; el.classList.add('visible'); }
+    function hideMessages() { document.getElementById('error-message').classList.remove('visible'); document.getElementById('success-message').classList.remove('visible'); }
+    function setLoading(btnId, loading) { const btn = document.getElementById(btnId); btn.classList.toggle('btn-loading', loading); btn.disabled = loading; }
+
+    nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { document.getElementById('room-code').value.trim() ? joinRoom() : createRoom(); } });
+    document.getElementById('room-code').addEventListener('keypress', (e) => { if (e.key === 'Enter') joinRoom(); });
 
     initAuth();
 </script>
