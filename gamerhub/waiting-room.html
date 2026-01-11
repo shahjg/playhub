@@ -460,9 +460,6 @@
     // Get game type from URL first, then localStorage, then default
     let gameType = urlParams.get('game') || localStorage.getItem('tempGameType') || 'spyfall';
     let gameConfig = GAMES[gameType] || GAMES['spyfall'];
-    
-    // Show loading state until we get room data with actual game type
-    let awaitingRoomData = true;
     let isHost = localStorage.getItem('tempIsHost') === 'true';
     let currentRoom = null;
     let myPlayerId = null;
@@ -476,21 +473,18 @@
     }
 
     // ========== INIT UI ==========
-    document.body.className = gameConfig.theme;
+    // Don't apply theme yet - wait for server to confirm game type
     document.getElementById('room-code').textContent = roomCode || '------';
-    document.getElementById('max-players').textContent = gameConfig.maxPlayers;
-    updateGameUI();
     
-    // Set leave button URL
+    // Set leave button URL based on initial guess (will update when room data arrives)
     const leaveBtn = document.getElementById('leave-btn');
     if (leaveBtn) {
         leaveBtn.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
     }
 
-    // Apply party mode class if needed
-    if (gameConfig.isPartyGame) {
-        document.body.classList.add('party-mode');
-    }
+    // Show loading state - actual game UI will be set when room data arrives
+    document.getElementById('game-title').textContent = 'Loading...';
+    document.getElementById('players-list').innerHTML = '<div class="players-empty">Connecting...</div>';
 
     // ========== SOCKET HANDLERS ==========
     function attemptJoinRoom() {
@@ -567,28 +561,39 @@
     });
 
     // ========== ROOM UPDATE HANDLER ==========
+    let firstRoomUpdate = true;
+    
     function handleRoomUpdate(room) {
         currentRoom = room;
         
-        // Always use the room's gameType as source of truth
+        // ALWAYS use room.gameType from server as the source of truth
         if (room.gameType) {
-            const newGameType = room.gameType;
-            if (newGameType !== gameType || awaitingRoomData) {
-                gameType = newGameType;
-                gameConfig = GAMES[gameType] || GAMES['spyfall'];
-                document.body.className = gameConfig.theme;
-                if (gameConfig.isPartyGame) {
-                    document.body.classList.add('party-mode');
-                } else {
-                    document.body.classList.remove('party-mode');
-                }
-                // Update leave button
-                const leaveBtn = document.getElementById('leave-btn');
-                if (leaveBtn) {
-                    leaveBtn.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
-                }
-                updateGameUI();
-                awaitingRoomData = false;
+            gameType = room.gameType;
+            gameConfig = GAMES[gameType] || GAMES['spyfall'];
+            
+            // Update localStorage to stay in sync
+            localStorage.setItem('tempGameType', gameType);
+            
+            // Apply theme
+            document.body.className = gameConfig.theme;
+            if (gameConfig.isPartyGame) {
+                document.body.classList.add('party-mode');
+            } else {
+                document.body.classList.remove('party-mode');
+            }
+            
+            // Update leave button
+            const leaveBtn = document.getElementById('leave-btn');
+            if (leaveBtn) {
+                leaveBtn.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
+            }
+            
+            // Update game UI (title, settings, etc)
+            updateGameUI();
+            
+            if (firstRoomUpdate) {
+                console.log('Room gameType from server:', gameType);
+                firstRoomUpdate = false;
             }
         }
         
