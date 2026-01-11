@@ -4,399 +4,400 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Lobby - TheGaming.co</title>
-    
-    <meta name="description" content="Waiting room - invite friends with your room code!">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0a0a0f">
     <link rel="stylesheet" href="/header.css">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Creepster&family=Bangers&family=Fredoka+One&family=Orbitron:wght@700&family=Permanent+Marker&family=Caveat:wght@700&family=Pacifico&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/js/cosmetics.js"></script>
-    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--accent:#14b8a6;--accent-glow:rgba(20,184,166,0.4);--bg:#0a0a0f;--border:rgba(255,255,255,0.1);--text:#fff;--muted:rgba(255,255,255,0.6);--gold:#fbbf24;--green:#22c55e;--red:#ef4444}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+        .bg-container{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .bg-base{position:absolute;inset:0}.bg-scene{position:absolute;inset:0}
 
-        :root {
-            --accent: #14b8a6;
-            --accent-glow: rgba(20, 184, 166, 0.4);
-            --accent-soft: rgba(20, 184, 166, 0.12);
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-card: rgba(255, 255, 255, 0.02);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-accent: rgba(20, 184, 166, 0.3);
-            --text: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.5);
-            --gold: #fbbf24;
-            --green: #22c55e;
-            --red: #ef4444;
-        }
+        /* Loading state */
+        .theme-loading{--accent:#666;--accent-glow:rgba(102,102,102,0.4)}
+        .theme-loading .bg-base{background:linear-gradient(180deg,#0a0a0f 0%,#12121a 100%)}
+        .theme-loading .game-title{opacity:0.3}
 
-        /* GAME THEMES */
-        .theme-spyfall { --accent: #14b8a6; --accent-glow: rgba(20, 184, 166, 0.4); --accent-soft: rgba(20, 184, 166, 0.12); --border-accent: rgba(20, 184, 166, 0.3); }
-        .theme-word-bomb { --accent: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.4); --accent-soft: rgba(244, 63, 94, 0.12); --border-accent: rgba(244, 63, 94, 0.3); }
-        .theme-codenames { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.4); --accent-soft: rgba(34, 197, 94, 0.12); --border-accent: rgba(34, 197, 94, 0.3); }
-        .theme-werewolf { --accent: #a855f7; --accent-glow: rgba(168, 85, 247, 0.4); --accent-soft: rgba(168, 85, 247, 0.12); --border-accent: rgba(168, 85, 247, 0.3); }
-        .theme-fake-artist { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
-        .theme-herd-mentality { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.4); --accent-soft: rgba(59, 130, 246, 0.12); --border-accent: rgba(59, 130, 246, 0.3); }
-        .theme-avalon { --accent: #eab308; --accent-glow: rgba(234, 179, 8, 0.4); --accent-soft: rgba(234, 179, 8, 0.12); --border-accent: rgba(234, 179, 8, 0.3); }
-        .theme-imposter { --accent: #ef4444; --accent-glow: rgba(239, 68, 68, 0.4); --accent-soft: rgba(239, 68, 68, 0.12); --border-accent: rgba(239, 68, 68, 0.3); }
-        .theme-insider { --accent: #6366f1; --accent-glow: rgba(99, 102, 241, 0.4); --accent-soft: rgba(99, 102, 241, 0.12); --border-accent: rgba(99, 102, 241, 0.3); }
-        .theme-wavelength { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-npat { --accent: #f59e0b; --accent-glow: rgba(245, 158, 11, 0.4); --accent-soft: rgba(245, 158, 11, 0.12); --border-accent: rgba(245, 158, 11, 0.3); }
-        .theme-categories { --accent: #00d9ff; --accent-glow: rgba(0, 217, 255, 0.4); --accent-soft: rgba(0, 217, 255, 0.12); --border-accent: rgba(0, 217, 255, 0.3); }
-        .theme-word-association { --accent: #a855f7; --accent-glow: rgba(168, 85, 247, 0.4); --accent-soft: rgba(168, 85, 247, 0.12); --border-accent: rgba(168, 85, 247, 0.3); }
-        .theme-charades { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.4); --accent-soft: rgba(16, 185, 129, 0.12); --border-accent: rgba(16, 185, 129, 0.3); }
-        .theme-celebrity { --accent: #f472b6; --accent-glow: rgba(244, 114, 182, 0.4); --accent-soft: rgba(244, 114, 182, 0.12); --border-accent: rgba(244, 114, 182, 0.3); }
-        .theme-fishbowl { --accent: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.4); --accent-soft: rgba(6, 182, 212, 0.12); --border-accent: rgba(6, 182, 212, 0.3); }
-        .theme-most-likely-to { --accent: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.4); --accent-soft: rgba(244, 63, 94, 0.12); --border-accent: rgba(244, 63, 94, 0.3); }
-        .theme-trivia-royale { --accent: #8b5cf6; --accent-glow: rgba(139, 92, 246, 0.4); --accent-soft: rgba(139, 92, 246, 0.12); --border-accent: rgba(139, 92, 246, 0.3); }
-        .theme-this-or-that-party { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-hot-takes-party { --accent: #ef4444; --accent-glow: rgba(239, 68, 68, 0.4); --accent-soft: rgba(239, 68, 68, 0.12); --border-accent: rgba(239, 68, 68, 0.3); }
-        .theme-never-ever-party { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
-        .theme-bet-or-bluff { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.4); --accent-soft: rgba(16, 185, 129, 0.12); --border-accent: rgba(16, 185, 129, 0.3); }
-        .theme-sketch-guess { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-fools-gold { --accent: #fbbf24; --accent-glow: rgba(251, 191, 36, 0.4); --accent-soft: rgba(251, 191, 36, 0.12); --border-accent: rgba(251, 191, 36, 0.3); }
-        .theme-power-struggle { --accent: #dc2626; --accent-glow: rgba(220, 38, 38, 0.4); --accent-soft: rgba(220, 38, 38, 0.12); --border-accent: rgba(220, 38, 38, 0.3); }
-        .theme-ludo { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.4); --accent-soft: rgba(34, 197, 94, 0.12); --border-accent: rgba(34, 197, 94, 0.3); }
-        .theme-punchline { --accent: #fbbf24; --accent-glow: rgba(251, 191, 36, 0.4); --accent-soft: rgba(251, 191, 36, 0.12); --border-accent: rgba(251, 191, 36, 0.3); }
-        .theme-broken-pictionary { --accent: #f97316; --accent-glow: rgba(249, 115, 22, 0.4); --accent-soft: rgba(249, 115, 22, 0.12); --border-accent: rgba(249, 115, 22, 0.3); }
-        .theme-doodle-duel { --accent: #ec4899; --accent-glow: rgba(236, 72, 153, 0.4); --accent-soft: rgba(236, 72, 153, 0.12); --border-accent: rgba(236, 72, 153, 0.3); }
-        .theme-two-truths { --accent: #22c55e; --accent-glow: rgba(34, 197, 94, 0.4); --accent-soft: rgba(34, 197, 94, 0.12); --border-accent: rgba(34, 197, 94, 0.3); }
-        .theme-loading { --accent: #666; --accent-glow: rgba(102, 102, 102, 0.4); --accent-soft: rgba(102, 102, 102, 0.12); --border-accent: rgba(102, 102, 102, 0.3); }
-        
-        .custom-words-hint { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 6px; }
+        /* GAME THEMES - Matching Lobby */
+        .theme-spyfall{--accent:#14b8a6;--accent-glow:rgba(20,184,166,0.6)}
+        .theme-spyfall .bg-base{background:linear-gradient(180deg,#0a2525 0%,#061818 50%,#0a1a1a 100%)}
+        .theme-spyfall .bg-scene{background:repeating-linear-gradient(90deg,transparent 0 80px,rgba(20,184,166,0.12) 80px 81px),repeating-linear-gradient(0deg,transparent 0 80px,rgba(20,184,166,0.12) 80px 81px)}
+        .theme-spyfall .bg-scene::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:conic-gradient(from 0deg,transparent 0deg,rgba(20,184,166,0.5) 10deg,transparent 20deg);border-radius:50%;animation:radarSweep 4s linear infinite}
+        @keyframes radarSweep{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 
-        /* PARTY GAME PLAYER GRID */
-        .party-mode .players-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding: 1rem; background: rgba(0, 0, 0, 0.2); border-radius: 12px; border: 1px solid var(--border); }
-        .party-mode .player-item { padding: 0.6rem 0.8rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-direction: row; justify-content: flex-start; }
-        .party-mode .player-item:hover { border-color: var(--accent); background: var(--accent-soft); }
-        .party-mode .player-item.is-host { border-color: var(--gold); background: rgba(251, 191, 36, 0.1); }
-        .party-mode .player-avatar { width: 28px; height: 28px; min-width: 28px; font-size: 0.75rem; }
-        .party-mode .player-info { flex: 1; min-width: 0; gap: 6px; }
-        .party-mode .player-name { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .party-mode .player-name.premium { background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold)); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: goldShimmer 3s linear infinite; }
-        .party-mode .player-badges { display: none; }
-        .party-mode .badge-host-icon { margin-left: auto; font-size: 0.7rem; }
-        .party-player-count { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 1rem; background: linear-gradient(135deg, var(--accent-soft), transparent); border: 1px solid var(--border-accent); border-radius: 12px; margin-bottom: 1rem; }
-        .party-player-count .count-number { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--accent); line-height: 1; }
-        .party-player-count .count-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .party-player-count .count-status { font-size: 0.75rem; color: var(--text-muted); padding: 4px 10px; background: rgba(255, 255, 255, 0.05); border-radius: 20px; }
-        .party-player-count .count-status.ready { background: rgba(34, 197, 94, 0.2); color: #86efac; }
-        .party-mode .players-list::-webkit-scrollbar { width: 6px; }
-        .party-mode .players-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
-        .party-mode .players-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+        .theme-avalon{--accent:#fbbf24;--accent-glow:rgba(251,191,36,0.6)}
+        .theme-avalon .bg-base{background:linear-gradient(180deg,#1f1a08 0%,#2a1f0a 40%,#15100a 100%)}
+        .theme-avalon .bg-scene::before{content:'';position:absolute;bottom:0;left:0;right:0;height:320px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 300'%3E%3Cpath d='M0 300V150h50V100h40v50h80V80h30V40h40V80h30v70h100V100h30V60h20V30h30V60h20v40h30v50h120V80h40V40h30V80h40v70h100V100h30V60h40v40h30v50h90V80h30V40h20V80h30v70h120v150H0z' fill='%23fbbf24' fill-opacity='0.2'/%3E%3C/svg%3E") bottom center/cover no-repeat}
+        .theme-avalon .bg-scene::after{content:'👑';position:absolute;top:10%;left:50%;transform:translateX(-50%);font-size:120px;opacity:0.2;animation:crownFloat 4s ease-in-out infinite}
+        @keyframes crownFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-15px)}}
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-        
-        /* Loading state - no theme applied yet */
-        .theme-loading { --accent: #666; --accent-glow: rgba(102,102,102,0.4); --accent-soft: rgba(102,102,102,0.12); --border-accent: rgba(102,102,102,0.3); }
-        .theme-loading .bg-gradient { background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%); }
-        .theme-loading .game-title, .theme-loading .room-code { opacity: 0.3; }
+        .theme-werewolf{--accent:#a855f7;--accent-glow:rgba(168,85,247,0.6)}
+        .theme-werewolf .bg-base{background:linear-gradient(180deg,#1a0a30 0%,#200a38 40%,#0f0520 100%)}
+        .theme-werewolf .bg-scene::before{content:'';position:absolute;top:5%;right:10%;width:150px;height:150px;background:radial-gradient(circle,rgba(255,255,220,1) 0%,rgba(255,255,200,0.8) 30%,transparent 70%);border-radius:50%;box-shadow:0 0 80px 40px rgba(255,255,200,0.4),0 0 150px 80px rgba(168,85,247,0.3)}
+        .theme-werewolf .bg-scene::after{content:'';position:absolute;bottom:0;left:0;right:0;height:45%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 400'%3E%3Cpath d='M0 400V250c40 0 50-50 80-50s30 40 60 30 50-80 80-70 60 60 90 50 30-60 70-50 40 40 70 30 50-50 80-40 60 30 90 20 30-30 70-20 40 20 60 10 50-30 80-20 60 20 90 10 30-20 70-10 40 10 60 0l100 40v400H0z' fill='%231a0525'/%3E%3C/svg%3E") bottom center/cover no-repeat}
+        .theme-werewolf .game-title{font-family:'Creepster',cursive!important;letter-spacing:8px!important}
 
-        .bg-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-        .bg-gradient { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse 80% 50% at 20% 0%, var(--accent-soft) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 90% 100%, var(--accent-soft) 0%, transparent 50%), var(--bg-primary); }
-        .glow-orb { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); border-radius: 50%; filter: blur(80px); opacity: 0.3; animation: orbFloat 25s ease-in-out infinite; }
-        .glow-orb:nth-child(2) { width: 300px; height: 300px; animation-delay: -12s; animation-duration: 30s; }
-        @keyframes orbFloat { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(60vw, 20vh); } 66% { transform: translate(30vw, 60vh); } }
-        .grid-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; }
+        .theme-imposter{--accent:#ef4444;--accent-glow:rgba(239,68,68,0.6)}
+        .theme-imposter .bg-base{background:linear-gradient(180deg,#250808 0%,#300a0a 40%,#180505 100%)}
+        .theme-imposter .bg-scene{background:repeating-linear-gradient(45deg,transparent 0 20px,rgba(239,68,68,0.08) 20px 22px);animation:alertMove 1s linear infinite}
+        @keyframes alertMove{from{background-position:0 0}to{background-position:42px 42px}}
+        .theme-imposter .bg-scene::before{content:'⚠';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:300px;opacity:0.1;animation:alertPulse 1s ease-in-out infinite}
+        @keyframes alertPulse{0%,100%{opacity:0.08;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.15;transform:translate(-50%,-50%) scale(1.05)}}
 
-        header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 60px; display: flex; align-items: center; padding: 0 18px; background: rgba(10, 10, 15, 0.88); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-        .nav-inner { width: 100%; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; }
-        .nav-left { justify-self: flex-start; }
-        .nav-right-wrapper { justify-self: flex-end; display: flex; justify-content: flex-end; }
-        .leave-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; text-decoration: none; }
-        .leave-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--red); border-color: var(--red); }
-        .leave-btn svg { width: 16px; height: 16px; }
-        .header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 4px; color: white; text-decoration: none; position: relative; white-space: nowrap; justify-self: center; }
-        .header-logo::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7); }
+        .theme-fake-artist{--accent:#ec4899;--accent-glow:rgba(236,72,153,0.6)}
+        .theme-fake-artist .bg-base{background:linear-gradient(135deg,#250a1d 0%,#0f1825 50%,#1a0a28 100%)}
+        .theme-fake-artist .bg-scene::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 15% 25%,rgba(236,72,153,0.5) 0%,transparent 25%),radial-gradient(circle at 85% 20%,rgba(168,85,247,0.4) 0%,transparent 20%),radial-gradient(circle at 80% 75%,rgba(59,130,246,0.4) 0%,transparent 25%),radial-gradient(circle at 20% 70%,rgba(34,197,94,0.35) 0%,transparent 20%);filter:blur(50px)}
+        .theme-fake-artist .bg-scene::after{content:'🎨';position:absolute;top:10%;left:50%;transform:translateX(-50%) rotate(-10deg);font-size:140px;opacity:0.25}
+        .theme-fake-artist .game-title{background:linear-gradient(90deg,#ec4899,#a855f7,#3b82f6,#22c55e,#eab308,#ec4899)!important;background-size:300% auto;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;animation:rainbowShift 4s linear infinite!important}
+        @keyframes rainbowShift{0%{background-position:0% center}100%{background-position:300% center}}
 
-        main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 80px 20px 40px; max-width: 600px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
-        .game-header { text-align: center; margin-bottom: 1.5rem; width: 100%; }
-        .game-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 5px; color: var(--text); margin-bottom: 0.25rem; }
-        .how-to-play-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1px; }
-        .how-to-play-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+        .theme-codenames{--accent:#dc2626;--accent-glow:rgba(220,38,38,0.5)}
+        .theme-codenames .bg-base{background:linear-gradient(180deg,#1a1008 0%,#0f0a05 100%)}
+        .theme-codenames .bg-scene::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:400px;background:repeating-linear-gradient(90deg,rgba(220,38,38,0.25) 0px,rgba(220,38,38,0.25) 95px,rgba(30,20,10,0.9) 95px,rgba(30,20,10,0.9) 100px),repeating-linear-gradient(0deg,rgba(59,130,246,0.25) 0px,rgba(59,130,246,0.25) 75px,rgba(30,20,10,0.9) 75px,rgba(30,20,10,0.9) 80px);border-radius:12px}
+        .theme-codenames .game-title{color:#fbbf24!important}
 
-        .room-code-section { width: 100%; margin-bottom: 1.5rem; }
-        .room-code-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; text-align: center; position: relative; }
-        .room-code-card::before { content: ''; position: absolute; top: 0; left: 40px; right: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
-        .room-code-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.75rem; }
-        .room-code-value { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; letter-spacing: 12px; color: var(--accent); text-shadow: 0 0 60px var(--accent-glow); line-height: 1; animation: codeGlow 4s ease-in-out infinite; }
-        @keyframes codeGlow { 0%, 100% { text-shadow: 0 0 40px var(--accent-glow); } 50% { text-shadow: 0 0 80px var(--accent-glow), 0 0 120px var(--accent-glow); } }
-        .room-code-hint { font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem; margin-bottom: 1rem; }
-        .room-code-actions { display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
-        .copy-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-muted); padding: 0.7rem 1.1rem; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px; }
-        .copy-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-        .copy-btn.copied { border-color: var(--green); color: var(--green); background: rgba(34, 197, 94, 0.1); }
-        .copy-btn svg { width: 16px; height: 16px; }
+        .theme-word-bomb{--accent:#f43f5e;--accent-glow:rgba(244,63,94,0.7)}
+        .theme-word-bomb .bg-base{background:radial-gradient(circle at 50% 50%,#301010 0%,#250808 40%,#180505 100%)}
+        .theme-word-bomb .bg-scene::before{content:'💣';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:220px;opacity:0.25;animation:bombShake 0.1s ease-in-out infinite}
+        @keyframes bombShake{0%,100%{transform:translate(-50%,-50%) rotate(-3deg)}50%{transform:translate(-50%,-50%) rotate(3deg)}}
+        .theme-word-bomb .bg-scene::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:450px;height:450px;background:radial-gradient(circle,rgba(251,146,60,0.4) 0%,rgba(244,63,94,0.3) 30%,transparent 60%);animation:explosionPulse 0.5s ease-in-out infinite}
+        @keyframes explosionPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.4}50%{transform:translate(-50%,-50%) scale(1.15);opacity:0.7}}
+        .theme-word-bomb .game-title{font-family:'Bangers',cursive!important}
 
-        .players-section { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; width: 100%; margin-bottom: 1.5rem; }
-        .players-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
-        .players-header-right { display: flex; align-items: center; gap: 12px; }
-        .players-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 2px; color: var(--text); }
-        .players-count { font-size: 0.85rem; color: var(--text-muted); }
-        .players-count span { color: var(--accent); font-weight: 800; }
-        .players-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
-        .player-item { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 0.9rem; background: var(--bg-card); border-radius: 10px; border: 1px solid transparent; transition: all 0.2s ease; animation: slideIn 0.3s ease forwards; opacity: 0; }
-        @keyframes slideIn { to { opacity: 1; } }
-        .player-item:hover { border-color: var(--border); }
-        .player-item.is-host { background: var(--accent-soft); border-color: var(--border-accent); }
-        .player-item.is-me { border-color: var(--accent); }
-        .player-info { display: flex; align-items: center; gap: 10px; }
-        .player-avatar { width: 32px; height: 32px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; color: var(--accent); }
-        .player-item.is-host .player-avatar { background: var(--accent); border-color: var(--accent); color: var(--bg-primary); }
-        .player-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-        .player-name.premium { background: linear-gradient(90deg, var(--gold), #f59e0b, var(--gold)); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: goldShimmer 3s linear infinite; }
-        @keyframes goldShimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-        .player-badges { display: flex; align-items: center; gap: 6px; }
-        .badge { font-size: 0.6rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-host { background: var(--gold); color: var(--bg-primary); }
-        .badge-you { background: rgba(255, 255, 255, 0.1); color: var(--text-muted); border: 1px solid var(--border); }
-        .kick-btn { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 0.25rem 0.5rem; border-radius: 5px; font-size: 0.65rem; font-weight: 800; cursor: pointer; opacity: 0; transition: all 0.2s ease; text-transform: uppercase; }
-        .player-item:hover .kick-btn { opacity: 1; }
-        .kick-btn:hover { background: var(--red); color: white; }
-        .players-empty { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem; }
-        .players-list::-webkit-scrollbar { width: 5px; }
-        .players-list::-webkit-scrollbar-track { background: transparent; }
-        .players-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        .kick-btn-floating { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: transparent; border: 1px solid var(--red); color: var(--red); font-size: 12px; cursor: pointer; opacity: 0; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
-        .player-card:hover .kick-btn-floating, .player-item:hover .kick-btn-floating { opacity: 1; }
-        .kick-btn-floating:hover { background: var(--red); color: white; }
-        .players-list .player-card { position: relative; margin-bottom: 8px; }
+        .theme-wavelength{--accent:#f97316;--accent-glow:rgba(249,115,22,0.6)}
+        .theme-wavelength .bg-base{background:linear-gradient(180deg,#1a1208 0%,#0f0a05 100%)}
+        .theme-wavelength .bg-scene::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:200px;background:conic-gradient(from 180deg at 50% 100%,#ef4444 0deg,#f97316 30deg,#eab308 60deg,#22c55e 90deg,#3b82f6 120deg,#8b5cf6 150deg,#ec4899 180deg);border-radius:200px 200px 0 0;opacity:0.5}
+        .theme-wavelength .bg-scene::after{content:'';position:absolute;top:50%;left:50%;width:8px;height:120px;background:white;border-radius:4px;transform-origin:bottom center;animation:needleSwing 3s ease-in-out infinite}
+        @keyframes needleSwing{0%,100%{transform:translate(-50%,-50%) rotate(-60deg)}50%{transform:translate(-50%,-50%) rotate(60deg)}}
 
-        .settings-section { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; width: 100%; margin-bottom: 1.5rem; }
-        .settings-header { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
-        .settings-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; color: var(--text); }
-        .host-badge { font-size: 0.55rem; font-weight: 800; padding: 0.2rem 0.4rem; border-radius: 4px; background: var(--gold); color: var(--bg-primary); text-transform: uppercase; letter-spacing: 1px; }
-        .setting-group { margin-bottom: 1rem; }
-        .setting-group:last-child { margin-bottom: 0; }
-        .setting-label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px; }
-        .setting-select { width: 100%; padding: 0.75rem 1rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9rem; font-family: inherit; cursor: pointer; transition: all 0.2s ease; }
-        .setting-select:focus { outline: none; border-color: var(--accent); }
-        .setting-select option { background: var(--bg-secondary); }
-        .setting-checkbox { display: flex; align-items: center; gap: 10px; padding: 0.75rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
-        .setting-checkbox:hover { border-color: var(--accent); }
-        .setting-checkbox input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-        .setting-checkbox-text { flex: 1; }
-        .setting-checkbox-title { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-        .setting-checkbox-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
-        .location-preview { background: var(--bg-primary); border-radius: 8px; padding: 0.75rem; margin-top: 0.5rem; border: 1px solid var(--border); }
-        .location-preview-title { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; font-weight: 700; }
-        .location-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-        .location-tag { background: var(--accent-soft); border: 1px solid var(--border-accent); padding: 0.25rem 0.5rem; border-radius: 5px; font-size: 0.7rem; color: var(--accent); font-weight: 600; }
+        .theme-ludo{--accent:#22c55e;--accent-glow:rgba(34,197,94,0.6)}
+        .theme-ludo .bg-base{background:#f5f0e1}
+        .theme-ludo .bg-scene::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;background:conic-gradient(from 0deg at 50% 50%,#ef4444 0deg 90deg,#22c55e 90deg 180deg,#eab308 180deg 270deg,#3b82f6 270deg 360deg);border-radius:20px;box-shadow:inset 0 0 0 20px #f5f0e1,0 10px 40px rgba(0,0,0,0.3)}
+        .theme-ludo .bg-scene::after{content:'🎲';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;animation:diceRoll 2s ease-in-out infinite}
+        @keyframes diceRoll{0%,100%{transform:translate(-50%,-50%) rotate(0deg)}50%{transform:translate(-50%,-50%) rotate(360deg)}}
+        .theme-ludo .game-title{font-family:'Fredoka One',cursive!important;color:#1a1a1a!important;text-shadow:none!important}
+        .theme-ludo .card,.theme-ludo .players-card{background:rgba(255,255,255,0.95)!important;border-color:rgba(0,0,0,0.1)!important}
+        .theme-ludo .section-title,.theme-ludo .room-code-label{color:#1a1a1a!important}
+        .theme-ludo .room-code-value{color:#ef4444!important}
+        .theme-ludo .input-field,.theme-ludo select{background:rgba(0,0,0,0.05)!important;color:#1a1a1a!important;border-color:rgba(0,0,0,0.15)!important}
+        .theme-ludo .btn-start{background:#ef4444!important}
+        .theme-ludo .text-muted,.theme-ludo .player-name{color:rgba(0,0,0,0.7)!important}
 
-        .start-section { width: 100%; }
-        .min-players-warning { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 0.9rem; text-align: center; margin-bottom: 1rem; color: var(--red); font-size: 0.85rem; font-weight: 600; }
-        .waiting-message { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; }
-        .waiting-dots { display: inline-flex; gap: 4px; margin-left: 6px; }
-        .waiting-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: dotBounce 1.4s ease-in-out infinite; }
-        .waiting-dot:nth-child(2) { animation-delay: 0.15s; }
-        .waiting-dot:nth-child(3) { animation-delay: 0.3s; }
-        @keyframes dotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-5px); opacity: 1; } }
-        .btn { width: 100%; padding: 1rem; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 3px; cursor: pointer; transition: all 0.2s ease; border: none; }
-        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 20px var(--accent-glow); }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 30px var(--accent-glow); filter: brightness(1.1); }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+        .theme-herd-mentality{--accent:#8b5cf6;--accent-glow:rgba(139,92,246,0.6)}
+        .theme-herd-mentality .bg-base{background:linear-gradient(180deg,#1a1030 0%,#0f0820 100%)}
+        .theme-herd-mentality .bg-scene::before{content:'🐑🐑🐑🐑🐑';position:absolute;bottom:25%;left:50%;font-size:50px;letter-spacing:10px;opacity:0.3;animation:sheepWalk 10s linear infinite}
+        @keyframes sheepWalk{0%{transform:translateX(-150%)}100%{transform:translateX(150%)}}
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; overflow-y: auto; }
-        .modal-overlay.visible { display: flex; }
-        .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 480px; max-height: calc(100vh - 2rem); display: flex; flex-direction: column; animation: modalIn 0.25s ease; box-shadow: 0 0 60px var(--accent-glow); margin: auto; }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--accent); }
-        .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1; transition: color 0.2s; }
-        .modal-close:hover { color: var(--text); }
-        .modal-body { padding: 1.5rem; color: var(--text-muted); line-height: 1.7; overflow-y: auto; flex: 1; }
-        .modal-body h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--accent); margin-top: 1.25rem; margin-bottom: 0.4rem; letter-spacing: 1px; }
-        .modal-body h3:first-child { margin-top: 0; }
-        .modal-body p { margin-bottom: 0.75rem; }
-        .modal-body ul { margin-left: 1.25rem; margin-bottom: 0.75rem; }
-        .modal-body li { margin-bottom: 0.35rem; color: var(--text); }
-        .modal-body strong { color: var(--accent); }
-        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; }
-        .modal-btn { width: 100%; padding: 0.8rem; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; cursor: pointer; transition: all 0.2s ease; }
-        .modal-btn:hover { filter: brightness(1.1); }
-        .confirm-modal .modal-body { text-align: center; padding: 2rem 1.5rem; }
-        .confirm-modal .modal-message { font-size: 1rem; color: var(--text); margin-bottom: 1.5rem; }
-        .confirm-modal .modal-actions { display: flex; gap: 0.75rem; }
-        .confirm-modal .modal-btn { flex: 1; }
-        .confirm-modal .modal-btn.cancel { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-muted); }
-        .confirm-modal .modal-btn.danger { background: var(--red); }
+        .theme-punchline{--accent:#fbbf24;--accent-glow:rgba(251,191,36,0.6)}
+        .theme-punchline .bg-base{background:radial-gradient(ellipse 100% 100% at 50% 0%,#302510 0%,#201808 40%,#100a05 100%)}
+        .theme-punchline .bg-scene::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:60%;height:100%;background:linear-gradient(180deg,rgba(251,191,36,0.25) 0%,transparent 60%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%)}
+        .theme-punchline .bg-scene::after{content:'🎤';position:absolute;top:12%;left:50%;transform:translateX(-50%);font-size:100px;opacity:0.3}
+        .theme-punchline .game-title{font-family:'Bangers',cursive!important}
 
-        footer { background: #000; position: relative; z-index: 10; margin-top: auto; }
-        .footer-border { height: 3px; background: linear-gradient(90deg, #ff6b9d, #4facfe, #a855f7, #ff6b9d); background-size: 300% 100%; animation: gradientSlide 6s linear infinite; }
-        @keyframes gradientSlide { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
-        .footer-main { max-width: 1100px; margin: 0 auto; padding: 40px 20px 25px; }
-        .footer-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 500px; margin-left: auto; margin-right: auto; }
-        .footer-column { text-align: center; }
-        .footer-column h5 { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 12px; color: rgba(255, 255, 255, 0.8); }
-        .footer-column ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-        .footer-column a { color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; transition: color 0.2s ease; text-decoration: none; }
-        .footer-column a:hover { color: var(--accent); }
-        .footer-bottom { padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; }
-        .footer-copyright { font-size: 0.8rem; color: rgba(255, 255, 255, 0.35); margin-bottom: 10px; }
-        .footer-legal { display: flex; justify-content: center; gap: 20px; }
-        .footer-legal a { color: rgba(255, 255, 255, 0.35); font-size: 0.75rem; text-decoration: none; transition: color 0.2s; }
-        .footer-legal a:hover { color: white; }
+        .theme-hot-takes-party{--accent:#f97316;--accent-glow:rgba(249,115,22,0.6)}
+        .theme-hot-takes-party .bg-base{background:linear-gradient(180deg,#301508 0%,#201008 40%,#150805 100%)}
+        .theme-hot-takes-party .bg-scene::before{content:'🔥';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:280px;opacity:0.25;animation:fireFlicker 0.2s ease-in-out infinite alternate}
+        @keyframes fireFlicker{0%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}100%{transform:translate(-50%,-50%) scale(1.03) rotate(2deg)}}
 
-        @media (max-width: 600px) {
-            header { height: 56px; padding: 0 14px; }
-            .nav-inner { gap: 12px; }
-            .header-logo { font-size: 1.4rem; letter-spacing: 3px; }
-            .leave-btn { padding: 6px 10px; font-size: 0.75rem; }
-            .leave-btn span { display: none; }
-            main { padding: 70px 16px 30px; }
-            .game-title { font-size: 2.4rem; }
-            .room-code-card { padding: 1.5rem; }
-            .room-code-value { font-size: 3.5rem; letter-spacing: 8px; }
-            .room-code-actions { flex-direction: column; }
-            .copy-btn { width: 100%; justify-content: center; }
-            .players-section, .settings-section { padding: 1rem; }
-            .player-item { padding: 0.6rem 0.75rem; }
-            .player-avatar { width: 28px; height: 28px; font-size: 0.8rem; }
-            .player-name { font-size: 0.85rem; }
-            .kick-btn { opacity: 1; }
-            .btn { padding: 0.9rem; font-size: 1.15rem; }
-            .modal { max-height: calc(100vh - 1rem); border-radius: 16px; }
-            .modal-header { padding: 1rem 1.25rem; }
-            .modal-body { padding: 1.25rem; }
-            .modal-footer { padding: 0.85rem 1.25rem; }
-            .footer-links { grid-template-columns: 1fr; gap: 20px; }
-            .footer-main { padding: 30px 20px 20px; }
-            .party-mode .players-list { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; max-height: 300px; padding: 0.75rem; }
-            .party-mode .player-item { padding: 0.5rem 0.6rem; }
-            .party-mode .player-avatar { width: 24px; height: 24px; min-width: 24px; font-size: 0.65rem; }
-            .party-mode .player-name { font-size: 0.8rem; }
-            .party-player-count .count-number { font-size: 2rem; }
-            .players-header-right { gap: 8px; }
-            .how-to-play-btn { padding: 0.4rem 0.7rem; font-size: 0.7rem; }
-        }
-        @media (max-height: 700px) {
-            .modal { max-height: calc(100vh - 1rem); }
-            .modal-body { max-height: 50vh; }
+        .theme-trivia-royale{--accent:#a855f7;--accent-glow:rgba(168,85,247,0.6)}
+        .theme-trivia-royale .bg-base{background:radial-gradient(ellipse 150% 100% at 50% 0%,#281840 0%,#1a1030 40%,#0f0818 100%)}
+        .theme-trivia-royale .bg-scene::before{content:'👑';position:absolute;top:8%;left:50%;transform:translateX(-50%);font-size:130px;opacity:0.35;animation:crownFloat 2s ease-in-out infinite}
+
+        .theme-power-struggle{--accent:#dc2626;--accent-glow:rgba(220,38,38,0.6)}
+        .theme-power-struggle .bg-base{background:linear-gradient(180deg,#1a0a0a 0%,#250f0f 50%,#0f0505 100%)}
+        .theme-power-struggle .bg-scene::before{content:'💰';position:absolute;top:45%;left:35%;font-size:100px;opacity:0.2;transform:rotate(-15deg)}
+        .theme-power-struggle .bg-scene::after{content:'🗡️';position:absolute;top:50%;left:55%;font-size:100px;opacity:0.2;transform:rotate(15deg)}
+        .theme-power-struggle .game-title{color:#fbbf24!important}
+
+        .theme-insider{--accent:#6366f1;--accent-glow:rgba(99,102,241,0.6)}
+        .theme-insider .bg-base{background:radial-gradient(circle at 50% 50%,#151530 0%,#0a0a1a 100%)}
+        .theme-insider .bg-scene::before{content:'🔍';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:180px;opacity:0.15;animation:searchMove 4s ease-in-out infinite}
+        @keyframes searchMove{0%,100%{transform:translate(-50%,-50%) rotate(-10deg)}50%{transform:translate(-50%,-50%) rotate(10deg)}}
+
+        .theme-categories{--accent:#06b6d4;--accent-glow:rgba(6,182,212,0.6)}
+        .theme-categories .bg-base{background:linear-gradient(180deg,#0a1a20 0%,#051215 100%)}
+        .theme-categories .bg-scene::before{content:'⚡';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:250px;opacity:0.15;animation:lightningFlash 2s ease-in-out infinite}
+        @keyframes lightningFlash{0%,90%,100%{opacity:0.1}92%,96%{opacity:0.3}}
+        .theme-categories .game-title{font-family:'Orbitron',monospace!important}
+
+        .theme-npat{--accent:#f59e0b;--accent-glow:rgba(245,158,11,0.6)}
+        .theme-npat .bg-base{background:linear-gradient(180deg,#251a08 0%,#181008 100%)}
+        .theme-npat .bg-scene::before{content:'📝';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:200px;opacity:0.15}
+        .theme-npat .bg-scene::after{content:'N·P·A·T';position:absolute;top:15%;left:50%;transform:translateX(-50%);font-family:'Permanent Marker',cursive;font-size:50px;opacity:0.2;letter-spacing:8px;color:#f59e0b}
+        .theme-npat .game-title{font-family:'Permanent Marker',cursive!important}
+
+        .theme-word-association{--accent:#8b5cf6;--accent-glow:rgba(139,92,246,0.6)}
+        .theme-word-association .bg-base{background:linear-gradient(180deg,#1d0a30 0%,#130820 100%)}
+        .theme-word-association .bg-scene::before{content:'🔗🔗🔗🔗🔗';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;letter-spacing:-10px;opacity:0.2;animation:chainPulse 2s ease-in-out infinite}
+        @keyframes chainPulse{0%,100%{letter-spacing:-10px}50%{letter-spacing:5px}}
+
+        .theme-charades{--accent:#ec4899;--accent-glow:rgba(236,72,153,0.6)}
+        .theme-charades .bg-base{background:linear-gradient(180deg,#2a0a1a 0%,#1a0510 100%)}
+        .theme-charades .bg-scene::after{content:'🎭';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:200px;opacity:0.2;animation:maskSwing 3s ease-in-out infinite}
+        @keyframes maskSwing{0%,100%{transform:translate(-50%,-50%) rotate(-5deg)}50%{transform:translate(-50%,-50%) rotate(5deg)}}
+        .theme-charades .game-title{font-family:'Pacifico',cursive!important}
+
+        .theme-celebrity{--accent:#fbbf24;--accent-glow:rgba(251,191,36,0.6)}
+        .theme-celebrity .bg-base{background:linear-gradient(180deg,#1a1508 0%,#100a05 100%)}
+        .theme-celebrity .bg-scene::before{content:'⭐⭐⭐⭐⭐';position:absolute;top:20%;left:50%;transform:translateX(-50%);font-size:50px;letter-spacing:20px;opacity:0.3}
+        .theme-celebrity .bg-scene::after{content:'🎬';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:180px;opacity:0.15}
+
+        .theme-fishbowl{--accent:#06b6d4;--accent-glow:rgba(6,182,212,0.6)}
+        .theme-fishbowl .bg-base{background:linear-gradient(180deg,#082530 0%,#051a25 50%,#031015 100%)}
+        .theme-fishbowl .bg-scene::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:350px;height:350px;border:15px solid rgba(6,182,212,0.2);border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;background:radial-gradient(ellipse at 50% 40%,rgba(6,182,212,0.1) 0%,transparent 70%)}
+        .theme-fishbowl .bg-scene::after{content:'🐟';position:absolute;top:50%;left:50%;font-size:80px;opacity:0.4;animation:fishSwim 4s ease-in-out infinite}
+        @keyframes fishSwim{0%,100%{transform:translate(-80%,-50%)}50%{transform:translate(-20%,-50%) scaleX(-1)}}
+
+        .theme-most-likely-to{--accent:#f43f5e;--accent-glow:rgba(244,63,94,0.6)}
+        .theme-most-likely-to .bg-base{background:radial-gradient(circle at 50% 50%,#250a15 0%,#150508 100%)}
+        .theme-most-likely-to .bg-scene::before{content:'👈';position:absolute;top:50%;left:30%;transform:translateY(-50%);font-size:120px;opacity:0.2}
+        .theme-most-likely-to .bg-scene::after{content:'👉';position:absolute;top:50%;right:30%;transform:translateY(-50%) scaleX(-1);font-size:120px;opacity:0.2}
+
+        .theme-sketch-guess{--accent:#22c55e;--accent-glow:rgba(34,197,94,0.6)}
+        .theme-sketch-guess .bg-base{background:#f5f5f0}
+        .theme-sketch-guess .bg-scene::before{content:'';position:absolute;inset:40px;border:3px dashed rgba(0,0,0,0.1);border-radius:20px}
+        .theme-sketch-guess .bg-scene::after{content:'✏️';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);font-size:180px;opacity:0.15}
+        .theme-sketch-guess .game-title{color:#1a1a1a!important;text-shadow:none!important;font-family:'Caveat',cursive!important;font-size:4rem!important}
+        .theme-sketch-guess .card,.theme-sketch-guess .players-card{background:rgba(255,255,255,0.95)!important;border-color:rgba(0,0,0,0.1)!important}
+        .theme-sketch-guess .section-title,.theme-sketch-guess .room-code-label{color:#1a1a1a!important}
+        .theme-sketch-guess .room-code-value{color:#22c55e!important}
+        .theme-sketch-guess .input-field,.theme-sketch-guess select{background:rgba(0,0,0,0.05)!important;color:#1a1a1a!important;border-color:rgba(0,0,0,0.15)!important}
+        .theme-sketch-guess .btn-start{background:#22c55e!important}
+        .theme-sketch-guess .text-muted,.theme-sketch-guess .player-name{color:rgba(0,0,0,0.7)!important}
+
+        .theme-fools-gold{--accent:#fbbf24;--accent-glow:rgba(251,191,36,0.6)}
+        .theme-fools-gold .bg-base{background:linear-gradient(180deg,#251a08 0%,#181005 100%)}
+        .theme-fools-gold .bg-scene::before{content:'🎭';position:absolute;top:45%;left:35%;font-size:100px;opacity:0.2}
+        .theme-fools-gold .bg-scene::after{content:'🪙🪙🪙';position:absolute;top:50%;left:55%;font-size:60px;opacity:0.25;animation:coinShine 2s ease-in-out infinite}
+        @keyframes coinShine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.5)}}
+        .theme-fools-gold .game-title{color:#fbbf24!important}
+
+        .theme-broken-pictionary{--accent:#f97316;--accent-glow:rgba(249,115,22,0.6)}
+        .theme-broken-pictionary .bg-base{background:linear-gradient(135deg,#251508 0%,#150810 100%)}
+        .theme-broken-pictionary .bg-scene::before{content:'✏️→💬→✏️→💬';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;opacity:0.2;letter-spacing:5px}
+
+        .theme-doodle-duel{--accent:#ec4899;--accent-glow:rgba(236,72,153,0.6)}
+        .theme-doodle-duel .bg-base{background:linear-gradient(180deg,#251015 0%,#180a10 100%)}
+        .theme-doodle-duel .bg-scene::before{content:'🖌️ VS 🖌️';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:70px;opacity:0.2}
+        .theme-doodle-duel .game-title{font-family:'Caveat',cursive!important;font-size:4rem!important}
+
+        .theme-two-truths{--accent:#22c55e;--accent-glow:rgba(34,197,94,0.6)}
+        .theme-two-truths .bg-base{background:linear-gradient(180deg,#0a1a10 0%,#051008 100%)}
+        .theme-two-truths .bg-scene::before{content:'✓ ✓ ✗';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:100px;letter-spacing:40px;opacity:0.15}
+
+        .theme-this-or-that-party{--accent:#f97316;--accent-glow:rgba(249,115,22,0.6)}
+        .theme-this-or-that-party .bg-base{background:linear-gradient(90deg,rgba(59,130,246,0.25) 0%,#0f0f15 30%,#0f0f15 70%,rgba(249,115,22,0.25) 100%)}
+        .theme-this-or-that-party .bg-scene::before{content:'VS';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:200px;opacity:0.1}
+
+        .theme-never-ever-party{--accent:#ec4899;--accent-glow:rgba(236,72,153,0.6)}
+        .theme-never-ever-party .bg-base{background:radial-gradient(ellipse at 50% 100%,#250a1a 0%,#150810 100%)}
+        .theme-never-ever-party .bg-scene::before{content:'🙈';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:180px;opacity:0.2}
+
+        .theme-bet-or-bluff{--accent:#10b981;--accent-glow:rgba(16,185,129,0.6)}
+        .theme-bet-or-bluff .bg-base{background:linear-gradient(180deg,#0a2518 0%,#081812 100%)}
+        .theme-bet-or-bluff .bg-scene::before{content:'🎰';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:180px;opacity:0.2}
+
+        /* LAYOUT */
+        main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:100px 20px 40px;position:relative;z-index:1}
+        .container{width:100%;max-width:900px;display:grid;grid-template-columns:1fr 320px;gap:24px}
+        @media(max-width:800px){.container{grid-template-columns:1fr;max-width:500px}}
+
+        /* CARDS */
+        .card{background:rgba(20,20,30,0.85);border:1px solid var(--border);border-radius:20px;padding:1.5rem;backdrop-filter:blur(20px)}
+        .card::before{content:'';position:absolute;top:0;left:30px;right:30px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);border-radius:2px}
+        .section-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:var(--accent);margin-bottom:1rem;display:flex;align-items:center;gap:10px}
+
+        /* GAME HEADER */
+        .game-header{text-align:center;margin-bottom:1.5rem;grid-column:1/-1}
+        .game-title{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:8px;line-height:1;text-shadow:0 0 80px var(--accent-glow)}
+
+        /* ROOM CODE */
+        .room-code-card{position:relative;text-align:center;padding:1.5rem;margin-bottom:1.5rem;grid-column:1/-1}
+        .room-code-label{font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem}
+        .room-code-value{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:12px;color:var(--accent);text-shadow:0 0 30px var(--accent-glow)}
+        .room-code-actions{display:flex;gap:10px;justify-content:center;margin-top:1rem}
+        .copy-btn{display:flex;align-items:center;gap:6px;padding:0.6rem 1rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+        .copy-btn:hover{border-color:var(--accent);background:rgba(255,255,255,0.1)}
+        .copy-btn svg{width:16px;height:16px}
+
+        /* PLAYERS */
+        .players-card{position:relative}
+        .players-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+        .player-count{background:var(--accent);color:white;padding:0.25rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:700}
+        .players-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+        .player-item{display:flex;align-items:center;gap:12px;padding:0.75rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;transition:all 0.2s}
+        .player-item:hover{border-color:var(--accent);background:rgba(255,255,255,0.05)}
+        .player-item.is-host{border-color:var(--gold);background:rgba(251,191,36,0.08)}
+        .player-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem}
+        .player-info{flex:1;min-width:0}
+        .player-name{font-weight:600;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .player-name.premium{background:linear-gradient(90deg,var(--gold),#f59e0b,var(--gold));background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldShimmer 3s linear infinite}
+        @keyframes goldShimmer{0%{background-position:0% center}100%{background-position:200% center}}
+        .host-badge{font-size:0.7rem;color:var(--gold)}
+        .kick-btn{padding:0.4rem 0.6rem;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#ef4444;font-size:0.75rem;cursor:pointer;opacity:0;transition:opacity 0.2s}
+        .player-item:hover .kick-btn{opacity:1}
+
+        /* SETTINGS */
+        .settings-card{position:relative}
+        .setting-group{margin-bottom:1.25rem}
+        .setting-group:last-child{margin-bottom:0}
+        .setting-label{display:block;font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:1.5px}
+        select,.input-field{width:100%;padding:0.8rem 1rem;background:rgba(10,10,15,0.8);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.95rem;font-family:inherit;cursor:pointer;transition:all 0.2s}
+        select:focus,.input-field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        select option{background:#1a1a2e;color:white}
+        .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:0.75rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px}
+        .toggle-label{font-size:0.9rem;font-weight:500}
+        .toggle{position:relative;width:44px;height:24px;background:rgba(255,255,255,0.1);border-radius:12px;cursor:pointer;transition:background 0.2s}
+        .toggle.active{background:var(--accent)}
+        .toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform 0.2s}
+        .toggle.active::after{transform:translateX(20px)}
+        .custom-words-input{margin-top:0.75rem;display:none}
+        .custom-words-input.visible{display:block}
+        .custom-words-input textarea{width:100%;height:80px;padding:0.75rem;background:rgba(10,10,15,0.8);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.9rem;resize:none}
+        .custom-words-hint{font-size:0.75rem;color:var(--muted);margin-top:0.4rem}
+
+        /* START BUTTON */
+        .btn-start{width:100%;padding:1.1rem;background:var(--accent);border:none;border-radius:12px;color:white;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;cursor:pointer;box-shadow:0 8px 30px var(--accent-glow);transition:all 0.2s;margin-top:1rem}
+        .btn-start:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 40px var(--accent-glow);filter:brightness(1.1)}
+        .btn-start:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+
+        /* HOW TO PLAY */
+        .htp-btn{display:flex;align-items:center;gap:6px;padding:0.5rem 0.8rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+        .htp-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .htp-btn svg{width:14px;height:14px}
+
+        /* MODAL */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+        .modal-overlay.visible{display:flex}
+        .modal{background:#14141f;border:1px solid var(--border);border-radius:24px;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column}
+        .modal-header{padding:1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+        .modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--accent)}
+        .modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
+        .modal-body{padding:1.5rem;color:var(--muted);line-height:1.7;overflow-y:auto;font-size:0.95rem}
+        .modal-body h3{color:var(--accent);margin:1rem 0 0.5rem;font-size:1rem}
+        .modal-body h3:first-child{margin-top:0}
+        .modal-body ul,.modal-body ol{margin-left:1.25rem}
+        .modal-body li{margin-bottom:0.4rem;color:var(--text)}
+        .modal-body strong{color:var(--accent)}
+
+        /* CONFIRM MODAL */
+        .confirm-btns{display:flex;gap:10px;margin-top:1.5rem}
+        .confirm-btns button{flex:1;padding:0.8rem;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:none}
+        .btn-confirm{background:var(--red);color:white}
+        .btn-cancel{background:rgba(255,255,255,0.1);color:var(--text);border:1px solid var(--border)}
+
+        /* PARTY MODE */
+        .party-mode .players-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+        .party-mode .player-item{flex-direction:column;text-align:center;padding:0.6rem}
+        .party-mode .player-avatar{margin-bottom:0.4rem}
+
+        /* MESSAGES */
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:0.8rem 1.5rem;background:#22c55e;color:white;border-radius:10px;font-weight:600;z-index:1001;animation:toastIn 0.3s ease}
+        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        footer{background:#000;position:relative;z-index:10}
+        .footer-border{height:4px;background:linear-gradient(90deg,#ff6b9d,#4facfe,#a855f7,#ff6b9d);background-size:300% 100%;animation:gradientSlide 6s linear infinite}
+        @keyframes gradientSlide{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+        .footer-main{max-width:1100px;margin:0 auto;padding:40px 20px 25px}
+        .footer-links{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-bottom:30px;max-width:500px;margin-left:auto;margin-right:auto}
+        .footer-column{text-align:center}
+        .footer-column h5{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:2px;margin-bottom:12px;color:rgba(255,255,255,0.8)}
+        .footer-column ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+        .footer-column a{color:rgba(255,255,255,0.4);font-size:0.85rem;text-decoration:none}
+        .footer-bottom{padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center}
+        .footer-copyright{font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:10px}
+        .footer-legal{display:flex;justify-content:center;gap:20px}
+        .footer-legal a{color:rgba(255,255,255,0.4);font-size:0.75rem;text-decoration:none}
+
+        @media(max-width:600px){
+            main{padding:80px 16px 30px}
+            .game-title{font-size:2.5rem;letter-spacing:5px}
+            .room-code-value{font-size:2.2rem;letter-spacing:8px}
+            .container{gap:16px}
+            .card{padding:1.25rem}
         }
     </style>
 </head>
 <body class="theme-loading">
-
-<div class="bg-container">
-    <div class="bg-gradient"></div>
-    <div class="glow-orb"></div>
-    <div class="glow-orb"></div>
-    <div class="grid-overlay"></div>
-</div>
-
-<header>
-    <nav class="nav-inner">
-        <div class="nav-left">
-            <a href="/squad-games.html" class="leave-btn" id="leave-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Leave</span>
-            </a>
-        </div>
-        <a href="/" class="header-logo">THEGAMING.CO</a>
-        <div class="nav-right-wrapper" id="site-header"></div>
-    </nav>
-</header>
+<div class="bg-container"><div class="bg-base"></div><div class="bg-scene"></div></div>
+<div id="site-header"></div>
+<a href="/squad-games.html" class="leave-btn" style="position:fixed;top:20px;left:20px;z-index:100;display:flex;align-items:center;gap:8px;padding:0.6rem 1rem;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:10px;color:var(--text);text-decoration:none;font-weight:600;font-size:0.9rem;backdrop-filter:blur(10px);transition:all 0.2s">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Leave
+</a>
 
 <main>
-    <div class="game-header">
-        <h1 class="game-title" id="game-title">Loading...</h1>
-    </div>
+    <div class="container">
+        <div class="game-header">
+            <h1 class="game-title" id="game-title">Loading...</h1>
+        </div>
 
-    <div class="room-code-section">
-        <div class="room-code-card">
+        <div class="room-code-card card">
             <div class="room-code-label">Share This Code</div>
             <div class="room-code-value" id="room-code">------</div>
-            <div class="room-code-hint">Join at thegaming.co/lobby</div>
             <div class="room-code-actions">
-                <button class="copy-btn" id="copy-code-btn" onclick="copyRoomCode()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <button class="copy-btn" onclick="copyCode()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Copy Code
                 </button>
-                <button class="copy-btn" id="copy-link-btn" onclick="copyLink()">
+                <button class="copy-btn" onclick="copyLink()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                     Copy Link
                 </button>
             </div>
         </div>
-    </div>
 
-    <div class="players-section">
-        <div class="players-header">
-            <h2 class="players-title">Players</h2>
-            <div class="players-header-right">
-                <button class="how-to-play-btn" onclick="showHowToPlay()">How to Play</button>
-                <div class="players-count"><span id="player-count">0</span>/<span id="max-players">20</span></div>
-            </div>
-        </div>
-        <div class="players-list" id="players-list"><div class="players-empty">Connecting...</div></div>
-    </div>
-
-    <div class="settings-section" id="settings-section" style="display: none;">
-        <div class="settings-header">
-            <h2 class="settings-title">Settings</h2>
-            <span class="host-badge">Host</span>
-        </div>
-        <div class="setting-group" id="category-group">
-            <label class="setting-label" id="category-label">Location Pack</label>
-            <select class="setting-select" id="category-select" onchange="updateLocationPreview(); updateCustomWordsVisibility();"></select>
-            <div class="location-preview" id="location-preview" style="display: none;">
-                <div class="location-preview-title">Included Locations</div>
-                <div class="location-tags" id="location-tags"></div>
-            </div>
-            <div class="custom-words-group" id="custom-words-group" style="display: none;">
-                <label class="setting-label" style="margin-top: 12px;">Your Custom Words</label>
-                <textarea class="setting-select" id="custom-words" placeholder="word1, word2, word3, word4..." rows="3" style="resize: vertical; min-height: 70px; font-family: inherit;"></textarea>
-                <div class="custom-words-hint">Enter at least 10 words separated by commas</div>
-            </div>
-        </div>
-        <div class="setting-group" id="two-spies-group" style="display: none;">
-            <label class="setting-checkbox" for="two-spies">
-                <input type="checkbox" id="two-spies">
-                <div class="setting-checkbox-text">
-                    <div class="setting-checkbox-title">Two Spies Mode</div>
-                    <div class="setting-checkbox-desc">Requires 5+ players</div>
+        <!-- LEFT: Players -->
+        <div class="players-card card">
+            <div class="players-header">
+                <div class="section-title">
+                    <span>Players</span>
+                    <span class="player-count" id="player-count">0</span>
                 </div>
-            </label>
+                <button class="htp-btn" onclick="showHowToPlay()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    How to Play
+                </button>
+            </div>
+            <div class="players-list" id="players-list"></div>
         </div>
-    </div>
 
-    <div class="start-section">
-        <div class="min-players-warning" id="min-warning" style="display: none;">Need <span id="min-players">4</span> players to start</div>
-        <div class="waiting-message" id="waiting-message" style="display: none;">Waiting for host to start<span class="waiting-dots"><span class="waiting-dot"></span><span class="waiting-dot"></span><span class="waiting-dot"></span></span></div>
-        <button class="btn btn-primary" id="start-btn" onclick="startGame()" style="display: none;">Start Game</button>
+        <!-- RIGHT: Settings -->
+        <div class="settings-card card" id="settings-section" style="display:none">
+            <div class="section-title">Host Settings</div>
+            <div id="settings-container"></div>
+            <button class="btn-start" id="start-btn" disabled>Waiting for Players...</button>
+        </div>
     </div>
 </main>
 
-<div class="modal-overlay" id="how-to-play-modal">
+<!-- How To Play Modal -->
+<div class="modal-overlay" id="htp-modal">
     <div class="modal">
         <div class="modal-header">
-            <h2 class="modal-title" id="modal-title">How to Play</h2>
-            <button class="modal-close" onclick="closeModal('how-to-play-modal')">&times;</button>
+            <span class="modal-title">How To Play</span>
+            <button class="modal-close" onclick="closeModal('htp-modal')">&times;</button>
         </div>
-        <div class="modal-body" id="modal-body"></div>
-        <div class="modal-footer"><button class="modal-btn" onclick="closeModal('how-to-play-modal')">Got It</button></div>
+        <div class="modal-body" id="htp-content"></div>
     </div>
 </div>
 
-<div class="modal-overlay confirm-modal" id="confirm-modal">
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
     <div class="modal">
         <div class="modal-header">
-            <h2 class="modal-title" id="confirm-title">Confirm</h2>
+            <span class="modal-title" id="confirm-title">Confirm</span>
             <button class="modal-close" onclick="closeModal('confirm-modal')">&times;</button>
         </div>
         <div class="modal-body">
-            <p class="modal-message" id="confirm-message">Are you sure?</p>
-            <div class="modal-actions">
-                <button class="modal-btn cancel" onclick="closeModal('confirm-modal')">Cancel</button>
-                <button class="modal-btn danger" id="confirm-btn" onclick="confirmAction()">Confirm</button>
+            <p id="confirm-message"></p>
+            <div class="confirm-btns">
+                <button class="btn-cancel" onclick="closeModal('confirm-modal')">Cancel</button>
+                <button class="btn-confirm" id="confirm-btn">Confirm</button>
             </div>
         </div>
     </div>
@@ -406,75 +407,254 @@
     <div class="footer-border"></div>
     <div class="footer-main">
         <div class="footer-links">
-            <div class="footer-column"><h5>GAMES</h5><ul><li><a href="/solo.html">Solo</a></li><li><a href="/squad-games.html">Squad</a></li><li><a href="/party-games.html">Party</a></li></ul></div>
-            <div class="footer-column"><h5>COMMUNITY</h5><ul><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/supporters.html">Supporters</a></li></ul></div>
-            <div class="footer-column"><h5>COMPANY</h5><ul><li><a href="/about.html">About</a></li><li><a href="/contact.html">Contact</a></li></ul></div>
+            <div class="footer-column"><h5>Games</h5><ul><li><a href="/solo-games.html">Solo</a></li><li><a href="/duos-games.html">Duos</a></li><li><a href="/squad-games.html">Squad</a></li><li><a href="/party-games.html">Party</a></li></ul></div>
+            <div class="footer-column"><h5>Account</h5><ul><li><a href="/login.html">Login</a></li><li><a href="/premium.html">Premium</a></li></ul></div>
+            <div class="footer-column"><h5>Company</h5><ul><li><a href="/about.html">About</a></li><li><a href="/contact.html">Contact</a></li></ul></div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
+            <p class="footer-copyright">© 2025 TheGaming.co. All rights reserved.</p>
             <div class="footer-legal"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div>
         </div>
     </div>
 </footer>
 
 <script>
-    // ========== CONFIG ==========
-    const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-    
-    const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // ========== GAME CONFIGS ==========
+    // ========== GAME CONFIGURATIONS ==========
     const GAMES = {
-        'spyfall': { displayName: 'SPY HUNT', backendType: 'spyfall', theme: 'theme-spyfall', minPlayers: 4, maxPlayers: 20, categoryLabel: 'Location Pack', categories: [{value:'random',text:'🎲 Random'},{value:'classic',text:'🏛️ Classic'},{value:'modern',text:'🏙️ Modern'},{value:'adult',text:'🔞 Adult'},{value:'marvel',text:'🦸 Marvel'},{value:'dc',text:'🦇 DC'},{value:'movies',text:'🎬 Movies'},{value:'medieval',text:'⚔️ Medieval'},{value:'websites',text:'🌐 Websites'},{value:'popculture',text:'📺 Pop Culture'},{value:'anime',text:'🎌 Anime'},{value:'horror',text:'🔪 Horror'},{value:'realitytv',text:'📺 Reality TV'},{value:'videogames',text:'🎮 Video Games'},{value:'bollywood',text:'🇮🇳 Bollywood'}], showTwoSpies: true, showLocationPreview: true, isPartyGame: false, howToPlay: '<h3>Setup</h3><p>One player is the <strong>Spy</strong>. Everyone else sees a location.</p><h3>Play</h3><p>Ask questions to find the Spy without revealing the location!</p><h3>Win</h3><ul><li>Players win by voting out the Spy</li><li>Spy wins by guessing location or surviving</li></ul>', gameFile: '/games/squad/spyfall.html' },
-        'avalon': { displayName: 'SECRET ROLES', backendType: 'avalon', theme: 'theme-avalon', minPlayers: 5, maxPlayers: 15, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'},{value:'advanced',text:'Advanced'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Setup</h3><p>Players are Loyal Servants or Minions of Mordred.</p><h3>Win</h3><ul><li>Good wins if 3 quests succeed</li><li>Evil wins if 3 fail or Assassin kills Merlin</li></ul>', gameFile: '/games/squad/avalon.html' },
-        'werewolf': { displayName: 'MAFIA', backendType: 'werewolf', theme: 'theme-werewolf', minPlayers: 6, maxPlayers: 20, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'},{value:'extended',text:'Extended'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Roles</h3><ul><li>Mafia eliminates at night</li><li>Seer checks players</li><li>Doctor protects</li></ul>', gameFile: '/games/squad/werewolf.html' },
-        'imposter': { displayName: 'IMPOSTER', backendType: 'imposter', theme: 'theme-imposter', minPlayers: 4, maxPlayers: 10, categoryLabel: 'Pack', categories: [{value:'random',text:'🎲 Random'},{value:'food',text:'🍕 Food'},{value:'animals',text:'🐾 Animals'},{value:'places',text:'🗺️ Places'},{value:'objects',text:'📦 Objects'},{value:'activities',text:'🏃 Activities'},{value:'nature',text:'🌿 Nature'},{value:'entertainment',text:'🎭 Entertainment'},{value:'spicy',text:'🌶️ Spicy'},{value:'stereotypes',text:'👥 Stereotypes'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Setup</h3><p>Everyone except Imposter sees a word.</p><h3>Play</h3><p>Give one-word clues. Imposter must fake it!</p>', gameFile: '/games/squad/imposter.html' },
-        'codenames': { displayName: 'CODEWORDS', backendType: 'codenames', theme: 'theme-codenames', minPlayers: 4, maxPlayers: 20, categoryLabel: 'Pack', categories: [{value:'standard',text:'Standard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Teams</h3><p>Spymasters give clues to find team words.</p>', gameFile: '/games/squad/codenames.html' },
-        'categories': { displayName: 'CATEGORIES', backendType: 'categories', theme: 'theme-categories', minPlayers: 2, maxPlayers: 20, categoryLabel: 'Rounds', categories: [{value:'5',text:'5 Rounds'},{value:'10',text:'10 Rounds'},{value:'15',text:'15 Rounds'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Race to type valid answers first!</p>', gameFile: '/games/squad/categories.html' },
-        'word-association': { displayName: 'WORD ASSOCIATION', backendType: 'word-association', theme: 'theme-word-association', minPlayers: 3, maxPlayers: 12, categoryLabel: 'Lives', categories: [{value:'2',text:'2 Lives'},{value:'3',text:'3 Lives'},{value:'5',text:'5 Lives'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Say related words before time runs out!</p>', gameFile: '/games/squad/word-association.html' },
-        'herd-mentality': { displayName: 'THINK ALIKE', backendType: 'herd-mentality', theme: 'theme-herd-mentality', minPlayers: 4, maxPlayers: 20, categoryLabel: 'Mode', categories: [{value:'quick',text:'Quick (5)'},{value:'standard',text:'Standard (8)'},{value:'marathon',text:'Marathon (12)'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Match the majority answer!</p>', gameFile: '/games/squad/herd-mentality.html' },
-        'trivia-royale': { displayName: 'TRIVIA ROYALE', backendType: 'trivia-royale', theme: 'theme-trivia-royale', minPlayers: 2, maxPlayers: 100, categoryLabel: 'Category', categories: [{value:'general',text:'General'},{value:'history',text:'History'},{value:'wars',text:'Wars'},{value:'science',text:'Science'},{value:'geography',text:'Geography'},{value:'popculture',text:'Pop Culture'},{value:'brainrot',text:'Brain Rot'},{value:'bollywood',text:'Bollywood'},{value:'hollywood',text:'Hollywood'},{value:'sports',text:'Sports'},{value:'music',text:'Music'},{value:'gaming',text:'Gaming'},{value:'anime',text:'Anime'},{value:'food',text:'Food'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>10 rounds of trivia. Speed = bonus points!</p>', gameFile: '/games/party/trivia-royale.html' },
-        'this-or-that-party': { displayName: 'THIS OR THAT', backendType: 'this-or-that-party', theme: 'theme-this-or-that-party', minPlayers: 2, maxPlayers: 100, categoryLabel: 'Pack', categories: [{value:'mixed',text:'Mixed'},{value:'lifestyle',text:'Lifestyle'},{value:'hypothetical',text:'Hypothetical'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>Pick between two options. Match majority!</p>', gameFile: '/games/party/this-or-that-party.html' },
-        'hot-takes-party': { displayName: 'HOT TAKES', backendType: 'hot-takes-party', theme: 'theme-hot-takes-party', minPlayers: 2, maxPlayers: 100, categoryLabel: 'Spice', categories: [{value:'mild',text:'Mild'},{value:'medium',text:'Medium'},{value:'spicy',text:'Spicy'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>Rate statements 1-5. Match the crowd!</p>', gameFile: '/games/party/hot-takes-party.html' },
-        'never-ever-party': { displayName: 'NEVER HAVE I EVER', backendType: 'never-ever-party', theme: 'theme-never-ever-party', minPlayers: 2, maxPlayers: 100, categoryLabel: 'Pack', categories: [{value:'clean',text:'Clean'},{value:'spicy',text:'Spicy'},{value:'extreme',text:'Extreme'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>Vote HAVE or HAVE NOT. Minority scores more!</p>', gameFile: '/games/party/never-ever-party.html' },
-        'bet-or-bluff': { displayName: 'BET OR BLUFF', backendType: 'bet-or-bluff', theme: 'theme-bet-or-bluff', minPlayers: 2, maxPlayers: 100, categoryLabel: 'Points', categories: [{value:'500',text:'500'},{value:'1000',text:'1000'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>Answer trivia, then bet on results!</p>', gameFile: '/games/party/bet-or-bluff.html' },
-        'sketch-guess': { displayName: 'SKETCH & GUESS', backendType: 'sketch-guess', theme: 'theme-sketch-guess', minPlayers: 3, maxPlayers: 20, categoryLabel: 'Word Category', categories: [{value:'random',text:'🎲 Random Mix'},{value:'animals',text:'🐾 Animals'},{value:'food',text:'🍕 Food & Drinks'},{value:'objects',text:'📦 Objects'},{value:'actions',text:'🏃 Actions'},{value:'movies',text:'🎬 Movies & TV'},{value:'places',text:'🗺️ Places'},{value:'people',text:'👤 People'},{value:'custom',text:'✏️ Custom Words'}], showTwoSpies: false, showLocationPreview: false, showCustomWords: true, isPartyGame: true, howToPlay: '<h3>Play</h3><p>One player draws, others guess!</p><h3>Scoring</h3><ul><li>Guesser: Faster = more points</li><li>Drawer: Points per correct guess</li></ul>', gameFile: '/games/squad/sketch-guess.html' },
-        'fools-gold': { displayName: 'FOOLS GOLD', backendType: 'fools-gold', theme: 'theme-fools-gold', minPlayers: 3, maxPlayers: 12, categoryLabel: 'Category', categories: [{value:'mixed',text:'🎲 Mixed'},{value:'brainrot',text:'🧠 Brain Rot'},{value:'memes',text:'😂 Memes'},{value:'history',text:'📜 History'},{value:'games',text:'🎮 Games'},{value:'popculture',text:'🌟 Pop Culture'},{value:'science',text:'🔬 Science'}], showTwoSpies: false, showLocationPreview: false, showCustomWords: false, isPartyGame: true, howToPlay: '<h3>How to Play</h3><p>Fill in the blank with a convincing lie!</p><h3>Scoring</h3><ul><li>Fool others: 100 pts each</li><li>Find the truth: 200 pts</li></ul>', gameFile: '/games/squad/fools-gold.html' },
-        'word-bomb': { displayName: 'WORD BOMB', backendType: 'word-bomb', theme: 'theme-word-bomb', minPlayers: 2, maxPlayers: 16, categoryLabel: 'Difficulty', categories: [{value:'easy',text:'Easy'},{value:'medium',text:'Medium'},{value:'hard',text:'Hard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Type a word containing the letters before the bomb explodes!</p><h3>Win</h3><p>Last player standing wins!</p>', gameFile: '/games/squad/word-bomb.html' },
-        'power-struggle': { displayName: 'POWER STRUGGLE', backendType: 'power-struggle', theme: 'theme-power-struggle', minPlayers: 3, maxPlayers: 10, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'},{value:'quick',text:'Quick'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Bluff roles, steal coins, eliminate opponents!</p><h3>Win</h3><p>Last player standing wins!</p>', gameFile: '/games/squad/power-struggle.html' },
-        'fake-artist': { displayName: 'FAKE ARTIST', backendType: 'fake-artist', theme: 'theme-fake-artist', minPlayers: 4, maxPlayers: 10, categoryLabel: 'Category', categories: [{value:'random',text:'🎲 Random'},{value:'objects',text:'📦 Objects'},{value:'animals',text:'🐾 Animals'},{value:'food',text:'🍕 Food'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Draw together one stroke at a time. Fake Artist does not know the word!</p><h3>Win</h3><ul><li>Players win by catching the Fake Artist</li><li>Fake Artist wins by escaping or guessing</li></ul>', gameFile: '/games/squad/fake-artist.html' },
-        'wavelength': { displayName: 'SPECTRUM', backendType: 'wavelength', theme: 'theme-wavelength', minPlayers: 4, maxPlayers: 12, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'},{value:'competitive',text:'Competitive'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Give clues to help your team find the hidden target on a spectrum!</p><h3>Scoring</h3><ul><li>Bullseye: 4 pts</li><li>Close: 3 pts</li><li>Nearby: 2 pts</li></ul>', gameFile: '/games/squad/wavelength.html' },
-        'ludo': { displayName: 'LUDO', backendType: 'ludo', theme: 'theme-ludo', minPlayers: 2, maxPlayers: 6, categoryLabel: 'Mode', categories: [{value:'classic',text:'Classic'},{value:'quick',text:'Quick'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Roll dice, race tokens around the board!</p><h3>Win</h3><p>First to get all 4 tokens home wins!</p>', gameFile: '/games/squad/ludo.html' },
-        'punchline': { displayName: 'PUNCHLINE', backendType: 'punchline', theme: 'theme-punchline', minPlayers: 3, maxPlayers: 16, categoryLabel: 'Mode', categories: [{value:'clean',text:'Clean'},{value:'spicy',text:'Spicy'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>Write the funniest punchline! Everyone votes.</p><h3>Scoring</h3><p>Each vote = 1 point</p>', gameFile: '/games/party/punchline.html' },
-        'insider': { displayName: 'INSIDER', backendType: 'insider', theme: 'theme-insider', minPlayers: 4, maxPlayers: 8, categoryLabel: 'Category', categories: [{value:'random',text:'🎲 Random'},{value:'easy',text:'Easy'},{value:'hard',text:'Hard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>20 Questions - but someone secretly knows the answer!</p><h3>Win</h3><ul><li>Catch Insider = Players win</li><li>Insider escapes = Insider wins</li></ul>', gameFile: '/games/squad/insider.html' },
-        'npat': { displayName: 'NAME PLACE ANIMAL THING', backendType: 'npat', theme: 'theme-npat', minPlayers: 2, maxPlayers: 20, categoryLabel: 'Rounds', categories: [{value:'5',text:'5 Rounds'},{value:'10',text:'10 Rounds'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Fill in Name, Place, Animal, Thing for the random letter!</p><h3>Scoring</h3><ul><li>Unique: 10 pts</li><li>Matching: 5 pts</li></ul>', gameFile: '/games/squad/npat.html' },
-        'charades': { displayName: 'CHARADES', backendType: 'charades', theme: 'theme-charades', minPlayers: 4, maxPlayers: 20, categoryLabel: 'Category', categories: [{value:'random',text:'🎲 Random'},{value:'movies',text:'🎬 Movies'},{value:'actions',text:'🏃 Actions'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Act out words without speaking. Team guesses!</p><h3>Rules</h3><ul><li>No talking or sounds</li><li>Gestures only</li></ul>', gameFile: '/games/squad/charades.html' },
-        'celebrity': { displayName: 'CELEBRITY', backendType: 'celebrity', theme: 'theme-celebrity', minPlayers: 4, maxPlayers: 16, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Guess names in 3 rounds: describe, one word, then act!</p>', gameFile: '/games/squad/celebrity.html' },
-        'fishbowl': { displayName: 'FISHBOWL', backendType: 'fishbowl', theme: 'theme-fishbowl', minPlayers: 6, maxPlayers: 20, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Rounds</h3><ol><li>Taboo: Describe without saying word</li><li>Password: One word clue</li><li>Charades: Act it out</li></ol>', gameFile: '/games/squad/fishbowl.html' },
-        'most-likely-to': { displayName: 'MOST LIKELY TO', backendType: 'most-likely-to', theme: 'theme-most-likely-to', minPlayers: 3, maxPlayers: 20, categoryLabel: 'Pack', categories: [{value:'clean',text:'Clean'},{value:'spicy',text:'Spicy'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: true, howToPlay: '<h3>Play</h3><p>Vote on who is most likely to do each scenario!</p>', gameFile: '/games/party/most-likely-to.html' },
-        'broken-pictionary': { displayName: 'BROKEN PICTIONARY', backendType: 'broken-pictionary', theme: 'theme-broken-pictionary', minPlayers: 4, maxPlayers: 16, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Telephone but with drawing! Draw what you see, describe what is drawn.</p>', gameFile: '/games/squad/broken-pictionary.html' },
-        'doodle-duel': { displayName: 'DOODLE DUEL', backendType: 'doodle-duel', theme: 'theme-doodle-duel', minPlayers: 3, maxPlayers: 12, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>One draws, others write fake titles. Spot the real one!</p>', gameFile: '/games/squad/doodle-duel.html' },
-        'two-truths': { displayName: 'TWO TRUTHS', backendType: 'two-truths', theme: 'theme-two-truths', minPlayers: 3, maxPlayers: 16, categoryLabel: 'Mode', categories: [{value:'standard',text:'Standard'}], showTwoSpies: false, showLocationPreview: false, isPartyGame: false, howToPlay: '<h3>Play</h3><p>Share two truths and one lie. Can friends spot the fake?</p>', gameFile: '/games/squad/two-truths.html' }
-    };
-
-    const LOCATION_PACKS = { 
-        classic: ['Airport','Bank','Beach','Casino','Cathedral','Circus','Hospital','Hotel','Military Base','Movie Studio'], 
-        modern: ['Coffee Shop','Gym','Shopping Mall','Tech Startup','Spa','Escape Room'], 
-        adult: ['Strip Club','Vegas Casino','Hookah Lounge','Wine Tasting','Nightclub'], 
-        marvel: ['Avengers Tower','Asgard','Wakanda','X-Mansion','Stark Industries'], 
-        dc: ['Batcave','Fortress of Solitude','Arkham Asylum','Metropolis','Gotham City'], 
-        movies: ['Hogwarts','The Shire','Death Star','Jurassic Park','The Matrix'], 
-        medieval: ['Castle','Tavern','Blacksmith','Market','Monastery'], 
-        websites: ['Reddit','YouTube','Discord','TikTok','Twitter','Twitch'], 
-        popculture: ['Squid Game','The Office','Friends','Stranger Things','Among Us'], 
-        anime: ['U.A. High School','Survey Corps HQ','Hidden Leaf Village','Thousand Sunny','Death Note HQ'], 
-        horror: ['Haunted Mansion','Camp Crystal Lake','Overlook Hotel','Elm Street','Cabin in the Woods'], 
-        realitytv: ['Love Island Villa','Survivor Tribal','Big Brother House','Bachelor Mansion','MasterChef Kitchen'], 
-        videogames: ['Los Santos','Hyrule Castle','Pokemon Gym','Verdansk Warzone','Night City'], 
-        bollywood: ['DDLJ Train Platform','Bollywood Film Set','Big Fat Indian Wedding','3 Idiots College','Mumbai Local Train'] 
+        'spyfall': {
+            displayName: 'SPY HUNT', theme: 'theme-spyfall', minPlayers: 4, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/spyfall.html',
+            howToPlay: '<h3>Setup</h3><p>One player is the <strong>Spy</strong>. Everyone else sees a shared location.</p><h3>Gameplay</h3><p>Ask questions to find the Spy without revealing the location!</p><h3>Win</h3><ul><li>Players win by voting out the Spy</li><li>Spy wins by guessing location or surviving</li></ul>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Location Pack', options: [{value:'random',text:'🎲 Random'},{value:'classic',text:'🏛️ Classic'},{value:'modern',text:'🏙️ Modern'},{value:'adult',text:'🔞 Adult'},{value:'marvel',text:'🦸 Marvel'},{value:'dc',text:'🦇 DC'},{value:'movies',text:'🎬 Movies'},{value:'medieval',text:'⚔️ Medieval'},{value:'anime',text:'🎌 Anime'},{value:'horror',text:'🔪 Horror'},{value:'videogames',text:'🎮 Video Games'},{value:'bollywood',text:'🇮🇳 Bollywood'}]},
+                { id: 'twoSpies', type: 'toggle', label: 'Two Spies Mode' },
+                { id: 'showLocations', type: 'toggle', label: 'Show Location List' }
+            ]
+        },
+        'avalon': {
+            displayName: 'SECRET ROLES', theme: 'theme-avalon', minPlayers: 5, maxPlayers: 10, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/avalon.html',
+            howToPlay: '<h3>Teams</h3><p><strong>Loyal Servants</strong> vs <strong>Minions of Mordred</strong></p><h3>Win</h3><ul><li>Good wins if 3 quests succeed</li><li>Evil wins if 3 fail or Assassin kills Merlin</li></ul>',
+            settings: [
+                { id: 'percival', type: 'toggle', label: 'Include Percival' },
+                { id: 'morgana', type: 'toggle', label: 'Include Morgana' },
+                { id: 'mordred', type: 'toggle', label: 'Include Mordred' },
+                { id: 'oberon', type: 'toggle', label: 'Include Oberon' }
+            ]
+        },
+        'werewolf': {
+            displayName: 'MAFIA', theme: 'theme-werewolf', minPlayers: 6, maxPlayers: 15, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/werewolf.html',
+            howToPlay: '<h3>Roles</h3><ul><li><strong>Mafia</strong> - Eliminate at night</li><li><strong>Seer</strong> - Check players</li><li><strong>Doctor</strong> - Protect players</li></ul><h3>Win</h3><p>Village wins when all Mafia die. Mafia wins when they equal villagers.</p>',
+            settings: [
+                { id: 'roles', type: 'select', label: 'Role Set', options: [{value:'basic',text:'Basic'},{value:'standard',text:'Standard'},{value:'chaos',text:'Chaos'}]},
+                { id: 'dayLength', type: 'select', label: 'Day Phase', options: [{value:'3',text:'3 min'},{value:'5',text:'5 min'},{value:'7',text:'7 min'}]}
+            ]
+        },
+        'imposter': {
+            displayName: 'IMPOSTER', theme: 'theme-imposter', minPlayers: 4, maxPlayers: 10, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/imposter.html',
+            howToPlay: '<h3>Setup</h3><p>Everyone except Imposter sees the word.</p><h3>Play</h3><p>Give one-word clues. Imposter must blend in!</p>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Word Pack', options: [{value:'random',text:'🎲 Random'},{value:'food',text:'🍕 Food'},{value:'animals',text:'🐾 Animals'},{value:'places',text:'🗺️ Places'},{value:'objects',text:'📦 Objects'},{value:'spicy',text:'🌶️ Spicy'}]}
+            ]
+        },
+        'codenames': {
+            displayName: 'CODEWORDS', theme: 'theme-codenames', minPlayers: 4, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/codenames.html',
+            howToPlay: '<h3>Teams</h3><p>Spymasters give clues. Teams guess words.</p><h3>Win</h3><p>Find all your words first. Avoid the Assassin!</p>',
+            settings: [
+                { id: 'gridSize', type: 'select', label: 'Grid Size', options: [{value:'5x5',text:'5×5'},{value:'4x4',text:'4×4'}]},
+                { id: 'timer', type: 'select', label: 'Turn Timer', options: [{value:'none',text:'None'},{value:'60',text:'1 min'},{value:'120',text:'2 min'}]}
+            ]
+        },
+        'word-bomb': {
+            displayName: 'WORD BOMB', theme: 'theme-word-bomb', minPlayers: 2, maxPlayers: 16, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/word-bomb.html',
+            howToPlay: '<h3>Play</h3><p>Type a word containing the letters before the bomb explodes!</p><h3>Win</h3><p>Last player standing wins!</p>',
+            settings: [
+                { id: 'difficulty', type: 'select', label: 'Difficulty', options: [{value:'easy',text:'Easy'},{value:'medium',text:'Medium'},{value:'hard',text:'Hard'}]},
+                { id: 'lives', type: 'select', label: 'Lives', options: [{value:'2',text:'2'},{value:'3',text:'3'},{value:'5',text:'5'}]}
+            ]
+        },
+        'power-struggle': {
+            displayName: 'POWER STRUGGLE', theme: 'theme-power-struggle', minPlayers: 3, maxPlayers: 8, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/power-struggle.html',
+            howToPlay: '<h3>Roles</h3><p>Duke, Assassin, Captain, Ambassador, Contessa</p><h3>Play</h3><p>Bluff roles, collect coins, eliminate opponents.</p><h3>Win</h3><p>Last player standing!</p>',
+            settings: [
+                { id: 'startCoins', type: 'select', label: 'Starting Coins', options: [{value:'2',text:'2'},{value:'3',text:'3'}]}
+            ]
+        },
+        'fake-artist': {
+            displayName: 'FAKE ARTIST', theme: 'theme-fake-artist', minPlayers: 4, maxPlayers: 10, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/fake-artist.html',
+            howToPlay: '<h3>Setup</h3><p>Fake Artist doesn\'t know what to draw.</p><h3>Play</h3><p>Add one stroke at a time. Find the faker!</p>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Category', options: [{value:'random',text:'🎲 Random'},{value:'objects',text:'📦 Objects'},{value:'animals',text:'🐾 Animals'},{value:'food',text:'🍕 Food'}]},
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'1',text:'1'},{value:'2',text:'2'}]}
+            ]
+        },
+        'wavelength': {
+            displayName: 'SPECTRUM', theme: 'theme-wavelength', minPlayers: 4, maxPlayers: 12, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/wavelength.html',
+            howToPlay: '<h3>Play</h3><p>Psychic gives clue for hidden target on spectrum. Team guesses location.</p><h3>Score</h3><p>Bullseye: 4 | Close: 3 | Nearby: 2</p>',
+            settings: [
+                { id: 'mode', type: 'select', label: 'Mode', options: [{value:'coop',text:'Coop'},{value:'teams',text:'Teams'}]},
+                { id: 'targetScore', type: 'select', label: 'Target', options: [{value:'10',text:'10 pts'},{value:'15',text:'15 pts'}]}
+            ]
+        },
+        'ludo': {
+            displayName: 'LUDO', theme: 'theme-ludo', minPlayers: 2, maxPlayers: 4, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/ludo.html',
+            howToPlay: '<h3>Play</h3><p>Roll dice, race tokens around the board!</p><h3>Win</h3><p>First to get all 4 tokens home!</p>',
+            settings: [
+                { id: 'mode', type: 'select', label: 'Mode', options: [{value:'classic',text:'Classic'},{value:'quick',text:'Quick Start'}]}
+            ]
+        },
+        'insider': {
+            displayName: 'INSIDER', theme: 'theme-insider', minPlayers: 4, maxPlayers: 8, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/insider.html',
+            howToPlay: '<h3>Play</h3><p>20 Questions - but Insider secretly knows!</p><h3>Win</h3><p>Catch Insider or escape undetected.</p>',
+            settings: [
+                { id: 'difficulty', type: 'select', label: 'Difficulty', options: [{value:'easy',text:'Easy'},{value:'medium',text:'Medium'},{value:'hard',text:'Hard'}]},
+                { id: 'timer', type: 'select', label: 'Time', options: [{value:'3',text:'3 min'},{value:'5',text:'5 min'}]}
+            ]
+        },
+        'categories': {
+            displayName: 'CATEGORIES', theme: 'theme-categories', minPlayers: 2, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/categories.html',
+            howToPlay: '<h3>Play</h3><p>Race to type valid answers for each category!</p>',
+            settings: [
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'5',text:'5'},{value:'10',text:'10'},{value:'15',text:'15'}]},
+                { id: 'timer', type: 'select', label: 'Time', options: [{value:'15',text:'15s'},{value:'20',text:'20s'},{value:'30',text:'30s'}]}
+            ]
+        },
+        'word-association': {
+            displayName: 'WORD CHAIN', theme: 'theme-word-association', minPlayers: 3, maxPlayers: 12, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/word-association.html',
+            howToPlay: '<h3>Play</h3><p>Say related words before time runs out!</p>',
+            settings: [
+                { id: 'lives', type: 'select', label: 'Lives', options: [{value:'2',text:'2'},{value:'3',text:'3'},{value:'5',text:'5'}]},
+                { id: 'timer', type: 'select', label: 'Turn Time', options: [{value:'5',text:'5s'},{value:'8',text:'8s'},{value:'10',text:'10s'}]}
+            ]
+        },
+        'herd-mentality': {
+            displayName: 'THINK ALIKE', theme: 'theme-herd-mentality', minPlayers: 4, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/herd-mentality.html',
+            howToPlay: '<h3>Play</h3><p>Write the same answer as everyone else!</p><h3>Score</h3><p>Match majority = 1 point</p>',
+            settings: [
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'5',text:'5'},{value:'8',text:'8'},{value:'12',text:'12'}]}
+            ]
+        },
+        'npat': {
+            displayName: 'NAME PLACE ANIMAL THING', theme: 'theme-npat', minPlayers: 2, maxPlayers: 16, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/npat.html',
+            howToPlay: '<h3>Play</h3><p>Fill categories for the random letter!</p><h3>Score</h3><p>Unique: 10 | Match: 5</p>',
+            settings: [
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'5',text:'5'},{value:'10',text:'10'}]},
+                { id: 'timer', type: 'select', label: 'Time', options: [{value:'30',text:'30s'},{value:'45',text:'45s'},{value:'60',text:'60s'}]}
+            ]
+        },
+        'charades': {
+            displayName: 'CHARADES', theme: 'theme-charades', minPlayers: 4, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/charades.html',
+            howToPlay: '<h3>Play</h3><p>Act out words - no talking!</p>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Category', options: [{value:'random',text:'🎲 Random'},{value:'movies',text:'🎬 Movies'},{value:'actions',text:'🏃 Actions'},{value:'animals',text:'🐾 Animals'}]},
+                { id: 'timer', type: 'select', label: 'Turn Time', options: [{value:'60',text:'60s'},{value:'90',text:'90s'},{value:'120',text:'2 min'}]}
+            ]
+        },
+        'celebrity': {
+            displayName: 'CELEBRITY', theme: 'theme-celebrity', minPlayers: 4, maxPlayers: 16, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/celebrity.html',
+            howToPlay: '<h3>3 Rounds</h3><ol><li>Describe</li><li>One Word</li><li>Act</li></ol>',
+            settings: [
+                { id: 'namesPerPlayer', type: 'select', label: 'Names/Player', options: [{value:'3',text:'3'},{value:'5',text:'5'}]}
+            ]
+        },
+        'fishbowl': {
+            displayName: 'FISHBOWL', theme: 'theme-fishbowl', minPlayers: 6, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/fishbowl.html',
+            howToPlay: '<h3>3 Rounds</h3><ol><li>Taboo</li><li>Password</li><li>Charades</li></ol>',
+            settings: [
+                { id: 'wordsPerPlayer', type: 'select', label: 'Words/Player', options: [{value:'2',text:'2'},{value:'3',text:'3'},{value:'4',text:'4'}]},
+                { id: 'turnTime', type: 'select', label: 'Turn Time', options: [{value:'45',text:'45s'},{value:'60',text:'60s'}]}
+            ]
+        },
+        'sketch-guess': {
+            displayName: 'SKETCH & GUESS', theme: 'theme-sketch-guess', minPlayers: 3, maxPlayers: 16, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/sketch-guess.html',
+            howToPlay: '<h3>Play</h3><p>One draws, others guess!</p>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Category', options: [{value:'random',text:'🎲 Random'},{value:'animals',text:'🐾 Animals'},{value:'food',text:'🍕 Food'},{value:'objects',text:'📦 Objects'},{value:'custom',text:'✏️ Custom'}]},
+                { id: 'drawTime', type: 'select', label: 'Draw Time', options: [{value:'60',text:'60s'},{value:'90',text:'90s'},{value:'120',text:'2 min'}]}
+            ],
+            customWords: true
+        },
+        'broken-pictionary': {
+            displayName: 'BROKEN PICTIONARY', theme: 'theme-broken-pictionary', minPlayers: 4, maxPlayers: 12, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/broken-pictionary.html',
+            howToPlay: '<h3>Play</h3><p>Telephone + Drawing! Watch words transform.</p>',
+            settings: [
+                { id: 'timer', type: 'select', label: 'Turn Time', options: [{value:'45',text:'45s'},{value:'60',text:'60s'}]}
+            ]
+        },
+        'doodle-duel': {
+            displayName: 'DOODLE DUEL', theme: 'theme-doodle-duel', minPlayers: 3, maxPlayers: 12, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/doodle-duel.html',
+            howToPlay: '<h3>Play</h3><p>One draws, others write fake titles!</p>',
+            settings: [
+                { id: 'drawTime', type: 'select', label: 'Draw Time', options: [{value:'60',text:'60s'},{value:'90',text:'90s'}]}
+            ]
+        },
+        'two-truths': {
+            displayName: 'TWO TRUTHS ONE LIE', theme: 'theme-two-truths', minPlayers: 3, maxPlayers: 12, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/two-truths.html',
+            howToPlay: '<h3>Play</h3><p>Share 2 truths and 1 lie. Others guess the lie!</p>',
+            settings: [
+                { id: 'revealMode', type: 'select', label: 'Reveal', options: [{value:'instant',text:'Instant'},{value:'delayed',text:'After All Vote'}]}
+            ]
+        },
+        'fools-gold': {
+            displayName: 'FOOLS GOLD', theme: 'theme-fools-gold', minPlayers: 3, maxPlayers: 10, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/fools-gold.html',
+            howToPlay: '<h3>Play</h3><p>Fill in the blank with a convincing lie!</p><h3>Score</h3><p>Fool: 100 | Truth: 200</p>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Category', options: [{value:'mixed',text:'🎲 Mixed'},{value:'history',text:'📜 History'},{value:'science',text:'🔬 Science'},{value:'brainrot',text:'🧠 Brain Rot'}]}
+            ]
+        },
+        'most-likely-to': {
+            displayName: 'MOST LIKELY TO', theme: 'theme-most-likely-to', minPlayers: 3, maxPlayers: 20, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/most-likely-to.html',
+            howToPlay: '<h3>Play</h3><p>Vote on who is most likely to do each scenario!</p>',
+            settings: [
+                { id: 'pack', type: 'select', label: 'Pack', options: [{value:'clean',text:'Clean'},{value:'spicy',text:'Spicy'}]},
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'10',text:'10'},{value:'15',text:'15'}]}
+            ]
+        },
+        'punchline': {
+            displayName: 'PUNCHLINE', theme: 'theme-punchline', minPlayers: 3, maxPlayers: 16, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/punchline.html',
+            howToPlay: '<h3>Play</h3><p>Write the funniest punchline! Everyone votes.</p>',
+            settings: [
+                { id: 'mode', type: 'select', label: 'Mode', options: [{value:'clean',text:'Clean'},{value:'spicy',text:'Spicy'}]},
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'5',text:'5'},{value:'8',text:'8'}]}
+            ]
+        },
+        'trivia-royale': {
+            displayName: 'TRIVIA ROYALE', theme: 'theme-trivia-royale', minPlayers: 2, maxPlayers: 100, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/trivia-royale.html',
+            howToPlay: '<h3>Play</h3><p>Answer trivia! Faster = more points.</p>',
+            settings: [
+                { id: 'category', type: 'select', label: 'Category', options: [{value:'general',text:'General'},{value:'history',text:'History'},{value:'science',text:'Science'},{value:'popculture',text:'Pop Culture'},{value:'sports',text:'Sports'},{value:'gaming',text:'Gaming'},{value:'anime',text:'Anime'},{value:'brainrot',text:'Brain Rot'}]},
+                { id: 'rounds', type: 'select', label: 'Questions', options: [{value:'10',text:'10'},{value:'15',text:'15'},{value:'20',text:'20'}]}
+            ]
+        },
+        'this-or-that-party': {
+            displayName: 'THIS OR THAT', theme: 'theme-this-or-that-party', minPlayers: 2, maxPlayers: 100, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/this-or-that-party.html',
+            howToPlay: '<h3>Play</h3><p>Choose between two options. Match the majority!</p>',
+            settings: [
+                { id: 'pack', type: 'select', label: 'Pack', options: [{value:'mixed',text:'Mixed'},{value:'lifestyle',text:'Lifestyle'},{value:'hypothetical',text:'Hypothetical'}]},
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'10',text:'10'},{value:'15',text:'15'}]}
+            ]
+        },
+        'hot-takes-party': {
+            displayName: 'HOT TAKES', theme: 'theme-hot-takes-party', minPlayers: 2, maxPlayers: 100, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/hot-takes-party.html',
+            howToPlay: '<h3>Play</h3><p>Rate statements 1-5. Match the crowd!</p>',
+            settings: [
+                { id: 'spice', type: 'select', label: 'Spice', options: [{value:'mild',text:'🌶️ Mild'},{value:'medium',text:'🌶️🌶️ Medium'},{value:'spicy',text:'🌶️🌶️🌶️ Spicy'}]},
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'10',text:'10'},{value:'15',text:'15'}]}
+            ]
+        },
+        'never-ever-party': {
+            displayName: 'NEVER HAVE I EVER', theme: 'theme-never-ever-party', minPlayers: 2, maxPlayers: 100, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/never-ever-party.html',
+            howToPlay: '<h3>Play</h3><p>Vote "I Have" or "Never". Minority scores more!</p>',
+            settings: [
+                { id: 'pack', type: 'select', label: 'Pack', options: [{value:'clean',text:'Clean'},{value:'spicy',text:'Spicy'},{value:'extreme',text:'Extreme'}]},
+                { id: 'rounds', type: 'select', label: 'Rounds', options: [{value:'10',text:'10'},{value:'15',text:'15'}]}
+            ]
+        },
+        'bet-or-bluff': {
+            displayName: 'BET OR BLUFF', theme: 'theme-bet-or-bluff', minPlayers: 2, maxPlayers: 100, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/bet-or-bluff.html',
+            howToPlay: '<h3>Play</h3><p>Answer trivia, then bet on % correct!</p>',
+            settings: [
+                { id: 'startPoints', type: 'select', label: 'Start Points', options: [{value:'500',text:'500'},{value:'1000',text:'1000'}]}
+            ]
+        }
     };
 
     // ========== STATE ==========
@@ -485,365 +665,279 @@
     const myCosmetics = JSON.parse(localStorage.getItem('tempCosmetics') || 'null');
     const myUserId = localStorage.getItem('tempUserId') || null;
 
-    // Get game type from URL first, then localStorage, then default
     let gameType = urlParams.get('game') || localStorage.getItem('tempGameType') || 'spyfall';
     let gameConfig = GAMES[gameType] || GAMES['spyfall'];
     let isHost = localStorage.getItem('tempIsHost') === 'true';
     let currentRoom = null;
     let myPlayerId = null;
     let confirmCallback = null;
-    let joinAttempts = 0;
-    const maxJoinAttempts = 3;
 
     // Redirect if no room or player name
-    if (!roomCode || !playerName) { 
-        window.location.href = `/lobby.html?game=${gameType}`; 
+    if (!roomCode || !playerName) {
+        window.location.href = `/lobby.html?game=${gameType}`;
     }
 
-    // ========== INIT UI ==========
-    // Don't apply theme yet - wait for server to confirm game type
+    // Set room code immediately
     document.getElementById('room-code').textContent = roomCode || '------';
-    
-    // Set leave button URL based on initial guess (will update when room data arrives)
-    const leaveBtn = document.getElementById('leave-btn');
-    if (leaveBtn) {
-        leaveBtn.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
-    }
 
-    // Show loading state - actual game UI will be set when room data arrives
-    document.getElementById('game-title').textContent = 'Loading...';
-    document.getElementById('players-list').innerHTML = '<div class="players-empty">Connecting...</div>';
+    // ========== SOCKET ==========
+    const socket = io('wss://cursor-api-production-6de6.up.railway.app', {
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000
+    });
 
-    // ========== SOCKET HANDLERS ==========
-    function attemptJoinRoom() {
-        if (!roomCode || !playerName) return;
-        joinAttempts++;
-        socket.emit('rejoin-room', { roomCode, playerName, isPremium, cosmetics: myCosmetics, userId: myUserId });
-    }
-
-    socket.on('connect', () => { 
+    socket.on('connect', () => {
         console.log('Connected to server');
-        joinAttempts = 0; 
-        attemptJoinRoom(); 
+        socket.emit('rejoin-room', { roomCode, playerName, isPremium, cosmetics: myCosmetics, odaId: myUserId });
     });
-    
-    socket.on('reconnect', () => { 
-        joinAttempts = 0; 
-        attemptJoinRoom(); 
+
+    socket.on('room-joined', (data) => {
+        if (data.success || data.room) handleRoomUpdate(data.room);
     });
-    
-    socket.on('room-joined', (data) => { 
-        joinAttempts = 0; 
-        handleRoomUpdate(data.room); 
-    });
-    
-    socket.on('room-state', (data) => { 
-        if (data.success) handleRoomUpdate(data.room); 
-    });
-    
+
     socket.on('player-joined', (data) => handleRoomUpdate(data.room));
     socket.on('player-disconnected', (data) => handleRoomUpdate(data.room));
     socket.on('player-kicked', (data) => handleRoomUpdate(data.room));
-    
-    socket.on('kicked', (data) => {
-        showConfirm('Kicked', data.message, () => {
-            window.location.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
-        }, false);
-    });
-    
-    socket.on('host-left', (data) => {
-        showConfirm('Host Left', data.message, () => {
-            window.location.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
-        }, false);
+    socket.on('room-settings-updated', (data) => handleRoomUpdate(data.room));
+    socket.on('host-changed', (data) => handleRoomUpdate(data.room));
+
+    socket.on('game-starting', (data) => {
+        const config = GAMES[gameType] || GAMES['spyfall'];
+        window.location.href = `${config.gameFile}?room=${roomCode}`;
     });
 
-    socket.on('game-started', (data) => {
-        const gameTypeFromData = data.gameType || currentRoom?.gameType || gameType;
-        const targetGameConfig = GAMES[gameTypeFromData];
-        if (targetGameConfig?.gameFile) { 
-            window.location.href = `${targetGameConfig.gameFile}?room=${roomCode}`; 
-        } else { 
-            window.location.href = `/game-room-error.html?reason=UnknownGame&game=${gameTypeFromData}`; 
-        }
+    socket.on('kicked', () => {
+        alert('You have been kicked from the room.');
+        window.location.href = gameConfig.backUrl;
     });
 
-    socket.on('error', (data) => {
-        if (data.message === 'Room not found' && joinAttempts < maxJoinAttempts) { 
-            setTimeout(attemptJoinRoom, 500); 
-        } else if (data.message === 'Room not found') { 
-            showConfirm('Room Expired', 'This room no longer exists.', () => { 
-                localStorage.removeItem('tempRoomCode'); 
-                window.location.href = `/lobby.html?game=${gameType}`; 
-            }, false); 
-        } else { 
-            showConfirm('Error', data.message, () => {
-                window.location.href = `/lobby.html?game=${gameType}`;
-            }, false); 
-        }
-    });
-    
-    socket.on('join-error', (data) => { 
-        showConfirm('Cannot Join', data.message, () => {
-            window.location.href = `/lobby.html?game=${gameType}`;
-        }, false); 
+    socket.on('room-not-found', () => {
+        alert('Room not found.');
+        window.location.href = gameConfig.backUrl;
     });
 
-    // ========== ROOM UPDATE HANDLER ==========
-    let firstRoomUpdate = true;
-    
+    // ========== ROOM UPDATE ==========
     function handleRoomUpdate(room) {
+        if (!room) return;
         currentRoom = room;
-        
-        // ALWAYS use room.gameType from server as the source of truth
-        if (room.gameType) {
+
+        // ALWAYS use server's gameType
+        if (room.gameType && room.gameType !== gameType) {
             gameType = room.gameType;
             gameConfig = GAMES[gameType] || GAMES['spyfall'];
-            
-            // Update localStorage to stay in sync
             localStorage.setItem('tempGameType', gameType);
-            
-            // Apply theme
-            document.body.className = gameConfig.theme;
-            if (gameConfig.isPartyGame) {
-                document.body.classList.add('party-mode');
-            } else {
-                document.body.classList.remove('party-mode');
-            }
-            
-            // Update leave button
-            const leaveBtn = document.getElementById('leave-btn');
-            if (leaveBtn) {
-                leaveBtn.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
-            }
-            
-            // Update game UI (title, settings, etc)
-            updateGameUI();
-            
-            if (firstRoomUpdate) {
-                console.log('Room gameType from server:', gameType);
-                firstRoomUpdate = false;
-            }
         }
-        
-        // Find current player
+
+        // Apply theme
+        document.body.className = gameConfig.theme;
+        if (gameConfig.isPartyGame) document.body.classList.add('party-mode');
+
+        // Update title
+        document.getElementById('game-title').textContent = gameConfig.displayName;
+
+        // Update leave link
+        document.querySelector('.leave-btn')?.setAttribute('href', gameConfig.backUrl);
+
+        // Find me
         const me = room.players.find(p => p.name === playerName);
-        if (me) { 
-            myPlayerId = me.id; 
-            isHost = me.isHost; 
+        if (me) {
+            myPlayerId = me.id;
+            isHost = me.isHost;
         }
-        
-        // Update UI
+
+        // Update players
         updatePlayersList(room.players);
         document.getElementById('player-count').textContent = room.players.length;
-        
+
+        // Show/hide settings
+        const settingsSection = document.getElementById('settings-section');
         if (isHost) {
-            document.getElementById('settings-section').style.display = 'block';
-            document.getElementById('start-btn').style.display = 'block';
-            document.getElementById('waiting-message').style.display = 'none';
-            
-            if (room.players.length < gameConfig.minPlayers) { 
-                document.getElementById('min-warning').style.display = 'block'; 
-                document.getElementById('min-players').textContent = gameConfig.minPlayers; 
-                document.getElementById('start-btn').disabled = true; 
-            } else { 
-                document.getElementById('min-warning').style.display = 'none'; 
-                document.getElementById('start-btn').disabled = false; 
-            }
-            
-            const twoSpies = document.getElementById('two-spies'); 
-            if (twoSpies) { 
-                twoSpies.disabled = room.players.length < 5; 
-                if (room.players.length < 5) twoSpies.checked = false; 
-            }
+            settingsSection.style.display = 'block';
+            renderSettings();
+            updateStartButton(room.players.length);
         } else {
-            document.getElementById('settings-section').style.display = 'none';
-            document.getElementById('start-btn').style.display = 'none';
-            document.getElementById('waiting-message').style.display = 'block';
-            document.getElementById('min-warning').style.display = 'none';
+            settingsSection.style.display = 'none';
         }
     }
 
     // ========== PLAYERS LIST ==========
     function updatePlayersList(players) {
         const list = document.getElementById('players-list');
-        const isPartyGame = gameConfig.isPartyGame || false;
-        
-        if (!players.length) { 
-            list.innerHTML = '<div class="players-empty">No players yet</div>'; 
-            return; 
-        }
-        
-        let html = '';
-        
-        // Party game header
-        if (isPartyGame) {
-            const minPlayers = gameConfig.minPlayers || 2;
-            const hasEnough = players.length >= minPlayers;
-            html += `<div class="party-player-count">
-                <div>
-                    <div class="count-number">${players.length}</div>
-                    <div class="count-label">Players</div>
-                </div>
-                <div class="count-status ${hasEnough ? 'ready' : ''}">${hasEnough ? '✓ Ready!' : `Need ${minPlayers - players.length} more`}</div>
-            </div>`;
-        }
-        
-        // Player items
-        html += players.map((player, idx) => {
-            const isMe = player.name === playerName;
-            
-            // Use cosmetics system if available
-            if (window.TGCOCosmetics) {
-                const card = window.TGCOCosmetics.renderPlayerCard({ 
-                    name: player.name, 
-                    cosmetics: player.cosmetics || {}, 
-                    isPremium: player.isPremium || false, 
-                    isHost: player.isHost, 
-                    isMe, 
-                    showEntrance: player.justJoined || false 
-                });
-                if (isHost && !player.isHost) { 
-                    return `<div class="player-card-wrapper" style="position:relative;">${card}<button class="kick-btn-floating" onclick="kickPlayer('${player.id}','${escapeHtml(player.name)}')">✕</button></div>`; 
-                }
-                return card;
+        list.innerHTML = '';
+
+        players.forEach(player => {
+            const div = document.createElement('div');
+            div.className = 'player-item' + (player.isHost ? ' is-host' : '');
+
+            // Use cosmetics if available
+            if (window.TGCOCosmetics && player.odaId) {
+                div.innerHTML = window.TGCOCosmetics.renderPlayerCard(player, { showKick: isHost && !player.isHost && player.name !== playerName });
+                const kickBtn = div.querySelector('.kick-btn');
+                if (kickBtn) kickBtn.onclick = () => confirmKick(player);
+            } else {
+                const initial = player.name.charAt(0).toUpperCase();
+                div.innerHTML = `
+                    <div class="player-avatar">${initial}</div>
+                    <div class="player-info">
+                        <div class="player-name ${player.isPremium ? 'premium' : ''}">${player.name}</div>
+                    </div>
+                    ${player.isHost ? '<span class="host-badge">👑 HOST</span>' : ''}
+                    ${isHost && !player.isHost && player.name !== playerName ? '<button class="kick-btn">Kick</button>' : ''}
+                `;
+                const kickBtn = div.querySelector('.kick-btn');
+                if (kickBtn) kickBtn.onclick = () => confirmKick(player);
             }
-            
-            // Fallback rendering
-            const initial = player.name.replace(/[^a-zA-Z]/g, '')[0]?.toUpperCase() || '?';
-            return `<div class="player-item ${player.isHost ? 'is-host' : ''} ${isMe ? 'is-me' : ''}" style="animation-delay:${idx * 0.05}s">
-                <div class="player-info">
-                    <div class="player-avatar">${player.isHost ? '★' : initial}</div>
-                    <span class="player-name ${player.isPremium ? 'premium' : ''}">${escapeHtml(player.name)}</span>
-                </div>
-                <div class="player-badges">
-                    ${player.isHost ? '<span class="badge badge-host">Host</span>' : ''}
-                    ${isMe ? '<span class="badge badge-you">You</span>' : ''}
-                    ${isHost && !player.isHost ? `<button class="kick-btn" onclick="kickPlayer('${player.id}','${escapeHtml(player.name)}')">Kick</button>` : ''}
-                </div>
-            </div>`;
+
+            list.appendChild(div);
+        });
+    }
+
+    // ========== SETTINGS ==========
+    function renderSettings() {
+        const container = document.getElementById('settings-container');
+        if (!gameConfig.settings) {
+            container.innerHTML = '<p style="color:var(--muted);font-size:0.9rem">No settings for this game.</p>';
+            return;
+        }
+
+        container.innerHTML = gameConfig.settings.map(setting => {
+            if (setting.type === 'select') {
+                return `
+                    <div class="setting-group">
+                        <label class="setting-label">${setting.label}</label>
+                        <select id="setting-${setting.id}" onchange="updateSetting('${setting.id}', this.value)">
+                            ${setting.options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            } else if (setting.type === 'toggle') {
+                return `
+                    <div class="setting-group">
+                        <div class="toggle-row">
+                            <span class="toggle-label">${setting.label}</span>
+                            <div class="toggle" id="setting-${setting.id}" onclick="toggleSetting('${setting.id}')"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            return '';
         }).join('');
-        
-        list.innerHTML = html;
-    }
 
-    // ========== UI UPDATE FUNCTIONS ==========
-    function updateGameUI() {
-        document.getElementById('game-title').textContent = gameConfig.displayName;
-        document.getElementById('modal-title').textContent = `How to Play ${gameConfig.displayName}`;
-        document.getElementById('modal-body').innerHTML = gameConfig.howToPlay;
-        document.getElementById('max-players').textContent = gameConfig.maxPlayers;
-        document.title = `${gameConfig.displayName} Lobby - TheGaming.co`;
-        document.getElementById('category-label').textContent = gameConfig.categoryLabel;
-        document.getElementById('category-select').innerHTML = gameConfig.categories.map(c => `<option value="${c.value}">${c.text}</option>`).join('');
-        document.getElementById('two-spies-group').style.display = gameConfig.showTwoSpies ? 'block' : 'none';
-        document.getElementById('custom-words-group').style.display = 'none';
-        if (gameConfig.showLocationPreview) updateLocationPreview(); 
-        else document.getElementById('location-preview').style.display = 'none';
-    }
+        // Custom words for sketch-guess etc
+        if (gameConfig.customWords) {
+            container.innerHTML += `
+                <div class="custom-words-input" id="custom-words-section">
+                    <label class="setting-label">Custom Words</label>
+                    <textarea id="custom-words" placeholder="Enter words separated by commas..." onchange="updateCustomWords()"></textarea>
+                    <div class="custom-words-hint">Only used when "Custom" category is selected</div>
+                </div>
+            `;
+        }
 
-    function updateLocationPreview() {
-        if (!gameConfig.showLocationPreview) return;
-        const category = document.getElementById('category-select').value;
-        const preview = document.getElementById('location-preview');
-        const tags = document.getElementById('location-tags');
-        if (category === 'random') { 
-            preview.style.display = 'block'; 
-            tags.innerHTML = '<span class="location-tag">All packs combined</span>'; 
-        } else if (LOCATION_PACKS[category]) { 
-            preview.style.display = 'block'; 
-            const locs = LOCATION_PACKS[category]; 
-            tags.innerHTML = locs.slice(0,8).map(l => `<span class="location-tag">${l}</span>`).join('') + (locs.length > 8 ? `<span class="location-tag">+${locs.length-8} more</span>` : ''); 
-        } else { 
-            preview.style.display = 'none'; 
+        // Apply current room settings if available
+        if (currentRoom?.settings) {
+            Object.entries(currentRoom.settings).forEach(([key, value]) => {
+                const el = document.getElementById(`setting-${key}`);
+                if (el) {
+                    if (el.classList.contains('toggle')) {
+                        if (value) el.classList.add('active');
+                    } else {
+                        el.value = value;
+                    }
+                }
+            });
         }
     }
 
-    function updateCustomWordsVisibility() { 
-        const category = document.getElementById('category-select').value; 
-        const customGroup = document.getElementById('custom-words-group'); 
-        if (customGroup && gameConfig?.showCustomWords) { 
-            customGroup.style.display = category === 'custom' ? 'block' : 'none'; 
-        } 
+    function updateSetting(id, value) {
+        socket.emit('update-settings', { roomCode, settings: { [id]: value } });
+
+        // Show/hide custom words
+        if (id === 'category' && document.getElementById('custom-words-section')) {
+            document.getElementById('custom-words-section').classList.toggle('visible', value === 'custom');
+        }
     }
 
-    // ========== ACTIONS ==========
-    function copyRoomCode() { 
-        navigator.clipboard.writeText(roomCode); 
-        const btn = document.getElementById('copy-code-btn'); 
-        btn.classList.add('copied'); 
-        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied`; 
-        setTimeout(() => { 
-            btn.classList.remove('copied'); 
-            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Code`; 
-        }, 2000); 
-    }
-    
-    function copyLink() { 
-        const gameId = Object.entries(GAMES).find(([k, v]) => v.backendType === gameType)?.[0] || gameType;
-        const link = `${window.location.origin}/lobby.html?game=${gameId}&join=${roomCode}`; 
-        navigator.clipboard.writeText(link); 
-        const btn = document.getElementById('copy-link-btn'); 
-        btn.classList.add('copied'); 
-        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied`; 
-        setTimeout(() => { 
-            btn.classList.remove('copied'); 
-            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copy Link`; 
-        }, 2000); 
-    }
-    
-    function kickPlayer(playerId, name) { 
-        showConfirm('Kick Player', `Remove ${name}?`, () => socket.emit('kick-player', { roomCode, playerId })); 
-    }
-    
-    function startGame() { 
-        let category = document.getElementById('category-select').value; 
-        const twoSpies = document.getElementById('two-spies')?.checked || false; 
-        if (category === 'custom') { 
-            const customWords = document.getElementById('custom-words')?.value || ''; 
-            category = 'custom:' + customWords; 
-        } 
-        localStorage.setItem('tempCategory', category); 
-        showConfirm('Start Game', 'Everyone ready?', () => socket.emit('start-game', { roomCode, category, twoSpies })); 
+    function toggleSetting(id) {
+        const toggle = document.getElementById(`setting-${id}`);
+        toggle.classList.toggle('active');
+        socket.emit('update-settings', { roomCode, settings: { [id]: toggle.classList.contains('active') } });
     }
 
-    // ========== MODALS ==========
-    function showHowToPlay() { 
-        document.getElementById('how-to-play-modal').classList.add('visible'); 
+    function updateCustomWords() {
+        const words = document.getElementById('custom-words').value;
+        socket.emit('update-settings', { roomCode, settings: { customWords: words } });
     }
-    
-    function closeModal(id) { 
-        document.getElementById(id).classList.remove('visible'); 
+
+    function updateStartButton(playerCount) {
+        const btn = document.getElementById('start-btn');
+        const min = gameConfig.minPlayers;
+        const max = gameConfig.maxPlayers;
+
+        if (playerCount < min) {
+            btn.disabled = true;
+            btn.textContent = `Need ${min - playerCount} More Player${min - playerCount > 1 ? 's' : ''}`;
+        } else if (playerCount > max) {
+            btn.disabled = true;
+            btn.textContent = `Too Many Players (Max ${max})`;
+        } else {
+            btn.disabled = false;
+            btn.textContent = 'Start Game';
+        }
     }
-    
-    function showConfirm(title, message, callback, showCancel = true) { 
-        document.getElementById('confirm-title').textContent = title; 
-        document.getElementById('confirm-message').textContent = message; 
-        document.getElementById('confirm-modal').classList.add('visible'); 
-        document.querySelector('#confirm-modal .cancel').style.display = showCancel ? 'block' : 'none'; 
-        confirmCallback = callback; 
-    }
-    
-    function confirmAction() { 
-        closeModal('confirm-modal'); 
-        if (confirmCallback) confirmCallback(); 
-    }
-    
-    document.querySelectorAll('.modal-overlay').forEach(o => { 
-        o.addEventListener('click', (e) => { 
-            if (e.target === o) o.classList.remove('visible'); 
-        }); 
-    });
+
+    document.getElementById('start-btn').onclick = () => {
+        socket.emit('start-game', { roomCode });
+    };
 
     // ========== UTILITIES ==========
-    function escapeHtml(t) { 
-        const d = document.createElement('div'); 
-        d.textContent = t; 
-        return d.innerHTML; 
+    function copyCode() {
+        navigator.clipboard.writeText(roomCode);
+        showToast('Code copied!');
     }
-    
-    window.addEventListener('beforeunload', () => socket.disconnect());
-</script>
 
-<script src="/header.js"></script>
+    function copyLink() {
+        const link = `${window.location.origin}/lobby.html?game=${gameType}&join=${roomCode}`;
+        navigator.clipboard.writeText(link);
+        showToast('Link copied!');
+    }
+
+    function showToast(msg) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    function showHowToPlay() {
+        document.getElementById('htp-content').innerHTML = gameConfig.howToPlay;
+        document.getElementById('htp-modal').classList.add('visible');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('visible');
+    }
+
+    function confirmKick(player) {
+        document.getElementById('confirm-title').textContent = 'Kick Player';
+        document.getElementById('confirm-message').textContent = `Are you sure you want to kick ${player.name}?`;
+        document.getElementById('confirm-btn').onclick = () => {
+            socket.emit('kick-player', { roomCode, playerId: player.id });
+            closeModal('confirm-modal');
+        };
+        document.getElementById('confirm-modal').classList.add('visible');
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.onclick = (e) => {
+            if (e.target === overlay) overlay.classList.remove('visible');
+        };
+    });
+
+</script>
 </body>
 </html>
