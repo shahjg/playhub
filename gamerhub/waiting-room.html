@@ -457,8 +457,12 @@
     const myCosmetics = JSON.parse(localStorage.getItem('tempCosmetics') || 'null');
     const myUserId = localStorage.getItem('tempUserId') || null;
 
-    let gameType = localStorage.getItem('tempGameType') || 'spyfall';
+    // Get game type from URL first, then localStorage, then default
+    let gameType = urlParams.get('game') || localStorage.getItem('tempGameType') || 'spyfall';
     let gameConfig = GAMES[gameType] || GAMES['spyfall'];
+    
+    // Show loading state until we get room data with actual game type
+    let awaitingRoomData = true;
     let isHost = localStorage.getItem('tempIsHost') === 'true';
     let currentRoom = null;
     let myPlayerId = null;
@@ -566,15 +570,26 @@
     function handleRoomUpdate(room) {
         currentRoom = room;
         
-        // Update game type if different
-        if (room.gameType && room.gameType !== gameType) { 
-            gameType = room.gameType; 
-            gameConfig = GAMES[gameType] || GAMES['spyfall']; 
-            document.body.className = gameConfig.theme; 
-            if (gameConfig.isPartyGame) {
-                document.body.classList.add('party-mode');
+        // Always use the room's gameType as source of truth
+        if (room.gameType) {
+            const newGameType = room.gameType;
+            if (newGameType !== gameType || awaitingRoomData) {
+                gameType = newGameType;
+                gameConfig = GAMES[gameType] || GAMES['spyfall'];
+                document.body.className = gameConfig.theme;
+                if (gameConfig.isPartyGame) {
+                    document.body.classList.add('party-mode');
+                } else {
+                    document.body.classList.remove('party-mode');
+                }
+                // Update leave button
+                const leaveBtn = document.getElementById('leave-btn');
+                if (leaveBtn) {
+                    leaveBtn.href = gameConfig.isPartyGame ? '/party-games.html' : '/squad-games.html';
+                }
+                updateGameUI();
+                awaitingRoomData = false;
             }
-            updateGameUI(); 
         }
         
         // Find current player
