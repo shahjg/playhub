@@ -357,15 +357,14 @@ function aiMove(){
 }
 
 function getBestMove(){
-    const depth=6; // Look 6 moves ahead
+    const depth=6;
     
     // OPENING BOOK - Always play center first
     if(board.every(row=>row.every(c=>!c))){
         showTrashTalk('start');
-        return 3; // Center column
+        return 3;
     }
     
-    // Count total moves
     let moves=0;
     for(let r=0;r<ROWS;r++){
         for(let c=0;c<COLS;c++){
@@ -373,15 +372,15 @@ function getBestMove(){
         }
     }
     
-    // Early game (first 3 moves) - stick to center area
+    // Early game - center focus
     if(moves<=3){
         const centerCols=[3,2,4];
         for(const c of centerCols){
-            if(getRow(c)!==-1)return c;
+            if(getRow(c)!==-1&&!givesFreeWin(c))return c;
         }
     }
     
-    // IMMEDIATE WIN/BLOCK
+    // IMMEDIATE WIN
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
         if(r!==-1){
@@ -395,23 +394,27 @@ function getBestMove(){
         }
     }
     
+    // IMMEDIATE BLOCK
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
         if(r!==-1){
             board[r][c]='red';
             if(wins(r,c,'red')){
                 board[r][c]=null;
-                showTrashTalk('block');
-                return c;
+                // But ONLY block if it doesn't give them a free win above!
+                if(!givesFreeWin(c)){
+                    showTrashTalk('block');
+                    return c;
+                }
             }
             board[r][c]=null;
         }
     }
     
-    // DOUBLE THREAT DETECTION - AI creates unstoppable position
+    // DOUBLE THREAT
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
-        if(r!==-1){
+        if(r!==-1&&!givesFreeWin(c)){
             board[r][c]='yellow';
             if(hasDoubleThreat(r,c,'yellow')){
                 board[r][c]=null;
@@ -422,10 +425,10 @@ function getBestMove(){
         }
     }
     
-    // BLOCK OPPONENT DOUBLE THREAT
+    // BLOCK DOUBLE THREAT
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
-        if(r!==-1){
+        if(r!==-1&&!givesFreeWin(c)){
             board[r][c]='red';
             if(hasDoubleThreat(r,c,'red')){
                 board[r][c]=null;
@@ -436,20 +439,16 @@ function getBestMove(){
         }
     }
     
-    // MINIMAX with alpha-beta pruning
+    // MINIMAX - but NEVER consider moves that give free wins
     let bestCol=-1;
     let bestScore=-Infinity;
-    const alpha=-Infinity;
-    const beta=Infinity;
-    
-    // Try columns in center-first order
     const colOrder=[3,2,4,1,5,0,6];
     
     for(const c of colOrder){
         const r=getRow(c);
-        if(r!==-1){
+        if(r!==-1&&!givesFreeWin(c)){
             board[r][c]='yellow';
-            const score=minimax(depth-1,false,alpha,beta,moves+1);
+            const score=minimax(depth-1,false,-Infinity,Infinity,moves+1);
             board[r][c]=null;
             
             if(score>bestScore){
@@ -465,8 +464,50 @@ function getBestMove(){
         return bestCol;
     }
     
+    // If ALL moves give free wins (we're doomed), just play center
     return 3;
 }
+
+function givesFreeWin(col){
+    // Check if playing this column gives opponent a win on their next turn
+    const r=getRow(col);
+    if(r===-1)return true; // Column full
+    
+    // Place our piece
+    board[r][col]='yellow';
+    
+    // Check if opponent can win immediately after
+    let opponentWins=false;
+    
+    // Check the spot above (if exists)
+    if(r>0){
+        board[r-1][col]='red';
+        if(wins(r-1,col,'red')){
+            opponentWins=true;
+        }
+        board[r-1][col]=null;
+    }
+    
+    // Check all other columns for opponent wins
+    if(!opponentWins){
+        for(let c=0;c<COLS;c++){
+            const opponentR=getRow(c);
+            if(opponentR!==-1){
+                board[opponentR][c]='red';
+                if(wins(opponentR,c,'red')){
+                    opponentWins=true;
+                    board[opponentR][c]=null;
+                    break;
+                }
+                board[opponentR][c]=null;
+            }
+        }
+    }
+    
+    board[r][col]=null;
+    return opponentWins;
+}
+
 
 function minimax(depth,isMaximizing,alpha,beta,moveCount){
     // Check terminal states
