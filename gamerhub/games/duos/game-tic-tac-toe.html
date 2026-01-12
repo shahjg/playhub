@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Tic Tac Toe – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Classic Tic Tac Toe for 2 players. Get three in a row to win!">
+    <meta name="description" content="Classic Tic Tac Toe for 2 players or vs AI. Get three in a row to win!">
     <meta name="theme-color" content="#0a0a0f">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -37,6 +37,18 @@
 
         .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
         .game-container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+
+        /* Mode Selection */
+        .mode-selection{background:#fff;border-radius:20px;padding:32px 24px;box-shadow:0 8px 30px rgba(244,114,182,0.1);text-align:center}
+        .mode-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:8px;color:var(--text-dark)}
+        .mode-subtitle{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
+        .mode-buttons{display:flex;flex-direction:column;gap:12px}
+        .mode-btn{padding:16px 24px;border-radius:14px;border:2px solid rgba(244,114,182,0.15);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between}
+        .mode-btn:hover{border-color:var(--accent);background:#fdf2f8;transform:translateY(-2px)}
+        .mode-btn-icon{font-size:1.5rem}
+        .mode-btn-text{text-align:left;flex:1;margin:0 12px}
+        .mode-btn-label{display:block;font-size:1.1rem;color:var(--text-dark);margin-bottom:2px}
+        .mode-btn-desc{display:block;font-size:0.75rem;color:var(--text-muted);font-weight:500}
 
         .score-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
         .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s}
@@ -75,6 +87,8 @@
         .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(244,114,182,0.2)}
         .btn-secondary:hover{border-color:var(--accent);background:#fdf2f8}
 
+        .hidden{display:none!important}
+
         @media(max-width:400px){
             .game-wrapper{padding:20px 12px 40px}
             .game-board{padding:16px}
@@ -101,40 +115,67 @@
                     </svg>
                 </div>
                 <h1 class="hero-title">TIC TAC TOE</h1>
-                <p class="hero-sub">Classic game for two – get three in a row!</p>
+                <p class="hero-sub">Classic game – get three in a row!</p>
             </div>
         </section>
 
         <div class="game-wrapper">
             <div class="game-container">
-                <div class="score-bar">
-                    <div class="score-card p1" id="cardX">
-                        <div class="score-label">Player X</div>
-                        <div class="score-value" id="scoreX">0</div>
-                    </div>
-                    <div class="score-card">
-                        <div class="score-label">Draws</div>
-                        <div class="score-value" id="scoreDraws">0</div>
-                    </div>
-                    <div class="score-card p2" id="cardO">
-                        <div class="score-label">Player O</div>
-                        <div class="score-value" id="scoreO">0</div>
+                <!-- Mode Selection -->
+                <div class="mode-selection" id="modeSelection">
+                    <div class="mode-title">Choose Game Mode</div>
+                    <div class="mode-subtitle">Play with a friend or challenge the AI</div>
+                    <div class="mode-buttons">
+                        <button class="mode-btn" onclick="startGame('player')">
+                            <span class="mode-btn-icon">👥</span>
+                            <div class="mode-btn-text">
+                                <span class="mode-btn-label">vs Player</span>
+                                <span class="mode-btn-desc">Play with a friend locally</span>
+                            </div>
+                            <span style="font-size:1.2rem">→</span>
+                        </button>
+                        <button class="mode-btn" onclick="startGame('ai')">
+                            <span class="mode-btn-icon">🤖</span>
+                            <div class="mode-btn-text">
+                                <span class="mode-btn-label">vs AI</span>
+                                <span class="mode-btn-desc">Challenge the computer</span>
+                            </div>
+                            <span style="font-size:1.2rem">→</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="turn-indicator p1" id="turnIndicator"><span>X</span>'s turn</div>
+                <!-- Game Area -->
+                <div id="gameArea" class="hidden">
+                    <div class="score-bar">
+                        <div class="score-card p1" id="cardX">
+                            <div class="score-label" id="labelX">Player X</div>
+                            <div class="score-value" id="scoreX">0</div>
+                        </div>
+                        <div class="score-card">
+                            <div class="score-label">Draws</div>
+                            <div class="score-value" id="scoreDraws">0</div>
+                        </div>
+                        <div class="score-card p2" id="cardO">
+                            <div class="score-label" id="labelO">Player O</div>
+                            <div class="score-value" id="scoreO">0</div>
+                        </div>
+                    </div>
 
-                <div class="game-board">
-                    <div class="board-grid" id="board"></div>
-                </div>
+                    <div class="turn-indicator p1" id="turnIndicator"><span>X</span>'s turn</div>
 
-                <div class="game-status">
-                    <div class="status-text" id="statusText"></div>
-                </div>
+                    <div class="game-board">
+                        <div class="board-grid" id="board"></div>
+                    </div>
 
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="resetGame()">New Game</button>
-                    <button class="btn btn-secondary" onclick="resetScores()">Reset All</button>
+                    <div class="game-status">
+                        <div class="status-text" id="statusText"></div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="resetGame()">New Game</button>
+                        <button class="btn btn-secondary" onclick="changeMode()">Change Mode</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -150,8 +191,33 @@ let board=['','','','','','','','',''];
 let current='X';
 let gameActive=true;
 let scores={X:0,O:0,draws:0};
+let gameMode='player'; // 'player' or 'ai'
+let isAiThinking=false;
 
 const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function startGame(mode){
+    gameMode=mode;
+    document.getElementById('modeSelection').classList.add('hidden');
+    document.getElementById('gameArea').classList.remove('hidden');
+    
+    if(mode==='ai'){
+        document.getElementById('labelX').textContent='You (X)';
+        document.getElementById('labelO').textContent='AI (O)';
+    }else{
+        document.getElementById('labelX').textContent='Player X';
+        document.getElementById('labelO').textContent='Player O';
+    }
+    
+    init();
+}
+
+function changeMode(){
+    document.getElementById('modeSelection').classList.remove('hidden');
+    document.getElementById('gameArea').classList.add('hidden');
+    scores={X:0,O:0,draws:0};
+    updateScores();
+}
 
 function init(){
     const boardEl=document.getElementById('board');
@@ -168,19 +234,38 @@ function init(){
 }
 
 function play(i){
-    if(!gameActive||board[i])return;
-    board[i]=current;
+    if(!gameActive||board[i]||isAiThinking)return;
+    if(gameMode==='ai'&&current==='O')return; // Don't allow clicking during AI turn
+    
+    makeMove(i,current);
+    
+    if(gameActive&&gameMode==='ai'&&current==='O'){
+        isAiThinking=true;
+        setTimeout(()=>{
+            aiMove();
+            isAiThinking=false;
+        },500);
+    }
+}
+
+function makeMove(i,player){
+    board[i]=player;
     const cell=document.querySelector(`[data-i="${i}"]`);
-    cell.textContent=current;
-    cell.classList.add('taken',current.toLowerCase());
+    cell.textContent=player;
+    cell.classList.add('taken',player.toLowerCase());
 
     const winner=checkWin();
     if(winner){
         gameActive=false;
         winner.pattern.forEach(idx=>document.querySelector(`[data-i="${idx}"]`).classList.add('winner'));
-        scores[current]++;
+        scores[player]++;
         updateScores();
-        showStatus(`Player ${current} wins!`,'win');
+        
+        if(gameMode==='ai'){
+            showStatus(player==='X'?'You win!':'AI wins!','win');
+        }else{
+            showStatus(`Player ${player} wins!`,'win');
+        }
         document.getElementById('turnIndicator').style.opacity='0';
     }else if(board.every(c=>c)){
         gameActive=false;
@@ -192,6 +277,51 @@ function play(i){
         current=current==='X'?'O':'X';
         updateTurn();
     }
+}
+
+function aiMove(){
+    const move=getBestMove();
+    makeMove(move,'O');
+}
+
+function getBestMove(){
+    // Check for winning move
+    for(let i=0;i<9;i++){
+        if(!board[i]){
+            board[i]='O';
+            if(checkWin()){
+                board[i]='';
+                return i;
+            }
+            board[i]='';
+        }
+    }
+    
+    // Block player's winning move
+    for(let i=0;i<9;i++){
+        if(!board[i]){
+            board[i]='X';
+            if(checkWin()){
+                board[i]='';
+                return i;
+            }
+            board[i]='';
+        }
+    }
+    
+    // Take center if available
+    if(!board[4])return 4;
+    
+    // Take a corner
+    const corners=[0,2,6,8];
+    const availableCorners=corners.filter(i=>!board[i]);
+    if(availableCorners.length>0){
+        return availableCorners[Math.floor(Math.random()*availableCorners.length)];
+    }
+    
+    // Take any available space
+    const available=board.map((v,i)=>v===''?i:null).filter(v=>v!==null);
+    return available[Math.floor(Math.random()*available.length)];
 }
 
 function checkWin(){
@@ -206,7 +336,11 @@ function checkWin(){
 
 function updateTurn(){
     const el=document.getElementById('turnIndicator');
-    el.innerHTML=`<span>${current}</span>'s turn`;
+    if(gameMode==='ai'){
+        el.innerHTML=current==='X'?`<span>Your</span> turn`:`<span>AI</span> thinking...`;
+    }else{
+        el.innerHTML=`<span>${current}</span>'s turn`;
+    }
     el.className=`turn-indicator p${current==='X'?'1':'2'}`;
     el.style.opacity='1';
     document.getElementById('cardX').classList.toggle('active',current==='X');
@@ -229,15 +363,10 @@ function resetGame(){
     board=['','','','','','','','',''];
     current='X';
     gameActive=true;
+    isAiThinking=false;
     document.getElementById('cardX').classList.remove('active');
     document.getElementById('cardO').classList.remove('active');
     init();
-}
-
-function resetScores(){
-    scores={X:0,O:0,draws:0};
-    updateScores();
-    resetGame();
 }
 
 init();
