@@ -196,13 +196,56 @@ let lastPlayerMove=-1;
 
 // TOXIC TRASH TALK
 const trashTalk={
-    start:["Ready to get destroyed? 😏","This is gonna be embarrassing for you...","I've already calculated your defeat 🤖","Hope you brought tissues for the tears 😢"],
-    block:["LOL did you think that would work? 😂","Blocked. Sit down. 🛑","Too predictable, try harder 🥱","I saw that 3 moves ago, amateur","Nice try, kiddo 👶","Imagine being this bad 💀"],
-    threat:["Watch and learn, human 😈","This is how a REAL player does it","You're cooked 🔥","GGs, it's over for you","Setting up your funeral ⚰️"],
-    win:["LMAOOO TOO EASY 🏆","Uninstall the game bro 💀","Maybe stick to tic-tac-toe? 🤡","I wasn't even trying 😴","Skill issue fr fr 📉","Your mom could've played better"],
-    mistake:["BRUH what was that move?? 🤦","Are you trolling or just bad?","Thanks for the free win I guess 🎁","Did you close your eyes? 😂","My grandma plays better than this"],
-    mid:["Hmm, cute move 😏","Still gonna lose tho...","Keep trying, it's adorable 🥺"]
-};
+    start:[
+        "Ready to witness perfection? 😏",
+        "I've already calculated your defeat 🤖",
+        "Minimax says you're cooked 💀",
+        "This won't even be close...",
+        "Pro tip: Try vs Player mode instead 🤡"
+    ],
+    block:[
+        "LMAOOO did you think that would work? 😂",
+        "I saw that 6 moves ago, amateur",
+        "Blocked. Alpha-beta pruning says sit down 🛑",
+        "Too predictable, I'm running circles around you 🥱",
+        "That's cute. Real cute. 😂",
+        "Imagine being this bad against an AI 💀",
+        "My grandmother plays better and she's dead"
+    ],
+    threat:[
+        "Watch this double threat incoming 😈",
+        "You're about to see some REAL strategy",
+        "Already 3 moves ahead of you 🔥",
+        "This is what optimal play looks like",
+        "Setting up the funeral ⚰️",
+        "You can't stop what's coming 💀",
+        "Fork incoming. Google it. 🍴"
+    ],
+    win:[
+        "LMAOOO GET ABSOLUTELY DESTROYED 🏆",
+        "Uninstall the browser bro 💀",
+        "That was embarrassing to watch 🤡",
+        "I wasn't even trying 😴",
+        "Skill issue + ratio + you fell off 📉",
+        "Maybe stick to tic-tac-toe? 👶",
+        "Your ancestors are ashamed",
+        "That's a 41-move guaranteed win. Look it up. 🤓"
+    ],
+    mistake:[
+        "BRUH WHAT THE HELL WAS THAT?? 🤦",
+        "Are you trolling or just that bad?",
+        "Thanks for the free win fr 🎁",
+        "Did a toddler take over? 😂",
+        "My neural network just blue screened from that move",
+        "That's not even legal in 37 countries"
+    ],
+    mid:[
+        "Cute move. Still losing tho... 😏",
+        "Bold strategy. Terrible execution. 🥱",
+        "Keep trying, it's adorable 🥺",
+        "Oh you thought you were cooking? 🔥❌"
+    ]
+}
 
 let lastTrash='';
 function showTrashTalk(cat){
@@ -314,73 +357,283 @@ function aiMove(){
 }
 
 function getBestMove(){
-    const avoid=lastPlayerMove;
-    // Win
+    const depth=6; // Look 6 moves ahead
+    
+    // OPENING BOOK - Always play center first
+    if(board.every(row=>row.every(c=>!c))){
+        showTrashTalk('start');
+        return 3; // Center column
+    }
+    
+    // Count total moves
+    let moves=0;
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            if(board[r][c])moves++;
+        }
+    }
+    
+    // Early game (first 3 moves) - stick to center area
+    if(moves<=3){
+        const centerCols=[3,2,4];
+        for(const c of centerCols){
+            if(getRow(c)!==-1)return c;
+        }
+    }
+    
+    // IMMEDIATE WIN/BLOCK
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
         if(r!==-1){
             board[r][c]='yellow';
-            if(wins(r,c,'yellow')){board[r][c]=null;showTrashTalk('win');return c;}
+            if(wins(r,c,'yellow')){
+                board[r][c]=null;
+                showTrashTalk('win');
+                return c;
+            }
             board[r][c]=null;
         }
     }
-    // Block win
+    
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
         if(r!==-1){
             board[r][c]='red';
-            if(wins(r,c,'red')){board[r][c]=null;showTrashTalk('block');return c;}
+            if(wins(r,c,'red')){
+                board[r][c]=null;
+                showTrashTalk('block');
+                return c;
+            }
             board[r][c]=null;
         }
     }
-    // Block 3
-    for(let c=0;c<COLS;c++){
-        const r=getRow(c);
-        if(r!==-1){
-            board[r][c]='red';
-            if(count(r,c,'red')>=3){board[r][c]=null;showTrashTalk('block');return c;}
-            board[r][c]=null;
-        }
-    }
-    // Make 3
+    
+    // DOUBLE THREAT DETECTION - AI creates unstoppable position
     for(let c=0;c<COLS;c++){
         const r=getRow(c);
         if(r!==-1){
             board[r][c]='yellow';
-            if(count(r,c,'yellow')>=3){board[r][c]=null;showTrashTalk('threat');return c;}
+            if(hasDoubleThreat(r,c,'yellow')){
+                board[r][c]=null;
+                showTrashTalk('threat');
+                return c;
+            }
             board[r][c]=null;
         }
     }
-    // Block 2
+    
+    // BLOCK OPPONENT DOUBLE THREAT
     for(let c=0;c<COLS;c++){
-        if(c===avoid)continue;
         const r=getRow(c);
         if(r!==-1){
             board[r][c]='red';
-            if(count(r,c,'red')>=2){board[r][c]=null;return c;}
+            if(hasDoubleThreat(r,c,'red')){
+                board[r][c]=null;
+                showTrashTalk('block');
+                return c;
+            }
             board[r][c]=null;
         }
     }
-    // Make 2
-    for(let c=0;c<COLS;c++){
-        if(c===avoid)continue;
+    
+    // MINIMAX with alpha-beta pruning
+    let bestCol=-1;
+    let bestScore=-Infinity;
+    const alpha=-Infinity;
+    const beta=Infinity;
+    
+    // Try columns in center-first order
+    const colOrder=[3,2,4,1,5,0,6];
+    
+    for(const c of colOrder){
         const r=getRow(c);
         if(r!==-1){
             board[r][c]='yellow';
-            if(count(r,c,'yellow')>=2){board[r][c]=null;return c;}
+            const score=minimax(depth-1,false,alpha,beta,moves+1);
             board[r][c]=null;
+            
+            if(score>bestScore){
+                bestScore=score;
+                bestCol=c;
+            }
         }
     }
-    // Center
-    const cols=[3,2,4,1,5,0,6];
-    for(const c of cols){
-        if(c!==avoid&&getRow(c)!==-1)return c;
+    
+    if(bestCol!==-1){
+        if(bestScore>100)showTrashTalk('threat');
+        else if(Math.random()<0.3)showTrashTalk('mid');
+        return bestCol;
     }
-    for(let c=0;c<COLS;c++){
-        if(getRow(c)!==-1)return c;
-    }
+    
     return 3;
 }
+
+function minimax(depth,isMaximizing,alpha,beta,moveCount){
+    // Check terminal states
+    const yellowWin=checkBoardWin('yellow');
+    const redWin=checkBoardWin('red');
+    
+    if(yellowWin)return 10000-moveCount; // Prefer faster wins
+    if(redWin)return -10000+moveCount; // Prefer slower losses
+    if(isFull())return 0;
+    if(depth===0)return evaluateBoard(moveCount);
+    
+    if(isMaximizing){
+        let maxEval=-Infinity;
+        for(let c=0;c<COLS;c++){
+            const r=getRow(c);
+            if(r!==-1){
+                board[r][c]='yellow';
+                const eval=minimax(depth-1,false,alpha,beta,moveCount+1);
+                board[r][c]=null;
+                maxEval=Math.max(maxEval,eval);
+                alpha=Math.max(alpha,eval);
+                if(beta<=alpha)break; // Prune
+            }
+        }
+        return maxEval;
+    }else{
+        let minEval=Infinity;
+        for(let c=0;c<COLS;c++){
+            const r=getRow(c);
+            if(r!==-1){
+                board[r][c]='red';
+                const eval=minimax(depth-1,true,alpha,beta,moveCount+1);
+                board[r][c]=null;
+                minEval=Math.min(minEval,eval);
+                beta=Math.min(beta,eval);
+                if(beta<=alpha)break; // Prune
+            }
+        }
+        return minEval;
+    }
+}
+
+function evaluateBoard(moveCount){
+    let score=0;
+    
+    // CENTER CONTROL (critical!)
+    for(let r=0;r<ROWS;r++){
+        if(board[r][3]==='yellow')score+=10;
+        if(board[r][3]==='red')score-=10;
+    }
+    
+    // PARITY STRATEGY - Odd rows favor Player 1 (red), Even rows favor Player 2 (yellow/AI)
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            if(board[r][c]==='yellow'){
+                // AI gets bonus on even rows (0,2,4)
+                if(r%2===0)score+=3;
+                else score+=1;
+            }
+            if(board[r][c]==='red'){
+                // Player gets penalty on even rows
+                if(r%2===0)score-=3;
+                else score-=1;
+            }
+        }
+    }
+    
+    // Evaluate all possible lines
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            if(board[r][c]==='yellow'){
+                score+=evaluatePosition(r,c,'yellow');
+            }
+            if(board[r][c]==='red'){
+                score-=evaluatePosition(r,c,'red');
+            }
+        }
+    }
+    
+    return score;
+}
+
+function evaluatePosition(row,col,player){
+    let score=0;
+    const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+    
+    for(const[dr,dc]of dirs){
+        let pieces=1;
+        let empty=0;
+        let blocked=false;
+        
+        // Forward
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r<0||r>=ROWS||c<0||c>=COLS){blocked=true;break;}
+            if(board[r][c]===player)pieces++;
+            else if(!board[r][c])empty++;
+            else{blocked=true;break;}
+        }
+        
+        // Backward
+        let backBlocked=false;
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r<0||r>=ROWS||c<0||c>=COLS){backBlocked=true;break;}
+            if(board[r][c]===player)pieces++;
+            else if(!board[r][c])empty++;
+            else{backBlocked=true;break;}
+        }
+        
+        // Scoring
+        if(pieces===3&&empty>=1&&!blocked&&!backBlocked)score+=100;
+        else if(pieces===3&&empty>=1)score+=50;
+        else if(pieces===2&&empty>=2)score+=10;
+        else if(pieces===2&&empty>=1)score+=3;
+    }
+    
+    return score;
+}
+
+function hasDoubleThreat(row,col,player){
+    // Check if this move creates 2+ winning threats
+    let threats=0;
+    const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+    
+    for(const[dr,dc]of dirs){
+        let pieces=1;
+        let gaps=[];
+        
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r<0||r>=ROWS||c<0||c>=COLS)break;
+            if(board[r][c]===player)pieces++;
+            else if(!board[r][c])gaps.push([r,c]);
+            else break;
+        }
+        
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r<0||r>=ROWS||c<0||c>=COLS)break;
+            if(board[r][c]===player)pieces++;
+            else if(!board[r][c])gaps.push([r,c]);
+            else break;
+        }
+        
+        // 3-in-a-row with gap = threat
+        if(pieces===3&&gaps.length>0)threats++;
+    }
+    
+    return threats>=2;
+}
+
+function checkBoardWin(player){
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            if(board[r][c]===player){
+                if(wins(r,c,player))return true;
+            }
+        }
+    }
+    return false;
+}
+
+function isFull(){
+    return board[0].every(c=>c!==null);
+}
+
 
 function getRow(c){
     for(let r=ROWS-1;r>=0;r--){
