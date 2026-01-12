@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Connect Four – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Classic Connect Four for 2 players. Drop discs and connect four to win!">
+    <meta name="description" content="Classic Connect Four for 2 players or vs AI. Drop discs and connect four to win!">
     <meta name="theme-color" content="#0a0a0f">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -37,6 +37,17 @@
 
         .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
         .game-container{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+
+        .mode-selection{background:#fff;border-radius:20px;padding:32px 24px;box-shadow:0 8px 30px rgba(244,114,182,0.1);text-align:center}
+        .mode-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:8px;color:var(--text-dark)}
+        .mode-subtitle{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
+        .mode-buttons{display:flex;flex-direction:column;gap:12px}
+        .mode-btn{padding:16px 24px;border-radius:14px;border:2px solid rgba(244,114,182,0.15);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between}
+        .mode-btn:hover{border-color:var(--accent);background:#fdf2f8;transform:translateY(-2px)}
+        .mode-btn-icon{font-size:1.5rem}
+        .mode-btn-text{text-align:left;flex:1;margin:0 12px}
+        .mode-btn-label{display:block;font-size:1.1rem;color:var(--text-dark);margin-bottom:2px}
+        .mode-btn-desc{display:block;font-size:0.75rem;color:var(--text-muted);font-weight:500}
 
         .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
         .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px}
@@ -74,6 +85,8 @@
         .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(244,114,182,0.2)}
         .btn-secondary:hover{border-color:var(--accent)}
 
+        .hidden{display:none!important}
+
         @media(max-width:400px){
             .cell{width:34px;height:34px}
             .board-grid{gap:4px}
@@ -104,38 +117,63 @@
 
         <div class="game-wrapper">
             <div class="game-container">
-                <div class="score-bar">
-                    <div class="score-card" id="cardRed">
-                        <div class="score-disc red"></div>
-                        <div class="score-info">
-                            <div class="score-label">Red</div>
-                            <div class="score-value" id="scoreRed">0</div>
+                <div class="mode-selection" id="modeSelection">
+                    <div class="mode-title">Choose Game Mode</div>
+                    <div class="mode-subtitle">Play with a friend or challenge the AI</div>
+                    <div class="mode-buttons">
+                        <button class="mode-btn" onclick="startGame('player')">
+                            <span class="mode-btn-icon">👥</span>
+                            <div class="mode-btn-text">
+                                <span class="mode-btn-label">vs Player</span>
+                                <span class="mode-btn-desc">Play with a friend locally</span>
+                            </div>
+                            <span style="font-size:1.2rem">→</span>
+                        </button>
+                        <button class="mode-btn" onclick="startGame('ai')">
+                            <span class="mode-btn-icon">🤖</span>
+                            <div class="mode-btn-text">
+                                <span class="mode-btn-label">vs AI</span>
+                                <span class="mode-btn-desc">Challenge the computer</span>
+                            </div>
+                            <span style="font-size:1.2rem">→</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="gameArea" class="hidden">
+                    <div class="score-bar">
+                        <div class="score-card" id="cardRed">
+                            <div class="score-disc red"></div>
+                            <div class="score-info">
+                                <div class="score-label" id="labelRed">Red</div>
+                                <div class="score-value" id="scoreRed">0</div>
+                            </div>
+                        </div>
+                        <div class="score-card" id="cardYellow">
+                            <div class="score-disc yellow"></div>
+                            <div class="score-info">
+                                <div class="score-label" id="labelYellow">Yellow</div>
+                                <div class="score-value" id="scoreYellow">0</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="score-card" id="cardYellow">
-                        <div class="score-disc yellow"></div>
-                        <div class="score-info">
-                            <div class="score-label">Yellow</div>
-                            <div class="score-value" id="scoreYellow">0</div>
+
+                    <div class="turn-indicator p1" id="turnIndicator"><span>RED</span>'s turn</div>
+
+                    <div class="game-board">
+                        <div class="board-wrapper">
+                            <div class="board-grid" id="board"></div>
                         </div>
                     </div>
-                </div>
 
-                <div class="turn-indicator p1" id="turnIndicator"><span>RED</span>'s turn</div>
-
-                <div class="game-board">
-                    <div class="board-wrapper">
-                        <div class="board-grid" id="board"></div>
+                    <div class="game-status">
+                        <div class="status-text" id="statusText"></div>
                     </div>
-                </div>
 
-                <div class="game-status">
-                    <div class="status-text" id="statusText"></div>
-                </div>
-
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="resetGame()">New Game</button>
-                    <button class="btn btn-secondary" onclick="resetScores()">Reset All</button>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="resetGame()">New Game</button>
+                        <button class="btn btn-secondary" onclick="changeMode()">Change Mode</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -152,9 +190,34 @@ let board=[];
 let current='red';
 let gameActive=true;
 let scores={red:0,yellow:0};
+let gameMode='player';
+let isAiThinking=false;
 
 function createBoard(){
     return Array(ROWS).fill(null).map(()=>Array(COLS).fill(null));
+}
+
+function startGame(mode){
+    gameMode=mode;
+    document.getElementById('modeSelection').classList.add('hidden');
+    document.getElementById('gameArea').classList.remove('hidden');
+    
+    if(mode==='ai'){
+        document.getElementById('labelRed').textContent='You';
+        document.getElementById('labelYellow').textContent='AI';
+    }else{
+        document.getElementById('labelRed').textContent='Red';
+        document.getElementById('labelYellow').textContent='Yellow';
+    }
+    
+    init();
+}
+
+function changeMode(){
+    document.getElementById('modeSelection').classList.remove('hidden');
+    document.getElementById('gameArea').classList.add('hidden');
+    scores={red:0,yellow:0};
+    updateScores();
 }
 
 function init(){
@@ -176,24 +239,43 @@ function init(){
 }
 
 function play(col){
-    if(!gameActive)return;
+    if(!gameActive||isAiThinking)return;
+    if(gameMode==='ai'&&current==='yellow')return;
+    
+    makeMove(col,current);
+    
+    if(gameActive&&gameMode==='ai'&&current==='yellow'){
+        isAiThinking=true;
+        setTimeout(()=>{
+            aiMove();
+            isAiThinking=false;
+        },600);
+    }
+}
+
+function makeMove(col,player){
     let row=-1;
     for(let r=ROWS-1;r>=0;r--){
         if(!board[r][col]){row=r;break;}
     }
-    if(row===-1)return;
+    if(row===-1)return false;
 
-    board[row][col]=current;
+    board[row][col]=player;
     const cell=document.querySelector(`[data-r="${row}"][data-c="${col}"]`);
-    cell.classList.add(current,'taken');
+    cell.classList.add(player,'taken');
 
     const winCells=checkWin(row,col);
     if(winCells){
         gameActive=false;
         winCells.forEach(([r,c])=>document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('winner'));
-        scores[current]++;
+        scores[player]++;
         updateScores();
-        showStatus(`${current.toUpperCase()} wins!`,'win');
+        
+        if(gameMode==='ai'){
+            showStatus(player==='red'?'You win!':'AI wins!','win');
+        }else{
+            showStatus(`${player.toUpperCase()} wins!`,'win');
+        }
         document.getElementById('turnIndicator').style.opacity='0';
     }else if(board[0].every(c=>c)){
         gameActive=false;
@@ -203,6 +285,72 @@ function play(col){
         current=current==='red'?'yellow':'red';
         updateTurn();
     }
+    
+    return true;
+}
+
+function aiMove(){
+    const col=getBestMove();
+    if(col!==-1)makeMove(col,'yellow');
+}
+
+function getBestMove(){
+    // Check for winning move
+    for(let c=0;c<COLS;c++){
+        const testBoard=board.map(r=>[...r]);
+        let r=-1;
+        for(let row=ROWS-1;row>=0;row--){
+            if(!testBoard[row][c]){r=row;break;}
+        }
+        if(r!==-1){
+            testBoard[r][c]='yellow';
+            if(checkWinOnBoard(testBoard,r,c,'yellow'))return c;
+        }
+    }
+    
+    // Block player's winning move
+    for(let c=0;c<COLS;c++){
+        const testBoard=board.map(r=>[...r]);
+        let r=-1;
+        for(let row=ROWS-1;row>=0;row--){
+            if(!testBoard[row][c]){r=row;break;}
+        }
+        if(r!==-1){
+            testBoard[r][c]='red';
+            if(checkWinOnBoard(testBoard,r,c,'red'))return c;
+        }
+    }
+    
+    // Prefer center columns
+    const centerCols=[3,2,4,1,5,0,6];
+    for(const c of centerCols){
+        let hasSpace=false;
+        for(let r=ROWS-1;r>=0;r--){
+            if(!board[r][c]){hasSpace=true;break;}
+        }
+        if(hasSpace)return c;
+    }
+    
+    return -1;
+}
+
+function checkWinOnBoard(testBoard,row,col,player){
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    for(const[dr,dc]of directions){
+        let count=1;
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
+            else break;
+        }
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
+            else break;
+        }
+        if(count>=4)return true;
+    }
+    return false;
 }
 
 function checkWin(row,col){
@@ -226,7 +374,11 @@ function checkWin(row,col){
 
 function updateTurn(){
     const el=document.getElementById('turnIndicator');
-    el.innerHTML=`<span>${current.toUpperCase()}</span>'s turn`;
+    if(gameMode==='ai'){
+        el.innerHTML=current==='red'?`<span>Your</span> turn`:`<span>AI</span> thinking...`;
+    }else{
+        el.innerHTML=`<span>${current.toUpperCase()}</span>'s turn`;
+    }
     el.className=`turn-indicator p${current==='red'?'1':'2'}`;
     el.style.opacity='1';
     document.getElementById('cardRed').classList.toggle('active',current==='red');
@@ -247,18 +399,11 @@ function updateScores(){
 function resetGame(){
     current='red';
     gameActive=true;
+    isAiThinking=false;
     document.getElementById('cardRed').classList.remove('active');
     document.getElementById('cardYellow').classList.remove('active');
     init();
 }
-
-function resetScores(){
-    scores={red:0,yellow:0};
-    updateScores();
-    resetGame();
-}
-
-init();
 </script>
 <script src="/header.js"></script>
 <script src="/js/engagement.js" defer></script>
