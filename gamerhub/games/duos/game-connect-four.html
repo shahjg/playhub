@@ -49,18 +49,6 @@
         .mode-btn-label{display:block;font-size:1.1rem;color:var(--text-dark);margin-bottom:2px}
         .mode-btn-desc{display:block;font-size:0.75rem;color:var(--text-muted);font-weight:500}
 
-        .difficulty-selection{background:#fff;border-radius:20px;padding:32px 24px;box-shadow:0 8px 30px rgba(244,114,182,0.1);text-align:center}
-        .difficulty-buttons{display:flex;flex-direction:column;gap:10px;margin-top:20px}
-        .diff-btn{padding:14px 20px;border-radius:12px;border:2px solid rgba(244,114,182,0.15);background:#fff;font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;transition:all 0.3s;text-align:left}
-        .diff-btn:hover{border-color:var(--accent);background:#fdf2f8}
-        .diff-btn.selected{border-color:var(--accent);background:linear-gradient(135deg,#fdf2f8,#fce7f3)}
-        .diff-label{font-size:1rem;color:var(--text-dark);margin-bottom:2px}
-        .diff-desc{font-size:0.75rem;color:var(--text-muted)}
-        .diff-btn.easy .diff-label{color:#22c55e}
-        .diff-btn.medium .diff-label{color:#f59e0b}
-        .diff-btn.hard .diff-label{color:#ef4444}
-        .diff-btn.impossible .diff-label{color:#a855f7}
-
         .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
         .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px}
         .score-card.active{border-color:var(--accent);box-shadow:0 4px 20px rgba(244,114,182,0.2)}
@@ -102,9 +90,6 @@
         .btn-secondary:hover{border-color:var(--accent)}
 
         .hidden{display:none!important}
-
-        .win-streak{text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:-8px}
-        .win-streak.hot{color:#ef4444;font-weight:600}
 
         @media(max-width:400px){
             .cell{width:34px;height:34px}
@@ -149,40 +134,15 @@
                             </div>
                             <span style="font-size:1.2rem">→</span>
                         </button>
-                        <button class="mode-btn" onclick="showDifficultySelect()">
+                        <button class="mode-btn" onclick="startGame('ai')">
                             <span class="mode-btn-icon">🤖</span>
                             <div class="mode-btn-text">
                                 <span class="mode-btn-label">vs AI</span>
-                                <span class="mode-btn-desc">Challenge the computer</span>
+                                <span class="mode-btn-desc">Challenge the unbeatable computer</span>
                             </div>
                             <span style="font-size:1.2rem">→</span>
                         </button>
                     </div>
-                </div>
-
-                <!-- Difficulty Selection -->
-                <div class="difficulty-selection hidden" id="difficultySelection">
-                    <div class="mode-title">Select Difficulty</div>
-                    <div class="mode-subtitle">How much pain do you want?</div>
-                    <div class="difficulty-buttons">
-                        <button class="diff-btn easy" onclick="startGame('ai', 'easy')">
-                            <div class="diff-label">😊 Easy</div>
-                            <div class="diff-desc">AI makes mistakes. Good for learning.</div>
-                        </button>
-                        <button class="diff-btn medium" onclick="startGame('ai', 'medium')">
-                            <div class="diff-label">🤔 Medium</div>
-                            <div class="diff-desc">AI plays smart but beatable.</div>
-                        </button>
-                        <button class="diff-btn hard" onclick="startGame('ai', 'hard')">
-                            <div class="diff-label">😤 Hard</div>
-                            <div class="diff-desc">AI plays near-optimal. Brings trash talk.</div>
-                        </button>
-                        <button class="diff-btn impossible" onclick="startGame('ai', 'impossible')">
-                            <div class="diff-label">💀 Impossible</div>
-                            <div class="diff-desc">Perfect play. You will lose. GL.</div>
-                        </button>
-                    </div>
-                    <button class="btn btn-secondary" style="margin-top:20px" onclick="backToModeSelect()">← Back</button>
                 </div>
 
                 <!-- Game Area -->
@@ -204,7 +164,6 @@
                         </div>
                     </div>
 
-                    <div class="win-streak" id="winStreak"></div>
                     <div class="turn-indicator p1" id="turnIndicator"><span>RED</span>'s turn</div>
 
                     <div class="game-board">
@@ -238,42 +197,26 @@ const COLS = 7;
 const EMPTY = null;
 const PLAYER = 'red';
 const AI = 'yellow';
+const AI_DEPTH = 10; // Always max difficulty
 
 // ==================== GAME STATE ====================
 let board = [];
 let currentPlayer = PLAYER;
 let gameActive = true;
 let gameMode = 'player';
-let difficulty = 'hard';
 let scores = { red: 0, yellow: 0 };
 let isAiThinking = false;
-let aiWinStreak = 0;
+let aiMoveTimeout = null;
 let moveHistory = [];
-
-// Depth settings per difficulty
-const DEPTH_MAP = {
-    easy: 2,
-    medium: 4,
-    hard: 7,
-    impossible: 10
-};
 
 // ==================== TRASH TALK ====================
 const trashTalk = {
-    start: {
-        hard: [
-            "Ready to get destroyed? 😏",
-            "I've already calculated your defeat 🤖",
-            "This won't even be close...",
-            "Hope you stretched before this L"
-        ],
-        impossible: [
-            "Connect Four is solved. I am the solution. 💀",
-            "Mathematically, you cannot win. Let's begin.",
-            "I don't make mistakes. Ever.",
-            "42 moves to your demise starts now."
-        ]
-    },
+    start: [
+        "Connect Four is solved. I am the solution. 💀",
+        "Mathematically, you cannot win. Let's begin.",
+        "I don't make mistakes. Ever.",
+        "42 moves to your demise starts now."
+    ],
     block: [
         "Nice try lmaooo 😂",
         "I saw that coming 6 moves ago",
@@ -289,39 +232,12 @@ const trashTalk = {
         "Fork incoming. Google it. 🍴",
         "This is what optimal play looks like"
     ],
-    win: {
-        normal: [
-            "GG EZ 🏆",
-            "Skill diff was massive",
-            "Maybe try Easy mode? 👶",
-            "That wasn't even close",
-            "Thanks for the free W"
-        ],
-        streak: [
-            "That's {n} in a row now... 💀",
-            "{n}-0. Starting to feel bad for you.",
-            "Win streak: {n}. Your move, literally.",
-            "{n} straight. Should I switch to Easy?"
-        ],
-        domination: [
-            "7-0 incoming at this rate...",
-            "You're the reason I don't have a Hard mode above this",
-            "I'm not even trying anymore",
-            "This is genuinely embarrassing to watch"
-        ]
-    },
-    playerMistake: [
-        "BRUH WHAT WAS THAT?? 🤦",
-        "Thanks for the free win I guess 🎁",
-        "Did a toddler take over?",
-        "That's... certainly a move",
-        "My neural network just crashed from that"
-    ],
-    playerGoodMove: [
-        "Okay, not bad... still losing tho 😏",
-        "Finally, some competition",
-        "Lucky move. Won't save you.",
-        "I see what you tried there 👀"
+    win: [
+        "GG EZ 🏆",
+        "Skill diff was massive",
+        "That wasn't even close",
+        "Thanks for the free W",
+        "I'm not even trying"
     ],
     thinking: [
         "Calculating your doom...",
@@ -333,17 +249,9 @@ const trashTalk = {
 
 let lastTrashMessage = '';
 
-function getTrash(category, subcategory = null) {
-    if (difficulty === 'easy' || difficulty === 'medium') return null;
-    
-    let pool;
-    if (subcategory && trashTalk[category][subcategory]) {
-        pool = trashTalk[category][subcategory];
-    } else if (Array.isArray(trashTalk[category])) {
-        pool = trashTalk[category];
-    } else {
-        return null;
-    }
+function getTrash(category) {
+    const pool = trashTalk[category];
+    if (!pool) return null;
     
     let msg = pool[Math.floor(Math.random() * pool.length)];
     while (msg === lastTrashMessage && pool.length > 1) {
@@ -353,7 +261,7 @@ function getTrash(category, subcategory = null) {
     return msg;
 }
 
-function showTrash(message, duration = 2500) {
+function showTrash(message) {
     if (!message) return;
     const el = document.getElementById('turnIndicator');
     el.innerHTML = `<span style="color:#a855f7;font-weight:600;">🤖 ${message}</span>`;
@@ -401,132 +309,95 @@ function undoPiece(b, col) {
     return -1;
 }
 
-// ==================== WIN DETECTION ====================
-function checkWin(b, row, col, player) {
-    const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
-    
-    for (const [dr, dc] of directions) {
-        let count = 1;
-        const cells = [[row, col]];
-        
-        // Forward
-        for (let i = 1; i < 4; i++) {
-            const r = row + dr * i;
-            const c = col + dc * i;
-            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && b[r][c] === player) {
-                count++;
-                cells.push([r, c]);
-            } else break;
-        }
-        
-        // Backward
-        for (let i = 1; i < 4; i++) {
-            const r = row - dr * i;
-            const c = col - dc * i;
-            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && b[r][c] === player) {
-                count++;
-                cells.push([r, c]);
-            } else break;
-        }
-        
-        if (count >= 4) return cells;
-    }
-    return null;
-}
-
-function hasWin(b, player) {
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-            if (b[r][c] === player && checkWin(b, r, c, player)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 function isBoardFull(b) {
     return b[0].every(cell => cell !== EMPTY);
 }
 
-// ==================== THREAT DETECTION ====================
-function countThreats(b, player) {
-    // A threat is a position where player can win on their next move
-    let threats = 0;
-    const validMoves = getValidMoves(b);
+// ==================== WIN DETECTION ====================
+function checkWin(b, row, col, player) {
+    const directions = [[0,1],[1,0],[1,1],[1,-1]];
     
-    for (const col of validMoves) {
-        const row = getRow(b, col);
-        b[row][col] = player;
-        if (checkWin(b, row, col, player)) {
-            threats++;
+    for (const [dr, dc] of directions) {
+        let cells = [[row, col]];
+        
+        for (let i = 1; i <= 3; i++) {
+            const r = row + dr * i;
+            const c = col + dc * i;
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && b[r][c] === player) {
+                cells.push([r, c]);
+            } else break;
         }
-        b[row][col] = EMPTY;
+        
+        for (let i = 1; i <= 3; i++) {
+            const r = row - dr * i;
+            const c = col - dc * i;
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && b[r][c] === player) {
+                cells.push([r, c]);
+            } else break;
+        }
+        
+        if (cells.length >= 4) return cells.slice(0, 4);
+    }
+    return null;
+}
+
+function findWinningMove(b, player) {
+    for (let c = 0; c < COLS; c++) {
+        const r = getRow(b, c);
+        if (r === -1) continue;
+        
+        b[r][c] = player;
+        const win = checkWin(b, r, c, player);
+        b[r][c] = EMPTY;
+        
+        if (win) return c;
+    }
+    return -1;
+}
+
+// ==================== ADVANCED AI PATTERNS ====================
+function countThreats(b, player) {
+    let threats = 0;
+    
+    for (let c = 0; c < COLS; c++) {
+        const r = getRow(b, c);
+        if (r === -1) continue;
+        
+        b[r][c] = player;
+        if (checkWin(b, r, c, player)) threats++;
+        b[r][c] = EMPTY;
     }
     
     return threats;
 }
 
-function findWinningMove(b, player) {
-    const validMoves = getValidMoves(b);
-    for (const col of validMoves) {
-        const row = getRow(b, col);
-        b[row][col] = player;
-        const wins = checkWin(b, row, col, player);
-        b[row][col] = EMPTY;
-        if (wins) return col;
-    }
-    return -1;
-}
-
 function findDoubleThreat(b, player) {
-    // Find a move that creates 2+ winning threats
-    const validMoves = getValidMoves(b);
-    
-    for (const col of validMoves) {
-        const row = getRow(b, col);
-        b[row][col] = player;
+    for (let c = 0; c < COLS; c++) {
+        const r = getRow(b, c);
+        if (r === -1) continue;
         
-        // Count threats after this move
+        b[r][c] = player;
         const threats = countThreats(b, player);
-        b[row][col] = EMPTY;
+        b[r][c] = EMPTY;
         
-        if (threats >= 2) return col;
+        if (threats >= 2) return c;
     }
-    
     return -1;
 }
 
-// Check if a move creates a "trap" - unblockable win
-function createsTrap(b, col, player) {
-    const row = getRow(b, col);
-    if (row === -1) return false;
-    
-    b[row][col] = player;
-    const threats = countThreats(b, player);
-    b[row][col] = EMPTY;
-    
-    return threats >= 2;
-}
-
-// ==================== POSITION EVALUATION ====================
+// ==================== EVALUATION FUNCTION ====================
 function evaluateWindow(window, player) {
     const opponent = player === AI ? PLAYER : AI;
     const playerCount = window.filter(c => c === player).length;
-    const opponentCount = window.filter(c => c === opponent).length;
+    const oppCount = window.filter(c => c === opponent).length;
     const emptyCount = window.filter(c => c === EMPTY).length;
     
-    // Winning position
     if (playerCount === 4) return 100000;
-    if (opponentCount === 4) return -100000;
-    
-    // Threat positions
+    if (oppCount === 4) return -100000;
     if (playerCount === 3 && emptyCount === 1) return 100;
-    if (opponentCount === 3 && emptyCount === 1) return -80;
-    
-    // Building positions
+    if (oppCount === 3 && emptyCount === 1) return -150;
     if (playerCount === 2 && emptyCount === 2) return 10;
-    if (opponentCount === 2 && emptyCount === 2) return -8;
+    if (oppCount === 2 && emptyCount === 2) return -12;
     
     return 0;
 }
@@ -534,16 +405,14 @@ function evaluateWindow(window, player) {
 function evaluateBoard(b, player) {
     let score = 0;
     
-    // Center column preference (huge in Connect Four)
-    const centerCol = 3;
+    // Center column preference
+    const centerCol = Math.floor(COLS / 2);
     let centerCount = 0;
     for (let r = 0; r < ROWS; r++) {
         if (b[r][centerCol] === player) centerCount++;
-        if (b[r][centerCol] === (player === AI ? PLAYER : AI)) centerCount--;
     }
     score += centerCount * 6;
     
-    // Evaluate all possible 4-in-a-row windows
     // Horizontal
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c <= COLS - 4; c++) {
@@ -580,19 +449,48 @@ function evaluateBoard(b, player) {
 }
 
 // ==================== MINIMAX WITH ALPHA-BETA ====================
-function minimax(b, depth, alpha, beta, maximizing, moveCount) {
+function orderMoves(b) {
+    const moves = getValidMoves(b);
+    const center = Math.floor(COLS / 2);
+    return moves.sort((a, c2) => Math.abs(a - center) - Math.abs(c2 - center));
+}
+
+function isTerminal(b) {
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (b[r][c] && checkWin(b, r, c, b[r][c])) return true;
+        }
+    }
+    return isBoardFull(b);
+}
+
+function minimax(b, depth, alpha, beta, isMaximizing, moveCount) {
     const validMoves = getValidMoves(b);
+    const terminal = isTerminal(b);
     
-    // Check terminal states
-    if (hasWin(b, AI)) return { score: 1000000 - moveCount, col: -1 };
-    if (hasWin(b, PLAYER)) return { score: -1000000 + moveCount, col: -1 };
-    if (validMoves.length === 0) return { score: 0, col: -1 };
-    if (depth === 0) return { score: evaluateBoard(b, AI), col: -1 };
+    if (depth === 0 || terminal || validMoves.length === 0) {
+        if (terminal) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (b[r][c]) {
+                        const win = checkWin(b, r, c, b[r][c]);
+                        if (win) {
+                            return { 
+                                score: b[r][c] === AI ? 1000000 - moveCount : -1000000 + moveCount, 
+                                col: -1 
+                            };
+                        }
+                    }
+                }
+            }
+            return { score: 0, col: -1 };
+        }
+        return { score: evaluateBoard(b, AI), col: -1 };
+    }
     
-    // Order moves: center first, then adjacent
-    const orderedMoves = [3, 2, 4, 1, 5, 0, 6].filter(c => validMoves.includes(c));
+    const orderedMoves = orderMoves(b);
     
-    if (maximizing) {
+    if (isMaximizing) {
         let maxScore = -Infinity;
         let bestCol = orderedMoves[0];
         
@@ -646,43 +544,6 @@ function getAIMove() {
         }
     }
     
-    // === EASY MODE: Random with basic win/block ===
-    if (difficulty === 'easy') {
-        // 70% chance to play randomly
-        if (Math.random() < 0.7) {
-            return validMoves[Math.floor(Math.random() * validMoves.length)];
-        }
-        // 30% chance to try win/block
-        const winMove = findWinningMove(board, AI);
-        if (winMove !== -1) return winMove;
-        const blockMove = findWinningMove(board, PLAYER);
-        if (blockMove !== -1) return blockMove;
-        return validMoves[Math.floor(Math.random() * validMoves.length)];
-    }
-    
-    // === MEDIUM MODE: Shallow search, occasional mistakes ===
-    if (difficulty === 'medium') {
-        // Always take wins
-        const winMove = findWinningMove(board, AI);
-        if (winMove !== -1) return winMove;
-        
-        // Always block immediate threats
-        const blockMove = findWinningMove(board, PLAYER);
-        if (blockMove !== -1) return blockMove;
-        
-        // 20% chance for random move
-        if (Math.random() < 0.2) {
-            return validMoves[Math.floor(Math.random() * validMoves.length)];
-        }
-        
-        // Use shallow minimax
-        const depth = DEPTH_MAP.medium;
-        const result = minimax(cloneBoard(board), depth, -Infinity, Infinity, true, moveCount);
-        return result.col;
-    }
-    
-    // === HARD/IMPOSSIBLE: Full strength ===
-    
     // Opening book: Always play center on first move
     if (moveCount === 0) {
         return 3;
@@ -697,7 +558,7 @@ function getAIMove() {
     // 1. IMMEDIATE WIN (always take it)
     const winMove = findWinningMove(board, AI);
     if (winMove !== -1) {
-        showTrash(getTrash('win', aiWinStreak >= 3 ? 'streak' : 'normal')?.replace('{n}', aiWinStreak + 1));
+        showTrash(getTrash('win'));
         return winMove;
     }
     
@@ -723,67 +584,63 @@ function getAIMove() {
     }
     
     // 5. MINIMAX for best move
-    const depth = DEPTH_MAP[difficulty];
-    const result = minimax(cloneBoard(board), depth, -Infinity, Infinity, true, moveCount);
+    const result = minimax(cloneBoard(board), AI_DEPTH, -Infinity, Infinity, true, moveCount);
     
     // Trash talk based on evaluation
     if (result.score > 500) {
         showTrash(getTrash('threat'));
     } else if (Math.random() < 0.15) {
-        showTrash(getTrash('thinking')[Math.floor(Math.random() * trashTalk.thinking.length)]);
+        showTrash(getTrash('thinking'));
     }
     
     return result.col;
 }
 
 // ==================== GAME FLOW ====================
-function showDifficultySelect() {
-    document.getElementById('modeSelection').classList.add('hidden');
-    document.getElementById('difficultySelection').classList.remove('hidden');
-}
-
-function backToModeSelect() {
-    document.getElementById('difficultySelection').classList.add('hidden');
-    document.getElementById('modeSelection').classList.remove('hidden');
-}
-
-function startGame(mode, diff = 'hard') {
+function startGame(mode) {
     gameMode = mode;
-    difficulty = diff;
     currentPlayer = PLAYER;
     gameActive = true;
     isAiThinking = false;
     moveHistory = [];
     
+    // Clear any pending AI move
+    if (aiMoveTimeout) {
+        clearTimeout(aiMoveTimeout);
+        aiMoveTimeout = null;
+    }
+    
     document.getElementById('modeSelection').classList.add('hidden');
-    document.getElementById('difficultySelection').classList.add('hidden');
     document.getElementById('gameArea').classList.remove('hidden');
     
     if (mode === 'ai') {
         document.getElementById('labelRed').textContent = 'You';
         document.getElementById('labelYellow').textContent = 'AI';
-        updateWinStreak();
     } else {
         document.getElementById('labelRed').textContent = 'Red';
         document.getElementById('labelYellow').textContent = 'Yellow';
-        document.getElementById('winStreak').textContent = '';
     }
     
     initBoard();
     
     // AI intro trash talk
-    if (mode === 'ai' && (difficulty === 'hard' || difficulty === 'impossible')) {
-        setTimeout(() => showTrash(getTrash('start', difficulty)), 500);
+    if (mode === 'ai') {
+        setTimeout(() => showTrash(getTrash('start')), 500);
         setTimeout(() => updateTurn(), 2500);
     }
 }
 
 function changeMode() {
+    // Clear any pending AI move
+    if (aiMoveTimeout) {
+        clearTimeout(aiMoveTimeout);
+        aiMoveTimeout = null;
+    }
+    isAiThinking = false;
+    
     document.getElementById('modeSelection').classList.remove('hidden');
-    document.getElementById('difficultySelection').classList.add('hidden');
     document.getElementById('gameArea').classList.add('hidden');
     scores = { red: 0, yellow: 0 };
-    aiWinStreak = 0;
     updateScores();
 }
 
@@ -819,19 +676,24 @@ function handleClick(col) {
     
     if (gameActive && gameMode === 'ai' && currentPlayer === AI) {
         isAiThinking = true;
-        const thinkTime = difficulty === 'impossible' ? 800 : 400;
         
-        setTimeout(() => {
+        // Use requestAnimationFrame + setTimeout for safer async handling
+        aiMoveTimeout = setTimeout(() => {
+            if (!gameActive || !isAiThinking) return;
+            
             const aiCol = getAIMove();
-            if (aiCol !== -1) {
+            if (aiCol !== -1 && gameActive) {
                 makeMove(aiCol, AI);
                 moveHistory.push(aiCol);
             }
             isAiThinking = false;
+            
             if (gameActive) {
-                setTimeout(() => updateTurn(), 1500);
+                setTimeout(() => {
+                    if (gameActive) updateTurn();
+                }, 1500);
             }
-        }, thinkTime);
+        }, 500);
     }
 }
 
@@ -846,6 +708,14 @@ function makeMove(col, player) {
     
     if (winCells) {
         gameActive = false;
+        isAiThinking = false;
+        
+        // Clear any pending AI move
+        if (aiMoveTimeout) {
+            clearTimeout(aiMoveTimeout);
+            aiMoveTimeout = null;
+        }
+        
         winCells.forEach(([r, c]) => {
             document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('winner');
         });
@@ -855,21 +725,10 @@ function makeMove(col, player) {
         
         if (gameMode === 'ai') {
             if (player === AI) {
-                aiWinStreak++;
                 showStatus('AI wins!', 'lose');
-                if (difficulty === 'hard' || difficulty === 'impossible') {
-                    const streakMsg = aiWinStreak >= 5 ? 
-                        getTrash('win', 'domination') :
-                        aiWinStreak >= 2 ?
-                        getTrash('win', 'streak')?.replace('{n}', aiWinStreak) :
-                        getTrash('win', 'normal');
-                    showTrash(streakMsg);
-                }
             } else {
-                aiWinStreak = 0;
                 showStatus('You win!', 'win');
             }
-            updateWinStreak();
         } else {
             showStatus(`${player.toUpperCase()} wins!`, 'win');
         }
@@ -878,6 +737,13 @@ function makeMove(col, player) {
         
     } else if (isBoardFull(board)) {
         gameActive = false;
+        isAiThinking = false;
+        
+        if (aiMoveTimeout) {
+            clearTimeout(aiMoveTimeout);
+            aiMoveTimeout = null;
+        }
+        
         showStatus("It's a draw!", '');
         document.getElementById('turnIndicator').style.opacity = '0.5';
         
@@ -919,20 +785,13 @@ function updateScores() {
     document.getElementById('scoreYellow').textContent = scores.yellow;
 }
 
-function updateWinStreak() {
-    const el = document.getElementById('winStreak');
-    if (aiWinStreak >= 3) {
-        el.textContent = `🔥 AI Win Streak: ${aiWinStreak}`;
-        el.className = 'win-streak hot';
-    } else if (aiWinStreak > 0) {
-        el.textContent = `AI Win Streak: ${aiWinStreak}`;
-        el.className = 'win-streak';
-    } else {
-        el.textContent = '';
-    }
-}
-
 function resetGame() {
+    // Clear any pending AI move
+    if (aiMoveTimeout) {
+        clearTimeout(aiMoveTimeout);
+        aiMoveTimeout = null;
+    }
+    
     currentPlayer = PLAYER;
     gameActive = true;
     isAiThinking = false;
