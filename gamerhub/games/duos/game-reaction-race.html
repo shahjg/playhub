@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Reaction Race – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Test your reflexes! Tap when you see green to win.">
+    <meta name="description" content="Test your reflexes against a friend or AI! Tap when you see green to win.">
     <meta name="theme-color" content="#0a0a0f">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -35,6 +35,17 @@
 
         .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
         .game-container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+
+        .mode-selection{background:#fff;border-radius:20px;padding:32px 24px;box-shadow:0 8px 30px rgba(244,114,182,0.1);text-align:center}
+        .mode-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:8px;color:var(--text-dark)}
+        .mode-subtitle{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
+        .mode-buttons{display:flex;flex-direction:column;gap:12px}
+        .mode-btn{padding:16px 24px;border-radius:14px;border:2px solid rgba(244,114,182,0.15);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between}
+        .mode-btn:hover{border-color:var(--accent);background:#fdf2f8;transform:translateY(-2px)}
+        .mode-btn-icon{font-size:1.5rem}
+        .mode-btn-text{text-align:left;flex:1;margin:0 12px}
+        .mode-btn-label{display:block;font-size:1.1rem;color:var(--text-dark);margin-bottom:2px}
+        .mode-btn-desc{display:block;font-size:0.75rem;color:var(--text-muted);font-weight:500}
 
         .score-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
         .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08)}
@@ -91,44 +102,70 @@
 
         <div class="game-wrapper">
             <div class="game-container">
-                <div class="score-bar">
-                    <div class="score-card p1">
-                        <div class="score-label">Player 1</div>
-                        <div class="score-value" id="score1">0</div>
-                    </div>
-                    <div class="vs-badge">VS</div>
-                    <div class="score-card p2">
-                        <div class="score-label">Player 2</div>
-                        <div class="score-value" id="score2">0</div>
+                <div class="mode-selection" id="modeSelection">
+                    <div class="mode-title">Choose Game Mode</div>
+                    <div class="mode-subtitle">Test your reflexes against a friend or AI</div>
+                    <div class="mode-buttons">
+                        <button class="mode-btn" onclick="startGame('player')">
+                            <span class="mode-btn-icon">👥</span>
+                            <div class="mode-btn-text">
+                                <span class="mode-btn-label">vs Player</span>
+                                <span class="mode-btn-desc">Play with a friend locally</span>
+                            </div>
+                            <span style="font-size:1.2rem">→</span>
+                        </button>
+                        <button class="mode-btn" onclick="startGame('ai')">
+                            <span class="mode-btn-icon">🤖</span>
+                            <div class="mode-btn-text">
+                                <span class="mode-btn-label">vs AI</span>
+                                <span class="mode-btn-desc">Challenge the computer</span>
+                            </div>
+                            <span style="font-size:1.2rem">→</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="round-info">Round <span id="roundNum">1</span> of 5</div>
-
-                <div class="game-board" id="gameArea">
-                    <div class="race-arena" id="arena">
-                        <div class="player-zone p1" id="zone1" onclick="tap(1)">
-                            <div class="zone-label">P1</div>
-                            <div class="zone-status" id="status1">Tap to start</div>
-                            <div class="zone-time hidden" id="time1"></div>
+                <div id="gameArea" class="hidden">
+                    <div class="score-bar">
+                        <div class="score-card p1">
+                            <div class="score-label" id="label1">Player 1</div>
+                            <div class="score-value" id="score1">0</div>
                         </div>
-                        <div class="player-zone p2" id="zone2" onclick="tap(2)">
-                            <div class="zone-label">P2</div>
-                            <div class="zone-status" id="status2">Tap to start</div>
-                            <div class="zone-time hidden" id="time2"></div>
+                        <div class="vs-badge">VS</div>
+                        <div class="score-card p2">
+                            <div class="score-label" id="label2">Player 2</div>
+                            <div class="score-value" id="score2">0</div>
                         </div>
                     </div>
-                </div>
 
-                <div class="game-status">
-                    <div class="status-text" id="statusText">Both players tap to begin</div>
-                </div>
+                    <div class="round-info">Round <span id="roundNum">1</span> of 5</div>
 
-                <div class="match-result hidden" id="matchResult">
-                    <div class="match-title" id="matchTitle"></div>
-                    <div class="match-sub" id="matchSub"></div>
-                    <div class="actions">
-                        <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                    <div class="game-board" id="gameArea2">
+                        <div class="race-arena" id="arena">
+                            <div class="player-zone p1" id="zone1" onclick="tap(1)">
+                                <div class="zone-label" id="zoneLabel1">P1</div>
+                                <div class="zone-status" id="status1">Tap to start</div>
+                                <div class="zone-time hidden" id="time1"></div>
+                            </div>
+                            <div class="player-zone p2" id="zone2" onclick="tap(2)">
+                                <div class="zone-label" id="zoneLabel2">P2</div>
+                                <div class="zone-status" id="status2">Tap to start</div>
+                                <div class="zone-time hidden" id="time2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-status">
+                        <div class="status-text" id="statusText">Tap to begin</div>
+                    </div>
+
+                    <div class="match-result hidden" id="matchResult">
+                        <div class="match-title" id="matchTitle"></div>
+                        <div class="match-sub" id="matchSub"></div>
+                        <div class="actions">
+                            <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                            <button class="btn btn-primary" onclick="changeMode()">Change Mode</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,6 +184,40 @@ let ready={p1:false,p2:false};
 let times={p1:null,p2:null};
 let goTime=null;
 let timeout=null;
+let gameMode='player';
+
+function startGame(mode){
+    gameMode=mode;
+    document.getElementById('modeSelection').classList.add('hidden');
+    document.getElementById('gameArea').classList.remove('hidden');
+    
+    if(mode==='ai'){
+        document.getElementById('label1').textContent='You';
+        document.getElementById('label2').textContent='AI';
+        document.getElementById('zoneLabel1').textContent='YOU';
+        document.getElementById('zoneLabel2').textContent='AI';
+        document.getElementById('status1').textContent='Tap to start';
+        document.getElementById('status2').textContent='Ready';
+        document.getElementById('statusText').textContent='Tap to begin';
+    }else{
+        document.getElementById('label1').textContent='Player 1';
+        document.getElementById('label2').textContent='Player 2';
+        document.getElementById('zoneLabel1').textContent='P1';
+        document.getElementById('zoneLabel2').textContent='P2';
+        document.getElementById('status1').textContent='Tap to start';
+        document.getElementById('status2').textContent='Tap to start';
+        document.getElementById('statusText').textContent='Both players tap to begin';
+    }
+}
+
+function changeMode(){
+    document.getElementById('modeSelection').classList.remove('hidden');
+    document.getElementById('gameArea').classList.add('hidden');
+    scores={p1:0,p2:0};
+    round=1;
+    resetRound();
+    updateScores();
+}
 
 function tap(player){
     const zone=document.getElementById(`zone${player}`);
@@ -155,10 +226,19 @@ function tap(player){
     const key=`p${player}`;
 
     if(state==='idle'){
+        if(gameMode==='ai'&&player===2)return; // Don't allow clicking AI zone
+        
         ready[key]=true;
         zone.classList.remove('p1','p2');
         zone.classList.add('waiting');
         status.textContent='Waiting...';
+        
+        if(gameMode==='ai'){
+            ready.p2=true;
+            document.getElementById('zone2').classList.remove('p2');
+            document.getElementById('zone2').classList.add('waiting');
+            document.getElementById('status2').textContent='Waiting...';
+        }
         
         if(ready.p1&&ready.p2){
             state='waiting';
@@ -167,6 +247,8 @@ function tap(player){
             timeout=setTimeout(goGreen,delay);
         }
     }else if(state==='waiting'){
+        if(gameMode==='ai'&&player===2)return;
+        
         // Too early!
         clearTimeout(timeout);
         const other=player===1?2:1;
@@ -176,18 +258,48 @@ function tap(player){
         document.getElementById(`zone${other}`).classList.add('win');
         status.textContent='Too early!';
         document.getElementById(`status${other}`).textContent='Wins!';
-        document.getElementById('statusText').textContent=`Player ${other} wins (P${player} jumped early)`;
+        
+        if(gameMode==='ai'){
+            document.getElementById('statusText').textContent=player===1?'AI wins (You jumped early)':'You win (AI jumped early)';
+        }else{
+            document.getElementById('statusText').textContent=`Player ${other} wins (P${player} jumped early)`;
+        }
+        
         state='result';
         setTimeout(nextRound,2000);
     }else if(state==='go'&&!times[key]){
+        if(gameMode==='ai'&&player===2)return;
+        
         times[key]=Date.now()-goTime;
         timeEl.textContent=times[key]+'ms';
         timeEl.classList.remove('hidden');
         status.textContent='';
         
-        if(times.p1&&times.p2){
+        if(gameMode==='ai'&&!times.p2){
+            // AI responds with realistic delay
+            setTimeout(aiReact,getAiDelay());
+        }else if(times.p1&&times.p2){
             endRound();
         }
+    }
+}
+
+function getAiDelay(){
+    // AI reaction time: 150-350ms (human-like but slightly faster)
+    return 150+Math.random()*200;
+}
+
+function aiReact(){
+    if(times.p2)return; // Already reacted
+    
+    times.p2=Date.now()-goTime;
+    const timeEl=document.getElementById('time2');
+    timeEl.textContent=times.p2+'ms';
+    timeEl.classList.remove('hidden');
+    document.getElementById('status2').textContent='';
+    
+    if(times.p1&&times.p2){
+        endRound();
     }
 }
 
@@ -214,12 +326,20 @@ function endRound(){
         scores.p1++;
         z1.classList.add('win');
         z2.classList.add('lose');
-        document.getElementById('statusText').textContent=`Player 1 wins! (${times.p1}ms vs ${times.p2}ms)`;
+        if(gameMode==='ai'){
+            document.getElementById('statusText').textContent=`You win! (${times.p1}ms vs ${times.p2}ms)`;
+        }else{
+            document.getElementById('statusText').textContent=`Player 1 wins! (${times.p1}ms vs ${times.p2}ms)`;
+        }
     }else if(times.p2<times.p1){
         scores.p2++;
         z1.classList.add('lose');
         z2.classList.add('win');
-        document.getElementById('statusText').textContent=`Player 2 wins! (${times.p2}ms vs ${times.p1}ms)`;
+        if(gameMode==='ai'){
+            document.getElementById('statusText').textContent=`AI wins! (${times.p2}ms vs ${times.p1}ms)`;
+        }else{
+            document.getElementById('statusText').textContent=`Player 2 wins! (${times.p2}ms vs ${times.p1}ms)`;
+        }
     }else{
         document.getElementById('statusText').textContent="It's a tie!";
     }
@@ -247,24 +367,39 @@ function resetRound(){
     z1.className='player-zone p1';
     z2.className='player-zone p2';
     
-    document.getElementById('status1').textContent='Tap to start';
-    document.getElementById('status2').textContent='Tap to start';
+    if(gameMode==='ai'){
+        document.getElementById('status1').textContent='Tap to start';
+        document.getElementById('status2').textContent='Ready';
+        document.getElementById('statusText').textContent='Tap to begin';
+    }else{
+        document.getElementById('status1').textContent='Tap to start';
+        document.getElementById('status2').textContent='Tap to start';
+        document.getElementById('statusText').textContent='Both players tap to begin';
+    }
+    
     document.getElementById('time1').classList.add('hidden');
     document.getElementById('time2').classList.add('hidden');
-    document.getElementById('statusText').textContent='Both players tap to begin';
 }
 
 function showMatchResult(){
-    document.getElementById('gameArea').classList.add('hidden');
+    document.getElementById('gameArea2').classList.add('hidden');
     const result=document.getElementById('matchResult');
     result.classList.remove('hidden');
     
     const title=document.getElementById('matchTitle');
     if(scores.p1>scores.p2){
-        title.textContent='PLAYER 1 WINS!';
+        if(gameMode==='ai'){
+            title.textContent='YOU WIN!';
+        }else{
+            title.textContent='PLAYER 1 WINS!';
+        }
         title.className='match-title p1';
     }else{
-        title.textContent='PLAYER 2 WINS!';
+        if(gameMode==='ai'){
+            title.textContent='AI WINS!';
+        }else{
+            title.textContent='PLAYER 2 WINS!';
+        }
         title.className='match-title p2';
     }
     document.getElementById('matchSub').textContent=`Final Score: ${scores.p1} - ${scores.p2}`;
@@ -281,7 +416,7 @@ function resetGame(){
     updateScores();
     document.getElementById('roundNum').textContent='1';
     document.getElementById('matchResult').classList.add('hidden');
-    document.getElementById('gameArea').classList.remove('hidden');
+    document.getElementById('gameArea2').classList.remove('hidden');
     resetRound();
 }
 </script>
