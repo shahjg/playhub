@@ -199,6 +199,10 @@ function createBoard(){
 
 function startGame(mode){
     gameMode=mode;
+    current='red';
+    gameActive=true;
+    isAiThinking=false;
+    
     document.getElementById('modeSelection').classList.add('hidden');
     document.getElementById('gameArea').classList.remove('hidden');
     
@@ -206,6 +210,12 @@ function startGame(mode){
         document.getElementById('labelRed').textContent='You';
         document.getElementById('labelYellow').textContent='AI';
     }else{
+        document.getElementById('labelRed').textContent='Red';
+        document.getElementById('labelYellow').textContent='Yellow';
+    }
+    
+    init();
+}else{
         document.getElementById('labelRed').textContent='Red';
         document.getElementById('labelYellow').textContent='Yellow';
     }
@@ -295,43 +305,98 @@ function aiMove(){
 }
 
 function getBestMove(){
-    // Check for winning move
+    // 1. Check for immediate winning move
     for(let c=0;c<COLS;c++){
         const testBoard=board.map(r=>[...r]);
-        let r=-1;
-        for(let row=ROWS-1;row>=0;row--){
-            if(!testBoard[row][c]){r=row;break;}
-        }
+        let r=getLowestRow(testBoard,c);
         if(r!==-1){
             testBoard[r][c]='yellow';
             if(checkWinOnBoard(testBoard,r,c,'yellow'))return c;
         }
     }
     
-    // Block player's winning move
+    // 2. Block player's winning move
     for(let c=0;c<COLS;c++){
         const testBoard=board.map(r=>[...r]);
-        let r=-1;
-        for(let row=ROWS-1;row>=0;row--){
-            if(!testBoard[row][c]){r=row;break;}
-        }
+        let r=getLowestRow(testBoard,c);
         if(r!==-1){
             testBoard[r][c]='red';
             if(checkWinOnBoard(testBoard,r,c,'red'))return c;
         }
     }
     
-    // Prefer center columns
-    const centerCols=[3,2,4,1,5,0,6];
-    for(const c of centerCols){
-        let hasSpace=false;
-        for(let r=ROWS-1;r>=0;r--){
-            if(!board[r][c]){hasSpace=true;break;}
+    // 3. Look for moves that create multiple threats
+    let bestCol=-1;
+    let bestScore=-999;
+    
+    for(let c=0;c<COLS;c++){
+        const testBoard=board.map(r=>[...r]);
+        let r=getLowestRow(testBoard,c);
+        if(r!==-1){
+            testBoard[r][c]='yellow';
+            let score=evaluatePosition(testBoard,r,c,'yellow');
+            
+            // Bonus for center columns
+            if(c===3)score+=3;
+            if(c===2||c===4)score+=2;
+            
+            // Penalty for moves that give opponent winning opportunity
+            if(r>0){
+                testBoard[r-1][c]='red';
+                if(checkWinOnBoard(testBoard,r-1,c,'red'))score-=100;
+                testBoard[r-1][c]=null;
+            }
+            
+            if(score>bestScore){
+                bestScore=score;
+                bestCol=c;
+            }
         }
-        if(hasSpace)return c;
     }
     
+    return bestCol!==-1?bestCol:3;
+}
+
+function getLowestRow(testBoard,col){
+    for(let r=ROWS-1;r>=0;r--){
+        if(!testBoard[r][col])return r;
+    }
     return -1;
+}
+
+function evaluatePosition(testBoard,row,col,player){
+    let score=0;
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    
+    for(const[dr,dc]of directions){
+        let count=1;
+        let open=0;
+        
+        // Check positive direction
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r<0||r>=ROWS||c<0||c>=COLS)break;
+            if(testBoard[r][c]===player)count++;
+            else if(!testBoard[r][c])open++;
+            else break;
+        }
+        
+        // Check negative direction
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r<0||r>=ROWS||c<0||c>=COLS)break;
+            if(testBoard[r][c]===player)count++;
+            else if(!testBoard[r][c])open++;
+            else break;
+        }
+        
+        // Score based on potential
+        if(count===3&&open>=1)score+=50;
+        else if(count===2&&open>=2)score+=10;
+        else if(count===2&&open>=1)score+=5;
+    }
+    
+    return score;
 }
 
 function checkWinOnBoard(testBoard,row,col,player){
