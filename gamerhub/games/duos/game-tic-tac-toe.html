@@ -198,6 +198,11 @@ const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
 function startGame(mode){
     gameMode=mode;
+    board=['','','','','','','','',''];
+    current='X';
+    gameActive=true;
+    isAiThinking=false;
+    
     document.getElementById('modeSelection').classList.add('hidden');
     document.getElementById('gameArea').classList.remove('hidden');
     
@@ -205,6 +210,12 @@ function startGame(mode){
         document.getElementById('labelX').textContent='You (X)';
         document.getElementById('labelO').textContent='AI (O)';
     }else{
+        document.getElementById('labelX').textContent='Player X';
+        document.getElementById('labelO').textContent='Player O';
+    }
+    
+    init();
+}else{
         document.getElementById('labelX').textContent='Player X';
         document.getElementById('labelO').textContent='Player O';
     }
@@ -285,43 +296,63 @@ function aiMove(){
 }
 
 function getBestMove(){
-    // Check for winning move
+    // Use minimax algorithm for perfect play
+    let bestScore=-Infinity;
+    let bestMove=-1;
+    
     for(let i=0;i<9;i++){
         if(!board[i]){
             board[i]='O';
-            if(checkWin()){
-                board[i]='';
-                return i;
-            }
+            let score=minimax(board,0,false);
             board[i]='';
+            if(score>bestScore){
+                bestScore=score;
+                bestMove=i;
+            }
         }
     }
+    return bestMove;
+}
+
+function minimax(testBoard,depth,isMaximizing){
+    const winner=checkWinForMinimax(testBoard);
+    if(winner==='O')return 10-depth;
+    if(winner==='X')return depth-10;
+    if(testBoard.every(c=>c))return 0;
     
-    // Block player's winning move
-    for(let i=0;i<9;i++){
-        if(!board[i]){
-            board[i]='X';
-            if(checkWin()){
-                board[i]='';
-                return i;
+    if(isMaximizing){
+        let bestScore=-Infinity;
+        for(let i=0;i<9;i++){
+            if(!testBoard[i]){
+                testBoard[i]='O';
+                let score=minimax(testBoard,depth+1,false);
+                testBoard[i]='';
+                bestScore=Math.max(score,bestScore);
             }
-            board[i]='';
+        }
+        return bestScore;
+    }else{
+        let bestScore=Infinity;
+        for(let i=0;i<9;i++){
+            if(!testBoard[i]){
+                testBoard[i]='X';
+                let score=minimax(testBoard,depth+1,true);
+                testBoard[i]='';
+                bestScore=Math.min(score,bestScore);
+            }
+        }
+        return bestScore;
+    }
+}
+
+function checkWinForMinimax(testBoard){
+    for(const pattern of wins){
+        const[a,b,c]=pattern;
+        if(testBoard[a]&&testBoard[a]===testBoard[b]&&testBoard[a]===testBoard[c]){
+            return testBoard[a];
         }
     }
-    
-    // Take center if available
-    if(!board[4])return 4;
-    
-    // Take a corner
-    const corners=[0,2,6,8];
-    const availableCorners=corners.filter(i=>!board[i]);
-    if(availableCorners.length>0){
-        return availableCorners[Math.floor(Math.random()*availableCorners.length)];
-    }
-    
-    // Take any available space
-    const available=board.map((v,i)=>v===''?i:null).filter(v=>v!==null);
-    return available[Math.floor(Math.random()*available.length)];
+    return null;
 }
 
 function checkWin(){
