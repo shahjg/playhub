@@ -192,6 +192,80 @@ let gameActive=true;
 let scores={red:0,yellow:0};
 let lastPlayerMove=-1;
 
+
+// AI Trash Talk System - TOXIC MODE 😈
+const trashTalk={
+    start:[
+        "Ready to get destroyed? 😏",
+        "This is gonna be embarrassing for you...",
+        "I've already calculated your defeat 🤖",
+        "Hope you brought tissues for the tears 😢"
+    ],
+    block:[
+        "LOL did you think that would work? 😂",
+        "Blocked. Sit down. 🛑",
+        "Too predictable, try harder 🥱",
+        "I saw that 3 moves ago, amateur",
+        "Nice try, kiddo 👶",
+        "Imagine being this bad 💀"
+    ],
+    threat:[
+        "Watch and learn, human 😈",
+        "This is how a REAL player does it",
+        "You're cooked 🔥",
+        "GGs, it's over for you",
+        "Setting up your funeral ⚰️",
+        "Mommy come pick me up I'm scared? 😂"
+    ],
+    win:[
+        "LMAOOO TOO EASY 🏆",
+        "Uninstall the game bro 💀",
+        "Maybe stick to tic-tac-toe? 🤡",
+        "I wasn't even trying 😴",
+        "Skill issue fr fr 📉",
+        "Your mom could've played better"
+    ],
+    mistake:[
+        "BRUH what was that move?? 🤦",
+        "Are you trolling or just bad?",
+        "Thanks for the free win I guess 🎁",
+        "Did you close your eyes? 😂",
+        "My grandma plays better than this",
+        "That's illegal levels of trash"
+    ],
+    mid:[
+        "Hmm, cute move 😏",
+        "Still gonna lose tho...",
+        "Keep trying, it's adorable 🥺",
+        "You're prolonging the inevitable"
+    ]
+};
+
+let lastTrashTalk='';
+function showTrashTalk(category){
+    if(gameMode!=='ai')return;
+    const messages=trashTalk[category];
+    let msg=messages[Math.floor(Math.random()*messages.length)];
+    while(msg===lastTrashTalk&&messages.length>1){
+        msg=messages[Math.floor(Math.random()*messages.length)];
+    }
+    lastTrashTalk=msg;
+    
+    const indicator=document.getElementById('turnIndicator');
+    indicator.innerHTML=`<span style="color:#a855f7;font-weight:700;">🤖 ${msg}</span>`;
+    indicator.style.opacity='1';
+    
+    setTimeout(()=>{
+        if(gameActive&&current==='yellow'){
+            indicator.innerHTML='<span>AI</span> thinking...';
+        }else if(gameActive){
+            updateTurn();
+        }
+    },2500);
+}
+
+let lastPlayerMove=-1;
+
 // AI Trash Talk System
 const trashTalk={
     start:["Let's see what you got 😏","Ready to lose?","I hope you've been practicing 🤖","This won't take long..."],
@@ -203,31 +277,6 @@ const trashTalk={
 };
 
 let lastTrashTalk='';
-function showTrashTalk(category){
-    if(gameMode!=='ai')return;
-    const messages=trashTalk[category];
-    let msg=messages[Math.floor(Math.random()*messages.length)];
-    // Don't repeat the same message twice in a row
-    while(msg===lastTrashTalk&&messages.length>1){
-        msg=messages[Math.floor(Math.random()*messages.length)];
-    }
-    lastTrashTalk=msg;
-    
-    const indicator=document.getElementById('turnIndicator');
-    const originalText=indicator.innerHTML;
-    indicator.innerHTML=`<span style="color:#a855f7">🤖 ${msg}</span>`;
-    indicator.style.opacity='1';
-    
-    setTimeout(()=>{
-        if(gameActive){
-            indicator.innerHTML=originalText;
-        }
-    },2500);
-}
-
-let gameMode='player';
-let isAiThinking=false;
-
 function createBoard(){
     return Array(ROWS).fill(null).map(()=>Array(COLS).fill(null));
 }
@@ -286,14 +335,11 @@ function play(col){
     makeMove(col,current);
     
     if(gameActive&&gameMode==='ai'&&current==='yellow'){
-        // Check for player mistake
-const lastR=getLowestRow(board,col)+1;
-if(lastR<ROWS&&evaluateThreat(board,lastR,col,'red')<5)showTrashTalk('mistake');
         isAiThinking=true;
         setTimeout(()=>{
             aiMove();
             isAiThinking=false;
-        },600);
+        },500);
     }
 }
 
@@ -347,9 +393,10 @@ function aiMove(){
 }
 
 function getBestMove(){
-    // Simple, fast, WORKING AI
+    // SMART AI - actually good this time
+    const avoid=lastPlayerMove;
     
-    // Priority 1: Win immediately
+    // Priority 1: WIN IMMEDIATELY
     for(let c=0;c<COLS;c++){
         const r=getLowestEmptyRow(c);
         if(r!==-1){
@@ -363,7 +410,7 @@ function getBestMove(){
         }
     }
     
-    // Priority 2: Block opponent win
+    // Priority 2: BLOCK OPPONENT WIN
     for(let c=0;c<COLS;c++){
         const r=getLowestEmptyRow(c);
         if(r!==-1){
@@ -377,70 +424,101 @@ function getBestMove(){
         }
     }
     
-    // Priority 3: Block 3-in-a-row
+    // Priority 3: BLOCK 3-IN-A-ROW (critical!)
     for(let c=0;c<COLS;c++){
         const r=getLowestEmptyRow(c);
         if(r!==-1){
             board[r][c]='red';
-            if(countConsecutive(r,c,'red')>=3){
-                board[r][c]=null;
+            const count=countConsecutive(r,c,'red');
+            board[r][c]=null;
+            if(count>=3){
                 showTrashTalk('block');
                 return c;
             }
-            board[r][c]=null;
         }
     }
     
-    // Priority 4: Create 3-in-a-row
+    // Priority 4: CREATE OUR OWN 3-IN-A-ROW
     for(let c=0;c<COLS;c++){
         const r=getLowestEmptyRow(c);
         if(r!==-1){
             board[r][c]='yellow';
-            if(countConsecutive(r,c,'yellow')>=3){
-                board[r][c]=null;
+            const count=countConsecutive(r,c,'yellow');
+            board[r][c]=null;
+            if(count>=3){
                 showTrashTalk('threat');
                 return c;
             }
-            board[r][c]=null;
         }
     }
     
-    // Priority 5: Block 2-in-a-row (avoid last player column)
-    const avoid=lastPlayerMove;
+    // Priority 5: BLOCK 2-IN-A-ROW HORIZONTAL (most dangerous)
+    for(let c=0;c<COLS;c++){
+        if(c===avoid)continue; // DON'T stack on their move
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
+            board[r][c]='red';
+            const horiz=countDirection(r,c,'red',0,1); // Horizontal only
+            board[r][c]=null;
+            if(horiz>=2){
+                Math.random()<0.6?showTrashTalk('block'):showTrashTalk('mid');
+                return c;
+            }
+        }
+    }
+    
+    // Priority 6: BLOCK ANY 2-IN-A-ROW
     for(let c=0;c<COLS;c++){
         if(c===avoid)continue;
         const r=getLowestEmptyRow(c);
         if(r!==-1){
             board[r][c]='red';
-            if(countConsecutive(r,c,'red')>=2){
-                board[r][c]=null;
-                return c;
-            }
+            const count=countConsecutive(r,c,'red');
             board[r][c]=null;
+            if(count>=2)return c;
         }
     }
     
-    // Priority 6: Build 2-in-a-row
+    // Priority 7: BUILD OUR OWN 2-IN-A-ROW
     for(let c=0;c<COLS;c++){
         if(c===avoid)continue;
         const r=getLowestEmptyRow(c);
         if(r!==-1){
             board[r][c]='yellow';
-            if(countConsecutive(r,c,'yellow')>=2){
-                board[r][c]=null;
-                return c;
-            }
+            const count=countConsecutive(r,c,'yellow');
             board[r][c]=null;
+            if(count>=2)return c;
         }
     }
     
-    // Priority 7: Center strategy
-    const preferred=[3,2,4,1,5,0,6];
-    for(const c of preferred){
+    // Priority 8: STRATEGIC CENTER CONTROL (avoid opponent's last column)
+    const strategic=[3,2,4,1,5,0,6];
+    for(const c of strategic){
         if(c!==avoid&&getLowestEmptyRow(c)!==-1)return c;
     }
     
+    // Fallback: play anywhere
+    for(let c=0;c<COLS;c++){
+        if(getLowestEmptyRow(c)!==-1)return c;
+    }
+    
     return 3;
+}
+
+function countDirection(row,col,player,dr,dc){
+    // Count in ONE specific direction
+    let count=1;
+    for(let i=1;i<4;i++){
+        const r=row+dr*i,c=col+dc*i;
+        if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player)count++;
+        else break;
+    }
+    for(let i=1;i<4;i++){
+        const r=row-dr*i,c=col-dc*i;
+        if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player)count++;
+        else break;
+    }
+    return count;
 }
 
 function getLowestEmptyRow(col){
