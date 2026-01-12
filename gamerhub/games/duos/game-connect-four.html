@@ -341,18 +341,20 @@ function makeMove(col,player){
 
 function aiMove(){
     const col=getBestMove();
-    if(col!==-1)makeMove(col,'yellow');
+    if(col!==-1){
+        makeMove(col,'yellow');
+    }
 }
 
 function getBestMove(){
-    // Fast AI with trash talk - no hanging!
+    // Simple, fast, WORKING AI
     
     // Priority 1: Win immediately
     for(let c=0;c<COLS;c++){
-        if(canPlay(c)){
-            let r=findRow(c);
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
             board[r][c]='yellow';
-            if(checkWinOnBoard(board,r,c,'yellow')){
+            if(isWinningMove(r,c,'yellow')){
                 board[r][c]=null;
                 showTrashTalk('win');
                 return c;
@@ -361,12 +363,12 @@ function getBestMove(){
         }
     }
     
-    // Priority 2: Block opponent's immediate win
+    // Priority 2: Block opponent win
     for(let c=0;c<COLS;c++){
-        if(canPlay(c)){
-            let r=findRow(c);
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
             board[r][c]='red';
-            if(checkWinOnBoard(board,r,c,'red')){
+            if(isWinningMove(r,c,'red')){
                 board[r][c]=null;
                 showTrashTalk('block');
                 return c;
@@ -375,109 +377,116 @@ function getBestMove(){
         }
     }
     
-    // Priority 3: Block opponent's 3-in-a-row
+    // Priority 3: Block 3-in-a-row
     for(let c=0;c<COLS;c++){
-        if(canPlay(c)){
-            let r=findRow(c);
-            let count=countInRow(board,r,c,'red');
-            if(count>=3){
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
+            board[r][c]='red';
+            if(countConsecutive(r,c,'red')>=3){
+                board[r][c]=null;
                 showTrashTalk('block');
                 return c;
             }
+            board[r][c]=null;
         }
     }
     
-    // Priority 4: Create our own 3-in-a-row
+    // Priority 4: Create 3-in-a-row
     for(let c=0;c<COLS;c++){
-        if(canPlay(c)){
-            let r=findRow(c);
-            let count=countInRow(board,r,c,'yellow');
-            if(count>=3){
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
+            board[r][c]='yellow';
+            if(countConsecutive(r,c,'yellow')>=3){
+                board[r][c]=null;
                 showTrashTalk('threat');
                 return c;
             }
+            board[r][c]=null;
         }
     }
     
-    // Priority 5: Block opponent's 2-in-a-row (avoid stacking on their move)
+    // Priority 5: Block 2-in-a-row (avoid last player column)
     const avoid=lastPlayerMove;
     for(let c=0;c<COLS;c++){
         if(c===avoid)continue;
-        if(canPlay(c)){
-            let r=findRow(c);
-            let count=countInRow(board,r,c,'red');
-            if(count>=2){
-                Math.random()<0.5?showTrashTalk('block'):showTrashTalk('mid');
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
+            board[r][c]='red';
+            if(countConsecutive(r,c,'red')>=2){
+                board[r][c]=null;
                 return c;
             }
+            board[r][c]=null;
         }
     }
     
-    // Priority 6: Create our own 2-in-a-row
+    // Priority 6: Build 2-in-a-row
     for(let c=0;c<COLS;c++){
         if(c===avoid)continue;
-        if(canPlay(c)){
-            let r=findRow(c);
-            let count=countInRow(board,r,c,'yellow');
-            if(count>=2)return c;
+        const r=getLowestEmptyRow(c);
+        if(r!==-1){
+            board[r][c]='yellow';
+            if(countConsecutive(r,c,'yellow')>=2){
+                board[r][c]=null;
+                return c;
+            }
+            board[r][c]=null;
         }
     }
     
-    // Priority 7: Play center/strategic columns (avoid opponent's last move)
-    const cols=[3,2,4,1,5,0,6];
-    for(const c of cols){
-        if(c!==avoid&&canPlay(c))return c;
-    }
-    
-    // Fallback
-    for(let c=0;c<COLS;c++){
-        if(canPlay(c))return c;
+    // Priority 7: Center strategy
+    const preferred=[3,2,4,1,5,0,6];
+    for(const c of preferred){
+        if(c!==avoid&&getLowestEmptyRow(c)!==-1)return c;
     }
     
     return 3;
 }
 
-function countInRow(testBoard,row,col,player){
-    // Count how many in a row this move would create
-    testBoard[row][col]=player;
-    let maxCount=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1; // This piece
-        
-        // Count forward
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player){
-                count++;
-            }else break;
-        }
-        
-        // Count backward
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player){
-                count++;
-            }else break;
-        }
-        
-        maxCount=Math.max(maxCount,count);
-    }
-    
-    testBoard[row][col]=null;
-    return maxCount;
-}
-
-function canPlay(col){
-    return board[0][col]===null;
-}
-
-function findRow(col){
+function getLowestEmptyRow(col){
     for(let r=ROWS-1;r>=0;r--){
         if(board[r][col]===null)return r;
     }
     return -1;
+}
+
+function isWinningMove(row,col,player){
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    for(const[dr,dc]of directions){
+        let count=1;
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player)count++;
+            else break;
+        }
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player)count++;
+            else break;
+        }
+        if(count>=4)return true;
+    }
+    return false;
+}
+
+function countConsecutive(row,col,player){
+    let max=0;
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    for(const[dr,dc]of directions){
+        let count=1;
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player)count++;
+            else break;
+        }
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player)count++;
+            else break;
+        }
+        max=Math.max(max,count);
+    }
+    return max;
 }
 
 function checkWinOnBoard(testBoard,row,col,player){
