@@ -345,7 +345,7 @@ function aiMove(){
 }
 
 function getBestMove(){
-    // Improved AI with better middle-game tactics
+    // Fast AI with trash talk - no hanging!
     
     // Priority 1: Win immediately
     for(let c=0;c<COLS;c++){
@@ -379,89 +379,54 @@ function getBestMove(){
     for(let c=0;c<COLS;c++){
         if(canPlay(c)){
             let r=findRow(c);
-            if(countInRow(board,r,c,'red')>=3){
+            let count=countInRow(board,r,c,'red');
+            if(count>=3){
                 showTrashTalk('block');
                 return c;
             }
         }
     }
     
-    // Priority 4: Create double-threat (AI can win two ways)
+    // Priority 4: Create our own 3-in-a-row
     for(let c=0;c<COLS;c++){
         if(canPlay(c)){
             let r=findRow(c);
-            if(createsDoubleThreat(board,r,c)){
+            let count=countInRow(board,r,c,'yellow');
+            if(count>=3){
                 showTrashTalk('threat');
                 return c;
             }
         }
     }
     
-    // Priority 5: Create our own 3-in-a-row
-    for(let c=0;c<COLS;c++){
-        if(canPlay(c)){
-            let r=findRow(c);
-            if(countInRow(board,r,c,'yellow')>=3){
-                showTrashTalk('threat');
-                return c;
-            }
-        }
-    }
-    
-    // Priority 6: Block opponent's 2-in-a-row (middle game defense)
+    // Priority 5: Block opponent's 2-in-a-row (avoid stacking on their move)
     const avoid=lastPlayerMove;
-    let bestBlock=-1;
-    let bestBlockScore=0;
-    
     for(let c=0;c<COLS;c++){
         if(c===avoid)continue;
         if(canPlay(c)){
             let r=findRow(c);
             let count=countInRow(board,r,c,'red');
             if(count>=2){
-                // Evaluate how dangerous this threat is
-                let score=evaluateThreat(board,r,c,'red');
-                if(score>bestBlockScore){
-                    bestBlockScore=score;
-                    bestBlock=c;
-                }
+                Math.random()<0.5?showTrashTalk('block'):showTrashTalk('mid');
+                return c;
             }
         }
     }
     
-    if(bestBlock!==-1){
-        showTrashTalk('block');
-        return bestBlock;
-    }
-    
-    // Priority 7: Build our own 2-in-a-row with future potential
-    let bestBuild=-1;
-    let bestBuildScore=0;
-    
+    // Priority 6: Create our own 2-in-a-row
     for(let c=0;c<COLS;c++){
         if(c===avoid)continue;
         if(canPlay(c)){
             let r=findRow(c);
             let count=countInRow(board,r,c,'yellow');
-            if(count>=2){
-                let score=evaluateThreat(board,r,c,'yellow');
-                if(score>bestBuildScore){
-                    bestBuildScore=score;
-                    bestBuild=c;
-                }
-            }
+            if(count>=2)return c;
         }
     }
     
-    if(bestBuild!==-1){
-        showTrashTalk('mid');
-        return bestBuild;
-    }
-    
-    // Priority 8: Control key positions (center and lower rows)
-    const strategic=getStrategicMove(avoid);
-    if(strategic!==-1){
-        return strategic;
+    // Priority 7: Play center/strategic columns (avoid opponent's last move)
+    const cols=[3,2,4,1,5,0,6];
+    for(const c of cols){
+        if(c!==avoid&&canPlay(c))return c;
     }
     
     // Fallback
@@ -470,117 +435,6 @@ function getBestMove(){
     }
     
     return 3;
-}
-
-function createsDoubleThreat(testBoard,row,col){
-    // Check if this move creates multiple winning threats
-    testBoard[row][col]='yellow';
-    let threats=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1;
-        let spaces=0;
-        
-        // Check if we can extend to 4
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]==='yellow')count++;
-                else if(!testBoard[r][c])spaces++;
-                else break;
-            }
-        }
-        
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]==='yellow')count++;
-                else if(!testBoard[r][c])spaces++;
-                else break;
-            }
-        }
-        
-        // If we have 3 with space to make 4, that's a threat
-        if(count===3&&spaces>=1)threats++;
-    }
-    
-    testBoard[row][col]=null;
-    return threats>=2; // Double threat!
-}
-
-function evaluateThreat(testBoard,row,col,player){
-    // Evaluate how dangerous/valuable a threat is
-    testBoard[row][col]=player;
-    let score=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1;
-        let openEnds=0;
-        
-        // Count pieces and open ends
-        let blocked=false;
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]===player)count++;
-                else if(!testBoard[r][c])break;
-                else{blocked=true;break;}
-            }
-        }
-        if(!blocked)openEnds++;
-        
-        blocked=false;
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]===player)count++;
-                else if(!testBoard[r][c])break;
-                else{blocked=true;break;}
-            }
-        }
-        if(!blocked)openEnds++;
-        
-        // Score based on count and openness
-        if(count===3&&openEnds===2)score+=100; // Very dangerous!
-        else if(count===3&&openEnds===1)score+=50;
-        else if(count===2&&openEnds===2)score+=20;
-        else if(count===2&&openEnds===1)score+=5;
-    }
-    
-    testBoard[row][col]=null;
-    return score;
-}
-
-function getStrategicMove(avoid){
-    // Control center and build from bottom up
-    // Prefer moves that give us better position
-    const strategic=[
-        [3,2,4], // Center columns
-        [1,5],   // Near center
-        [0,6]    // Edges
-    ];
-    
-    for(const group of strategic){
-        for(const c of group){
-            if(c===avoid)continue;
-            if(canPlay(c)){
-                let r=findRow(c);
-                // Prefer lower rows (more stable base)
-                if(r>=ROWS-2)return c;
-            }
-        }
-    }
-    
-    // Any center move
-    for(const group of strategic){
-        for(const c of group){
-            if(c!==avoid&&canPlay(c))return c;
-        }
-    }
-    
-    return -1;
 }
 
 function countInRow(testBoard,row,col,player){
