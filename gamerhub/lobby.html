@@ -309,19 +309,6 @@
                 <input type="text" id="player-name" class="input-field" placeholder="Loading..." maxlength="20" autocomplete="off">
                 <p class="input-hint" id="name-hint">Loading...</p>
             </div>
-            <div class="override-row" id="override-section" style="display:none;margin:-0.5rem 0 1rem;padding:0.6rem 0.8rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:var(--muted)">
-                    <input type="checkbox" id="override-check" style="width:16px;height:16px;accent-color:var(--accent)">
-                    <span>Use custom name for this game</span>
-                </label>
-                <div id="override-name-wrap" style="display:none;margin-top:0.6rem">
-                    <input type="text" id="override-name" class="input-field" placeholder="Enter custom name..." maxlength="20" style="padding:0.7rem 1rem;font-size:0.9rem">
-                    <label style="display:flex;align-items:center;gap:6px;margin-top:0.5rem;cursor:pointer;font-size:0.8rem;color:var(--gold)">
-                        <input type="checkbox" id="override-premium" style="width:14px;height:14px;accent-color:var(--gold)">
-                        <span>⭐ Apply premium styling</span>
-                    </label>
-                </div>
-            </div>
             <button class="btn btn-primary" id="btn-create">Create Room</button>
             <div class="divider"><div class="divider-line"></div><span class="divider-text">Or Join</span><div class="divider-line"></div></div>
             <div class="input-group">
@@ -432,58 +419,41 @@ document.getElementById('game-icon').innerHTML=ICONS[game.icon]||ICONS.question;
 document.title=game.name+' - TheGaming.co';
 if(joinCode)codeInput.value=joinCode.toUpperCase();
 var socket=io(BACKEND,{transports:['websocket','polling']}),user=null,profile=null,premium=false;
-async function init(){try{var s=await supa.auth.getSession();if(s.data&&s.data.session&&s.data.session.user){user=s.data.session.user;var r=await supa.from('profiles').select('display_name,gamer_tag,account_type,cosmetics').eq('id',user.id).single();if(r.data){profile=r.data;premium=r.data.account_type==='premium'}nameInput.value=(profile&&profile.display_name)||(profile&&profile.gamer_tag)||user.email.split('@')[0];nameInput.disabled=false;nameInput.placeholder='Enter your name';nameHint.innerHTML=premium?'Premium styling active':'Change in <a href="/profile">Profile</a>';document.getElementById('override-section').style.display='block'}else{var adj=['Swift','Clever','Bold','Silent','Quick','Sly','Sharp','Cool','Wild','Rapid'],noun=['Fox','Wolf','Eagle','Tiger','Hawk','Bear','Lion','Shark','Falcon','Panther'];nameInput.value=adj[Math.floor(Math.random()*10)]+noun[Math.floor(Math.random()*10)]+(Math.floor(Math.random()*99)+1);nameInput.disabled=true;nameHint.innerHTML='<a href="/login">Sign in</a> to choose your name'}}catch(e){console.error(e)}}
-
-// Override name toggle
-var overrideCheck=document.getElementById('override-check'),overrideNameWrap=document.getElementById('override-name-wrap'),overrideNameInput=document.getElementById('override-name'),overridePremiumCheck=document.getElementById('override-premium');
-overrideCheck.addEventListener('change',function(){overrideNameWrap.style.display=this.checked?'block':'none';if(!this.checked){overrideNameInput.value='';overridePremiumCheck.checked=false}});
-
-function getPlayerData(){
-    var n=nameInput.value.trim();
-    var isPrem=premium;
-    var cosm=profile?profile.cosmetics:null;
-    if(overrideCheck.checked&&overrideNameInput.value.trim()){
-        n=overrideNameInput.value.trim();
-        isPrem=overridePremiumCheck.checked;
-        if(overridePremiumCheck.checked&&!cosm){cosm={border_color:'gold',name_effect:'shimmer',badge_icon:'⭐'}}
-    }
-    return{name:n,isPremium:isPrem,cosmetics:cosm};
-}
+async function init(){try{var s=await supa.auth.getSession();if(s.data&&s.data.session&&s.data.session.user){user=s.data.session.user;var r=await supa.from('profiles').select('display_name,gamer_tag,account_type,cosmetics').eq('id',user.id).single();if(r.data){profile=r.data;premium=r.data.account_type==='premium'}nameInput.value=(profile&&profile.display_name)||(profile&&profile.gamer_tag)||user.email.split('@')[0];nameInput.disabled=false;nameInput.placeholder='Enter your name';nameHint.innerHTML=premium?'Premium styling active':'Change in <a href="/profile">Profile</a>'}else{var adj=['Swift','Clever','Bold','Silent','Quick','Sly','Sharp','Cool','Wild','Rapid'],noun=['Fox','Wolf','Eagle','Tiger','Hawk','Bear','Lion','Shark','Falcon','Panther'];nameInput.value=adj[Math.floor(Math.random()*10)]+noun[Math.floor(Math.random()*10)]+(Math.floor(Math.random()*99)+1);nameInput.disabled=false;nameHint.innerHTML='<a href="/login">Sign in</a> to save your name'}}catch(e){console.error(e)}}
 codeInput.addEventListener('input',function(e){e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'')});
 btnRules.addEventListener('click',function(){modal.classList.add('visible')});
 document.getElementById('modal-close').addEventListener('click',function(){modal.classList.remove('visible')});
 document.getElementById('modal-btn').addEventListener('click',function(){modal.classList.remove('visible')});
 modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('visible')});
 
-// CREATE ROOM - Set tempGameType for the game THIS lobby is for
+// CREATE ROOM
 btnCreate.addEventListener('click',function(){
-    var pd=getPlayerData();
-    if(!pd.name||pd.name.length<2){showMsg('Name must be at least 2 characters',true);return}
+    var n=nameInput.value.trim();
+    if(!n||n.length<2){showMsg('Name must be at least 2 characters',true);return}
     msgBox.textContent='';
     btnCreate.classList.add('btn-loading');
     btnCreate.disabled=true;
-    localStorage.setItem('tempPlayerName',pd.name);
-    localStorage.setItem('tempIsPremium',pd.isPremium?'true':'false');
-    localStorage.setItem('tempCosmetics',JSON.stringify(pd.cosmetics));
+    localStorage.setItem('tempPlayerName',n);
+    localStorage.setItem('tempIsPremium',premium?'true':'false');
+    localStorage.setItem('tempCosmetics',JSON.stringify(profile?profile.cosmetics:null));
     localStorage.setItem('tempGameType',game.type);
     localStorage.setItem('tempGameId',gameId);
-    socket.emit('create-room',{playerName:pd.name,gameType:game.type,isPremium:pd.isPremium,cosmetics:pd.cosmetics,userId:user?user.id:null});
+    socket.emit('create-room',{playerName:n,gameType:game.type,isPremium:premium,cosmetics:profile?profile.cosmetics:null,userId:user?user.id:null});
 });
 
-// JOIN ROOM - Do NOT set tempGameType here; we'll get it from the server
+// JOIN ROOM
 btnJoin.addEventListener('click',function(){
-    var pd=getPlayerData(),c=codeInput.value.trim();
-    if(!pd.name||pd.name.length<2){showMsg('Name must be at least 2 characters',true);return}
+    var n=nameInput.value.trim(),c=codeInput.value.trim();
+    if(!n||n.length<2){showMsg('Name must be at least 2 characters',true);return}
     if(!c||c.length!==6){showMsg('Enter a 6-character room code',true);return}
     msgBox.textContent='';
     btnJoin.classList.add('btn-loading');
     btnJoin.disabled=true;
-    localStorage.setItem('tempPlayerName',pd.name);
-    localStorage.setItem('tempIsPremium',pd.isPremium?'true':'false');
-    localStorage.setItem('tempCosmetics',JSON.stringify(pd.cosmetics));
+    localStorage.setItem('tempPlayerName',n);
+    localStorage.setItem('tempIsPremium',premium?'true':'false');
+    localStorage.setItem('tempCosmetics',JSON.stringify(profile?profile.cosmetics:null));
     localStorage.setItem('tempRoomCode',c);
-    // DO NOT set tempGameType here - the server will tell us what game this room is for
-    socket.emit('join-room',{roomCode:c,playerName:pd.name,isPremium:pd.isPremium,cosmetics:pd.cosmetics,userId:user?user.id:null});
+    socket.emit('join-room',{roomCode:c,playerName:n,isPremium:premium,cosmetics:profile?profile.cosmetics:null,userId:user?user.id:null});
 });
 
 nameInput.addEventListener('keypress',function(e){if(e.key==='Enter'){codeInput.value.trim()?btnJoin.click():btnCreate.click()}});
