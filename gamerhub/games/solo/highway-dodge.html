@@ -3,698 +3,978 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Highway Dodge – Free Endless Racing Game | TheGaming.co</title>
-    <meta name="description" content="Dodge traffic in this free endless racing game. Swipe to switch lanes, collect coins, and survive as long as you can!">
+    <title>Highway Dodge – Endless Racing | TheGaming.co</title>
+    <meta name="description" content="Dodge traffic in this endless racing game. Collect coins, grab power-ups, and see how far you can go!">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --neon-cyan: #00f5ff;
-            --neon-pink: #ff006e;
-            --neon-yellow: #ffbe0b;
-            --dark: #0a0a0f;
-            --road: #1a1a2e;
+            --pink: #ff6b9d;
+            --blue: #4facfe;
+            --purple: #a855f7;
+            --cyan: #22d3ee;
+            --green: #22c55e;
+            --gold: #ffd700;
+            --text-dark: #1a1a2e;
         }
+        
+        html { -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--dark);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
             color: white;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
         }
         h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
 
-        .game-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            aspect-ratio: 9/16;
-            max-height: 90vh;
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-top: 60px;
         }
 
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            display: block;
+        /* Hero Section */
+        .game-hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+            padding: 30px 20px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .game-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(79, 172, 254, 0.2) 0%, transparent 60%);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .hero-title {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #fff, var(--cyan), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+        .hero-sub { font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+
+        /* Game Container */
+        .game-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px 30px;
+            gap: 16px;
         }
 
         /* HUD */
         .hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 16px 20px;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            pointer-events: none;
-            z-index: 10;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 400px;
         }
-        .score-display {
-            background: rgba(0,0,0,0.6);
+        .hud-item {
+            background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
             padding: 10px 16px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            min-width: 80px;
         }
-        .score-label {
+        .hud-label {
             font-size: 0.65rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 2px;
         }
-        .score-value {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 20px var(--neon-cyan);
-        }
-        .coins-display {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            padding: 10px 14px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .coin-icon {
-            width: 20px;
-            height: 20px;
-            background: var(--neon-yellow);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--neon-yellow);
-        }
-        .coins-value {
+        .hud-value {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.4rem;
-            color: var(--neon-yellow);
+            letter-spacing: 1px;
+        }
+        .hud-value.score { color: var(--cyan); }
+        .hud-value.coins { color: var(--gold); }
+        .hud-value.speed { color: var(--pink); }
+
+        /* Power-up indicator */
+        .powerup-active {
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        .powerup-active.show { display: flex; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
-        /* Overlays */
-        .overlay {
-            position: absolute;
+        /* Canvas */
+        #gameCanvas {
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(79, 172, 254, 0.15);
+            max-width: 100%;
+            touch-action: none;
+        }
+
+        /* Controls hint */
+        .controls-hint {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+        }
+
+        /* Game Over Overlay */
+        .game-over {
+            position: fixed;
             inset: 0;
-            background: rgba(10, 10, 15, 0.95);
-            display: flex;
-            flex-direction: column;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            display: none;
             align-items: center;
             justify-content: center;
-            padding: 30px;
-            text-align: center;
             z-index: 100;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
+            padding: 20px;
         }
-        .overlay.hidden { display: none; }
-
-        .overlay-title {
-            font-size: 3rem;
+        .game-over.show { display: flex; }
+        .game-over-content {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            max-width: 360px;
+            width: 100%;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .game-over-title {
+            font-size: 2.5rem;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            background: linear-gradient(135deg, var(--pink), var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .overlay-subtitle {
-            font-size: 1rem;
+        .game-over-subtitle {
+            font-size: 0.9rem;
             color: rgba(255,255,255,0.6);
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
-
-        .final-score {
-            font-size: 4rem;
-            font-family: 'Bebas Neue', sans-serif;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 30px var(--neon-cyan);
-            margin: 10px 0;
+        .final-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }
-        .final-label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: rgba(255,255,255,0.5);
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 30px;
-            margin: 20px 0 30px;
-        }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-value {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.6rem;
-            color: var(--neon-yellow);
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px 12px;
         }
         .stat-label {
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: rgba(255,255,255,0.5);
+            margin-bottom: 4px;
         }
+        .stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--cyan);
+        }
+        .stat-value.gold { color: var(--gold); }
+        .stat-value.green { color: var(--green); }
+
+        .new-best {
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .new-best.show { display: inline-block; }
 
         .btn {
-            padding: 16px 40px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.3rem;
-            letter-spacing: 2px;
-            border: none;
+            padding: 14px 32px;
             border-radius: 50px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.3s;
-            margin: 8px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .btn-primary {
-            background: linear-gradient(135deg, var(--neon-cyan), #00b8ba);
-            color: var(--dark);
-            box-shadow: 0 0 30px rgba(0, 245, 255, 0.4);
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            color: #000;
+            width: 100%;
+            margin-bottom: 12px;
         }
-        .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 40px rgba(0, 245, 255, 0.6);
-        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4); }
         .btn-secondary {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .controls-hint {
-            margin-top: 30px;
-            padding: 16px 24px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .controls-hint p {
-            font-size: 0.85rem;
+            background: transparent;
             color: rgba(255,255,255,0.7);
-            margin: 4px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 100%;
         }
-        .key {
-            display: inline-block;
-            background: rgba(255,255,255,0.15);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.75rem;
-        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
 
-        .back-link {
+        /* Start Screen */
+        .start-screen {
             position: fixed;
-            top: 20px;
-            left: 20px;
-            color: rgba(255,255,255,0.6);
-            text-decoration: none;
-            font-size: 0.9rem;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
             display: flex;
             align-items: center;
-            gap: 6px;
-            z-index: 1000;
-            transition: color 0.2s;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
         }
-        .back-link:hover { color: white; }
-        .back-link svg { width: 18px; height: 18px; }
+        .start-screen.hidden { display: none; }
+        .start-content {
+            text-align: center;
+            max-width: 360px;
+        }
+        .start-icon { font-size: 4rem; margin-bottom: 16px; }
+        .start-title {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #fff, var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        .start-desc {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        .powerup-legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .legend-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .legend-icon.shield { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .legend-icon.magnet { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+        .legend-icon.slow { background: linear-gradient(135deg, #22c55e, #16a34a); }
 
-        /* Speed indicator */
-        .speed-indicator {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            padding: 8px 14px;
-            border-radius: 8px;
-            pointer-events: none;
-        }
-        .speed-value {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            color: var(--neon-pink);
-        }
-        .speed-label {
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.5);
-            text-transform: uppercase;
+        @media (max-width: 400px) {
+            .hero-title { font-size: 2rem; }
+            .hud { gap: 8px; }
+            .hud-item { padding: 8px 12px; min-width: 70px; }
+            .hud-value { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
-    <a href="/solo" class="back-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Back to Solo
-    </a>
-
-    <div class="game-wrapper">
-        <canvas id="gameCanvas"></canvas>
-
-        <div class="hud">
-            <div class="score-display">
-                <div class="score-label">Score</div>
-                <div class="score-value" id="score">0</div>
+    <div id="site-header"></div>
+    
+    <main>
+        <section class="game-hero">
+            <div class="hero-content">
+                <div class="hero-icon">🚗</div>
+                <h1 class="hero-title">HIGHWAY DODGE</h1>
+                <p class="hero-sub">Dodge traffic, collect coins, grab power-ups!</p>
             </div>
-            <div class="coins-display">
-                <div class="coin-icon"></div>
-                <div class="coins-value" id="coins">0</div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="hud">
+                <div class="hud-item">
+                    <div class="hud-label">Score</div>
+                    <div class="hud-value score" id="score">0</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">Coins</div>
+                    <div class="hud-value coins" id="coins">0</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">Speed</div>
+                    <div class="hud-value speed" id="speed">60</div>
+                </div>
             </div>
-        </div>
 
-        <div class="speed-indicator">
-            <div class="speed-value" id="speed">60</div>
-            <div class="speed-label">MPH</div>
-        </div>
+            <div class="powerup-active" id="powerupIndicator">
+                <span id="powerupIcon">🛡️</span>
+                <span id="powerupText">Shield Active</span>
+            </div>
 
-        <!-- Start Screen -->
-        <div class="overlay" id="startScreen">
-            <h1 class="overlay-title">HIGHWAY DODGE</h1>
-            <p class="overlay-subtitle">Dodge traffic. Collect coins. Survive.</p>
-            <button class="btn btn-primary" onclick="startGame()">START</button>
+            <canvas id="gameCanvas" width="360" height="540"></canvas>
+
             <div class="controls-hint">
-                <p><span class="key">← →</span> or <span class="key">A D</span> to change lanes</p>
-                <p><span class="key">Swipe</span> on mobile</p>
+                ← → Arrow Keys or Swipe/Tap to move
             </div>
         </div>
+    </main>
 
-        <!-- Game Over Screen -->
-        <div class="overlay hidden" id="gameOverScreen">
-            <h2 class="overlay-title">GAME OVER</h2>
-            <div class="final-label">Final Score</div>
-            <div class="final-score" id="finalScore">0</div>
-            <div class="stats-row">
-                <div class="stat-item">
-                    <div class="stat-value" id="finalCoins">0</div>
-                    <div class="stat-label">Coins</div>
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <div class="start-content">
+            <div class="start-icon">🏎️</div>
+            <h1 class="start-title">HIGHWAY DODGE</h1>
+            <p class="start-desc">
+                Dodge oncoming traffic and survive as long as you can!
+                Collect coins and power-ups to boost your score.
+            </p>
+            <div class="powerup-legend">
+                <div class="legend-item">
+                    <div class="legend-icon shield">🛡️</div>
+                    <span>Shield</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="finalDistance">0</div>
-                    <div class="stat-label">Distance</div>
+                <div class="legend-item">
+                    <div class="legend-icon magnet">🧲</div>
+                    <span>Coin Magnet</span>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="finalSpeed">0</div>
-                    <div class="stat-label">Top Speed</div>
+                <div class="legend-item">
+                    <div class="legend-icon slow">🐢</div>
+                    <span>Slow-Mo</span>
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="startGame()">PLAY AGAIN</button>
-            <button class="btn btn-secondary" onclick="window.location.href='/solo'">BACK TO SOLO</button>
+            <button class="btn btn-primary" onclick="startGame()">TAP TO START</button>
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // Responsive canvas
-        function resizeCanvas() {
-            const wrapper = canvas.parentElement;
-            const rect = wrapper.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Game state
-        let gameRunning = false;
-        let score = 0;
-        let coins = 0;
-        let distance = 0;
-        let speed = 60;
-        let maxSpeed = 60;
-        let playerLane = 1; // 0, 1, 2 (3 lanes)
-        let targetLane = 1;
-        let playerX = 0;
-        let obstacles = [];
-        let coinItems = [];
-        let roadLines = [];
-        let lastTime = 0;
-        let speedIncreaseTimer = 0;
-
-        // Constants
-        const LANES = 3;
-        const LANE_WIDTH = () => canvas.width / window.devicePixelRatio / LANES;
-        const CAR_WIDTH = 50;
-        const CAR_HEIGHT = 90;
-        const OBSTACLE_WIDTH = 50;
-        const OBSTACLE_HEIGHT = 85;
-
-        // Colors
-        const COLORS = {
-            road: '#1a1a2e',
-            roadLine: '#3a3a4e',
-            player: '#00f5ff',
-            playerGlow: 'rgba(0, 245, 255, 0.3)',
-            obstacles: ['#ff006e', '#ff4444', '#ff8844', '#aa44ff'],
-            coin: '#ffbe0b',
-            coinGlow: 'rgba(255, 190, 11, 0.4)'
-        };
-
-        // Initialize road lines
-        function initRoadLines() {
-            roadLines = [];
-            const canvasH = canvas.height / window.devicePixelRatio;
-            for (let i = 0; i < 15; i++) {
-                roadLines.push({ y: i * 60 });
-            }
-        }
-
-        // Get lane X position
-        function getLaneX(lane) {
-            const laneW = LANE_WIDTH();
-            return laneW * lane + laneW / 2;
-        }
-
-        // Spawn obstacle
-        function spawnObstacle() {
-            const lane = Math.floor(Math.random() * LANES);
-            const color = COLORS.obstacles[Math.floor(Math.random() * COLORS.obstacles.length)];
-            obstacles.push({
-                lane,
-                x: getLaneX(lane),
-                y: -OBSTACLE_HEIGHT,
-                color,
-                width: OBSTACLE_WIDTH,
-                height: OBSTACLE_HEIGHT
-            });
-        }
-
-        // Spawn coin
-        function spawnCoin() {
-            const lane = Math.floor(Math.random() * LANES);
-            coinItems.push({
-                lane,
-                x: getLaneX(lane),
-                y: -30,
-                radius: 12,
-                collected: false
-            });
-        }
-
-        // Start game
-        function startGame() {
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('gameOverScreen').classList.add('hidden');
+    <!-- Game Over -->
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 class="game-over-title">GAME OVER</h2>
+            <p class="game-over-subtitle">You crashed into traffic!</p>
             
-            gameRunning = true;
-            score = 0;
-            coins = 0;
-            distance = 0;
-            speed = 60;
-            maxSpeed = 60;
-            playerLane = 1;
-            targetLane = 1;
-            playerX = getLaneX(1);
-            obstacles = [];
-            coinItems = [];
-            speedIncreaseTimer = 0;
+            <div class="new-best" id="newBest">🏆 NEW HIGH SCORE!</div>
             
-            initRoadLines();
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+            <div class="final-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Final Score</div>
+                    <div class="stat-value" id="finalScore">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Coins</div>
+                    <div class="stat-value gold" id="finalCoins">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Distance</div>
+                    <div class="stat-value green" id="finalDistance">0m</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Top Speed</div>
+                    <div class="stat-value" id="finalSpeed">0</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="restartGame()">PLAY AGAIN</button>
+            <button class="btn btn-secondary" onclick="goToLeaderboard()">VIEW LEADERBOARD</button>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabaseClient = supabaseClient;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game constants
+const LANE_COUNT = 3;
+const LANE_WIDTH = canvas.width / LANE_COUNT;
+const CAR_WIDTH = 50;
+const CAR_HEIGHT = 90;
+const PLAYER_Y = canvas.height - 140;
+
+// Game state
+let gameRunning = false;
+let score = 0;
+let coins = 0;
+let distance = 0;
+let speed = 60;
+let maxSpeed = 60;
+let playerLane = 1;
+let obstacles = [];
+let collectibles = [];
+let roadOffset = 0;
+
+// Power-ups
+let shield = false;
+let shieldTimer = 0;
+let magnet = false;
+let magnetTimer = 0;
+let slowMo = false;
+let slowMoTimer = 0;
+
+// Spawn timing - FIXED: Guaranteed safe spawning
+let spawnTimer = 0;
+let spawnInterval = 1500; // Start with 1.5s between cars
+
+// Animation
+let animFrame;
+let lastTime = 0;
+
+// High score
+let highScore = parseInt(localStorage.getItem('highway_dodge_high') || '0');
+
+// Colors
+const COLORS = {
+    road: '#1a1a2e',
+    roadLine: '#3b4a6b',
+    player: '#22d3ee',
+    playerAccent: '#0891b2',
+    obstacle: ['#ef4444', '#f97316', '#ec4899', '#a855f7', '#8b5cf6'],
+    coin: '#ffd700',
+    shield: '#3b82f6',
+    magnet: '#a855f7',
+    slow: '#22c55e'
+};
+
+function startGame() {
+    document.getElementById('startScreen').classList.add('hidden');
+    resetGame();
+    gameRunning = true;
+    lastTime = performance.now();
+    gameLoop();
+}
+
+function resetGame() {
+    score = 0;
+    coins = 0;
+    distance = 0;
+    speed = 60;
+    maxSpeed = 60;
+    playerLane = 1;
+    obstacles = [];
+    collectibles = [];
+    roadOffset = 0;
+    shield = false;
+    magnet = false;
+    slowMo = false;
+    spawnTimer = 0;
+    spawnInterval = 1500;
+    updateHUD();
+    hidePowerupIndicator();
+}
+
+function restartGame() {
+    document.getElementById('gameOver').classList.remove('show');
+    resetGame();
+    gameRunning = true;
+    lastTime = performance.now();
+    gameLoop();
+}
+
+function gameLoop(currentTime = 0) {
+    if (!gameRunning) return;
+    
+    const deltaTime = Math.min(currentTime - lastTime, 50);
+    lastTime = currentTime;
+    
+    update(deltaTime);
+    draw();
+    
+    animFrame = requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    const timeScale = slowMo ? 0.5 : 1;
+    const effectiveDt = dt * timeScale;
+    
+    // Update distance and score
+    distance += speed * (effectiveDt / 1000);
+    score = Math.floor(distance * 10 + coins * 50);
+    
+    // Gradually increase speed (slow ramp)
+    if (speed < 160) {
+        speed += 0.002 * effectiveDt;
+    }
+    maxSpeed = Math.max(maxSpeed, speed);
+    
+    // Spawn interval decreases with speed but never below 800ms
+    spawnInterval = Math.max(800, 1500 - (speed - 60) * 5);
+    
+    // Update road animation
+    roadOffset += speed * 0.15 * (effectiveDt / 16);
+    if (roadOffset > 60) roadOffset = 0;
+    
+    // Update power-up timers
+    updatePowerups(effectiveDt);
+    
+    // Spawn obstacles on timer
+    spawnTimer += effectiveDt;
+    if (spawnTimer >= spawnInterval) {
+        spawnObstacle();
+        spawnTimer = 0;
+    }
+    
+    // Spawn collectibles
+    spawnCollectibles(effectiveDt);
+    
+    // Move obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.y += (speed * 0.12 + obs.speed) * (effectiveDt / 16);
+        
+        if (obs.y > canvas.height + 100) {
+            obstacles.splice(i, 1);
+            continue;
         }
-
-        // Game over
-        function gameOver() {
-            gameRunning = false;
-            document.getElementById('gameOverScreen').classList.remove('hidden');
-            document.getElementById('finalScore').textContent = Math.floor(score).toLocaleString();
-            document.getElementById('finalCoins').textContent = coins;
-            document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
-            document.getElementById('finalSpeed').textContent = maxSpeed + ' mph';
-        }
-
-        // Update HUD
-        function updateHUD() {
-            document.getElementById('score').textContent = Math.floor(score).toLocaleString();
-            document.getElementById('coins').textContent = coins;
-            document.getElementById('speed').textContent = speed;
-        }
-
-        // Game loop
-        function gameLoop(currentTime) {
-            if (!gameRunning) return;
-
-            const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
-            lastTime = currentTime;
-
-            update(dt);
-            render();
-            updateHUD();
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Update
-        function update(dt) {
-            const canvasW = canvas.width / window.devicePixelRatio;
-            const canvasH = canvas.height / window.devicePixelRatio;
-            const baseSpeed = speed * 3;
-
-            // Increase speed over time
-            speedIncreaseTimer += dt;
-            if (speedIncreaseTimer > 3) {
-                speedIncreaseTimer = 0;
-                speed = Math.min(speed + 2, 200);
-                if (speed > maxSpeed) maxSpeed = speed;
-            }
-
-            // Score increases with speed and time
-            score += dt * (speed / 10) * (1 + distance / 1000);
-            distance += dt * (speed / 10);
-
-            // Move player smoothly to target lane
-            const targetX = getLaneX(targetLane);
-            const lerpSpeed = 12;
-            playerX += (targetX - playerX) * lerpSpeed * dt;
-            playerLane = targetLane;
-
-            // Update road lines
-            roadLines.forEach(line => {
-                line.y += baseSpeed * dt;
-                if (line.y > canvasH + 30) {
-                    line.y = -30;
-                }
-            });
-
-            // Spawn obstacles
-            if (Math.random() < dt * (1 + speed / 100)) {
-                spawnObstacle();
-            }
-
-            // Spawn coins
-            if (Math.random() < dt * 0.8) {
-                spawnCoin();
-            }
-
-            // Update obstacles
-            obstacles.forEach(obs => {
-                obs.y += baseSpeed * dt;
-            });
-            obstacles = obstacles.filter(obs => obs.y < canvasH + 100);
-
-            // Update coins
-            coinItems.forEach(coin => {
-                coin.y += baseSpeed * dt;
-            });
-            coinItems = coinItems.filter(coin => coin.y < canvasH + 50 && !coin.collected);
-
-            // Collision detection - player
-            const playerY = canvasH - 120;
-            const playerLeft = playerX - CAR_WIDTH / 2;
-            const playerRight = playerX + CAR_WIDTH / 2;
-            const playerTop = playerY;
-            const playerBottom = playerY + CAR_HEIGHT;
-
-            // Check obstacle collisions
-            for (const obs of obstacles) {
-                const obsLeft = obs.x - obs.width / 2;
-                const obsRight = obs.x + obs.width / 2;
-                const obsTop = obs.y;
-                const obsBottom = obs.y + obs.height;
-
-                if (playerRight > obsLeft + 10 && playerLeft < obsRight - 10 &&
-                    playerBottom > obsTop + 10 && playerTop < obsBottom - 10) {
-                    gameOver();
-                    return;
-                }
-            }
-
-            // Check coin collisions
-            coinItems.forEach(coin => {
-                const dx = playerX - coin.x;
-                const dy = (playerY + CAR_HEIGHT / 2) - coin.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < coin.radius + 30) {
-                    coin.collected = true;
-                    coins++;
-                    score += 50;
-                }
-            });
-        }
-
-        // Render
-        function render() {
-            const w = canvas.width / window.devicePixelRatio;
-            const h = canvas.height / window.devicePixelRatio;
-
-            // Clear
-            ctx.fillStyle = COLORS.road;
-            ctx.fillRect(0, 0, w, h);
-
-            // Road lines (dashed center lines)
-            ctx.fillStyle = COLORS.roadLine;
-            const laneW = LANE_WIDTH();
-            for (let i = 1; i < LANES; i++) {
-                const lineX = laneW * i - 2;
-                roadLines.forEach(line => {
-                    ctx.fillRect(lineX, line.y, 4, 40);
-                });
-            }
-
-            // Coins
-            coinItems.forEach(coin => {
-                if (coin.collected) return;
-                // Glow
-                ctx.beginPath();
-                ctx.arc(coin.x, coin.y, coin.radius + 8, 0, Math.PI * 2);
-                ctx.fillStyle = COLORS.coinGlow;
-                ctx.fill();
-                // Coin
-                ctx.beginPath();
-                ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
-                ctx.fillStyle = COLORS.coin;
-                ctx.fill();
-                // Shine
-                ctx.beginPath();
-                ctx.arc(coin.x - 3, coin.y - 3, 4, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255,255,255,0.6)';
-                ctx.fill();
-            });
-
-            // Obstacles (other cars)
-            obstacles.forEach(obs => {
-                // Shadow
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                ctx.fillRect(obs.x - obs.width/2 + 5, obs.y + 5, obs.width, obs.height);
-                // Car body
-                ctx.fillStyle = obs.color;
-                roundRect(ctx, obs.x - obs.width/2, obs.y, obs.width, obs.height, 8);
-                // Windshield
-                ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                ctx.fillRect(obs.x - obs.width/2 + 8, obs.y + obs.height - 30, obs.width - 16, 20);
-                // Headlights
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(obs.x - obs.width/2 + 6, obs.y + obs.height - 8, 10, 6);
-                ctx.fillRect(obs.x + obs.width/2 - 16, obs.y + obs.height - 8, 10, 6);
-            });
-
-            // Player car
-            const playerY = h - 120;
-            // Glow
-            ctx.shadowColor = COLORS.player;
-            ctx.shadowBlur = 30;
-            // Car body
-            ctx.fillStyle = COLORS.player;
-            roundRect(ctx, playerX - CAR_WIDTH/2, playerY, CAR_WIDTH, CAR_HEIGHT, 8);
-            ctx.shadowBlur = 0;
-            // Windshield
-            ctx.fillStyle = 'rgba(0,50,60,0.8)';
-            ctx.fillRect(playerX - CAR_WIDTH/2 + 8, playerY + 15, CAR_WIDTH - 16, 25);
-            // Taillights
-            ctx.fillStyle = '#ff0044';
-            ctx.fillRect(playerX - CAR_WIDTH/2 + 5, playerY + CAR_HEIGHT - 10, 12, 6);
-            ctx.fillRect(playerX + CAR_WIDTH/2 - 17, playerY + CAR_HEIGHT - 10, 12, 6);
-            // Racing stripe
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.fillRect(playerX - 3, playerY + 5, 6, CAR_HEIGHT - 10);
-        }
-
-        // Helper: rounded rectangle
-        function roundRect(ctx, x, y, w, h, r) {
-            ctx.beginPath();
-            ctx.moveTo(x + r, y);
-            ctx.lineTo(x + w - r, y);
-            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-            ctx.lineTo(x + w, y + h - r);
-            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-            ctx.lineTo(x + r, y + h);
-            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-            ctx.lineTo(x, y + r);
-            ctx.quadraticCurveTo(x, y, x + r, y);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // Controls - Keyboard
-        document.addEventListener('keydown', (e) => {
-            if (!gameRunning) {
-                if (e.key === ' ' || e.key === 'Enter') startGame();
+        
+        if (checkCollision(obs)) {
+            if (shield) {
+                shield = false;
+                obstacles.splice(i, 1);
+                hidePowerupIndicator();
+            } else {
+                gameOver();
                 return;
             }
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                targetLane = Math.max(0, targetLane - 1);
+        }
+    }
+    
+    // Move collectibles
+    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2;
+    for (let i = collectibles.length - 1; i >= 0; i--) {
+        const col = collectibles[i];
+        col.y += speed * 0.12 * (effectiveDt / 16);
+        
+        // Magnet effect
+        if (magnet && col.type === 'coin') {
+            const dx = playerX - col.x;
+            const dy = PLAYER_Y - col.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 200) {
+                col.x += dx * 0.1;
+                col.y += dy * 0.1;
             }
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                targetLane = Math.min(LANES - 1, targetLane + 1);
-            }
+        }
+        
+        if (col.y > canvas.height + 50) {
+            collectibles.splice(i, 1);
+            continue;
+        }
+        
+        if (checkCollectibleCollision(col)) {
+            collectItem(col);
+            collectibles.splice(i, 1);
+        }
+    }
+    
+    updateHUD();
+}
+
+function spawnObstacle() {
+    // CRITICAL FIX: Always leave at least 1 lane open
+    // Check which lanes are currently dangerous
+    const dangerZone = 300; // Pixels from top where cars are "blocking"
+    const blockedLanes = new Set();
+    
+    for (const obs of obstacles) {
+        if (obs.y < dangerZone) {
+            blockedLanes.add(obs.lane);
+        }
+    }
+    
+    // Find safe lanes
+    const safeLanes = [0, 1, 2].filter(l => !blockedLanes.has(l));
+    
+    // If 2+ lanes already blocked, don't spawn more
+    if (safeLanes.length <= 1) return;
+    
+    // Decide how many cars to spawn (1 or 2, never 3)
+    // Early game: mostly 1 car. Later: sometimes 2
+    const maxCars = distance < 200 ? 1 : (Math.random() < 0.7 ? 1 : 2);
+    const numCars = Math.min(maxCars, safeLanes.length - 1); // Always leave 1 safe
+    
+    // Shuffle safe lanes and pick
+    const shuffled = safeLanes.sort(() => Math.random() - 0.5);
+    
+    for (let i = 0; i < numCars; i++) {
+        const lane = shuffled[i];
+        obstacles.push({
+            lane: lane,
+            x: lane * LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2,
+            y: -CAR_HEIGHT - (i * 80), // Stagger vertically
+            width: CAR_WIDTH,
+            height: CAR_HEIGHT,
+            speed: 1 + Math.random() * 1.5,
+            color: COLORS.obstacle[Math.floor(Math.random() * COLORS.obstacle.length)]
         });
+    }
+}
 
-        // Controls - Touch/Swipe
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        canvas.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-
-        canvas.addEventListener('touchend', (e) => {
-            if (!gameRunning) return;
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
-            const dx = touchEndX - touchStartX;
-            const dy = touchEndY - touchStartY;
-
-            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
-                if (dx > 0) {
-                    targetLane = Math.min(LANES - 1, targetLane + 1);
-                } else {
-                    targetLane = Math.max(0, targetLane - 1);
-                }
-            }
-        }, { passive: true });
-
-        // Tap sides to move
-        canvas.addEventListener('click', (e) => {
-            if (!gameRunning) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const midX = rect.width / 2;
-
-            if (x < midX) {
-                targetLane = Math.max(0, targetLane - 1);
-            } else {
-                targetLane = Math.min(LANES - 1, targetLane + 1);
-            }
+function spawnCollectibles(dt) {
+    // Coins
+    if (Math.random() < 0.01 * (dt / 16)) {
+        const lane = Math.floor(Math.random() * 3);
+        const blocked = obstacles.some(o => o.lane === lane && o.y < 150);
+        if (!blocked) {
+            collectibles.push({
+                type: 'coin',
+                lane: lane,
+                x: lane * LANE_WIDTH + LANE_WIDTH / 2,
+                y: -30,
+                radius: 15
+            });
+        }
+    }
+    
+    // Power-ups (rarer)
+    if (Math.random() < 0.0015 * (dt / 16) && distance > 30) {
+        const lane = Math.floor(Math.random() * 3);
+        const types = ['shield', 'magnet', 'slow'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        
+        collectibles.push({
+            type: type,
+            lane: lane,
+            x: lane * LANE_WIDTH + LANE_WIDTH / 2,
+            y: -30,
+            radius: 20
         });
+    }
+}
 
-        // Initialize
-        initRoadLines();
-    </script>
+function collectItem(item) {
+    if (item.type === 'coin') {
+        coins++;
+    } else if (item.type === 'shield') {
+        shield = true;
+        shieldTimer = 8000;
+        showPowerupIndicator('🛡️', 'Shield Active');
+    } else if (item.type === 'magnet') {
+        magnet = true;
+        magnetTimer = 10000;
+        showPowerupIndicator('🧲', 'Coin Magnet');
+    } else if (item.type === 'slow') {
+        slowMo = true;
+        slowMoTimer = 5000;
+        showPowerupIndicator('🐢', 'Slow Motion');
+    }
+}
+
+function updatePowerups(dt) {
+    if (shield) {
+        shieldTimer -= dt;
+        if (shieldTimer <= 0) { shield = false; hidePowerupIndicator(); }
+    }
+    if (magnet) {
+        magnetTimer -= dt;
+        if (magnetTimer <= 0) { magnet = false; hidePowerupIndicator(); }
+    }
+    if (slowMo) {
+        slowMoTimer -= dt;
+        if (slowMoTimer <= 0) { slowMo = false; hidePowerupIndicator(); }
+    }
+}
+
+function showPowerupIndicator(icon, text) {
+    const el = document.getElementById('powerupIndicator');
+    document.getElementById('powerupIcon').textContent = icon;
+    document.getElementById('powerupText').textContent = text;
+    el.classList.add('show');
+}
+
+function hidePowerupIndicator() {
+    if (!shield && !magnet && !slowMo) {
+        document.getElementById('powerupIndicator').classList.remove('show');
+    }
+}
+
+function checkCollision(obs) {
+    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2;
+    const padding = 10; // Forgiving hitbox
+    
+    return playerX + padding < obs.x + obs.width - padding &&
+           playerX + CAR_WIDTH - padding > obs.x + padding &&
+           PLAYER_Y + padding < obs.y + obs.height - padding &&
+           PLAYER_Y + CAR_HEIGHT - padding > obs.y + padding;
+}
+
+function checkCollectibleCollision(col) {
+    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2;
+    const playerCenterY = PLAYER_Y + CAR_HEIGHT / 2;
+    const dx = playerX - col.x;
+    const dy = playerCenterY - col.y;
+    return Math.sqrt(dx * dx + dy * dy) < col.radius + 35;
+}
+
+function draw() {
+    // Road background
+    ctx.fillStyle = COLORS.road;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Lane dividers
+    ctx.strokeStyle = COLORS.roadLine;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([40, 20]);
+    
+    for (let i = 1; i < LANE_COUNT; i++) {
+        const x = i * LANE_WIDTH;
+        ctx.beginPath();
+        ctx.moveTo(x, -60 + roadOffset);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    
+    // Road edges
+    const edgeGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    edgeGradient.addColorStop(0, 'rgba(79, 172, 254, 0.4)');
+    edgeGradient.addColorStop(1, 'rgba(79, 172, 254, 0.1)');
+    ctx.fillStyle = edgeGradient;
+    ctx.fillRect(0, 0, 5, canvas.height);
+    ctx.fillRect(canvas.width - 5, 0, 5, canvas.height);
+    
+    // Collectibles
+    for (const col of collectibles) {
+        if (col.type === 'coin') {
+            // Coin glow
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = COLORS.coin;
+            ctx.fillStyle = COLORS.coin;
+            ctx.beginPath();
+            ctx.arc(col.x, col.y, col.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = '#b8860b';
+            ctx.font = 'bold 12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('$', col.x, col.y);
+        } else {
+            const color = col.type === 'shield' ? COLORS.shield : 
+                         col.type === 'magnet' ? COLORS.magnet : COLORS.slow;
+            const icon = col.type === 'shield' ? '🛡️' : 
+                        col.type === 'magnet' ? '🧲' : '🐢';
+            
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(col.x, col.y, col.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(icon, col.x, col.y);
+        }
+    }
+    
+    // Enemy cars
+    for (const obs of obstacles) {
+        drawCar(obs.x, obs.y, obs.width, obs.height, obs.color, false);
+    }
+    
+    // Player car
+    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2;
+    
+    // Shield effect
+    if (shield) {
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#3b82f6';
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(playerX + CAR_WIDTH / 2, PLAYER_Y + CAR_HEIGHT / 2, 55, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    
+    drawCar(playerX, PLAYER_Y, CAR_WIDTH, CAR_HEIGHT, COLORS.player, true);
+}
+
+function drawCar(x, y, w, h, color, isPlayer) {
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x + w/2, y + h - 5, w/2 - 5, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Car body
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x + 5, y + 10, w - 10, h - 20, 8);
+    ctx.fill();
+    
+    // Roof/cabin
+    ctx.fillStyle = isPlayer ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.roundRect(x + 10, y + 20, w - 20, 30, 6);
+    ctx.fill();
+    
+    // Windshield
+    ctx.fillStyle = 'rgba(100,200,255,0.4)';
+    ctx.beginPath();
+    ctx.roundRect(x + 12, isPlayer ? y + 22 : y + h - 40, w - 24, 18, 4);
+    ctx.fill();
+    
+    // Headlights/taillights
+    ctx.fillStyle = isPlayer ? '#fff' : '#ef4444';
+    ctx.shadowBlur = isPlayer ? 10 : 8;
+    ctx.shadowColor = isPlayer ? '#fff' : '#ef4444';
+    ctx.beginPath();
+    ctx.arc(x + 14, isPlayer ? y + h - 10 : y + 12, 5, 0, Math.PI * 2);
+    ctx.arc(x + w - 14, isPlayer ? y + h - 10 : y + 12, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Racing stripe for player
+    if (isPlayer) {
+        ctx.fillStyle = COLORS.playerAccent;
+        ctx.fillRect(x + w/2 - 4, y + 12, 8, h - 24);
+    }
+}
+
+function updateHUD() {
+    document.getElementById('score').textContent = score.toLocaleString();
+    document.getElementById('coins').textContent = coins;
+    document.getElementById('speed').textContent = Math.floor(speed);
+}
+
+function gameOver() {
+    gameRunning = false;
+    cancelAnimationFrame(animFrame);
+    
+    const isNewBest = score > highScore;
+    if (isNewBest) {
+        highScore = score;
+        localStorage.setItem('highway_dodge_high', score.toString());
+    }
+    
+    document.getElementById('finalScore').textContent = score.toLocaleString();
+    document.getElementById('finalCoins').textContent = coins;
+    document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
+    document.getElementById('finalSpeed').textContent = Math.floor(maxSpeed) + ' mph';
+    document.getElementById('newBest').classList.toggle('show', isNewBest);
+    
+    document.getElementById('gameOver').classList.add('show');
+    
+    submitScore();
+}
+
+async function submitScore() {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) return;
+        
+        await supabaseClient.from('solo_scores').upsert({
+            user_id: session.user.id,
+            game_id: 'highway-dodge',
+            score: score,
+            metadata: { coins, distance: Math.floor(distance), maxSpeed: Math.floor(maxSpeed) }
+        }, { onConflict: 'user_id,game_id' });
+    } catch (e) {
+        console.log('Score submission:', e);
+    }
+}
+
+function goToLeaderboard() {
+    window.location.href = '/leaderboards?game=highway-dodge';
+}
+
+// Controls
+function moveLeft() { if (playerLane > 0) playerLane--; }
+function moveRight() { if (playerLane < 2) playerLane++; }
+
+document.addEventListener('keydown', (e) => {
+    if (!gameRunning) return;
+    if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+    if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
+});
+
+let touchStartX = 0;
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    touchStartX = e.touches[0].clientX;
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    
+    if (Math.abs(diff) > 30) {
+        if (diff > 0) moveRight();
+        else moveLeft();
+    } else {
+        const rect = canvas.getBoundingClientRect();
+        const tapX = touchEndX - rect.left;
+        if (tapX < canvas.width / 3) moveLeft();
+        else if (tapX > canvas.width * 2 / 3) moveRight();
+    }
+}, { passive: false });
+
+canvas.addEventListener('click', (e) => {
+    if (!gameRunning) return;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    if (clickX < canvas.width / 3) moveLeft();
+    else if (clickX > canvas.width * 2 / 3) moveRight();
+});
+
+document.getElementById('startScreen').addEventListener('click', (e) => {
+    if (e.target.tagName !== 'BUTTON') startGame();
+});
+</script>
+
+<script src="/header.js"></script>
 </body>
 </html>
