@@ -299,51 +299,68 @@ function aiMove(){
 }
 
 function getBestMove(){
-    // Use minimax with alpha-beta pruning for smart play
+    // Priority 1: Win immediately if possible
+    for(let c=0;c<COLS;c++){
+        let r=getLowestRow(board,c);
+        if(r!==-1){
+            board[r][c]='yellow';
+            if(checkWinOnBoard(board,r,c,'yellow')){
+                board[r][c]=null;
+                return c;
+            }
+            board[r][c]=null;
+        }
+    }
+    
+    // Priority 2: Block opponent's immediate win
+    for(let c=0;c<COLS;c++){
+        let r=getLowestRow(board,c);
+        if(r!==-1){
+            board[r][c]='red';
+            if(checkWinOnBoard(board,r,c,'red')){
+                board[r][c]=null;
+                return c;
+            }
+            board[r][c]=null;
+        }
+    }
+    
+    // Priority 3: Block opponent's 3-in-a-row threats (this is the key fix!)
+    for(let c=0;c<COLS;c++){
+        let r=getLowestRow(board,c);
+        if(r!==-1){
+            if(blocksThreat(board,r,c,'red')){
+                return c;
+            }
+        }
+    }
+    
+    // Priority 4: Create our own 3-in-a-row threats
+    for(let c=0;c<COLS;c++){
+        let r=getLowestRow(board,c);
+        if(r!==-1){
+            if(createsThreat(board,r,c,'yellow')){
+                return c;
+            }
+        }
+    }
+    
+    // Priority 5: Use minimax for strategic play
     let bestCol=-1;
     let bestScore=-Infinity;
-    const depth=4; // Look 4 moves ahead
     
-    // First, check for immediate wins
     for(let c=0;c<COLS;c++){
-        const testBoard=board.map(r=>[...r]);
-        let r=getLowestRow(testBoard,c);
+        let r=getLowestRow(board,c);
         if(r!==-1){
-            testBoard[r][c]='yellow';
-            if(checkWinOnBoard(testBoard,r,c,'yellow'))return c;
-        }
-    }
-    
-    // Second, block immediate losses
-    for(let c=0;c<COLS;c++){
-        const testBoard=board.map(r=>[...r]);
-        let r=getLowestRow(testBoard,c);
-        if(r!==-1){
-            testBoard[r][c]='red';
-            if(checkWinOnBoard(testBoard,r,c,'red'))return c;
-        }
-    }
-    
-    // Third, check for critical blocks (opponent has 3-in-a-row with gaps)
-    for(let c=0;c<COLS;c++){
-        const testBoard=board.map(r=>[...r]);
-        let r=getLowestRow(testBoard,c);
-        if(r!==-1){
-            if(isCriticalBlock(testBoard,r,c))return c;
-        }
-    }
-    
-    // Use minimax for strategic play
-    for(let c=0;c<COLS;c++){
-        const testBoard=board.map(r=>[...r]);
-        let r=getLowestRow(testBoard,c);
-        if(r!==-1){
-            testBoard[r][c]='yellow';
-            let score=minimax(testBoard,depth-1,false,-Infinity,Infinity);
+            board[r][c]='yellow';
+            let score=evaluateMove(board,r,c);
             
-            // Bonus for center columns (strategic positioning)
-            if(c===3)score+=4;
-            if(c===2||c===4)score+=2;
+            // Center preference
+            if(c===3)score+=8;
+            else if(c===2||c===4)score+=4;
+            else if(c===1||c===5)score+=2;
+            
+            board[r][c]=null;
             
             if(score>bestScore){
                 bestScore=score;
@@ -354,6 +371,111 @@ function getBestMove(){
     
     return bestCol!==-1?bestCol:3;
 }
+
+function blocksThreat(testBoard,row,col,player){
+    // Check if placing a piece here blocks opponent's threat
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    
+    for(const[dr,dc]of directions){
+        // Check all windows of 4 that include this position
+        for(let start=-3;start<=0;start++){
+            let playerCount=0;
+            let emptyCount=0;
+            let positions=[];
+            
+            for(let i=0;i<4;i++){
+                const r=row+dr*(start+i);
+                const c=col+dc*(start+i);
+                if(r>=0&&r<ROWS&&c>=0&&c<COLS){
+                    positions.push([r,c]);
+                    if(testBoard[r][c]===player)playerCount++;
+                    else if(!testBoard[r][c])emptyCount++;
+                }
+            }
+            
+            // If opponent has 2-3 pieces and this blocks them
+            if(positions.length===4&&playerCount>=2&&emptyCount>=1){
+                const[targetR,targetC]=positions.find(([r,c])=>r===row&&c===col)||[];
+                if(targetR===row&&targetC===col)return true;
+            }
+        }
+    }
+    return false;
+}
+
+function createsThreat(testBoard,row,col,player){
+    // Check if placing here creates a winning threat
+    testBoard[row][col]=player;
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    
+    for(const[dr,dc]of directions){
+        let count=1;
+        
+        // Count in positive direction
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
+            else break;
+        }
+        
+        // Count in negative direction
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
+            else break;
+        }
+        
+        if(count>=3){
+            testBoard[row][col]=null;
+            return true;
+        }
+    }
+    
+    testBoard[row][col]=null;
+    return false;
+}
+
+function evaluateMove(testBoard,row,col){
+    let score=0;
+    const directions=[[0,1],[1,0],[1,1],[1,-1]];
+    
+    testBoard[row][col]='yellow';
+    
+    for(const[dr,dc]of directions){
+        let yellowCount=1;
+        let redCount=0;
+        let empty=0;
+        
+        // Check window of 4
+        for(let i=1;i<4;i++){
+            const r=row+dr*i,c=col+dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
+                if(testBoard[r][c]==='yellow')yellowCount++;
+                else if(testBoard[r][c]==='red')redCount++;
+                else empty++;
+            }
+        }
+        
+        for(let i=1;i<4;i++){
+            const r=row-dr*i,c=col-dc*i;
+            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
+                if(testBoard[r][c]==='yellow')yellowCount++;
+                else if(testBoard[r][c]==='red')redCount++;
+                else empty++;
+            }
+        }
+        
+        if(yellowCount===3)score+=50;
+        else if(yellowCount===2&&empty>0)score+=10;
+        
+        if(redCount===3)score-=40;
+        else if(redCount===2)score-=5;
+    }
+    
+    testBoard[row][col]=null;
+    return score;
+}
+
 
 function minimax(testBoard,depth,isMaximizing,alpha,beta){
     // Check terminal states
