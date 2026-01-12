@@ -2,979 +2,710 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Highway Dodge – Endless Racing | TheGaming.co</title>
-    <meta name="description" content="Dodge traffic in this endless racing game. Collect coins, grab power-ups, and see how far you can go!">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Highway Dodge – Endless Arcade Game | TheGaming.co</title>
+    <meta name="description" content="Dodge traffic and survive as long as you can!">
     <meta name="theme-color" content="#0a0a0f">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --pink: #ff6b9d;
-            --blue: #4facfe;
-            --purple: #a855f7;
-            --cyan: #22d3ee;
-            --green: #22c55e;
-            --gold: #ffd700;
-            --text-dark: #1a1a2e;
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#06b6d4;--accent-dark:#0891b2;--accent-light:#cffafe;
+            --gold:#ffd700;--text-dark:#1a1a2e;--text-muted:#6b7280;
         }
+        html,body{overscroll-behavior:none;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);color:#fff;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        a{color:inherit;text-decoration:none}
+
+        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
+        .game-hero{background:radial-gradient(circle at 10% 0%,#164e63 0%,#0e7490 50%,#155e75 100%);padding:35px 20px;text-align:center;position:relative;overflow:hidden}
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(6,182,212,0.3) 0%,transparent 55%)}
+        .game-hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .game-icon{width:60px;height:60px;margin:0 auto 12px;animation:iconFloat 3s ease-in-out infinite}
+        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        .game-hero-title{font-size:clamp(2.2rem,8vw,3.5rem);line-height:0.95;margin-bottom:6px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+        .game-hero-desc{font-size:0.85rem;color:rgba(255,255,255,0.7)}
+
+        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:25px 15px 40px}
+        .game-container{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+
+        .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+        .stat-card{background:rgba(6,182,212,0.1);border:2px solid rgba(6,182,212,0.2);border-radius:14px;padding:10px 8px;text-align:center;box-shadow:0 2px 12px rgba(6,182,212,0.08)}
+        .stat-label{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:2px}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--accent)}
+        .stat-value.best{color:var(--gold)}
+
+        .game-board{background:rgba(15,23,42,0.8);border-radius:20px;border:3px solid rgba(6,182,212,0.3);padding:12px;box-shadow:0 8px 30px rgba(6,182,212,0.12);display:flex;flex-direction:column;align-items:center}
         
-        html { -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            color: white;
-            min-height: 100vh;
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+        .canvas-wrapper{position:relative;border-radius:12px;overflow:hidden;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+        #canvas{display:block;border-radius:10px;max-width:100%}
+        
+        .game-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;border-radius:12px;backdrop-filter:blur(4px)}
+        .game-overlay.hidden{display:none}
+        .overlay-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;color:#fff;margin-bottom:6px}
+        .overlay-title.gameover{color:#ef4444}
+        .overlay-title.start{background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .overlay-score{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--gold);margin:12px 0}
+        .overlay-text{color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:16px}
+        .new-best{color:var(--gold);font-weight:700;margin-bottom:10px}
+        .btn{padding:14px 28px;border-radius:50px;border:none;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.3s;text-transform:uppercase;letter-spacing:1px;font-family:'Inter',sans-serif}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 6px 20px rgba(6,182,212,0.3)}
 
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding-top: 60px;
-        }
+        .tap-hint{margin-top:12px;font-size:0.75rem;color:var(--text-muted);text-align:center}
 
-        /* Hero Section */
-        .game-hero {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
-            padding: 30px 20px 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .game-hero::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 0%, rgba(79, 172, 254, 0.2) 0%, transparent 60%);
-        }
-        .hero-content { position: relative; z-index: 1; }
-        .hero-icon {
-            font-size: 3rem;
-            margin-bottom: 8px;
-            animation: bounce 2s ease-in-out infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        .hero-title {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #fff, var(--cyan), var(--blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 4px;
-        }
-        .hero-sub { font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+        .get-ready{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.3);border-radius:12px;backdrop-filter:blur(2px)}
+        .get-ready.show{display:flex}
+        .get-ready-text{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,0.5);animation:pulse 0.5s ease-in-out infinite alternate}
+        .get-ready-hint{font-size:0.85rem;color:rgba(255,255,255,0.8);margin-top:8px}
+        @keyframes pulse{0%{transform:scale(1)}100%{transform:scale(1.05)}}
 
-        /* Game Container */
-        .game-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 16px 30px;
-            gap: 16px;
-        }
-
-        /* HUD */
-        .hud {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            width: 100%;
-            max-width: 400px;
-        }
-        .hud-item {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 10px 16px;
-            text-align: center;
-            min-width: 80px;
-        }
-        .hud-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 2px;
-        }
-        .hud-value {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.4rem;
-            letter-spacing: 1px;
-        }
-        .hud-value.score { color: var(--cyan); }
-        .hud-value.coins { color: var(--gold); }
-        .hud-value.speed { color: var(--pink); }
-
-        /* Power-up indicator */
-        .powerup-active {
-            background: linear-gradient(135deg, var(--purple), var(--pink));
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            animation: pulse 1s ease-in-out infinite;
-        }
-        .powerup-active.show { display: flex; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* Canvas */
-        #gameCanvas {
-            border-radius: 16px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(79, 172, 254, 0.15);
-            max-width: 100%;
-            touch-action: none;
-        }
-
-        /* Controls hint */
-        .controls-hint {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.4);
-            text-align: center;
-        }
-
-        /* Game Over Overlay */
-        .game-over {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 20px;
-        }
-        .game-over.show { display: flex; }
-        .game-over-content {
-            background: linear-gradient(135deg, #1e1b4b, #312e81);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 24px;
-            padding: 40px 32px;
-            text-align: center;
-            max-width: 360px;
-            width: 100%;
-            animation: slideUp 0.4s ease;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(40px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .game-over-title {
-            font-size: 2.5rem;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, var(--pink), var(--purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .game-over-subtitle {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 24px;
-        }
-        .final-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        .stat-box {
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 16px 12px;
-        }
-        .stat-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 4px;
-        }
-        .stat-value {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.6rem;
-            color: var(--cyan);
-        }
-        .stat-value.gold { color: var(--gold); }
-        .stat-value.green { color: var(--green); }
-
-        .new-best {
-            background: linear-gradient(135deg, var(--gold), #f59e0b);
-            color: #000;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .new-best.show { display: inline-block; }
-
-        .btn {
-            padding: 14px 32px;
-            border-radius: 50px;
-            border: none;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--cyan), var(--blue));
-            color: #000;
-            width: 100%;
-            margin-bottom: 12px;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(34, 211, 238, 0.4); }
-        .btn-secondary {
-            background: transparent;
-            color: rgba(255,255,255,0.7);
-            border: 1px solid rgba(255,255,255,0.2);
-            width: 100%;
-        }
-        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-
-        /* Start Screen */
-        .start-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 20px;
-        }
-        .start-screen.hidden { display: none; }
-        .start-content {
-            text-align: center;
-            max-width: 360px;
-        }
-        .start-icon { font-size: 4rem; margin-bottom: 16px; }
-        .start-title {
-            font-size: 3rem;
-            background: linear-gradient(135deg, #fff, var(--cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
-        }
-        .start-desc {
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 32px;
-            line-height: 1.6;
-        }
-        .powerup-legend {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.7);
-        }
-        .legend-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
-        .legend-icon.shield { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-        .legend-icon.magnet { background: linear-gradient(135deg, #a855f7, #7c3aed); }
-        .legend-icon.slow { background: linear-gradient(135deg, #22c55e, #16a34a); }
-
-        @media (max-width: 400px) {
-            .hero-title { font-size: 2rem; }
-            .hud { gap: 8px; }
-            .hud-item { padding: 8px 12px; min-width: 70px; }
-            .hud-value { font-size: 1.2rem; }
-        }
+        .leaderboard-section{background:rgba(15,23,42,0.8);border:2px solid rgba(6,182,212,0.2);border-radius:18px;padding:18px;box-shadow:0 8px 30px rgba(6,182,212,0.12)}
+        .lb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid rgba(6,182,212,0.15);flex-wrap:wrap;gap:10px}
+        .lb-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        .lb-tabs{display:flex;gap:5px;background:rgba(6,182,212,0.08);padding:3px;border-radius:10px}
+        .lb-tab{padding:6px 12px;border-radius:7px;font-size:0.7rem;font-weight:600;text-transform:uppercase;cursor:pointer;color:var(--text-muted);background:transparent;border:none}
+        .lb-tab:hover{color:var(--accent)}
+        .lb-tab.active{background:rgba(6,182,212,0.2);color:var(--accent);box-shadow:0 2px 8px rgba(6,182,212,0.15)}
+        .lb-list{display:flex;flex-direction:column;gap:5px}
+        .lb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(6,182,212,0.05);border-radius:10px;border:1px solid transparent}
+        .lb-row:hover{background:rgba(6,182,212,0.1)}
+        .lb-row.top-1{background:linear-gradient(90deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05));border:2px solid rgba(255,215,0,0.4)}
+        .lb-row.top-2{background:linear-gradient(90deg,rgba(192,192,192,0.12),rgba(192,192,192,0.04));border:2px solid rgba(192,192,192,0.3)}
+        .lb-row.top-3{background:linear-gradient(90deg,rgba(205,127,50,0.12),rgba(205,127,50,0.04));border:2px solid rgba(205,127,50,0.3)}
+        .lb-row.premium-row{background:linear-gradient(90deg,rgba(251,191,36,0.12),rgba(251,191,36,0.03))!important;border:1px solid rgba(251,191,36,0.3)!important;box-shadow:0 0 15px rgba(251,191,36,0.1)}
+        .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;width:28px;color:var(--text-muted)}
+        .lb-row.top-1 .lb-rank{color:#ffd700}
+        .lb-row.top-2 .lb-rank{color:#c0c0c0}
+        .lb-row.top-3 .lb-rank{color:#cd7f32}
+        .lb-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff}
+        .lb-avatar.premium{background:linear-gradient(135deg,#fbbf24,#f59e0b)!important;box-shadow:0 0 20px rgba(251,191,36,0.5),0 0 40px rgba(251,191,36,0.2)!important}
+        .lb-name{flex:1;font-weight:600;font-size:0.8rem;color:#fff}
+        .lb-name.premium{background:linear-gradient(90deg,var(--gold),#f59e0b,#fcd34d,var(--gold))!important;background-size:200% auto!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;animation:goldShimmer 3s linear infinite!important;font-weight:700!important}
+        @keyframes goldShimmer{0%{background-position:0% center}100%{background-position:200% center}}
+        .lb-score{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--accent)}
+        .lb-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:0.8rem}
     </style>
 </head>
 <body>
     <div id="site-header"></div>
-    
+
     <main>
         <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">🚗</div>
-                <h1 class="hero-title">HIGHWAY DODGE</h1>
-                <p class="hero-sub">Dodge traffic, collect coins, grab power-ups!</p>
+            <div class="game-hero-content">
+                <svg class="game-icon" viewBox="0 0 100 100" fill="none">
+                    <rect x="15" y="20" width="70" height="60" rx="10" fill="#06b6d4"/>
+                    <rect x="25" y="30" width="20" height="15" rx="3" fill="#67e8f9"/>
+                    <rect x="55" y="30" width="20" height="15" rx="3" fill="#67e8f9"/>
+                    <circle cx="30" cy="70" r="10" fill="#1e293b" stroke="#94a3b8" stroke-width="3"/>
+                    <circle cx="70" cy="70" r="10" fill="#1e293b" stroke="#94a3b8" stroke-width="3"/>
+                    <rect x="40" y="55" width="20" height="8" rx="2" fill="#fbbf24"/>
+                </svg>
+                <h1 class="game-hero-title">HIGHWAY DODGE</h1>
+                <p class="game-hero-desc">Dodge traffic and survive!</p>
             </div>
         </section>
 
         <div class="game-wrapper">
-            <div class="hud">
-                <div class="hud-item">
-                    <div class="hud-label">Score</div>
-                    <div class="hud-value score" id="score">0</div>
+            <div class="game-container">
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-label">Score</div>
+                        <div class="stat-value" id="score-display">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Best</div>
+                        <div class="stat-value best" id="best-display">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Games</div>
+                        <div class="stat-value" id="games-display">0</div>
+                    </div>
                 </div>
-                <div class="hud-item">
-                    <div class="hud-label">Coins</div>
-                    <div class="hud-value coins" id="coins">0</div>
+
+                <div class="game-board">
+                    <div class="canvas-wrapper" id="canvas-wrapper">
+                        <canvas id="canvas" width="300" height="500"></canvas>
+                        <div class="game-overlay" id="overlay">
+                            <div class="overlay-title start" id="overlay-title">HIGHWAY DODGE</div>
+                            <div class="overlay-score hidden" id="overlay-score">0</div>
+                            <div class="new-best hidden" id="new-best">🏆 NEW BEST!</div>
+                            <p class="overlay-text" id="overlay-text">Swipe or use arrow keys to dodge</p>
+                            <button class="btn btn-primary" id="start-btn">START</button>
+                        </div>
+                        <div class="get-ready" id="get-ready">
+                            <div class="get-ready-text">GET READY!</div>
+                            <div class="get-ready-hint">← → to move</div>
+                        </div>
+                    </div>
+                    <p class="tap-hint">← → Arrow keys or tap sides to move</p>
                 </div>
-                <div class="hud-item">
-                    <div class="hud-label">Speed</div>
-                    <div class="hud-value speed" id="speed">60</div>
+
+                <div class="leaderboard-section">
+                    <div class="lb-header">
+                        <h2 class="lb-title">🏆 Leaderboard</h2>
+                        <div class="lb-tabs">
+                            <button class="lb-tab active" data-tab="global">Global</button>
+                            <button class="lb-tab" data-tab="today">Today</button>
+                            <button class="lb-tab" data-tab="friends">Friends</button>
+                        </div>
+                    </div>
+                    <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
                 </div>
-            </div>
-
-            <div class="powerup-active" id="powerupIndicator">
-                <span id="powerupIcon">🛡️</span>
-                <span id="powerupText">Shield Active</span>
-            </div>
-
-            <canvas id="gameCanvas" width="360" height="540"></canvas>
-
-            <div class="controls-hint">
-                ← → Arrow Keys or Swipe/Tap to move
             </div>
         </div>
     </main>
 
-    <!-- Start Screen -->
-    <div class="start-screen" id="startScreen">
-        <div class="start-content">
-            <div class="start-icon">🏎️</div>
-            <h1 class="start-title">HIGHWAY DODGE</h1>
-            <p class="start-desc">
-                Dodge oncoming traffic and survive as long as you can!
-                Collect coins and power-ups to boost your score.
-            </p>
-            <div class="powerup-legend">
-                <div class="legend-item">
-                    <div class="legend-icon shield">🛡️</div>
-                    <span>Shield</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-icon magnet">🧲</div>
-                    <span>Coin Magnet</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-icon slow">🐢</div>
-                    <span>Slow-Mo</span>
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="startGame()">TAP TO START</button>
-        </div>
-    </div>
-
-    <!-- Game Over -->
-    <div class="game-over" id="gameOver">
-        <div class="game-over-content">
-            <h2 class="game-over-title">GAME OVER</h2>
-            <p class="game-over-subtitle">You crashed into traffic!</p>
-            
-            <div class="new-best" id="newBest">🏆 NEW HIGH SCORE!</div>
-            
-            <div class="final-stats">
-                <div class="stat-box">
-                    <div class="stat-label">Final Score</div>
-                    <div class="stat-value" id="finalScore">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Coins</div>
-                    <div class="stat-value gold" id="finalCoins">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Distance</div>
-                    <div class="stat-value green" id="finalDistance">0m</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Top Speed</div>
-                    <div class="stat-value" id="finalSpeed">0</div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" onclick="restartGame()">PLAY AGAIN</button>
-            <button class="btn btn-secondary" onclick="goToLeaderboard()">VIEW LEADERBOARD</button>
-        </div>
-    </div>
-
 <script>
-const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.supabaseClient = supabaseClient;
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const W=canvas.width;
+const H=canvas.height;
 
 // Game constants
 const LANE_COUNT = 3;
-const LANE_WIDTH = canvas.width / LANE_COUNT;
+const LANE_WIDTH = W / LANE_COUNT;
 const CAR_WIDTH = 50;
-const CAR_HEIGHT = 90;
-const PLAYER_Y = canvas.height - 140;
+const CAR_HEIGHT = 80;
+const PLAYER_Y = H - 120;
+const OBSTACLE_SPEED = 4;
+const SPAWN_INTERVAL = 90; // Frames between spawns
+const COIN_INTERVAL = 180; // Frames between coins
+const COIN_VALUE = 100;
 
 // Game state
-let gameRunning = false;
+let gameState = 'idle';
 let score = 0;
-let coins = 0;
-let distance = 0;
-let speed = 60;
-let maxSpeed = 60;
+let bestScore = parseInt(localStorage.getItem('highway_dodge_best') || '0');
+let gamesPlayed = parseInt(localStorage.getItem('highway_dodge_games') || '0');
+let currentUserId = null;
+let friendIds = [];
+let currentTab = 'global';
+
+// Player state
 let playerLane = 1;
+let targetLane = 1;
+let playerX = getLaneX(1);
+
+// Objects
 let obstacles = [];
-let collectibles = [];
+let coins = [];
+let frameCount = 0;
 let roadOffset = 0;
+let lastSpawn = -SPAWN_INTERVAL; // Ensure first spawn happens
+let lastCoin = -COIN_INTERVAL;
 
-// Power-ups
-let shield = false;
-let shieldTimer = 0;
-let magnet = false;
-let magnetTimer = 0;
-let slowMo = false;
-let slowMoTimer = 0;
+// UI elements
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlayScore = document.getElementById('overlay-score');
+const overlayText = document.getElementById('overlay-text');
+const newBestEl = document.getElementById('new-best');
+const startBtn = document.getElementById('start-btn');
+const getReadyEl = document.getElementById('get-ready');
 
-// Spawn timing - FIXED: Guaranteed safe spawning
-let spawnTimer = 0;
-let spawnInterval = 1500; // Start with 1.5s between cars
+function updateDisplays() {
+    document.getElementById('score-display').textContent = score;
+    document.getElementById('best-display').textContent = bestScore;
+    document.getElementById('games-display').textContent = gamesPlayed;
+}
+updateDisplays();
 
-// Animation
-let animFrame;
-let lastTime = 0;
-
-// High score
-let highScore = parseInt(localStorage.getItem('highway_dodge_high') || '0');
-
-// Colors
-const COLORS = {
-    road: '#1a1a2e',
-    roadLine: '#3b4a6b',
-    player: '#22d3ee',
-    playerAccent: '#0891b2',
-    obstacle: ['#ef4444', '#f97316', '#ec4899', '#a855f7', '#8b5cf6'],
-    coin: '#ffd700',
-    shield: '#3b82f6',
-    magnet: '#a855f7',
-    slow: '#22c55e'
-};
-
-function startGame() {
-    document.getElementById('startScreen').classList.add('hidden');
-    resetGame();
-    gameRunning = true;
-    lastTime = performance.now();
-    gameLoop();
+function getLaneX(lane) {
+    return lane * LANE_WIDTH + LANE_WIDTH / 2;
 }
 
-function resetGame() {
-    score = 0;
-    coins = 0;
-    distance = 0;
-    speed = 60;
-    maxSpeed = 60;
-    playerLane = 1;
-    obstacles = [];
-    collectibles = [];
-    roadOffset = 0;
-    shield = false;
-    magnet = false;
-    slowMo = false;
-    spawnTimer = 0;
-    spawnInterval = 1500;
-    updateHUD();
-    hidePowerupIndicator();
-}
-
-function restartGame() {
-    document.getElementById('gameOver').classList.remove('show');
-    resetGame();
-    gameRunning = true;
-    lastTime = performance.now();
-    gameLoop();
-}
-
-function gameLoop(currentTime = 0) {
-    if (!gameRunning) return;
+function drawRoad() {
+    // Asphalt
+    ctx.fillStyle = '#374151';
+    ctx.fillRect(0, 0, W, H);
     
-    const deltaTime = Math.min(currentTime - lastTime, 50);
-    lastTime = currentTime;
-    
-    update(deltaTime);
-    draw();
-    
-    animFrame = requestAnimationFrame(gameLoop);
-}
-
-function update(dt) {
-    const timeScale = slowMo ? 0.5 : 1;
-    const effectiveDt = dt * timeScale;
-    
-    // Update distance and score
-    distance += speed * (effectiveDt / 1000);
-    score = Math.floor(distance * 10 + coins * 50);
-    
-    // Gradually increase speed (slow ramp)
-    if (speed < 160) {
-        speed += 0.002 * effectiveDt;
-    }
-    maxSpeed = Math.max(maxSpeed, speed);
-    
-    // Spawn interval decreases with speed but never below 800ms
-    spawnInterval = Math.max(800, 1500 - (speed - 60) * 5);
-    
-    // Update road animation
-    roadOffset += speed * 0.15 * (effectiveDt / 16);
-    if (roadOffset > 60) roadOffset = 0;
-    
-    // Update power-up timers
-    updatePowerups(effectiveDt);
-    
-    // Spawn obstacles on timer
-    spawnTimer += effectiveDt;
-    if (spawnTimer >= spawnInterval) {
-        spawnObstacle();
-        spawnTimer = 0;
-    }
-    
-    // Spawn collectibles
-    spawnCollectibles(effectiveDt);
-    
-    // Move obstacles
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        const obs = obstacles[i];
-        obs.y += (speed * 0.12 + obs.speed) * (effectiveDt / 16);
-        
-        if (obs.y > canvas.height + 100) {
-            obstacles.splice(i, 1);
-            continue;
-        }
-        
-        if (checkCollision(obs)) {
-            if (shield) {
-                shield = false;
-                obstacles.splice(i, 1);
-                hidePowerupIndicator();
-            } else {
-                gameOver();
-                return;
-            }
-        }
-    }
-    
-    // Move collectibles
-    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2;
-    for (let i = collectibles.length - 1; i >= 0; i--) {
-        const col = collectibles[i];
-        col.y += speed * 0.12 * (effectiveDt / 16);
-        
-        // Magnet effect
-        if (magnet && col.type === 'coin') {
-            const dx = playerX - col.x;
-            const dy = PLAYER_Y - col.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 200) {
-                col.x += dx * 0.1;
-                col.y += dy * 0.1;
-            }
-        }
-        
-        if (col.y > canvas.height + 50) {
-            collectibles.splice(i, 1);
-            continue;
-        }
-        
-        if (checkCollectibleCollision(col)) {
-            collectItem(col);
-            collectibles.splice(i, 1);
-        }
-    }
-    
-    updateHUD();
-}
-
-function spawnObstacle() {
-    // CRITICAL FIX: Always leave at least 1 lane open
-    // Check which lanes are currently dangerous
-    const dangerZone = 300; // Pixels from top where cars are "blocking"
-    const blockedLanes = new Set();
-    
-    for (const obs of obstacles) {
-        if (obs.y < dangerZone) {
-            blockedLanes.add(obs.lane);
-        }
-    }
-    
-    // Find safe lanes
-    const safeLanes = [0, 1, 2].filter(l => !blockedLanes.has(l));
-    
-    // If 2+ lanes already blocked, don't spawn more
-    if (safeLanes.length <= 1) return;
-    
-    // Decide how many cars to spawn (1 or 2, never 3)
-    // Early game: mostly 1 car. Later: sometimes 2
-    const maxCars = distance < 200 ? 1 : (Math.random() < 0.7 ? 1 : 2);
-    const numCars = Math.min(maxCars, safeLanes.length - 1); // Always leave 1 safe
-    
-    // Shuffle safe lanes and pick
-    const shuffled = safeLanes.sort(() => Math.random() - 0.5);
-    
-    for (let i = 0; i < numCars; i++) {
-        const lane = shuffled[i];
-        obstacles.push({
-            lane: lane,
-            x: lane * LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2,
-            y: -CAR_HEIGHT - (i * 80), // Stagger vertically
-            width: CAR_WIDTH,
-            height: CAR_HEIGHT,
-            speed: 1 + Math.random() * 1.5,
-            color: COLORS.obstacle[Math.floor(Math.random() * COLORS.obstacle.length)]
-        });
-    }
-}
-
-function spawnCollectibles(dt) {
-    // Coins
-    if (Math.random() < 0.01 * (dt / 16)) {
-        const lane = Math.floor(Math.random() * 3);
-        const blocked = obstacles.some(o => o.lane === lane && o.y < 150);
-        if (!blocked) {
-            collectibles.push({
-                type: 'coin',
-                lane: lane,
-                x: lane * LANE_WIDTH + LANE_WIDTH / 2,
-                y: -30,
-                radius: 15
-            });
-        }
-    }
-    
-    // Power-ups (rarer)
-    if (Math.random() < 0.0015 * (dt / 16) && distance > 30) {
-        const lane = Math.floor(Math.random() * 3);
-        const types = ['shield', 'magnet', 'slow'];
-        const type = types[Math.floor(Math.random() * types.length)];
-        
-        collectibles.push({
-            type: type,
-            lane: lane,
-            x: lane * LANE_WIDTH + LANE_WIDTH / 2,
-            y: -30,
-            radius: 20
-        });
-    }
-}
-
-function collectItem(item) {
-    if (item.type === 'coin') {
-        coins++;
-    } else if (item.type === 'shield') {
-        shield = true;
-        shieldTimer = 8000;
-        showPowerupIndicator('🛡️', 'Shield Active');
-    } else if (item.type === 'magnet') {
-        magnet = true;
-        magnetTimer = 10000;
-        showPowerupIndicator('🧲', 'Coin Magnet');
-    } else if (item.type === 'slow') {
-        slowMo = true;
-        slowMoTimer = 5000;
-        showPowerupIndicator('🐢', 'Slow Motion');
-    }
-}
-
-function updatePowerups(dt) {
-    if (shield) {
-        shieldTimer -= dt;
-        if (shieldTimer <= 0) { shield = false; hidePowerupIndicator(); }
-    }
-    if (magnet) {
-        magnetTimer -= dt;
-        if (magnetTimer <= 0) { magnet = false; hidePowerupIndicator(); }
-    }
-    if (slowMo) {
-        slowMoTimer -= dt;
-        if (slowMoTimer <= 0) { slowMo = false; hidePowerupIndicator(); }
-    }
-}
-
-function showPowerupIndicator(icon, text) {
-    const el = document.getElementById('powerupIndicator');
-    document.getElementById('powerupIcon').textContent = icon;
-    document.getElementById('powerupText').textContent = text;
-    el.classList.add('show');
-}
-
-function hidePowerupIndicator() {
-    if (!shield && !magnet && !slowMo) {
-        document.getElementById('powerupIndicator').classList.remove('show');
-    }
-}
-
-function checkCollision(obs) {
-    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2;
-    const padding = 10; // Forgiving hitbox
-    
-    return playerX + padding < obs.x + obs.width - padding &&
-           playerX + CAR_WIDTH - padding > obs.x + padding &&
-           PLAYER_Y + padding < obs.y + obs.height - padding &&
-           PLAYER_Y + CAR_HEIGHT - padding > obs.y + padding;
-}
-
-function checkCollectibleCollision(col) {
-    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2;
-    const playerCenterY = PLAYER_Y + CAR_HEIGHT / 2;
-    const dx = playerX - col.x;
-    const dy = playerCenterY - col.y;
-    return Math.sqrt(dx * dx + dy * dy) < col.radius + 35;
-}
-
-function draw() {
-    // Road background
-    ctx.fillStyle = COLORS.road;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Lane dividers
-    ctx.strokeStyle = COLORS.roadLine;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([40, 20]);
+    // Animated lane markers
+    roadOffset = (roadOffset + OBSTACLE_SPEED) % 40;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([20, 20]);
     
     for (let i = 1; i < LANE_COUNT; i++) {
         const x = i * LANE_WIDTH;
         ctx.beginPath();
-        ctx.moveTo(x, -60 + roadOffset);
-        ctx.lineTo(x, canvas.height);
+        ctx.moveTo(x, -40 + roadOffset);
+        ctx.lineTo(x, H);
         ctx.stroke();
     }
     ctx.setLineDash([]);
     
     // Road edges
-    const edgeGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    edgeGradient.addColorStop(0, 'rgba(79, 172, 254, 0.4)');
-    edgeGradient.addColorStop(1, 'rgba(79, 172, 254, 0.1)');
-    ctx.fillStyle = edgeGradient;
-    ctx.fillRect(0, 0, 5, canvas.height);
-    ctx.fillRect(canvas.width - 5, 0, 5, canvas.height);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(0, 0, 8, H);
+    ctx.fillRect(W - 8, 0, 8, H);
     
-    // Collectibles
-    for (const col of collectibles) {
-        if (col.type === 'coin') {
-            // Coin glow
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = COLORS.coin;
-            ctx.fillStyle = COLORS.coin;
-            ctx.beginPath();
-            ctx.arc(col.x, col.y, col.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            ctx.fillStyle = '#b8860b';
-            ctx.font = 'bold 12px Inter';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('$', col.x, col.y);
-        } else {
-            const color = col.type === 'shield' ? COLORS.shield : 
-                         col.type === 'magnet' ? COLORS.magnet : COLORS.slow;
-            const icon = col.type === 'shield' ? '🛡️' : 
-                        col.type === 'magnet' ? '🧲' : '🐢';
-            
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = color;
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(col.x, col.y, col.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            ctx.font = '18px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(icon, col.x, col.y);
-        }
+    // Edge stripes
+    ctx.fillStyle = '#fff';
+    for (let y = -40 + roadOffset; y < H; y += 40) {
+        ctx.fillRect(0, y, 8, 20);
+        ctx.fillRect(W - 8, y, 8, 20);
     }
-    
-    // Enemy cars
-    for (const obs of obstacles) {
-        drawCar(obs.x, obs.y, obs.width, obs.height, obs.color, false);
-    }
-    
-    // Player car
-    const playerX = playerLane * LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2;
-    
-    // Shield effect
-    if (shield) {
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = '#3b82f6';
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(playerX + CAR_WIDTH / 2, PLAYER_Y + CAR_HEIGHT / 2, 55, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-    }
-    
-    drawCar(playerX, PLAYER_Y, CAR_WIDTH, CAR_HEIGHT, COLORS.player, true);
 }
 
-function drawCar(x, y, w, h, color, isPlayer) {
+function drawPlayer() {
+    const x = playerX;
+    const y = PLAYER_Y;
+    
     // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
-    ctx.ellipse(x + w/2, y + h - 5, w/2 - 5, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + CAR_HEIGHT/2 + 5, CAR_WIDTH/2, 10, 0, 0, Math.PI * 2);
     ctx.fill();
     
     // Car body
-    ctx.fillStyle = color;
+    ctx.fillStyle = '#06b6d4';
     ctx.beginPath();
-    ctx.roundRect(x + 5, y + 10, w - 10, h - 20, 8);
-    ctx.fill();
-    
-    // Roof/cabin
-    ctx.fillStyle = isPlayer ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.4)';
-    ctx.beginPath();
-    ctx.roundRect(x + 10, y + 20, w - 20, 30, 6);
+    ctx.roundRect(x - CAR_WIDTH/2, y - CAR_HEIGHT/2, CAR_WIDTH, CAR_HEIGHT, 10);
     ctx.fill();
     
     // Windshield
-    ctx.fillStyle = 'rgba(100,200,255,0.4)';
+    ctx.fillStyle = '#67e8f9';
     ctx.beginPath();
-    ctx.roundRect(x + 12, isPlayer ? y + 22 : y + h - 40, w - 24, 18, 4);
+    ctx.roundRect(x - 18, y - CAR_HEIGHT/2 + 10, 36, 20, 5);
     ctx.fill();
     
-    // Headlights/taillights
-    ctx.fillStyle = isPlayer ? '#fff' : '#ef4444';
-    ctx.shadowBlur = isPlayer ? 10 : 8;
-    ctx.shadowColor = isPlayer ? '#fff' : '#ef4444';
+    // Headlights
+    ctx.fillStyle = '#fef3c7';
     ctx.beginPath();
-    ctx.arc(x + 14, isPlayer ? y + h - 10 : y + 12, 5, 0, Math.PI * 2);
-    ctx.arc(x + w - 14, isPlayer ? y + h - 10 : y + 12, 5, 0, Math.PI * 2);
+    ctx.roundRect(x - 20, y - CAR_HEIGHT/2, 12, 8, 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.roundRect(x + 8, y - CAR_HEIGHT/2, 12, 8, 2);
+    ctx.fill();
     
-    // Racing stripe for player
-    if (isPlayer) {
-        ctx.fillStyle = COLORS.playerAccent;
-        ctx.fillRect(x + w/2 - 4, y + 12, 8, h - 24);
+    // Taillights
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.roundRect(x - 20, y + CAR_HEIGHT/2 - 8, 12, 6, 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x + 8, y + CAR_HEIGHT/2 - 8, 12, 6, 2);
+    ctx.fill();
+}
+
+function drawObstacle(obs) {
+    const x = getLaneX(obs.lane);
+    const y = obs.y;
+    
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + CAR_HEIGHT/2 + 5, CAR_WIDTH/2, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Car body
+    ctx.fillStyle = obs.color;
+    ctx.beginPath();
+    ctx.roundRect(x - CAR_WIDTH/2, y - CAR_HEIGHT/2, CAR_WIDTH, CAR_HEIGHT, 10);
+    ctx.fill();
+    
+    // Windshield
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.roundRect(x - 18, y - CAR_HEIGHT/2 + 10, 36, 20, 5);
+    ctx.fill();
+    
+    // Taillights
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.roundRect(x - 20, y + CAR_HEIGHT/2 - 8, 12, 6, 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x + 8, y + CAR_HEIGHT/2 - 8, 12, 6, 2);
+    ctx.fill();
+}
+
+function drawCoin(coin) {
+    const x = getLaneX(coin.lane);
+    const y = coin.y;
+    
+    // Glow
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+    ctx.beginPath();
+    ctx.arc(x, y, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Coin circle
+    ctx.fillStyle = '#22c55e';
+    ctx.beginPath();
+    ctx.arc(x, y, 18, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner circle
+    ctx.fillStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Score text
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+' + COIN_VALUE, x, y);
+}
+
+function drawScore() {
+    if (gameState !== 'playing') return;
+    ctx.fillStyle = '#fff';
+    ctx.font = "bold 36px 'Bebas Neue', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillText(score, W / 2, 50);
+}
+
+function spawnObstacle() {
+    // Find which lanes are blocked (have cars near the top)
+    const blockedLanes = new Set();
+    for (const obs of obstacles) {
+        if (obs.y < CAR_HEIGHT * 2) {
+            blockedLanes.add(obs.lane);
+        }
+    }
+    
+    // Get available lanes
+    const availableLanes = [0, 1, 2].filter(l => !blockedLanes.has(l));
+    
+    // Always leave at least one lane open
+    if (availableLanes.length <= 1) return;
+    
+    // Spawn 1-2 cars
+    const numToSpawn = Math.random() < 0.7 ? 1 : 2;
+    const colors = ['#ef4444', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6'];
+    
+    // Shuffle available lanes and pick
+    const shuffled = [...availableLanes].sort(() => Math.random() - 0.5);
+    const lanesToUse = shuffled.slice(0, Math.min(numToSpawn, availableLanes.length - 1));
+    
+    for (const lane of lanesToUse) {
+        obstacles.push({
+            lane,
+            y: -CAR_HEIGHT,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        });
     }
 }
 
-function updateHUD() {
-    document.getElementById('score').textContent = score.toLocaleString();
-    document.getElementById('coins').textContent = coins;
-    document.getElementById('speed').textContent = Math.floor(speed);
+function spawnCoin() {
+    // Don't spawn in lanes with obstacles near spawn point
+    const safeLanes = [0, 1, 2].filter(lane => {
+        return !obstacles.some(obs => obs.lane === lane && obs.y < 100);
+    });
+    
+    if (safeLanes.length === 0) return;
+    
+    const lane = safeLanes[Math.floor(Math.random() * safeLanes.length)];
+    coins.push({ lane, y: -30 });
 }
 
-function gameOver() {
-    gameRunning = false;
-    cancelAnimationFrame(animFrame);
+function update() {
+    if (gameState !== 'playing') return;
     
-    const isNewBest = score > highScore;
-    if (isNewBest) {
-        highScore = score;
-        localStorage.setItem('highway_dodge_high', score.toString());
+    frameCount++;
+    
+    // Smooth lane transition
+    const targetX = getLaneX(targetLane);
+    playerX += (targetX - playerX) * 0.2;
+    playerLane = targetLane;
+    
+    // Score increases over time (1 point per 10 frames = 6 points per second at 60fps)
+    if (frameCount % 10 === 0) {
+        score++;
+        document.getElementById('score-display').textContent = score;
     }
     
-    document.getElementById('finalScore').textContent = score.toLocaleString();
-    document.getElementById('finalCoins').textContent = coins;
-    document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
-    document.getElementById('finalSpeed').textContent = Math.floor(maxSpeed) + ' mph';
-    document.getElementById('newBest').classList.toggle('show', isNewBest);
+    // Spawn obstacles
+    if (frameCount - lastSpawn >= SPAWN_INTERVAL) {
+        spawnObstacle();
+        lastSpawn = frameCount;
+    }
     
-    document.getElementById('gameOver').classList.add('show');
+    // Spawn coins occasionally
+    if (frameCount - lastCoin >= COIN_INTERVAL && Math.random() < 0.5) {
+        spawnCoin();
+        lastCoin = frameCount;
+    }
     
-    submitScore();
-}
-
-async function submitScore() {
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) return;
+    // Move obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].y += OBSTACLE_SPEED;
+        if (obstacles[i].y > H + CAR_HEIGHT) {
+            obstacles.splice(i, 1);
+        }
+    }
+    
+    // Move coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+        coins[i].y += OBSTACLE_SPEED;
+        if (coins[i].y > H + 30) {
+            coins.splice(i, 1);
+        }
+    }
+    
+    // Coin collection
+    for (let i = coins.length - 1; i >= 0; i--) {
+        const coin = coins[i];
+        const coinX = getLaneX(coin.lane);
+        const coinY = coin.y;
         
-        await supabaseClient.from('solo_scores').upsert({
-            user_id: session.user.id,
-            game_id: 'highway-dodge',
-            score: score,
-            metadata: { coins, distance: Math.floor(distance), maxSpeed: Math.floor(maxSpeed) }
-        }, { onConflict: 'user_id,game_id' });
-    } catch (e) {
-        console.log('Score submission:', e);
+        if (Math.abs(playerX - coinX) < 40 && Math.abs(PLAYER_Y - coinY) < 50) {
+            score += COIN_VALUE;
+            document.getElementById('score-display').textContent = score;
+            coins.splice(i, 1);
+        }
     }
-}
-
-function goToLeaderboard() {
-    window.location.href = '/leaderboards?game=highway-dodge';
-}
-
-// Controls
-function moveLeft() { if (playerLane > 0) playerLane--; }
-function moveRight() { if (playerLane < 2) playerLane++; }
-
-document.addEventListener('keydown', (e) => {
-    if (!gameRunning) return;
-    if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
-    if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
-});
-
-let touchStartX = 0;
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    touchStartX = e.touches[0].clientX;
-}, { passive: false });
-
-canvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchEndX - touchStartX;
     
-    if (Math.abs(diff) > 30) {
-        if (diff > 0) moveRight();
-        else moveLeft();
-    } else {
-        const rect = canvas.getBoundingClientRect();
-        const tapX = touchEndX - rect.left;
-        if (tapX < canvas.width / 3) moveLeft();
-        else if (tapX > canvas.width * 2 / 3) moveRight();
+    // Collision detection (forgiving hitbox)
+    const hitW = CAR_WIDTH - 15;
+    const hitH = CAR_HEIGHT - 15;
+    
+    for (const obs of obstacles) {
+        const obsX = getLaneX(obs.lane);
+        const obsY = obs.y;
+        
+        if (Math.abs(playerX - obsX) < hitW && Math.abs(PLAYER_Y - obsY) < hitH) {
+            gameOver();
+            return;
+        }
     }
+}
+
+function draw() {
+    drawRoad();
+    for (const coin of coins) drawCoin(coin);
+    for (const obs of obstacles) drawObstacle(obs);
+    drawPlayer();
+    drawScore();
+}
+
+let animFrame;
+function gameLoop() {
+    update();
+    draw();
+    animFrame = requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    gameState = 'ready';
+    score = 0;
+    playerLane = 1;
+    targetLane = 1;
+    playerX = getLaneX(1);
+    obstacles = [];
+    coins = [];
+    frameCount = 0;
+    lastSpawn = -SPAWN_INTERVAL;
+    lastCoin = -COIN_INTERVAL;
+    
+    overlay.classList.add('hidden');
+    getReadyEl.classList.add('show');
+    document.getElementById('score-display').textContent = '0';
+    
+    setTimeout(() => {
+        getReadyEl.classList.remove('show');
+        gameState = 'playing';
+    }, 1500);
+    
+    if (!animFrame) gameLoop();
+}
+
+async function gameOver() {
+    gameState = 'dead';
+    gamesPlayed++;
+    localStorage.setItem('highway_dodge_games', gamesPlayed);
+    
+    let isNewBest = false;
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('highway_dodge_best', bestScore);
+        isNewBest = true;
+    }
+    
+    updateDisplays();
+    
+    overlayTitle.textContent = 'GAME OVER';
+    overlayTitle.className = 'overlay-title gameover';
+    overlayScore.textContent = score;
+    overlayScore.classList.remove('hidden');
+    overlayText.textContent = 'Tap to try again';
+    startBtn.textContent = 'PLAY AGAIN';
+    newBestEl.classList.toggle('hidden', !isNewBest);
+    overlay.classList.remove('hidden');
+    
+    if (currentUserId && score > 0) {
+        await supabaseClient.from('solo_scores').insert({
+            user_id: currentUserId,
+            game_id: 'highway-dodge',
+            score: score
+        });
+        fetchLeaderboard(currentTab);
+    }
+}
+
+function moveLeft() {
+    if (gameState === 'playing' && targetLane > 0) targetLane--;
+}
+
+function moveRight() {
+    if (gameState === 'playing' && targetLane < 2) targetLane++;
+}
+
+// Keyboard controls
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') {
+        e.preventDefault();
+        moveLeft();
+    } else if (e.key === 'ArrowRight' || e.key === 'd') {
+        e.preventDefault();
+        moveRight();
+    } else if ((e.key === ' ' || e.key === 'Enter') && (gameState === 'idle' || gameState === 'dead')) {
+        startGame();
+    }
+});
+
+// Touch/click controls
+const canvasWrapper = document.getElementById('canvas-wrapper');
+
+canvasWrapper.addEventListener('touchstart', e => {
+    if (gameState === 'idle' || gameState === 'dead') return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    
+    if (x < rect.width / 2) moveLeft();
+    else moveRight();
 }, { passive: false });
 
-canvas.addEventListener('click', (e) => {
-    if (!gameRunning) return;
+canvasWrapper.addEventListener('click', e => {
+    if (gameState === 'idle' || gameState === 'dead') return;
+    
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    if (clickX < canvas.width / 3) moveLeft();
-    else if (clickX > canvas.width * 2 / 3) moveRight();
+    const x = e.clientX - rect.left;
+    
+    if (x < rect.width / 2) moveLeft();
+    else moveRight();
 });
 
-document.getElementById('startScreen').addEventListener('click', (e) => {
-    if (e.target.tagName !== 'BUTTON') startGame();
+startBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    startGame();
 });
+
+// Auth & leaderboard
+async function loadAuth() {
+    const { data } = await supabaseClient.auth.getSession();
+    const user = data?.session?.user;
+    if (user) {
+        currentUserId = user.id;
+        loadFriends();
+    }
+    fetchLeaderboard('global');
+}
+
+async function loadFriends() {
+    if (!currentUserId) return;
+    try {
+        const { data } = await supabaseClient.from('friendships')
+            .select('user_id,friend_id')
+            .or('user_id.eq.' + currentUserId + ',friend_id.eq.' + currentUserId)
+            .eq('status', 'accepted');
+        if (data) friendIds = data.map(f => f.user_id === currentUserId ? f.friend_id : f.user_id);
+    } catch (e) {}
+}
+
+document.querySelectorAll('.lb-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        fetchLeaderboard(currentTab);
+    });
+});
+
+async function fetchLeaderboard(tab) {
+    const lbList = document.getElementById('lb-list');
+    lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
+    
+    let query = supabaseClient.from('solo_scores')
+        .select('score,user_id,created_at')
+        .eq('game_id', 'highway-dodge')
+        .order('score', { ascending: false })
+        .limit(50);
+    
+    if (tab === 'today') {
+        const t = new Date();
+        t.setHours(0, 0, 0, 0);
+        query = query.gte('created_at', t.toISOString());
+    } else if (tab === 'friends') {
+        if (!friendIds.length) {
+            lbList.innerHTML = '<div class="lb-empty">Add friends to see scores</div>';
+            return;
+        }
+        query = query.in('user_id', [...friendIds, currentUserId]);
+    }
+    
+    const { data, error } = await query;
+    if (error || !data || !data.length) {
+        lbList.innerHTML = '<div class="lb-empty">No scores yet</div>';
+        return;
+    }
+    
+    // Dedupe to best score per user
+    const best = new Map();
+    data.forEach(e => {
+        if (!best.has(e.user_id) || e.score > best.get(e.user_id).score) {
+            best.set(e.user_id, e);
+        }
+    });
+    const deduped = Array.from(best.values()).sort((a, b) => b.score - a.score);
+    
+    // Fetch profiles
+    const userIds = [...new Set(deduped.map(e => e.user_id))];
+    const { data: profiles } = await supabaseClient.from('profiles')
+        .select('id,display_name,gamer_tag,account_type')
+        .in('id', userIds);
+    const pm = {};
+    if (profiles) profiles.forEach(p => pm[p.id] = p);
+    
+    // Render
+    lbList.innerHTML = '';
+    deduped.slice(0, 10).forEach((e, i) => {
+        const p = pm[e.user_id];
+        const name = p ? (p.display_name || p.gamer_tag) : 'Anonymous';
+        const isPremium = p && p.account_type === 'premium';
+        const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : '';
+        const premiumClass = isPremium && i > 2 ? 'premium-row' : '';
+        
+        const row = document.createElement('div');
+        row.className = `lb-row ${topClass} ${premiumClass}`.trim();
+        row.innerHTML = `
+            <div class="lb-rank">${i + 1}</div>
+            <div class="lb-avatar${isPremium ? ' premium' : ''}">${name.charAt(0).toUpperCase()}</div>
+            <div class="lb-name${isPremium ? ' premium' : ''}">${name}</div>
+            <div class="lb-score">${e.score}</div>
+        `;
+        lbList.appendChild(row);
+    });
+}
+
+loadAuth();
+draw();
 </script>
-
 <script src="/header.js"></script>
 </body>
 </html>
