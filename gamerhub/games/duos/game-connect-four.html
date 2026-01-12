@@ -307,16 +307,12 @@ function aiMove(){
 }
 
 function getBestMove(){
-    // CRITICAL: Never stack on top of opponent's last move!
-    const blockedCols=new Set();
-    if(lastPlayerMove!==-1){
-        blockedCols.add(lastPlayerMove);
-    }
+    // Super simple, fast AI - no hanging!
     
-    // Priority 1: Win immediately
+    // 1. Win if possible
     for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
+        if(canPlay(c)){
+            let r=findRow(c);
             board[r][c]='yellow';
             if(checkWinOnBoard(board,r,c,'yellow')){
                 board[r][c]=null;
@@ -326,10 +322,10 @@ function getBestMove(){
         }
     }
     
-    // Priority 2: Block immediate 4-in-a-row
+    // 2. Block opponent win
     for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
+        if(canPlay(c)){
+            let r=findRow(c);
             board[r][c]='red';
             if(checkWinOnBoard(board,r,c,'red')){
                 board[r][c]=null;
@@ -339,435 +335,33 @@ function getBestMove(){
         }
     }
     
-    // Priority 3: Detect and block DOUBLE THREATS (open on both ends)
-    const doubleThreat=findDoubleEndedThreat('red');
-    if(doubleThreat!==-1&&!blockedCols.has(doubleThreat)){
-        return doubleThreat;
+    // 3. Avoid opponent's last column (prevents double-threat setup)
+    const avoid=lastPlayerMove;
+    
+    // 4. Try center and nearby columns (strategic play)
+    const cols=[3,2,4,1,5,0,6];
+    for(const c of cols){
+        if(c!==avoid&&canPlay(c))return c;
     }
     
-    // Priority 4: Block any 3-in-a-row
+    // 5. Play anywhere available
     for(let c=0;c<COLS;c++){
-        if(blockedCols.has(c))continue;
-        let r=getLowestRow(board,c);
-        if(r!==-1&&countsThreeInRow(board,r,c,'red')){
-            return c;
-        }
+        if(canPlay(c))return c;
     }
     
-    // Priority 5: Block any 2-in-a-row with open ends
-    for(let c=0;c<COLS;c++){
-        if(blockedCols.has(c))continue;
-        let r=getLowestRow(board,c);
-        if(r!==-1&&countsTwoInRow(board,r,c,'red')){
-            return c;
-        }
-    }
-    
-    // Priority 6: Create our own threats (not on blocked columns)
-    for(let c=0;c<COLS;c++){
-        if(blockedCols.has(c))continue;
-        let r=getLowestRow(board,c);
-        if(r!==-1&&countsThreeInRow(board,r,c,'yellow')){
-            return c;
-        }
-    }
-    
-    // Priority 7: Strategic positioning (center preference, avoid blocked)
-    const preferredCols=[3,2,4,1,5,0,6];
-    for(const c of preferredCols){
-        if(blockedCols.has(c))continue;
-        let r=getLowestRow(board,c);
-        if(r!==-1)return c;
-    }
-    
-    // Fallback
     return 3;
 }
 
-function findDoubleEndedThreat(player){
-    // Find if opponent has 2 or 3 in a row with BOTH ends open
-    // This is the most dangerous - must block immediately!
-    
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            if(board[r][c]!==player)continue;
-            
-            // Check horizontal
-            if(c<=COLS-4){
-                let count=0;
-                let leftOpen=c>0&&!board[r][c-1];
-                let rightOpen=false;
-                
-                for(let i=0;i<4;i++){
-                    if(board[r][c+i]===player)count++;
-                }
-                
-                if(c+4<COLS)rightOpen=!board[r][c+4];
-                
-                // If 2-3 in a row with both ends open
-                if(count>=2&&leftOpen&&rightOpen){
-                    // Block the left end
-                    const leftCol=c-1;
-                    if(getLowestRow(board,leftCol)!==-1){
-                        return leftCol;
-                    }
-                    // Or right end
-                    const rightCol=c+count;
-                    if(rightCol<COLS&&getLowestRow(board,rightCol)!==-1){
-                        return rightCol;
-                    }
-                }
-            }
-            
-            // Check diagonals too
-            // Diagonal down-right
-            if(r<=ROWS-4&&c<=COLS-4){
-                let count=0;
-                for(let i=0;i<4;i++){
-                    if(board[r+i][c+i]===player)count++;
-                }
-                if(count>=2){
-                    // Find open spots
-                    for(let i=0;i<4;i++){
-                        if(!board[r+i][c+i]){
-                            const col=c+i;
-                            const row=getLowestRow(board,col);
-                            if(row===r+i)return col;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    return -1;
+function canPlay(col){
+    return board[0][col]===null;
 }
 
-function countsThreeInRow(testBoard,row,col,player){
-    testBoard[row][col]=player;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1;
-        for(let i=1;i<3;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        for(let i=1;i<3;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        if(count>=3){
-            testBoard[row][col]=null;
-            return true;
-        }
-    }
-    
-    testBoard[row][col]=null;
-    return false;
-}
-
-function countsTwoInRow(testBoard,row,col,player){
-    testBoard[row][col]=player;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1;
-        for(let i=1;i<2;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        for(let i=1;i<2;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        if(count>=2){
-            testBoard[row][col]=null;
-            return true;
-        }
-    }
-    
-    testBoard[row][col]=null;
-    return false;
-}
-
-function blocksThreat(testBoard,row,col,player){
-    // Check if placing a piece here blocks opponent's threat
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        // Check all windows of 4 that include this position
-        for(let start=-3;start<=0;start++){
-            let playerCount=0;
-            let emptyCount=0;
-            let positions=[];
-            
-            for(let i=0;i<4;i++){
-                const r=row+dr*(start+i);
-                const c=col+dc*(start+i);
-                if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                    positions.push([r,c]);
-                    if(testBoard[r][c]===player)playerCount++;
-                    else if(!testBoard[r][c])emptyCount++;
-                }
-            }
-            
-            // If opponent has 2-3 pieces and this blocks them
-            if(positions.length===4&&playerCount>=2&&emptyCount>=1){
-                const[targetR,targetC]=positions.find(([r,c])=>r===row&&c===col)||[];
-                if(targetR===row&&targetC===col)return true;
-            }
-        }
-    }
-    return false;
-}
-
-function createsThreat(testBoard,row,col,player){
-    // Check if placing here creates a winning threat
-    testBoard[row][col]=player;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1;
-        
-        // Count in positive direction
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        
-        // Count in negative direction
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        
-        if(count>=3){
-            testBoard[row][col]=null;
-            return true;
-        }
-    }
-    
-    testBoard[row][col]=null;
-    return false;
-}
-
-function evaluateMove(testBoard,row,col){
-    let score=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    testBoard[row][col]='yellow';
-    
-    for(const[dr,dc]of directions){
-        let yellowCount=1;
-        let redCount=0;
-        let empty=0;
-        
-        // Check window of 4
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]==='yellow')yellowCount++;
-                else if(testBoard[r][c]==='red')redCount++;
-                else empty++;
-            }
-        }
-        
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]==='yellow')yellowCount++;
-                else if(testBoard[r][c]==='red')redCount++;
-                else empty++;
-            }
-        }
-        
-        if(yellowCount===3)score+=50;
-        else if(yellowCount===2&&empty>0)score+=10;
-        
-        if(redCount===3)score-=40;
-        else if(redCount===2)score-=5;
-    }
-    
-    testBoard[row][col]=null;
-    return score;
-}
-
-
-function minimax(testBoard,depth,isMaximizing,alpha,beta){
-    // Check terminal states
-    const yellowWin=checkBoardWinner(testBoard,'yellow');
-    const redWin=checkBoardWinner(testBoard,'red');
-    
-    if(yellowWin)return 10000;
-    if(redWin)return -10000;
-    if(isBoardFull(testBoard))return 0;
-    if(depth===0)return evaluateBoard(testBoard);
-    
-    if(isMaximizing){
-        let maxScore=-Infinity;
-        for(let c=0;c<COLS;c++){
-            let r=getLowestRow(testBoard,c);
-            if(r!==-1){
-                testBoard[r][c]='yellow';
-                let score=minimax(testBoard,depth-1,false,alpha,beta);
-                testBoard[r][c]=null;
-                maxScore=Math.max(maxScore,score);
-                alpha=Math.max(alpha,score);
-                if(beta<=alpha)break; // Alpha-beta pruning
-            }
-        }
-        return maxScore;
-    }else{
-        let minScore=Infinity;
-        for(let c=0;c<COLS;c++){
-            let r=getLowestRow(testBoard,c);
-            if(r!==-1){
-                testBoard[r][c]='red';
-                let score=minimax(testBoard,depth-1,true,alpha,beta);
-                testBoard[r][c]=null;
-                minScore=Math.min(minScore,score);
-                beta=Math.min(beta,score);
-                if(beta<=alpha)break; // Alpha-beta pruning
-            }
-        }
-        return minScore;
-    }
-}
-
-function isCriticalBlock(testBoard,row,col){
-    // Check if opponent has 3-in-a-row patterns that need blocking
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let redCount=0;
-        let emptyCount=0;
-        const positions=[];
-        
-        // Check 4 positions in this direction
-        for(let i=-3;i<=3;i++){
-            const r=row+dr*i;
-            const c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                positions.push([r,c,testBoard[r][c]]);
-            }
-        }
-        
-        // Look for patterns like: red-red-red-empty or red-red-empty-red
-        for(let start=0;start<positions.length-3;start++){
-            redCount=0;
-            emptyCount=0;
-            let hasTargetEmpty=false;
-            
-            for(let i=0;i<4;i++){
-                const[r,c,val]=positions[start+i];
-                if(val==='red')redCount++;
-                else if(!val){
-                    emptyCount++;
-                    if(r===row&&c===col)hasTargetEmpty=true;
-                }
-            }
-            
-            if(redCount===3&&emptyCount===1&&hasTargetEmpty)return true;
-        }
-    }
-    return false;
-}
-
-function evaluateBoard(testBoard){
-    let score=0;
-    
-    // Evaluate all positions
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            if(testBoard[r][c]==='yellow'){
-                score+=evaluatePosition(testBoard,r,c,'yellow');
-            }else if(testBoard[r][c]==='red'){
-                score-=evaluatePosition(testBoard,r,c,'red');
-            }
-        }
-    }
-    
-    return score;
-}
-
-function checkBoardWinner(testBoard,player){
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            if(testBoard[r][c]===player){
-                if(checkWinOnBoard(testBoard,r,c,player))return true;
-            }
-        }
-    }
-    return false;
-}
-
-function isBoardFull(testBoard){
-    return testBoard[0].every(cell=>cell!==null);
-}
-
-function getLowestRow(testBoard,col){
+function findRow(col){
     for(let r=ROWS-1;r>=0;r--){
-        if(!testBoard[r][col])return r;
+        if(board[r][col]===null)return r;
     }
     return -1;
 }
-
-function evaluatePosition(testBoard,row,col,player){
-    let score=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]]; // horizontal, vertical, diagonal, anti-diagonal
-    
-    for(const[dr,dc]of directions){
-        let count=1; // Count this piece
-        let openEnds=0;
-        
-        // Check positive direction
-        let blocked=false;
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r<0||r>=ROWS||c<0||c>=COLS||testBoard[r][c]===(player==='yellow'?'red':'yellow')){
-                blocked=true;
-                break;
-            }
-            if(testBoard[r][c]===player)count++;
-            else break;
-        }
-        if(!blocked)openEnds++;
-        
-        // Check negative direction
-        blocked=false;
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r<0||r>=ROWS||c<0||c>=COLS||testBoard[r][c]===(player==='yellow'?'red':'yellow')){
-                blocked=true;
-                break;
-            }
-            if(testBoard[r][c]===player)count++;
-            else break;
-        }
-        if(!blocked)openEnds++;
-        
-        // Score based on count and open ends
-        if(count>=4)score+=10000;
-        else if(count===3&&openEnds===2)score+=100; // Strong threat
-        else if(count===3&&openEnds===1)score+=50;  // Weak threat
-        else if(count===2&&openEnds===2)score+=10;
-        else if(count===2&&openEnds===1)score+=3;
-    }
-    
-    // Center column bonus
-    if(col===3)score+=3;
-    else if(col===2||col===4)score+=2;
-    
-    return score;
-}
-
 
 function checkWin(row,col){
     const directions=[[0,1],[1,0],[1,1],[1,-1]];
