@@ -227,6 +227,10 @@ let playerHistory=[];
 
 function startGame(mode){
     gameMode=mode;
+    p1Choice=null;
+    p2Choice=null;
+    playerHistory=[];
+    
     document.getElementById('modeSelection').classList.add('hidden');
     document.getElementById('gameArea').classList.remove('hidden');
     
@@ -235,7 +239,19 @@ function startGame(mode){
         document.getElementById('label2').textContent='AI';
         document.getElementById('resultLabel1').textContent='You';
         document.getElementById('resultLabel2').textContent='AI';
+        document.getElementById('selectTitle').textContent='MAKE YOUR CHOICE';
+        document.getElementById('selectSub').textContent='Choose your move!';
     }else{
+        document.getElementById('label1').textContent='Player 1';
+        document.getElementById('label2').textContent='Player 2';
+        document.getElementById('resultLabel1').textContent='Player 1';
+        document.getElementById('resultLabel2').textContent='Player 2';
+        document.getElementById('selectTitle').textContent='PLAYER 1';
+        document.getElementById('selectSub').textContent="Make your choice (don't let P2 see!)";
+    }
+    
+    showPhase('phase1');
+}else{
         document.getElementById('label1').textContent='Player 1';
         document.getElementById('label2').textContent='Player 2';
         document.getElementById('resultLabel1').textContent='Player 1';
@@ -285,31 +301,78 @@ function showP2(){
 }
 
 function getAiChoice(){
-    // Smart AI that adapts to player patterns
     const choices=['rock','paper','scissors'];
+    const counters={rock:'paper',paper:'scissors',scissors:'rock'};
     
-    // Add some randomness (40% of the time)
-    if(Math.random()<0.4||playerHistory.length<2){
-        return choices[Math.floor(Math.random()*3)];
+    // Early game - play randomly with slight rock bias (humans tend to start with rock)
+    if(playerHistory.length===0){
+        return Math.random()<0.5?'paper':'scissors';
+    }
+    if(playerHistory.length===1){
+        return Math.random()<0.6?counters[playerHistory[0]]:'rock';
     }
     
-    // 60% of the time, predict player's next move based on history
-    // Count player's most frequent choice
-    const counts={rock:0,paper:0,scissors:0};
-    playerHistory.slice(-5).forEach(c=>counts[c]++);
+    // Advanced pattern detection
+    let prediction='rock';
     
-    let predictedPlayer='rock';
+    // Strategy 1: Detect if player repeats their last choice (20% check)
+    if(playerHistory.length>=2){
+        const last=playerHistory[playerHistory.length-1];
+        const secondLast=playerHistory[playerHistory.length-2];
+        if(last===secondLast&&Math.random()<0.3){
+            prediction=last;
+            return counters[prediction];
+        }
+    }
+    
+    // Strategy 2: Detect 2-move patterns (e.g., rock-paper-rock-paper)
+    if(playerHistory.length>=4){
+        const pattern=playerHistory.slice(-2).join('-');
+        const previousPattern=playerHistory.slice(-4,-2).join('-');
+        if(pattern===previousPattern&&Math.random()<0.35){
+            prediction=playerHistory[playerHistory.length-2];
+            return counters[prediction];
+        }
+    }
+    
+    // Strategy 3: Detect rotation pattern (rock->paper->scissors)
+    if(playerHistory.length>=3){
+        const last3=playerHistory.slice(-3);
+        const rotations=[
+            ['rock','paper','scissors'],
+            ['paper','scissors','rock'],
+            ['scissors','rock','paper']
+        ];
+        for(const rotation of rotations){
+            if(last3.join('')===rotation.join('')){
+                const nextInRotation=rotation[0];
+                if(Math.random()<0.4){
+                    return counters[nextInRotation];
+                }
+            }
+        }
+    }
+    
+    // Strategy 4: Counter their most frequent recent choice
+    const recentHistory=playerHistory.slice(-6);
+    const counts={rock:0,paper:0,scissors:0};
+    recentHistory.forEach(c=>counts[c]++);
+    
+    let mostFrequent='rock';
     let maxCount=0;
     for(const[choice,count]of Object.entries(counts)){
         if(count>maxCount){
             maxCount=count;
-            predictedPlayer=choice;
+            mostFrequent=choice;
         }
     }
     
-    // Counter the predicted move
-    const counters={rock:'paper',paper:'scissors',scissors:'rock'};
-    return counters[predictedPlayer];
+    // Mixed strategy: 70% counter most frequent, 30% random
+    if(Math.random()<0.7){
+        return counters[mostFrequent];
+    }else{
+        return choices[Math.floor(Math.random()*3)];
+    }
 }
 
 function getWinner(c1,c2){
