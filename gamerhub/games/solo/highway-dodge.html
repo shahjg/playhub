@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Highway Dodge – Free Endless Racing Game | TheGaming.co</title>
+    <meta name="description" content="Dodge traffic in this free endless racing game. Swipe to switch lanes, collect coins, and survive as long as you can!">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-pink: #ff006e;
+            --neon-yellow: #ffbe0b;
+            --dark: #0a0a0f;
+            --road: #1a1a2e;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 9/16;
+            max-height: 90vh;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            display: block;
+        }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .score-display {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .score-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.6);
+        }
+        .score-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 20px var(--neon-cyan);
+        }
+        .coins-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .coin-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--neon-yellow);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-yellow);
+        }
+        .coins-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            color: var(--neon-yellow);
+        }
+
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 10, 15, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+            z-index: 100;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        .overlay.hidden { display: none; }
+
+        .overlay-title {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .overlay-subtitle {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 30px;
+        }
+
+        .final-score {
+            font-size: 4rem;
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 30px var(--neon-cyan);
+            margin: 10px 0;
+        }
+        .final-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 30px;
+            margin: 20px 0 30px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--neon-yellow);
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .btn {
+            padding: 16px 40px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-cyan), #00b8ba);
+            color: var(--dark);
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.4);
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 245, 255, 0.6);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            padding: 16px 24px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .controls-hint p {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+            margin: 4px 0;
+        }
+        .key {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 1000;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: white; }
+        .back-link svg { width: 18px; height: 18px; }
+
+        /* Speed indicator */
+        .speed-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        .speed-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: var(--neon-pink);
+        }
+        .speed-label {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <a href="/solo" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Solo
+    </a>
+
+    <div class="game-wrapper">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="hud">
+            <div class="score-display">
+                <div class="score-label">Score</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="coins-display">
+                <div class="coin-icon"></div>
+                <div class="coins-value" id="coins">0</div>
+            </div>
+        </div>
+
+        <div class="speed-indicator">
+            <div class="speed-value" id="speed">60</div>
+            <div class="speed-label">MPH</div>
+        </div>
+
+        <!-- Start Screen -->
+        <div class="overlay" id="startScreen">
+            <h1 class="overlay-title">HIGHWAY DODGE</h1>
+            <p class="overlay-subtitle">Dodge traffic. Collect coins. Survive.</p>
+            <button class="btn btn-primary" onclick="startGame()">START</button>
+            <div class="controls-hint">
+                <p><span class="key">← →</span> or <span class="key">A D</span> to change lanes</p>
+                <p><span class="key">Swipe</span> on mobile</p>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="overlay hidden" id="gameOverScreen">
+            <h2 class="overlay-title">GAME OVER</h2>
+            <div class="final-label">Final Score</div>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-value" id="finalCoins">0</div>
+                    <div class="stat-label">Coins</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="finalDistance">0</div>
+                    <div class="stat-label">Distance</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="finalSpeed">0</div>
+                    <div class="stat-label">Top Speed</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="startGame()">PLAY AGAIN</button>
+            <button class="btn btn-secondary" onclick="window.location.href='/solo'">BACK TO SOLO</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Responsive canvas
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            const rect = wrapper.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let coins = 0;
+        let distance = 0;
+        let speed = 60;
+        let maxSpeed = 60;
+        let playerLane = 1; // 0, 1, 2 (3 lanes)
+        let targetLane = 1;
+        let playerX = 0;
+        let obstacles = [];
+        let coinItems = [];
+        let roadLines = [];
+        let lastTime = 0;
+        let speedIncreaseTimer = 0;
+
+        // Constants
+        const LANES = 3;
+        const LANE_WIDTH = () => canvas.width / window.devicePixelRatio / LANES;
+        const CAR_WIDTH = 50;
+        const CAR_HEIGHT = 90;
+        const OBSTACLE_WIDTH = 50;
+        const OBSTACLE_HEIGHT = 85;
+
+        // Colors
+        const COLORS = {
+            road: '#1a1a2e',
+            roadLine: '#3a3a4e',
+            player: '#00f5ff',
+            playerGlow: 'rgba(0, 245, 255, 0.3)',
+            obstacles: ['#ff006e', '#ff4444', '#ff8844', '#aa44ff'],
+            coin: '#ffbe0b',
+            coinGlow: 'rgba(255, 190, 11, 0.4)'
+        };
+
+        // Initialize road lines
+        function initRoadLines() {
+            roadLines = [];
+            const canvasH = canvas.height / window.devicePixelRatio;
+            for (let i = 0; i < 15; i++) {
+                roadLines.push({ y: i * 60 });
+            }
+        }
+
+        // Get lane X position
+        function getLaneX(lane) {
+            const laneW = LANE_WIDTH();
+            return laneW * lane + laneW / 2;
+        }
+
+        // Spawn obstacle
+        function spawnObstacle() {
+            const lane = Math.floor(Math.random() * LANES);
+            const color = COLORS.obstacles[Math.floor(Math.random() * COLORS.obstacles.length)];
+            obstacles.push({
+                lane,
+                x: getLaneX(lane),
+                y: -OBSTACLE_HEIGHT,
+                color,
+                width: OBSTACLE_WIDTH,
+                height: OBSTACLE_HEIGHT
+            });
+        }
+
+        // Spawn coin
+        function spawnCoin() {
+            const lane = Math.floor(Math.random() * LANES);
+            coinItems.push({
+                lane,
+                x: getLaneX(lane),
+                y: -30,
+                radius: 12,
+                collected: false
+            });
+        }
+
+        // Start game
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            
+            gameRunning = true;
+            score = 0;
+            coins = 0;
+            distance = 0;
+            speed = 60;
+            maxSpeed = 60;
+            playerLane = 1;
+            targetLane = 1;
+            playerX = getLaneX(1);
+            obstacles = [];
+            coinItems = [];
+            speedIncreaseTimer = 0;
+            
+            initRoadLines();
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            document.getElementById('finalScore').textContent = Math.floor(score).toLocaleString();
+            document.getElementById('finalCoins').textContent = coins;
+            document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
+            document.getElementById('finalSpeed').textContent = maxSpeed + ' mph';
+        }
+
+        // Update HUD
+        function updateHUD() {
+            document.getElementById('score').textContent = Math.floor(score).toLocaleString();
+            document.getElementById('coins').textContent = coins;
+            document.getElementById('speed').textContent = speed;
+        }
+
+        // Game loop
+        function gameLoop(currentTime) {
+            if (!gameRunning) return;
+
+            const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+            lastTime = currentTime;
+
+            update(dt);
+            render();
+            updateHUD();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Update
+        function update(dt) {
+            const canvasW = canvas.width / window.devicePixelRatio;
+            const canvasH = canvas.height / window.devicePixelRatio;
+            const baseSpeed = speed * 3;
+
+            // Increase speed over time
+            speedIncreaseTimer += dt;
+            if (speedIncreaseTimer > 3) {
+                speedIncreaseTimer = 0;
+                speed = Math.min(speed + 2, 200);
+                if (speed > maxSpeed) maxSpeed = speed;
+            }
+
+            // Score increases with speed and time
+            score += dt * (speed / 10) * (1 + distance / 1000);
+            distance += dt * (speed / 10);
+
+            // Move player smoothly to target lane
+            const targetX = getLaneX(targetLane);
+            const lerpSpeed = 12;
+            playerX += (targetX - playerX) * lerpSpeed * dt;
+            playerLane = targetLane;
+
+            // Update road lines
+            roadLines.forEach(line => {
+                line.y += baseSpeed * dt;
+                if (line.y > canvasH + 30) {
+                    line.y = -30;
+                }
+            });
+
+            // Spawn obstacles
+            if (Math.random() < dt * (1 + speed / 100)) {
+                spawnObstacle();
+            }
+
+            // Spawn coins
+            if (Math.random() < dt * 0.8) {
+                spawnCoin();
+            }
+
+            // Update obstacles
+            obstacles.forEach(obs => {
+                obs.y += baseSpeed * dt;
+            });
+            obstacles = obstacles.filter(obs => obs.y < canvasH + 100);
+
+            // Update coins
+            coinItems.forEach(coin => {
+                coin.y += baseSpeed * dt;
+            });
+            coinItems = coinItems.filter(coin => coin.y < canvasH + 50 && !coin.collected);
+
+            // Collision detection - player
+            const playerY = canvasH - 120;
+            const playerLeft = playerX - CAR_WIDTH / 2;
+            const playerRight = playerX + CAR_WIDTH / 2;
+            const playerTop = playerY;
+            const playerBottom = playerY + CAR_HEIGHT;
+
+            // Check obstacle collisions
+            for (const obs of obstacles) {
+                const obsLeft = obs.x - obs.width / 2;
+                const obsRight = obs.x + obs.width / 2;
+                const obsTop = obs.y;
+                const obsBottom = obs.y + obs.height;
+
+                if (playerRight > obsLeft + 10 && playerLeft < obsRight - 10 &&
+                    playerBottom > obsTop + 10 && playerTop < obsBottom - 10) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Check coin collisions
+            coinItems.forEach(coin => {
+                const dx = playerX - coin.x;
+                const dy = (playerY + CAR_HEIGHT / 2) - coin.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < coin.radius + 30) {
+                    coin.collected = true;
+                    coins++;
+                    score += 50;
+                }
+            });
+        }
+
+        // Render
+        function render() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+
+            // Clear
+            ctx.fillStyle = COLORS.road;
+            ctx.fillRect(0, 0, w, h);
+
+            // Road lines (dashed center lines)
+            ctx.fillStyle = COLORS.roadLine;
+            const laneW = LANE_WIDTH();
+            for (let i = 1; i < LANES; i++) {
+                const lineX = laneW * i - 2;
+                roadLines.forEach(line => {
+                    ctx.fillRect(lineX, line.y, 4, 40);
+                });
+            }
+
+            // Coins
+            coinItems.forEach(coin => {
+                if (coin.collected) return;
+                // Glow
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, coin.radius + 8, 0, Math.PI * 2);
+                ctx.fillStyle = COLORS.coinGlow;
+                ctx.fill();
+                // Coin
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                ctx.fillStyle = COLORS.coin;
+                ctx.fill();
+                // Shine
+                ctx.beginPath();
+                ctx.arc(coin.x - 3, coin.y - 3, 4, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.fill();
+            });
+
+            // Obstacles (other cars)
+            obstacles.forEach(obs => {
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(obs.x - obs.width/2 + 5, obs.y + 5, obs.width, obs.height);
+                // Car body
+                ctx.fillStyle = obs.color;
+                roundRect(ctx, obs.x - obs.width/2, obs.y, obs.width, obs.height, 8);
+                // Windshield
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.fillRect(obs.x - obs.width/2 + 8, obs.y + obs.height - 30, obs.width - 16, 20);
+                // Headlights
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(obs.x - obs.width/2 + 6, obs.y + obs.height - 8, 10, 6);
+                ctx.fillRect(obs.x + obs.width/2 - 16, obs.y + obs.height - 8, 10, 6);
+            });
+
+            // Player car
+            const playerY = h - 120;
+            // Glow
+            ctx.shadowColor = COLORS.player;
+            ctx.shadowBlur = 30;
+            // Car body
+            ctx.fillStyle = COLORS.player;
+            roundRect(ctx, playerX - CAR_WIDTH/2, playerY, CAR_WIDTH, CAR_HEIGHT, 8);
+            ctx.shadowBlur = 0;
+            // Windshield
+            ctx.fillStyle = 'rgba(0,50,60,0.8)';
+            ctx.fillRect(playerX - CAR_WIDTH/2 + 8, playerY + 15, CAR_WIDTH - 16, 25);
+            // Taillights
+            ctx.fillStyle = '#ff0044';
+            ctx.fillRect(playerX - CAR_WIDTH/2 + 5, playerY + CAR_HEIGHT - 10, 12, 6);
+            ctx.fillRect(playerX + CAR_WIDTH/2 - 17, playerY + CAR_HEIGHT - 10, 12, 6);
+            // Racing stripe
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(playerX - 3, playerY + 5, 6, CAR_HEIGHT - 10);
+        }
+
+        // Helper: rounded rectangle
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Controls - Keyboard
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) {
+                if (e.key === ' ' || e.key === 'Enter') startGame();
+                return;
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                targetLane = Math.max(0, targetLane - 1);
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                targetLane = Math.min(LANES - 1, targetLane + 1);
+            }
+        });
+
+        // Controls - Touch/Swipe
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!gameRunning) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+                if (dx > 0) {
+                    targetLane = Math.min(LANES - 1, targetLane + 1);
+                } else {
+                    targetLane = Math.max(0, targetLane - 1);
+                }
+            }
+        }, { passive: true });
+
+        // Tap sides to move
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const midX = rect.width / 2;
+
+            if (x < midX) {
+                targetLane = Math.max(0, targetLane - 1);
+            } else {
+                targetLane = Math.min(LANES - 1, targetLane + 1);
+            }
+        });
+
+        // Initialize
+        initRoadLines();
+    </script>
+</body>
+</html>
