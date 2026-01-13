@@ -257,10 +257,9 @@ async function loadPersonalBest(){
     const{data}=await supabaseClient.from('solo_scores').select('score').eq('user_id',currentUserId).eq('game_id','block-stack').order('score',{ascending:false}).limit(1).single();
     if(data){personalBest=data.score;document.getElementById('best').textContent=personalBest}
 }
-
 async function loadFriends(){
     if(!currentUserId)return;
-    try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}
+    try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`);if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}
 }
 
 document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
