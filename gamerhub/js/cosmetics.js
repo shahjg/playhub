@@ -1,23 +1,22 @@
 /**
- * TheGaming.co Cosmetics Renderer
+ * TheGaming.co Cosmetics Renderer v2.0
  * 
- * Include this script on any page that needs to render premium nameplates.
- * Works in: Lobbies, Waiting Rooms, In-Game Player Lists, Leaderboards
+ * Now with Level-Based Unlocks!
+ * Free users can earn cosmetics by leveling up.
+ * Premium unlocks everything instantly.
  * 
  * Usage:
- *   // Render a nameplate
  *   const html = renderNameplate({
  *     name: 'PlayerName',
  *     cosmetics: { badge_icon: '👑', border_color: 'gold', ... },
  *     isPremium: true,
- *     showEntrance: true // triggers entrance animation
+ *     level: 50,
+ *     prestige: 0,
+ *     showEntrance: true
  *   });
- * 
- *   // Or use the helper to fetch and render from Supabase
- *   const html = await renderPlayerNameplate(userId, playerName);
  */
 
-// Color map for border colors
+// ========== COLOR MAP ==========
 const COSMETIC_COLORS = {
   gray: '#6b7280',
   gold: '#fbbf24',
@@ -28,10 +27,12 @@ const COSMETIC_COLORS = {
   platinum: '#e2e8f0',
   obsidian: '#1e1b4b',
   rose: '#fb7185',
+  sunset: '#f97316',
+  toxic: '#84cc16',
   rainbow: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc)'
 };
 
-// Default cosmetics for free users
+// ========== DEFAULT COSMETICS ==========
 const DEFAULT_COSMETICS = {
   border_style: 'solid',
   border_color: 'gray',
@@ -41,7 +42,84 @@ const DEFAULT_COSMETICS = {
   entrance_animation: 'fade'
 };
 
-// CSS styles - inject once
+// ========== LEVEL REWARDS SYSTEM ==========
+// Free users unlock cosmetics by leveling up!
+const LEVEL_REWARDS = [
+  { level: 1, type: 'color', value: 'gray', name: 'Gray Border', icon: '⬜' },
+  { level: 5, type: 'badge', value: '⭐', name: 'Star Badge', icon: '⭐' },
+  { level: 10, type: 'entrance', value: 'slide', name: 'Slide Entrance', icon: '→' },
+  { level: 15, type: 'color', value: 'emerald', name: 'Emerald Border', icon: '💚' },
+  { level: 20, type: 'badge', value: '🔥', name: 'Fire Badge', icon: '🔥' },
+  { level: 25, type: 'effect', value: 'shadow', name: 'Shadow Text', icon: '▣' },
+  { level: 30, type: 'color', value: 'ruby', name: 'Ruby Border', icon: '❤️' },
+  { level: 35, type: 'entrance', value: 'pop', name: 'Pop Entrance', icon: '●' },
+  { level: 40, type: 'badge', value: '💎', name: 'Diamond Badge', icon: '💎' },
+  { level: 45, type: 'border', value: 'glow', name: 'Glow Border', icon: '✦' },
+  { level: 50, type: 'color', value: 'diamond', name: 'Diamond Border', icon: '💠' },
+  { level: 55, type: 'effect', value: 'glow', name: 'Glow Text', icon: '✨' },
+  { level: 60, type: 'badge', value: '👑', name: 'Crown Badge', icon: '👑' },
+  { level: 65, type: 'entrance', value: 'sparkle', name: 'Sparkle Entrance', icon: '✧' },
+  { level: 70, type: 'color', value: 'amethyst', name: 'Amethyst Border', icon: '💜' },
+  { level: 75, type: 'effect', value: 'shimmer', name: 'Shimmer Text', icon: '≋' },
+  { level: 80, type: 'border', value: 'pulse', name: 'Pulse Border', icon: '◉' },
+  { level: 85, type: 'badge', value: '🏆', name: 'Trophy Badge', icon: '🏆' },
+  { level: 90, type: 'color', value: 'gold', name: 'Gold Border', icon: '💛' },
+  { level: 95, type: 'entrance', value: 'lightning', name: 'Lightning Entrance', icon: '⚡' },
+  { level: 100, type: 'effect', value: 'neon', name: 'Neon Text', icon: '◈' },
+];
+
+// ========== PRESTIGE REWARDS ==========
+// Exclusive rewards for prestiging (resetting at max level)
+const PRESTIGE_REWARDS = [
+  { prestige: 1, type: 'badge', value: '🌟', name: 'P1 - Prestige Star', icon: '🌟' },
+  { prestige: 2, type: 'color', value: 'platinum', name: 'P2 - Platinum Border', icon: '🤍' },
+  { prestige: 3, type: 'entrance', value: 'fire', name: 'P3 - Fire Entrance', icon: '🔥' },
+  { prestige: 4, type: 'effect', value: 'fire', name: 'P4 - Fire Text', icon: '🔥' },
+  { prestige: 5, type: 'color', value: 'rainbow', name: 'P5 - Rainbow Border', icon: '🌈' },
+  { prestige: 6, type: 'badge', value: '💫', name: 'P6 - Cosmic Badge', icon: '💫' },
+  { prestige: 7, type: 'effect', value: 'ice', name: 'P7 - Ice Text', icon: '❄️' },
+  { prestige: 8, type: 'entrance', value: 'matrix', name: 'P8 - Matrix Entrance', icon: '▼' },
+  { prestige: 9, type: 'effect', value: 'glitch', name: 'P9 - Glitch Text', icon: '⚠' },
+  { prestige: 10, type: 'badge', value: '🐉', name: 'P10 - Dragon Badge', icon: '🐉' },
+];
+
+// ========== CHECK IF COSMETIC IS UNLOCKED ==========
+function isCosmeticUnlocked(type, value, options = {}) {
+  const { isPremium = false, level = 1, prestige = 0 } = options;
+  
+  // Premium unlocks everything
+  if (isPremium) return true;
+  
+  // Check base unlocks (always available)
+  if (type === 'color' && value === 'gray') return true;
+  if (type === 'border' && value === 'solid') return true;
+  if (type === 'effect' && value === 'none') return true;
+  if (type === 'entrance' && value === 'fade') return true;
+  if (type === 'badge' && !value) return true; // "None" badge
+  
+  // Check level rewards
+  const levelReward = LEVEL_REWARDS.find(r => r.type === type && r.value === value);
+  if (levelReward && level >= levelReward.level) return true;
+  
+  // Check prestige rewards
+  const prestigeReward = PRESTIGE_REWARDS.find(r => r.type === type && r.value === value);
+  if (prestigeReward && prestige >= prestigeReward.prestige) return true;
+  
+  return false;
+}
+
+// ========== GET REQUIRED LEVEL FOR COSMETIC ==========
+function getUnlockRequirement(type, value) {
+  const levelReward = LEVEL_REWARDS.find(r => r.type === type && r.value === value);
+  if (levelReward) return { type: 'level', value: levelReward.level };
+  
+  const prestigeReward = PRESTIGE_REWARDS.find(r => r.type === type && r.value === value);
+  if (prestigeReward) return { type: 'prestige', value: prestigeReward.prestige };
+  
+  return { type: 'premium', value: null };
+}
+
+// ========== CSS STYLES ==========
 const COSMETICS_STYLES = `
 <style id="cosmetics-styles">
   /* Nameplate Container */
@@ -94,7 +172,8 @@ const COSMETICS_STYLES = `
   .tgco-border-glow { box-shadow: 0 0 15px var(--tgco-color), 0 0 30px var(--tgco-color); }
   .tgco-border-pulse { animation: tgcoBorderPulse 1.5s ease-in-out infinite !important; }
   .tgco-border-double { border-style: double; border-width: 4px; }
-  .tgco-border-dotted { border-style: dotted; }
+  .tgco-border-dotted { border-style: dotted; border-width: 3px; }
+  .tgco-border-dashed { border-style: dashed; border-width: 2px; }
 
   @keyframes tgcoBorderPulse {
     0%, 100% { 
@@ -135,10 +214,34 @@ const COSMETICS_STYLES = `
   .tgco-effect-neon { 
     text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor, 0 0 80px currentColor !important; 
   }
+  .tgco-effect-fire {
+    text-shadow: 0 0 5px #ff6b35, 0 -5px 10px #ff6b35, 0 -10px 20px #ffa500, 0 -15px 30px #ff4500 !important;
+    animation: tgcoFireFlicker 0.5s ease-in-out infinite alternate !important;
+  }
+  .tgco-effect-ice {
+    text-shadow: 0 0 10px #67e8f9, 0 0 20px #06b6d4, 0 0 30px #0891b2 !important;
+  }
+  .tgco-effect-glitch {
+    animation: tgcoGlitchText 0.3s infinite !important;
+  }
 
   @keyframes tgcoShimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  @keyframes tgcoFireFlicker {
+    0% { filter: brightness(1); }
+    100% { filter: brightness(1.2); }
+  }
+
+  @keyframes tgcoGlitchText {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
   }
 
   /* Entrance Animations */
@@ -169,6 +272,16 @@ const COSMETICS_STYLES = `
     60% { transform: translateX(3px) skewX(3deg); filter: hue-rotate(360deg); }
     100% { transform: translateX(0) skewX(0deg); filter: hue-rotate(0deg); }
   }
+  @keyframes tgcoMatrix {
+    0% { opacity: 0; transform: translateY(-30px); filter: blur(10px) hue-rotate(90deg); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0) hue-rotate(0deg); }
+  }
+  @keyframes tgcoBounce {
+    0% { opacity: 0; transform: scale(0); }
+    50% { transform: scale(1.2); }
+    70% { transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
 
   .tgco-entrance-fade { animation: tgcoFade 0.5s ease both; }
   .tgco-entrance-slide { animation: tgcoSlide 0.5s ease both; }
@@ -178,6 +291,8 @@ const COSMETICS_STYLES = `
   .tgco-entrance-sparkle { animation: tgcoSparkle 0.6s ease both; }
   .tgco-entrance-smoke { animation: tgcoSmoke 0.6s ease both; }
   .tgco-entrance-glitch { animation: tgcoGlitch 0.5s ease both; }
+  .tgco-entrance-matrix { animation: tgcoMatrix 0.6s ease both; }
+  .tgco-entrance-bounce { animation: tgcoBounce 0.6s ease both; }
 
   /* Compact mode for player lists */
   .tgco-nameplate.compact {
@@ -395,6 +510,14 @@ const COSMETICS_STYLES = `
     border-color: #fb7185 !important; 
     background: linear-gradient(135deg, rgba(251, 113, 133, 0.12), transparent); 
   }
+  .lb-item.sunset-border, .mini-lb-item.sunset-border, .winner-card.sunset-border { 
+    border-color: #f97316 !important; 
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), transparent); 
+  }
+  .lb-item.toxic-border, .mini-lb-item.toxic-border, .winner-card.toxic-border { 
+    border-color: #84cc16 !important; 
+    background: linear-gradient(135deg, rgba(132, 204, 22, 0.12), transparent); 
+  }
   .lb-item.gray-border, .mini-lb-item.gray-border, .winner-card.gray-border { 
     border-color: #6b7280 !important; 
   }
@@ -538,6 +661,8 @@ const COSMETICS_STYLES = `
   .global-lb-item.platinum-border { border-color: #e2e8f0 !important; background: linear-gradient(135deg, rgba(226, 232, 240, 0.12), transparent); }
   .global-lb-item.obsidian-border { border-color: #1e1b4b !important; background: linear-gradient(135deg, rgba(30, 27, 75, 0.25), transparent); }
   .global-lb-item.rose-border { border-color: #fb7185 !important; background: linear-gradient(135deg, rgba(251, 113, 133, 0.12), transparent); }
+  .global-lb-item.sunset-border { border-color: #f97316 !important; background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), transparent); }
+  .global-lb-item.toxic-border { border-color: #84cc16 !important; background: linear-gradient(135deg, rgba(132, 204, 22, 0.12), transparent); }
 
   .global-lb-rank {
     font-family: 'Bebas Neue', sans-serif;
@@ -591,13 +716,7 @@ function injectCosmeticsStyles() {
 
 /**
  * Render a nameplate with cosmetics
- * @param {Object} options
- * @param {string} options.name - Player display name
- * @param {Object} options.cosmetics - Cosmetics object from Supabase
- * @param {boolean} options.isPremium - Whether user is premium
- * @param {boolean} options.showEntrance - Trigger entrance animation
- * @param {string} options.mode - 'default', 'compact', or 'leaderboard'
- * @returns {string} HTML string
+ * Now supports level-based unlocks!
  */
 function renderNameplate(options) {
   injectCosmeticsStyles();
@@ -606,12 +725,40 @@ function renderNameplate(options) {
     name = 'Player',
     cosmetics = {},
     isPremium = false,
+    level = 1,
+    prestige = 0,
     showEntrance = false,
     mode = 'default'
   } = options;
 
-  // Merge with defaults
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  // Determine which cosmetics are actually usable
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  // Only apply cosmetics that are unlocked
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.border_style && isCosmeticUnlocked('border', cosmetics.border_style, unlockOpts)) {
+    c.border_style = cosmetics.border_style;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+  if (cosmetics.entrance_animation && isCosmeticUnlocked('entrance', cosmetics.entrance_animation, unlockOpts)) {
+    c.entrance_animation = cosmetics.entrance_animation;
+  }
+  // Title is premium-only
+  if (isPremium && cosmetics.title) {
+    c.title = cosmetics.title;
+  }
+
+  // Check if user has ANY unlocked cosmetics
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || 
+                       c.name_effect !== 'none' || c.title;
 
   // Get color
   const isRainbow = c.border_color === 'rainbow';
@@ -620,7 +767,7 @@ function renderNameplate(options) {
   // Build classes
   const classes = ['tgco-nameplate'];
   
-  if (!isPremium) {
+  if (!hasCosmetics) {
     classes.push('free');
   } else {
     if (isRainbow) {
@@ -639,24 +786,24 @@ function renderNameplate(options) {
 
   // Name classes
   const nameClasses = ['tgco-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
 
   // Build HTML
-  const badgeHtml = (isPremium && c.badge_icon) 
+  const badgeHtml = (hasCosmetics && c.badge_icon) 
     ? `<span class="tgco-badge">${escapeHtml(c.badge_icon)}</span>` 
     : '';
 
-  const titleHtml = (isPremium && c.title) 
+  const titleHtml = (hasCosmetics && c.title) 
     ? `<span class="tgco-title">${escapeHtml(c.title)}</span>` 
     : '';
 
-  const styleAttr = isPremium && !isRainbow
+  const styleAttr = hasCosmetics && !isRainbow
     ? `style="--tgco-color: ${color}; border-color: ${color};"` 
     : '';
 
-  const nameStyle = isPremium ? `style="color: ${color};"` : '';
+  const nameStyle = hasCosmetics ? `style="color: ${color};"` : '';
 
   return `
     <div class="${classes.join(' ')}" ${styleAttr}>
@@ -671,7 +818,6 @@ function renderNameplate(options) {
 
 /**
  * Render a simple name with cosmetics (no nameplate box)
- * Good for inline use in player lists
  */
 function renderInlineName(options) {
   injectCosmeticsStyles();
@@ -679,19 +825,34 @@ function renderInlineName(options) {
   const {
     name = 'Player',
     cosmetics = {},
-    isPremium = false
+    isPremium = false,
+    level = 1,
+    prestige = 0
   } = options;
 
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
 
   const nameClasses = ['tgco-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
 
-  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
-  const nameStyle = isPremium ? `style="color: ${color};"` : '';
+  const badge = (hasCosmetics && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = hasCosmetics ? `style="color: ${color};"` : '';
 
   return `<span class="${nameClasses.join(' ')}" ${nameStyle}>${badge}${escapeHtml(name)}</span>`;
 }
@@ -706,41 +867,66 @@ function renderPlayerCard(options) {
     name = 'Player',
     cosmetics = {},
     isPremium = false,
+    level = 1,
+    prestige = 0,
     isHost = false,
     isMe = false,
     showEntrance = false
   } = options;
 
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.border_style && isCosmeticUnlocked('border', cosmetics.border_style, unlockOpts)) {
+    c.border_style = cosmetics.border_style;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+  if (cosmetics.entrance_animation && isCosmeticUnlocked('entrance', cosmetics.entrance_animation, unlockOpts)) {
+    c.entrance_animation = cosmetics.entrance_animation;
+  }
+  if (isPremium && cosmetics.title) {
+    c.title = cosmetics.title;
+  }
+
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || 
+                       c.name_effect !== 'none' || c.title;
   const isRainbow = c.border_color === 'rainbow';
-  const color = isRainbow ? '#c084fc' : (isPremium ? (COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray) : 'rgba(255,255,255,0.1)');
+  const color = isRainbow ? '#c084fc' : (hasCosmetics ? (COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray) : 'rgba(255,255,255,0.1)');
 
   // Card classes
   const cardClasses = ['player-card'];
   if (isMe) cardClasses.push('is-me');
-  if (isPremium) cardClasses.push('premium');
-  if (isRainbow && isPremium) cardClasses.push('rainbow-border');
-  if (showEntrance && isPremium) cardClasses.push(`tgco-entrance-${c.entrance_animation || 'fade'}`);
+  if (hasCosmetics) cardClasses.push('premium');
+  if (isRainbow && hasCosmetics) cardClasses.push('rainbow-border');
+  if (showEntrance && hasCosmetics) cardClasses.push(`tgco-entrance-${c.entrance_animation || 'fade'}`);
 
   // Name classes  
   const nameClasses = ['player-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
 
-  const badge = (isPremium && c.badge_icon) ? `<span class="player-badge">${c.badge_icon}</span>` : '';
+  const badge = (hasCosmetics && c.badge_icon) ? `<span class="player-badge">${c.badge_icon}</span>` : '';
   const hostBadge = isHost ? '<span class="host-badge">HOST</span>' : '';
-  const title = (isPremium && c.title) ? `<span class="player-title">${escapeHtml(c.title)}</span>` : '';
+  const title = (hasCosmetics && c.title) ? `<span class="player-title">${escapeHtml(c.title)}</span>` : '';
 
   // Border style (skip for rainbow - handled by class)
   let borderStyle = '';
-  if (isPremium && !isRainbow) {
+  if (hasCosmetics && !isRainbow) {
     borderStyle = `border-color: ${color};`;
     if (c.border_style === 'glow') borderStyle += ` box-shadow: 0 0 15px ${color}, 0 0 30px ${color};`;
     if (c.border_style === 'pulse') borderStyle += ` --tgco-color: ${color};`;
   }
   
-  const nameStyle = isPremium ? `color: ${color};` : '';
+  const nameStyle = hasCosmetics ? `color: ${color};` : '';
 
   return `
     <div class="${cardClasses.join(' ')}" style="${borderStyle}">
@@ -757,7 +943,7 @@ function renderPlayerCard(options) {
 }
 
 /**
- * Render a leaderboard item (for in-game leaderboards)
+ * Render a leaderboard item
  */
 function renderLeaderboardItem(options) {
   injectCosmeticsStyles();
@@ -768,12 +954,29 @@ function renderLeaderboardItem(options) {
     rank = 1,
     cosmetics = {},
     isPremium = false,
+    level = 1,
+    prestige = 0,
     isMe = false,
     showRankStyling = true
   } = options;
 
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
-  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+  if (isPremium && cosmetics.title) {
+    c.title = cosmetics.title;
+  }
+
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['lb-item'];
@@ -789,12 +992,12 @@ function renderLeaderboardItem(options) {
 
   // Build name with effects
   const nameClasses = ['tgco-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
-  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
-  const nameStyle = isPremium ? `color: ${color};` : '';
-  const title = (isPremium && c.title) ? `<span class="lb-title">${escapeHtml(c.title)}</span>` : '';
+  const badge = (hasCosmetics && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = hasCosmetics ? `color: ${color};` : '';
+  const title = (hasCosmetics && c.title) ? `<span class="lb-title">${escapeHtml(c.title)}</span>` : '';
 
   return `
     <div class="${classes.join(' ')}">
@@ -809,7 +1012,7 @@ function renderLeaderboardItem(options) {
 }
 
 /**
- * Render a mini leaderboard item (compact, for during gameplay)
+ * Render a mini leaderboard item (compact)
  */
 function renderMiniLeaderboardItem(options) {
   injectCosmeticsStyles();
@@ -820,11 +1023,28 @@ function renderMiniLeaderboardItem(options) {
     rank = 1,
     cosmetics = {},
     isPremium = false,
+    level = 1,
+    prestige = 0,
     isMe = false
   } = options;
 
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
-  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+  if (isPremium && cosmetics.title) {
+    c.title = cosmetics.title;
+  }
+
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['mini-lb-item'];
@@ -832,14 +1052,13 @@ function renderMiniLeaderboardItem(options) {
   if (rank === 1 && !hasCosmetics) classes.push('rank-1');
   if (hasCosmetics && c.border_color) classes.push(`${c.border_color}-border`);
 
-  // Build name with effects
   const nameClasses = ['tgco-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
-  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
-  const nameStyle = isPremium ? `color: ${color};` : '';
-  const title = (isPremium && c.title) ? `<span class="mini-lb-title">${escapeHtml(c.title)}</span>` : '';
+  const badge = (hasCosmetics && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = hasCosmetics ? `color: ${color};` : '';
+  const title = (hasCosmetics && c.title) ? `<span class="mini-lb-title">${escapeHtml(c.title)}</span>` : '';
 
   return `
     <div class="${classes.join(' ')}">
@@ -864,11 +1083,28 @@ function renderWinnerCard(options) {
     score = 0,
     cosmetics = {},
     isPremium = false,
+    level = 1,
+    prestige = 0,
     showCrown = true
   } = options;
 
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
-  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+  if (isPremium && cosmetics.title) {
+    c.title = cosmetics.title;
+  }
+
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
   const color = COSMETIC_COLORS[c.border_color] || '#fbbf24';
   
   const classes = ['winner-card'];
@@ -877,14 +1113,14 @@ function renderWinnerCard(options) {
   }
 
   const nameClasses = ['winner-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
 
-  const badge = (isPremium && c.badge_icon) ? c.badge_icon + ' ' : '';
-  const title = (isPremium && c.title) ? `<div class="winner-title">${escapeHtml(c.title)}</div>` : '';
+  const badge = (hasCosmetics && c.badge_icon) ? c.badge_icon + ' ' : '';
+  const title = (hasCosmetics && c.title) ? `<div class="winner-title">${escapeHtml(c.title)}</div>` : '';
   const crown = showCrown ? '<div class="winner-crown">👑</div>' : '';
-  const nameStyle = isPremium ? `color: ${color};` : '';
+  const nameStyle = hasCosmetics ? `color: ${color};` : '';
 
   return `
     <div class="${classes.join(' ')}">
@@ -897,7 +1133,7 @@ function renderWinnerCard(options) {
 }
 
 /**
- * Render a global leaderboard item (for leaderboard pages)
+ * Render a global leaderboard item
  */
 function renderGlobalLeaderboardItem(options) {
   injectCosmeticsStyles();
@@ -908,11 +1144,28 @@ function renderGlobalLeaderboardItem(options) {
     rank = 1,
     stats = '',
     cosmetics = {},
-    isPremium = false
+    isPremium = false,
+    level = 1,
+    prestige = 0
   } = options;
 
-  const c = isPremium ? { ...DEFAULT_COSMETICS, ...cosmetics } : DEFAULT_COSMETICS;
-  const hasCosmetics = isPremium && cosmetics && Object.keys(cosmetics).length > 0;
+  const unlockOpts = { isPremium, level, prestige };
+  const c = { ...DEFAULT_COSMETICS };
+  
+  if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) {
+    c.badge_icon = cosmetics.badge_icon;
+  }
+  if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) {
+    c.border_color = cosmetics.border_color;
+  }
+  if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) {
+    c.name_effect = cosmetics.name_effect;
+  }
+  if (isPremium && cosmetics.title) {
+    c.title = cosmetics.title;
+  }
+
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['global-lb-item'];
@@ -920,14 +1173,13 @@ function renderGlobalLeaderboardItem(options) {
 
   const rankClass = rank <= 3 ? `top-${rank}` : '';
   
-  // Build name with effects
   const nameClasses = ['tgco-name'];
-  if (isPremium && c.name_effect && c.name_effect !== 'none') {
+  if (hasCosmetics && c.name_effect && c.name_effect !== 'none') {
     nameClasses.push(`tgco-effect-${c.name_effect}`);
   }
-  const badge = (isPremium && c.badge_icon) ? `${c.badge_icon} ` : '';
-  const nameStyle = isPremium ? `color: ${color};` : '';
-  const title = (isPremium && c.title) ? `<div class="global-lb-title">${escapeHtml(c.title)}</div>` : '';
+  const badge = (hasCosmetics && c.badge_icon) ? `${c.badge_icon} ` : '';
+  const nameStyle = hasCosmetics ? `color: ${color};` : '';
+  const title = (hasCosmetics && c.title) ? `<div class="global-lb-title">${escapeHtml(c.title)}</div>` : '';
 
   return `
     <div class="${classes.join(' ')}">
@@ -959,7 +1211,6 @@ const cosmeticsCache = new Map();
 
 /**
  * Fetch cosmetics from Supabase for a user
- * Requires supabaseClient to be available globally
  */
 async function fetchPlayerCosmetics(userId) {
   if (cosmeticsCache.has(userId)) {
@@ -969,16 +1220,21 @@ async function fetchPlayerCosmetics(userId) {
   try {
     const { data, error } = await supabaseClient
       .from('profiles')
-      .select('display_name, account_type, cosmetics')
+      .select('display_name, account_type, cosmetics, xp, prestige')
       .eq('id', userId)
       .single();
 
     if (error) throw error;
 
+    // Calculate level from XP
+    const level = getLevelFromXP(data.xp || 0);
+
     const result = {
       name: data.display_name || 'Player',
       isPremium: data.account_type === 'premium',
-      cosmetics: data.cosmetics || DEFAULT_COSMETICS
+      cosmetics: data.cosmetics || DEFAULT_COSMETICS,
+      level: level,
+      prestige: data.prestige || 0
     };
 
     cosmeticsCache.set(userId, result);
@@ -988,13 +1244,36 @@ async function fetchPlayerCosmetics(userId) {
     return {
       name: 'Player',
       isPremium: false,
-      cosmetics: DEFAULT_COSMETICS
+      cosmetics: DEFAULT_COSMETICS,
+      level: 1,
+      prestige: 0
     };
   }
 }
 
+// Level thresholds (must match profile.html)
+const LEVEL_THRESHOLDS = [
+  0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200,
+  4000, 5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000,
+  26000, 30500, 35500, 41000, 47000, 54000, 62000, 71000, 81000, 92000,
+  104000, 117000, 131000, 146000, 162000, 180000, 199000, 220000, 242000, 266000,
+  292000, 320000, 350000, 382000, 416000, 452000, 490000, 530000, 572000, 616000,
+  665000, 718000, 775000, 836000, 901000, 970000, 1043000, 1120000, 1201000, 1286000,
+  1375000, 1468000, 1565000, 1666000, 1771000, 1880000, 1993000, 2110000, 2231000, 2356000,
+  2485000, 2618000, 2755000, 2896000, 3041000, 3190000, 3343000, 3500000, 3661000, 3826000,
+  3995000, 4168000, 4345000, 4526000, 4711000, 4900000, 5093000, 5290000, 5491000, 5696000,
+  5905000, 6118000, 6335000, 6556000, 6781000, 7010000, 7243000, 7480000, 7721000, 7966000
+];
+
+function getLevelFromXP(xp) {
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= LEVEL_THRESHOLDS[i]) return i + 1;
+  }
+  return 1;
+}
+
 /**
- * Clear cosmetics cache (call when user updates their cosmetics)
+ * Clear cosmetics cache
  */
 function clearCosmeticsCache(userId = null) {
   if (userId) {
@@ -1016,7 +1295,13 @@ if (typeof window !== 'undefined') {
     renderGlobalLeaderboardItem,
     fetchPlayerCosmetics,
     clearCosmeticsCache,
+    isCosmeticUnlocked,
+    getUnlockRequirement,
     COSMETIC_COLORS,
-    DEFAULT_COSMETICS
+    DEFAULT_COSMETICS,
+    LEVEL_REWARDS,
+    PRESTIGE_REWARDS,
+    LEVEL_THRESHOLDS,
+    getLevelFromXP
   };
 }
