@@ -232,25 +232,21 @@ const PIECES=[
 let board,currentPiece,nextPiece,holdPiece,canHold,score,level,lines,gameLoop,gameRunning=false,dropCounter=0,lastTime=0;
 let currentUserId=null,personalBest=0,friendIds=[],currentTab='global';
 
-// ========== FIX: Properly await loadFriends before fetching leaderboard ==========
+// Auth
 async function loadAuth(){
     const{data}=await supabaseClient.auth.getSession();
     const user=data?.session?.user;
-    document.getElementById('auth-skeleton')?.style.setProperty('display','none');
+    document.getElementById('auth-skeleton').style.display='none';
     if(user){
         currentUserId=user.id;
-        document.querySelector('.nav-right-logged-out')?.style.setProperty('display','none','important');
-        document.querySelector('.nav-right-logged-in')?.style.setProperty('display','flex','important');
+        document.querySelector('.nav-right-logged-out').style.setProperty('display','none','important');
+        document.querySelector('.nav-right-logged-in').style.setProperty('display','flex','important');
         const{data:p}=await supabaseClient.from('profiles').select('display_name,gamer_tag').eq('id',user.id).single();
         if(p)document.getElementById('header-username-label').textContent=(p.display_name||p.gamer_tag||'Player').slice(0,16);
-        
-        // FIX: AWAIT these so friendIds is populated before we fetch leaderboard
-        await loadPersonalBest();
-        await loadFriends();
-        console.log('🔧 Friends loaded:', friendIds.length, 'friends:', friendIds);
+        loadPersonalBest();loadFriends();
     }else{
-        document.querySelector('.nav-right-logged-out')?.style.setProperty('display','flex','important');
-        document.querySelector('.nav-right-logged-in')?.style.setProperty('display','none','important');
+        document.querySelector('.nav-right-logged-out').style.setProperty('display','flex','important');
+        document.querySelector('.nav-right-logged-in').style.setProperty('display','none','important');
     }
     fetchLeaderboard('global');
 }
@@ -264,28 +260,7 @@ async function loadPersonalBest(){
 
 async function loadFriends(){
     if(!currentUserId)return;
-    try{
-        const{data,error}=await supabaseClient
-            .from('friendships')
-            .select('user_id,friend_id')
-            .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`)
-            .eq('status','accepted');
-        
-        if(error){
-            console.error('❌ Error loading friends:', error);
-            return;
-        }
-        
-        if(data && data.length > 0){
-            friendIds = data.map(f => f.user_id === currentUserId ? f.friend_id : f.user_id);
-            console.log('✅ Loaded', friendIds.length, 'friends');
-        } else {
-            console.log('ℹ️ No friends found in database');
-            friendIds = [];
-        }
-    }catch(e){
-        console.error('❌ Exception loading friends:', e);
-    }
+    try{const{data}=await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).eq('status','accepted');if(data)friendIds=data.map(f=>f.user_id===currentUserId?f.friend_id:f.user_id)}catch(e){}
 }
 
 document.getElementById('user-menu-signout')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();location.reload()});
@@ -299,16 +274,20 @@ function randomPiece(){
 
 function draw(){
     ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Grid
     ctx.strokeStyle='rgba(168,85,247,0.1)';
     for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*BLOCK,0);ctx.lineTo(i*BLOCK,canvas.height);ctx.stroke()}
     for(let i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*BLOCK);ctx.lineTo(canvas.width,i*BLOCK);ctx.stroke()}
+    // Board
     board.forEach((row,y)=>row.forEach((val,x)=>{if(val){ctx.fillStyle=val;ctx.fillRect(x*BLOCK+1,y*BLOCK+1,BLOCK-2,BLOCK-2);ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(x*BLOCK+1,y*BLOCK+1,BLOCK-2,4)}}));
+    // Ghost
     if(currentPiece){
         let ghostY=currentPiece.y;
         while(!collision(currentPiece.x,ghostY+1,currentPiece.shape))ghostY++;
         ctx.globalAlpha=0.3;
         currentPiece.shape.forEach((row,dy)=>row.forEach((val,dx)=>{if(val){ctx.fillStyle=currentPiece.color;ctx.fillRect((currentPiece.x+dx)*BLOCK+1,(ghostY+dy)*BLOCK+1,BLOCK-2,BLOCK-2)}}));
         ctx.globalAlpha=1;
+        // Current
         currentPiece.shape.forEach((row,dy)=>row.forEach((val,dx)=>{if(val){ctx.fillStyle=currentPiece.color;ctx.fillRect((currentPiece.x+dx)*BLOCK+1,(currentPiece.y+dy)*BLOCK+1,BLOCK-2,BLOCK-2);ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect((currentPiece.x+dx)*BLOCK+1,(currentPiece.y+dy)*BLOCK+1,BLOCK-2,4)}}));
     }
 }
@@ -475,6 +454,7 @@ document.getElementById('btn-down')?.addEventListener('click',()=>{if(gameRunnin
 document.getElementById('btn-drop')?.addEventListener('click',()=>gameRunning&&hardDrop());
 document.getElementById('btn-rotate')?.addEventListener('click',()=>gameRunning&&rotatePiece());
 
+// Touch swipe controls on canvas only (not overlay)
 const gameCanvas=document.getElementById('game-canvas');
 let touchStartX=0,touchStartY=0,touchStartTime=0;
 gameCanvas.addEventListener('touchstart',e=>{if(!gameRunning)return;touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;touchStartTime=Date.now();e.preventDefault()},{passive:false});
@@ -488,89 +468,25 @@ document.querySelectorAll('.lb-tab').forEach(tab=>{
     });
 });
 
-// ========== FIX: Improved fetchLeaderboard with better friends handling ==========
 async function fetchLeaderboard(tab){
     const lbList=document.getElementById('lb-list');
     lbList.innerHTML='<div class="lb-empty">Loading...</div>';
-    
-    // FIX: For friends tab, check if we have friends first
-    if(tab==='friends'){
-        console.log('🔍 Friends tab clicked. friendIds:', friendIds.length, friendIds);
-        
-        if(!currentUserId){
-            lbList.innerHTML='<div class="lb-empty">Log in to see friends</div>';
-            return;
-        }
-        
-        if(!friendIds.length){
-            lbList.innerHTML='<div class="lb-empty">👥 Add friends to see their scores here</div>';
-            return;
-        }
-    }
-    
-    let query=supabaseClient.from('solo_scores')
-        .select('score,user_id,created_at')
-        .eq('game_id','block-stack')
-        .order('score',{ascending:false})
-        .limit(50);
-    
-    if(tab==='today'){
-        const t=new Date();
-        t.setHours(0,0,0,0);
-        query=query.gte('created_at',t.toISOString());
-    }
-    else if(tab==='friends'){
-        // Include self + friends
-        query=query.in('user_id',[...friendIds,currentUserId]);
-    }
-    
+    let query=supabaseClient.from('solo_scores').select('score,user_id,created_at').eq('game_id','block-stack').order('score',{ascending:false}).limit(50);
+    if(tab==='today'){const t=new Date();t.setHours(0,0,0,0);query=query.gte('created_at',t.toISOString())}
+    else if(tab==='friends'){if(!friendIds.length){lbList.innerHTML='<div class="lb-empty">Add friends to see scores</div>';return}query=query.in('user_id',[...friendIds,currentUserId])}
     const{data,error}=await query;
-    
-    if(error){
-        console.error('❌ Leaderboard query error:', error);
-        lbList.innerHTML='<div class="lb-empty">Error loading scores</div>';
-        return;
-    }
-    
-    // FIX: Better empty state messages
-    if(!data?.length){
-        if(tab==='friends'){
-            lbList.innerHTML='<div class="lb-empty">🎮 None of your friends have played this game yet.<br><small style="opacity:0.7">Invite them to play!</small></div>';
-        } else if(tab==='today'){
-            lbList.innerHTML='<div class="lb-empty">No scores today yet. Be the first!</div>';
-        } else {
-            lbList.innerHTML='<div class="lb-empty">No scores yet</div>';
-        }
-        return;
-    }
-    
-    // Dedupe to best score per user
-    const best=new Map();
-    data.forEach(e=>{
-        if(!best.has(e.user_id)||e.score>best.get(e.user_id).score)
-            best.set(e.user_id,e);
-    });
+    if(error||!data?.length){lbList.innerHTML='<div class="lb-empty">No scores yet</div>';return}
+    const best=new Map();data.forEach(e=>{if(!best.has(e.user_id)||e.score>best.get(e.user_id).score)best.set(e.user_id,e)});
     const deduped=Array.from(best.values()).sort((a,b)=>b.score-a.score);
-    
-    // Get profiles
     const userIds=[...new Set(deduped.map(e=>e.user_id))];
     const{data:profiles}=await supabaseClient.from('profiles').select('id,display_name,gamer_tag').in('id',userIds);
-    const pm={};
-    profiles?.forEach(p=>pm[p.id]=p);
-    
-    // Render
+    const pm={};profiles?.forEach(p=>pm[p.id]=p);
     lbList.innerHTML='';
     deduped.slice(0,10).forEach((e,i)=>{
-        const p=pm[e.user_id];
-        const name=p?.display_name||p?.gamer_tag||'Anonymous';
-        const isMe = e.user_id === currentUserId;
+        const p=pm[e.user_id];const name=p?.display_name||p?.gamer_tag||'Anonymous';
         const topClass=i===0?'top-1':i===1?'top-2':i===2?'top-3':'';
-        const row=document.createElement('div');
-        row.className=`lb-row ${topClass}`;
-        row.innerHTML=`
-            <div class="lb-rank">${i+1}</div>
-            <div class="lb-name">${name}${isMe?' <small style="opacity:0.6">(you)</small>':''}</div>
-            <div class="lb-score">${e.score.toLocaleString()}</div>`;
+        const row=document.createElement('div');row.className=`lb-row ${topClass}`;
+        row.innerHTML=`<div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-score">${e.score.toLocaleString()}</div>`;
         lbList.appendChild(row);
     });
 }
