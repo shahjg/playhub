@@ -194,9 +194,9 @@
                         <div class="lb-login-gate" id="lb-login-gate" style="display:none"><h3 class="lb-login-title">Sign In to View</h3><p class="lb-login-desc">Log in to see leaderboards, save scores, and compete globally.</p><a href="/login.html" class="btn-gold">Log In</a></div>
                         <div id="lb-content">
                             <div class="podium" id="podium">
-                                <div class="podium-spot silver" id="podium-2"><div class="podium-rank">2</div><div class="podium-label">Silver</div><div class="podium-avatar">—</div><div class="podium-name">—</div><div class="podium-title"></div><div class="podium-score">—</div><div class="podium-games"></div></div>
-                                <div class="podium-spot gold" id="podium-1"><div class="podium-rank">1</div><div class="podium-label">Champion</div><div class="podium-avatar">—</div><div class="podium-name">—</div><div class="podium-title"></div><div class="podium-score">—</div><div class="podium-games"></div></div>
-                                <div class="podium-spot bronze" id="podium-3"><div class="podium-rank">3</div><div class="podium-label">Bronze</div><div class="podium-avatar">—</div><div class="podium-name">—</div><div class="podium-title"></div><div class="podium-score">—</div><div class="podium-games"></div></div>
+                                <div id="podium-2"></div>
+                                <div id="podium-1"></div>
+                                <div id="podium-3"></div>
                             </div>
                             <div class="lb-list" id="lb-list"></div>
                         </div>
@@ -288,7 +288,7 @@
             badge.textContent=b;playLink.href=g.url;
         }
         function getGameId(){if(game==='typing-test')return`typing-test-${duration}`;if(game==='aim-trainer')return`aim-trainer-${targets}`;if(game==='math-speed')return`math-speed-${op}`;return game;}
-        function clearPodium(){[1,2,3].forEach(i=>{const s=$(`#podium-${i}`);s.querySelector('.podium-avatar').textContent='—';s.querySelector('.podium-avatar').className='podium-avatar';s.querySelector('.podium-avatar').style='';s.querySelector('.podium-name').textContent='—';s.querySelector('.podium-name').className='podium-name';s.querySelector('.podium-name').style='';s.querySelector('.podium-title').textContent='';s.querySelector('.podium-score').textContent='—';s.querySelector('.podium-games').textContent='';});}
+        function clearPodium(){[1,2,3].forEach(i=>{const c=$(`#podium-${i}`);if(c)c.innerHTML='';});}
         function getName(p,uid){if(p&&p.display_name)return p.display_name;if(p&&p.gamer_tag)return p.gamer_tag;return'Player_'+uid.substring(0,6);}
         function isPremium(p){return p&&p.is_premium===true;}
         function fmtScore(e,g){return`${e.score} ${g.unit}`;}
@@ -352,73 +352,29 @@
             renderTopGamer(rankings,pm);
         }
 
-        function renderPodiumSpot(rank, entry, profile, scoreText) {
-            const s = $(`#podium-${rank}`);
-            if (!entry) return;
-            
-            const n = getName(profile, entry.user_id);
-            const prem = isPremium(profile);
-            const cosmetics = profile?.cosmetics || {};
-            const level = profile?.xp ? window.TGCOCosmetics.getLevelFromXP(profile.xp) : 1;
-            const prestige = profile?.prestige || 0;
-            
-            // Check if cosmetics are unlocked
-            const unlockOpts = { isPremium: prem, level, prestige };
-            const hasCosmetics = prem || level > 1;
-            
-            // Avatar
-            const avatarEl = s.querySelector('.podium-avatar');
-            if (cosmetics.avatar && prem) {
-                avatarEl.textContent = cosmetics.avatar;
-                avatarEl.style.background = 'transparent';
-                avatarEl.style.fontSize = rank === 1 ? '2rem' : '1.5rem';
-            } else {
-                avatarEl.textContent = n.charAt(0).toUpperCase();
-                if (prem && cosmetics.border_color) {
-                    const color = COSMETIC_COLORS[cosmetics.border_color] || COSMETIC_COLORS.gold;
-                    if (cosmetics.border_color === 'rainbow') {
-                        avatarEl.style.background = 'linear-gradient(135deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc)';
-                    } else {
-                        avatarEl.style.background = `linear-gradient(135deg, ${color}, rgba(255,255,255,0.2))`;
-                    }
-                }
-            }
-            
-            // Name with effects
-            const nameEl = s.querySelector('.podium-name');
-            nameEl.textContent = n;
-            nameEl.className = 'podium-name';
-            
-            if (hasCosmetics && cosmetics.border_color) {
-                const color = cosmetics.border_color === 'rainbow' ? '#c084fc' : (COSMETIC_COLORS[cosmetics.border_color] || '#fff');
-                nameEl.style.color = color;
-            }
-            
-            if (hasCosmetics && cosmetics.name_effect && cosmetics.name_effect !== 'none') {
-                nameEl.classList.add(`tgco-effect-${cosmetics.name_effect}`);
-            }
-            
-            // Title
-            const titleEl = s.querySelector('.podium-title');
-            if (prem && cosmetics.title) {
-                titleEl.textContent = cosmetics.title;
-            } else {
-                titleEl.textContent = '';
-            }
-            
-            // Score
-            s.querySelector('.podium-score').textContent = scoreText;
-        }
-
         function render(rows,pm,g){
             $('#podium').style.display='grid';
             
-            // Render podium spots
+            // Render podium spots using cosmetics renderer
             [1,2,3].forEach(r=>{
                 const e=rows[r-1];
+                const container=$(`#podium-${r}`);
                 if(e){
                     const p=pm[e.user_id];
-                    renderPodiumSpot(r, e, p, fmtScore(e,g));
+                    const n=getName(p,e.user_id);
+                    const level=p&&p.xp?window.TGCOCosmetics.getLevelFromXP(p.xp):1;
+                    container.innerHTML=window.TGCOCosmetics.renderPodiumItem({
+                        name:n,
+                        score:e.score,
+                        rank:r,
+                        cosmetics:p?.cosmetics||{},
+                        isPremium:isPremium(p),
+                        level:level,
+                        prestige:p?.prestige||0,
+                        scoreUnit:g.unit
+                    });
+                } else {
+                    container.innerHTML='';
                 }
             });
             
@@ -450,13 +406,27 @@
         function renderTopGamer(rankings,pm){
             $('#podium').style.display='grid';
             
-            // Render podium spots
+            // Render podium spots using cosmetics renderer
             [1,2,3].forEach(r=>{
                 const e=rankings[r-1];
+                const container=$(`#podium-${r}`);
                 if(e){
                     const p=pm[e.user_id];
-                    renderPodiumSpot(r, e, p, e.totalPoints.toLocaleString()+' pts');
-                    $(`#podium-${r}`).querySelector('.podium-games').textContent=e.gamesPlayed+' games';
+                    const n=getName(p,e.user_id);
+                    const level=p&&p.xp?window.TGCOCosmetics.getLevelFromXP(p.xp):1;
+                    container.innerHTML=window.TGCOCosmetics.renderPodiumItem({
+                        name:n,
+                        score:e.totalPoints,
+                        rank:r,
+                        cosmetics:p?.cosmetics||{},
+                        isPremium:isPremium(p),
+                        level:level,
+                        prestige:p?.prestige||0,
+                        scoreUnit:'pts',
+                        meta:`${e.gamesPlayed} games`
+                    });
+                } else {
+                    container.innerHTML='';
                 }
             });
             
