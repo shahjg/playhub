@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0a0f">
-    <link rel="stylesheet" href="/header.css">
+  <link rel="stylesheet" href="/header.css">
   <meta name="description" content="View your gaming stats, achievements, and customize your profile at TheGaming.co">
   <meta name="robots" content="noindex,nofollow">
   
@@ -317,6 +317,73 @@
       color: var(--text-muted);
     }
 
+    /* ========== LEVEL REWARDS ========== */
+    .level-rewards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .level-reward-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid var(--border);
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .level-reward-item.unlocked {
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    .level-reward-item.current {
+      border-color: rgba(255, 107, 157, 0.5);
+      background: rgba(255, 107, 157, 0.1);
+      animation: currentReward 2s ease-in-out infinite;
+    }
+
+    @keyframes currentReward {
+      0%, 100% { box-shadow: 0 0 0 rgba(255, 107, 157, 0); }
+      50% { box-shadow: 0 0 20px rgba(255, 107, 157, 0.3); }
+    }
+
+    .level-reward-item.locked {
+      opacity: 0.5;
+    }
+
+    .level-reward-level {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .level-reward-item.unlocked .level-reward-level { color: var(--green); }
+    .level-reward-item.current .level-reward-level { color: var(--pink); }
+
+    .level-reward-icon {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    .level-reward-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .level-reward-item.locked .level-reward-icon {
+      filter: grayscale(1);
+    }
+
     /* ========== STATS GRID ========== */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
 
@@ -588,6 +655,7 @@
     .preview-nameplate[data-border="pulse"] { border-style: solid; animation: borderPulse 1.5s ease-in-out infinite; }
     .preview-nameplate[data-border="double"] { border-style: double; border-width: 5px; }
     .preview-nameplate[data-border="dotted"] { border-style: dotted; border-width: 4px; }
+    .preview-nameplate[data-border="dashed"] { border-style: dashed; border-width: 3px; }
 
     @keyframes borderPulse {
       0%, 100% { box-shadow: 0 0 5px var(--current-color); }
@@ -614,8 +682,27 @@
       animation: shimmerText 2s linear infinite;
     }
     .preview-name[data-effect="neon"] { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor; }
+    .preview-name[data-effect="fire"] { 
+      text-shadow: 0 0 5px #ff6b35, 0 -5px 10px #ff6b35, 0 -10px 20px #ffa500, 0 -15px 30px #ff4500;
+      animation: fireFlicker 0.5s ease-in-out infinite alternate;
+    }
+    .preview-name[data-effect="ice"] { 
+      text-shadow: 0 0 10px #67e8f9, 0 0 20px #06b6d4, 0 0 30px #0891b2;
+    }
+    .preview-name[data-effect="glitch"] {
+      animation: glitchText 0.3s infinite;
+    }
 
     @keyframes shimmerText { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes fireFlicker { 0% { filter: brightness(1); } 100% { filter: brightness(1.2); } }
+    @keyframes glitchText {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
 
     @keyframes entranceFade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes entranceSlide { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
@@ -625,6 +712,8 @@
     @keyframes entranceSparkle { 0% { opacity: 0; transform: scale(0) rotate(-180deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
     @keyframes entranceSmoke { 0% { opacity: 0; filter: blur(20px); transform: scale(1.5); } 100% { opacity: 1; filter: blur(0); transform: scale(1); } }
     @keyframes entranceGlitch { 0% { opacity: 0; transform: translateX(-10px) skewX(-10deg); } 50% { transform: translateX(5px) skewX(5deg); } 100% { transform: translateX(0) skewX(0deg); } }
+    @keyframes entranceMatrix { 0% { opacity: 0; transform: translateY(-50px); filter: blur(10px) hue-rotate(90deg); } 100% { opacity: 1; transform: translateY(0); filter: blur(0) hue-rotate(0deg); } }
+    @keyframes entranceBounce { 0% { opacity: 0; transform: scale(0); } 50% { transform: scale(1.2); } 70% { transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
 
     .option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; margin-top: 10px; }
 
@@ -640,6 +729,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
       min-height: 72px;
+      position: relative;
     }
 
     .option-item:hover, .option-item:active { border-color: var(--border-hover); background: rgba(255, 255, 255, 0.06); transform: translateY(-2px); }
@@ -648,6 +738,24 @@
       border-color: var(--pink);
       background: rgba(255, 107, 157, 0.15);
       box-shadow: 0 0 18px rgba(255, 107, 157, 0.25);
+    }
+
+    .option-item.level-locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .option-item.level-locked::after {
+      content: attr(data-unlock-level);
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 0.55rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      background: rgba(79, 172, 254, 0.3);
+      border-radius: 4px;
+      color: var(--blue);
     }
 
     .option-icon { font-size: 1.5rem; margin-bottom: 6px; }
@@ -677,6 +785,11 @@
       font-weight: bold;
       color: white;
       text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    .color-option.level-locked {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
 
     .title-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
@@ -846,6 +959,7 @@
       .premium-price { font-size: 2.5rem; }
       .xp-level-number { font-size: 1.8rem; }
       .card { padding: 18px; }
+      .level-rewards-grid { grid-template-columns: repeat(3, 1fr); }
     }
 
     @media (max-width: 380px) {
@@ -902,17 +1016,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <span>Stats</span>
         </button>
-        <button class="sidebar-nav-item" data-section="challenges">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span>Challenges</span>
+        <button class="sidebar-nav-item" data-section="rewards">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15l-2 5l9-13h-7l2-5l-9 13h7z"/></svg>
+          <span>Rewards</span>
         </button>
         <button class="sidebar-nav-item" data-section="achievements">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
           <span>Achievements</span>
-        </button>
-        <button class="sidebar-nav-item" data-section="referrals">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-          <span>Referrals</span>
         </button>
 
         <span class="sidebar-section-label">Account</span>
@@ -1020,17 +1130,26 @@
         </div>
       </section>
 
-      <!-- CHALLENGES SECTION -->
-      <section class="content-section" id="challenges-section">
+      <!-- REWARDS SECTION (Level Unlocks) -->
+      <section class="content-section" id="rewards-section">
         <div class="section-header">
-          <h1 class="section-title">DAILY CHALLENGES</h1>
-          <p class="section-subtitle">Complete challenges to earn XP and rewards</p>
+          <h1 class="section-title">LEVEL REWARDS</h1>
+          <p class="section-subtitle">Unlock cosmetics by leveling up - no premium required!</p>
         </div>
-        <div id="challenges-container">
-          <div class="card">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <p>Loading challenges...</p>
-            </div>
+
+        <div class="card">
+          <h3 class="card-title">🎁 Your Unlocked Rewards</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Play games to earn XP and unlock free cosmetics. Premium unlocks everything instantly!</p>
+          <div class="level-rewards-grid" id="level-rewards-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">⭐ Prestige Rewards</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Reach max level and prestige for exclusive rewards!</p>
+          <div class="level-rewards-grid" id="prestige-rewards-grid">
+            <!-- Populated by JS -->
           </div>
         </div>
       </section>
@@ -1045,21 +1164,6 @@
           <div class="card">
             <div style="text-align: center; padding: 40px; color: var(--text-muted);">
               <p>Loading achievements...</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- REFERRALS SECTION -->
-      <section class="content-section" id="referrals-section">
-        <div class="section-header">
-          <h1 class="section-title">INVITE FRIENDS</h1>
-          <p class="section-subtitle">Share your code and earn rewards</p>
-        </div>
-        <div id="referrals-container">
-          <div class="card">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <p>Loading referral info...</p>
             </div>
           </div>
         </div>
@@ -1126,11 +1230,11 @@
             <div class="premium-price">$1.50<span>/month</span></div>
             <div class="premium-features">
               <div class="premium-feature">• Ad-free experience</div>
-              <div class="premium-feature">• 16+ Badge icons</div>
-              <div class="premium-feature">• 10 Border colors</div>
-              <div class="premium-feature">• 5 Border styles</div>
-              <div class="premium-feature">• Name effects (glow, neon)</div>
-              <div class="premium-feature">• 8 Entrance animations</div>
+              <div class="premium-feature">• 25+ Badge icons</div>
+              <div class="premium-feature">• 12 Border colors</div>
+              <div class="premium-feature">• 6 Border styles</div>
+              <div class="premium-feature">• 7 Name effects</div>
+              <div class="premium-feature">• 10 Entrance animations</div>
               <div class="premium-feature">• Custom titles</div>
               <div class="premium-feature">• Early access to new games</div>
             </div>
@@ -1174,6 +1278,15 @@
               <div class="option-item" data-value="🦄"><span class="option-icon">🦄</span><span class="option-label">Unicorn</span></div>
               <div class="option-item" data-value="🐺"><span class="option-icon">🐺</span><span class="option-label">Wolf</span></div>
               <div class="option-item" data-value="🗿"><span class="option-icon">🗿</span><span class="option-label">Moai</span></div>
+              <div class="option-item" data-value="🦋"><span class="option-icon">🦋</span><span class="option-label">Butterfly</span></div>
+              <div class="option-item" data-value="🌙"><span class="option-icon">🌙</span><span class="option-label">Moon</span></div>
+              <div class="option-item" data-value="☀️"><span class="option-icon">☀️</span><span class="option-label">Sun</span></div>
+              <div class="option-item" data-value="🎭"><span class="option-icon">🎭</span><span class="option-label">Drama</span></div>
+              <div class="option-item" data-value="🎪"><span class="option-icon">🎪</span><span class="option-label">Circus</span></div>
+              <div class="option-item" data-value="🍀"><span class="option-icon">🍀</span><span class="option-label">Lucky</span></div>
+              <div class="option-item" data-value="💫"><span class="option-icon">💫</span><span class="option-label">Dizzy</span></div>
+              <div class="option-item" data-value="🌈"><span class="option-icon">🌈</span><span class="option-label">Rainbow</span></div>
+              <div class="option-item" data-value="🎸"><span class="option-icon">🎸</span><span class="option-label">Rock</span></div>
             </div>
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
           </div>
@@ -1191,6 +1304,8 @@
               <div class="color-option" data-value="platinum" style="background: linear-gradient(135deg, #e2e8f0, #94a3b8);" title="Platinum"></div>
               <div class="color-option" data-value="obsidian" style="background: linear-gradient(135deg, #312e81, #1e1b4b);" title="Obsidian"></div>
               <div class="color-option" data-value="rose" style="background: linear-gradient(135deg, #fb7185, #f43f5e);" title="Rose"></div>
+              <div class="color-option" data-value="sunset" style="background: linear-gradient(135deg, #f97316, #ea580c);" title="Sunset"></div>
+              <div class="color-option" data-value="toxic" style="background: linear-gradient(135deg, #84cc16, #65a30d);" title="Toxic"></div>
               <div class="color-option" data-value="rainbow" style="background: linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc);" title="Rainbow"></div>
             </div>
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
@@ -1205,6 +1320,7 @@
               <div class="option-item" data-value="pulse"><span class="option-icon">◉</span><span class="option-label">Pulse</span></div>
               <div class="option-item" data-value="double"><span class="option-icon">▭</span><span class="option-label">Double</span></div>
               <div class="option-item" data-value="dotted"><span class="option-icon">┅</span><span class="option-label">Dotted</span></div>
+              <div class="option-item" data-value="dashed"><span class="option-icon">╌</span><span class="option-label">Dashed</span></div>
             </div>
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
           </div>
@@ -1218,6 +1334,9 @@
               <div class="option-item" data-value="shadow"><span class="option-icon">▣</span><span class="option-label">Shadow</span></div>
               <div class="option-item" data-value="shimmer"><span class="option-icon">≋</span><span class="option-label">Shimmer</span></div>
               <div class="option-item" data-value="neon"><span class="option-icon">◈</span><span class="option-label">Neon</span></div>
+              <div class="option-item" data-value="fire"><span class="option-icon">🔥</span><span class="option-label">Fire</span></div>
+              <div class="option-item" data-value="ice"><span class="option-icon">❄️</span><span class="option-label">Ice</span></div>
+              <div class="option-item" data-value="glitch"><span class="option-icon">⚠</span><span class="option-label">Glitch</span></div>
             </div>
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
           </div>
@@ -1234,6 +1353,8 @@
               <div class="option-item" data-value="sparkle"><span class="option-icon">✧</span><span class="option-label">Sparkle</span></div>
               <div class="option-item" data-value="smoke"><span class="option-icon">◌</span><span class="option-label">Smoke</span></div>
               <div class="option-item" data-value="glitch"><span class="option-icon">▦</span><span class="option-label">Glitch</span></div>
+              <div class="option-item" data-value="matrix"><span class="option-icon">▼</span><span class="option-label">Matrix</span></div>
+              <div class="option-item" data-value="bounce"><span class="option-icon">◎</span><span class="option-label">Bounce</span></div>
             </div>
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
           </div>
@@ -1255,6 +1376,9 @@
               <div class="title-option" data-value="Lowkey Goated">Lowkey Goated</div>
               <div class="title-option" data-value="Unhinged">Unhinged</div>
               <div class="title-option" data-value="Chaotic Neutral">Chaotic Neutral</div>
+              <div class="title-option" data-value="Goblin Mode">Goblin Mode</div>
+              <div class="title-option" data-value="Sigma">Sigma</div>
+              <div class="title-option" data-value="No Thoughts">No Thoughts</div>
             </div>
             <div class="custom-title-wrapper">
               <label class="form-label">Or write your own:</label>
@@ -1342,24 +1466,63 @@
     const supabaseClient = window.supabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = supabaseClient;
 
-    let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎';
+    let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎', currentLevel = 1;
     let cosmetics = { border_style: 'solid', border_color: 'gold', badge_icon: '👑', name_effect: 'none', title: null, entrance_animation: 'fade', avatar: '😎' };
 
-    // Level thresholds (1-100) - matches database
+    // Level thresholds (1-100)
     const LEVEL_THRESHOLDS = [
-      0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200,           // 1-10
-      4000, 5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000, // 11-20
-      26000, 30500, 35500, 41000, 47000, 54000, 62000, 71000, 81000, 92000, // 21-30
-      104000, 117000, 131000, 146000, 162000, 180000, 199000, 220000, 242000, 266000, // 31-40
-      292000, 320000, 350000, 382000, 416000, 452000, 490000, 530000, 572000, 616000, // 41-50
-      665000, 718000, 775000, 836000, 901000, 970000, 1043000, 1120000, 1201000, 1286000, // 51-60
-      1375000, 1468000, 1565000, 1666000, 1771000, 1880000, 1993000, 2110000, 2231000, 2356000, // 61-70
-      2485000, 2618000, 2755000, 2896000, 3041000, 3190000, 3343000, 3500000, 3661000, 3826000, // 71-80
-      3995000, 4168000, 4345000, 4526000, 4711000, 4900000, 5093000, 5290000, 5491000, 5696000, // 81-90
-      5905000, 6118000, 6335000, 6556000, 6781000, 7010000, 7243000, 7480000, 7721000, 7966000  // 91-100
+      0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200,
+      4000, 5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000,
+      26000, 30500, 35500, 41000, 47000, 54000, 62000, 71000, 81000, 92000,
+      104000, 117000, 131000, 146000, 162000, 180000, 199000, 220000, 242000, 266000,
+      292000, 320000, 350000, 382000, 416000, 452000, 490000, 530000, 572000, 616000,
+      665000, 718000, 775000, 836000, 901000, 970000, 1043000, 1120000, 1201000, 1286000,
+      1375000, 1468000, 1565000, 1666000, 1771000, 1880000, 1993000, 2110000, 2231000, 2356000,
+      2485000, 2618000, 2755000, 2896000, 3041000, 3190000, 3343000, 3500000, 3661000, 3826000,
+      3995000, 4168000, 4345000, 4526000, 4711000, 4900000, 5093000, 5290000, 5491000, 5696000,
+      5905000, 6118000, 6335000, 6556000, 6781000, 7010000, 7243000, 7480000, 7721000, 7966000
     ];
 
-    // Solo games config - all games with icons
+    // ========== LEVEL REWARDS SYSTEM ==========
+    // Free users can unlock cosmetics by leveling up!
+    const LEVEL_REWARDS = [
+      { level: 1, type: 'color', value: 'gray', name: 'Gray Border', icon: '⬜' },
+      { level: 5, type: 'badge', value: '⭐', name: 'Star Badge', icon: '⭐' },
+      { level: 10, type: 'entrance', value: 'slide', name: 'Slide Entrance', icon: '→' },
+      { level: 15, type: 'color', value: 'emerald', name: 'Emerald Border', icon: '💚' },
+      { level: 20, type: 'badge', value: '🔥', name: 'Fire Badge', icon: '🔥' },
+      { level: 25, type: 'effect', value: 'shadow', name: 'Shadow Text', icon: '▣' },
+      { level: 30, type: 'color', value: 'ruby', name: 'Ruby Border', icon: '❤️' },
+      { level: 35, type: 'entrance', value: 'pop', name: 'Pop Entrance', icon: '●' },
+      { level: 40, type: 'badge', value: '💎', name: 'Diamond Badge', icon: '💎' },
+      { level: 45, type: 'border', value: 'glow', name: 'Glow Border', icon: '✦' },
+      { level: 50, type: 'color', value: 'diamond', name: 'Diamond Border', icon: '💠' },
+      { level: 55, type: 'effect', value: 'glow', name: 'Glow Text', icon: '✨' },
+      { level: 60, type: 'badge', value: '👑', name: 'Crown Badge', icon: '👑' },
+      { level: 65, type: 'entrance', value: 'sparkle', name: 'Sparkle Entrance', icon: '✧' },
+      { level: 70, type: 'color', value: 'amethyst', name: 'Amethyst Border', icon: '💜' },
+      { level: 75, type: 'effect', value: 'shimmer', name: 'Shimmer Text', icon: '≋' },
+      { level: 80, type: 'border', value: 'pulse', name: 'Pulse Border', icon: '◉' },
+      { level: 85, type: 'badge', value: '🏆', name: 'Trophy Badge', icon: '🏆' },
+      { level: 90, type: 'color', value: 'gold', name: 'Gold Border', icon: '💛' },
+      { level: 95, type: 'entrance', value: 'lightning', name: 'Lightning Entrance', icon: '⚡' },
+      { level: 100, type: 'effect', value: 'neon', name: 'Neon Text', icon: '◈' },
+    ];
+
+    const PRESTIGE_REWARDS = [
+      { prestige: 1, type: 'badge', value: '🌟', name: 'P1 - Prestige Star', icon: '🌟' },
+      { prestige: 2, type: 'color', value: 'platinum', name: 'P2 - Platinum Border', icon: '🤍' },
+      { prestige: 3, type: 'entrance', value: 'fire', name: 'P3 - Fire Entrance', icon: '🔥' },
+      { prestige: 4, type: 'effect', value: 'fire', name: 'P4 - Fire Text', icon: '🔥' },
+      { prestige: 5, type: 'color', value: 'rainbow', name: 'P5 - Rainbow Border', icon: '🌈' },
+      { prestige: 6, type: 'badge', value: '💫', name: 'P6 - Cosmic Badge', icon: '💫' },
+      { prestige: 7, type: 'effect', value: 'ice', name: 'P7 - Ice Text', icon: '❄️' },
+      { prestige: 8, type: 'entrance', value: 'matrix', name: 'P8 - Matrix Entrance', icon: '▼' },
+      { prestige: 9, type: 'effect', value: 'glitch', name: 'P9 - Glitch Text', icon: '⚠' },
+      { prestige: 10, type: 'badge', value: '🐉', name: 'P10 - Dragon Badge', icon: '🐉' },
+    ];
+
+    // Solo games config - ALL GAMES including new arcade games
     const SOLO_GAMES = {
       'reaction-time': { name: 'Reaction Time', unit: 'ms', ascending: true, icon: '⚡' },
       'typing-test-60': { name: 'Typing Test', unit: 'WPM', ascending: false, icon: '⌨️' },
@@ -1373,6 +1536,8 @@
       '2048': { name: '2048', unit: 'score', ascending: false, icon: '🔲' },
       'snake': { name: 'Snake', unit: 'score', ascending: false, icon: '🐍' },
       'sky-hop': { name: 'Sky Hop', unit: 'score', ascending: false, icon: '☁️' },
+      'highway-dodge': { name: 'Highway Dodge', unit: 'score', ascending: false, icon: '🚗' },
+      'dash-run': { name: 'Dash Run', unit: 'score', ascending: false, icon: '🏃' },
       'stroop-test': { name: 'Stroop Test', unit: 'score', ascending: false, icon: '🎨' },
       'minesweeper': { name: 'Minesweeper', unit: 'sec', ascending: true, icon: '💣' },
       'sudoku': { name: 'Sudoku', unit: 'sec', ascending: true, icon: '🔢' },
@@ -1383,7 +1548,7 @@
     };
 
     const blockedWords = ['fuck', 'shit', 'ass', 'bitch', 'dick', 'pussy', 'cock', 'cunt', 'nigger', 'faggot', 'retard'];
-    const colorMap = { gray: '#6b7280', gold: '#fbbf24', diamond: '#67e8f9', ruby: '#f87171', emerald: '#34d399', amethyst: '#c084fc', platinum: '#e2e8f0', obsidian: '#312e81', rose: '#fb7185', rainbow: '#c084fc' };
+    const colorMap = { gray: '#6b7280', gold: '#fbbf24', diamond: '#67e8f9', ruby: '#f87171', emerald: '#34d399', amethyst: '#c084fc', platinum: '#e2e8f0', obsidian: '#312e81', rose: '#fb7185', sunset: '#f97316', toxic: '#84cc16', rainbow: '#c084fc' };
 
     function containsProfanity(text) { return blockedWords.some(word => text.toLowerCase().includes(word)); }
     function getLevelFromXP(xp) { 
@@ -1407,7 +1572,72 @@
     function formatPlaytime(m) { if (!m || m < 1) return '0m'; const h = Math.floor(m / 60); const mins = m % 60; return h > 0 ? (mins > 0 ? `${h}h ${mins}m` : `${h}h`) : `${mins}m`; }
     function showStatus(msg, type = 'success') { const s = document.getElementById('status-bar'); s.className = `status-bar visible ${type}`; document.getElementById('status-message').textContent = msg; setTimeout(() => s.classList.remove('visible'), 4000); }
 
-    // Auth check function
+    // Check if cosmetic is unlocked by level
+    function isUnlockedByLevel(type, value, level, prestige) {
+      // Premium unlocks everything
+      if (isPremium) return true;
+      
+      // Check level rewards
+      const levelReward = LEVEL_REWARDS.find(r => r.type === type && r.value === value);
+      if (levelReward && level >= levelReward.level) return true;
+      
+      // Check prestige rewards
+      const prestigeReward = PRESTIGE_REWARDS.find(r => r.type === type && r.value === value);
+      if (prestigeReward && prestige >= prestigeReward.prestige) return true;
+      
+      return false;
+    }
+
+    // Get required level for a cosmetic
+    function getRequiredLevel(type, value) {
+      const levelReward = LEVEL_REWARDS.find(r => r.type === type && r.value === value);
+      if (levelReward) return `LVL ${levelReward.level}`;
+      
+      const prestigeReward = PRESTIGE_REWARDS.find(r => r.type === type && r.value === value);
+      if (prestigeReward) return `P${prestigeReward.prestige}`;
+      
+      return 'PREMIUM';
+    }
+
+    // Render level rewards section
+    function renderLevelRewards(level, prestige) {
+      const container = document.getElementById('level-rewards-grid');
+      const prestigeContainer = document.getElementById('prestige-rewards-grid');
+      
+      // Level rewards
+      let html = '';
+      LEVEL_REWARDS.forEach(reward => {
+        const isUnlocked = level >= reward.level || isPremium;
+        const isCurrent = !isUnlocked && LEVEL_REWARDS.filter(r => r.level <= level).length === LEVEL_REWARDS.indexOf(reward);
+        const statusClass = isUnlocked ? 'unlocked' : (isCurrent ? 'current' : 'locked');
+        
+        html += `
+          <div class="level-reward-item ${statusClass}">
+            <div class="level-reward-level">${isUnlocked ? '✓ UNLOCKED' : `LVL ${reward.level}`}</div>
+            <div class="level-reward-icon">${reward.icon}</div>
+            <div class="level-reward-name">${reward.name}</div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      
+      // Prestige rewards
+      let prestigeHtml = '';
+      PRESTIGE_REWARDS.forEach(reward => {
+        const isUnlocked = prestige >= reward.prestige || isPremium;
+        const statusClass = isUnlocked ? 'unlocked' : 'locked';
+        
+        prestigeHtml += `
+          <div class="level-reward-item ${statusClass}">
+            <div class="level-reward-level">${isUnlocked ? '✓ UNLOCKED' : `PRESTIGE ${reward.prestige}`}</div>
+            <div class="level-reward-icon">${reward.icon}</div>
+            <div class="level-reward-name">${reward.name}</div>
+          </div>
+        `;
+      });
+      prestigeContainer.innerHTML = prestigeHtml;
+    }
+
     async function checkSession() {
       const { data } = await supabaseClient.auth.getSession();
       return data?.session?.user || null;
@@ -1424,7 +1654,7 @@
 
     async function handlePrestige() {
       if (!currentUser) return;
-      if (!confirm('Are you sure you want to prestige? You will reset to Level 1 but gain a prestige badge!')) return;
+      if (!confirm('Are you sure you want to prestige? You will reset to Level 1 but gain a prestige badge and unlock exclusive rewards!')) return;
       
       try {
         const { data, error } = await supabaseClient.rpc('prestige_user', { p_user_id: currentUser.id });
@@ -1461,35 +1691,93 @@
       showStatus('Avatar saved!', 'success');
     }
 
-    // Cosmetics lock
-    function lockCosmeticsForFreeUsers() {
-      ['badge-section', 'color-section', 'border-section', 'effect-section', 'entrance-section', 'title-section'].forEach(id => {
-        const s = document.getElementById(id);
-        if (s) { s.classList.add('cosmetics-locked'); const lock = s.querySelector('.lock-overlay'); if (lock) { lock.style.display = 'block'; lock.onclick = () => { document.querySelector('[data-section="premium"]').click(); }; } }
-      });
-      document.getElementById('save-cosmetics').textContent = 'Upgrade to Save'; document.getElementById('save-cosmetics').disabled = true;
-    }
-    function unlockCosmeticsForPremium() {
-      ['badge-section', 'color-section', 'border-section', 'effect-section', 'entrance-section', 'title-section'].forEach(id => {
-        const s = document.getElementById(id);
-        if (s) { s.classList.remove('cosmetics-locked'); const lock = s.querySelector('.lock-overlay'); if (lock) lock.style.display = 'none'; }
-      });
-      document.getElementById('save-cosmetics').textContent = 'Save Cosmetics'; document.getElementById('save-cosmetics').disabled = false;
+    // Cosmetics lock for free users (but check level unlocks)
+    function setupCosmeticsUI(level, prestige) {
+      if (isPremium) {
+        // Premium: unlock everything
+        ['badge-section', 'color-section', 'border-section', 'effect-section', 'entrance-section', 'title-section'].forEach(id => {
+          const s = document.getElementById(id);
+          if (s) { s.classList.remove('cosmetics-locked'); const lock = s.querySelector('.lock-overlay'); if (lock) lock.style.display = 'none'; }
+        });
+        document.getElementById('save-cosmetics').textContent = 'Save Cosmetics';
+        document.getElementById('save-cosmetics').disabled = false;
+      } else {
+        // Free user: show what they can use based on level
+        ['badge-section', 'color-section', 'border-section', 'effect-section', 'entrance-section', 'title-section'].forEach(id => {
+          const s = document.getElementById(id);
+          if (s) { 
+            s.classList.remove('cosmetics-locked'); 
+            const lock = s.querySelector('.lock-overlay'); 
+            if (lock) lock.style.display = 'none'; 
+          }
+        });
+        
+        // Mark individual items as locked/unlocked
+        document.querySelectorAll('#badge-options .option-item').forEach(item => {
+          const value = item.dataset.value;
+          if (!value) return; // "None" is always available
+          const unlocked = isUnlockedByLevel('badge', value, level, prestige);
+          item.classList.toggle('level-locked', !unlocked);
+          if (!unlocked) item.dataset.unlockLevel = getRequiredLevel('badge', value);
+        });
+        
+        document.querySelectorAll('#color-options .color-option').forEach(item => {
+          const value = item.dataset.value;
+          const unlocked = isUnlockedByLevel('color', value, level, prestige);
+          item.classList.toggle('level-locked', !unlocked);
+        });
+        
+        document.querySelectorAll('#border-options .option-item').forEach(item => {
+          const value = item.dataset.value;
+          if (value === 'solid') return; // Solid is always available
+          const unlocked = isUnlockedByLevel('border', value, level, prestige);
+          item.classList.toggle('level-locked', !unlocked);
+          if (!unlocked) item.dataset.unlockLevel = getRequiredLevel('border', value);
+        });
+        
+        document.querySelectorAll('#effect-options .option-item').forEach(item => {
+          const value = item.dataset.value;
+          if (value === 'none') return; // None is always available
+          const unlocked = isUnlockedByLevel('effect', value, level, prestige);
+          item.classList.toggle('level-locked', !unlocked);
+          if (!unlocked) item.dataset.unlockLevel = getRequiredLevel('effect', value);
+        });
+        
+        document.querySelectorAll('#entrance-options .option-item').forEach(item => {
+          const value = item.dataset.value;
+          if (value === 'fade') return; // Fade is always available
+          const unlocked = isUnlockedByLevel('entrance', value, level, prestige);
+          item.classList.toggle('level-locked', !unlocked);
+          if (!unlocked) item.dataset.unlockLevel = getRequiredLevel('entrance', value);
+        });
+        
+        // Lock title section entirely for free users
+        const titleSection = document.getElementById('title-section');
+        if (titleSection) {
+          titleSection.classList.add('cosmetics-locked');
+          const lock = titleSection.querySelector('.lock-overlay');
+          if (lock) {
+            lock.style.display = 'block';
+            lock.onclick = () => { document.querySelector('[data-section="premium"]').click(); };
+          }
+        }
+        
+        document.getElementById('save-cosmetics').textContent = 'Save Cosmetics';
+        document.getElementById('save-cosmetics').disabled = false;
+      }
     }
 
     // =====================================
-    // COMPUTE STATS FROM ACTUAL DATA (solo_scores table)
+    // COMPUTE STATS FROM ACTUAL DATA
     // =====================================
     async function computeStatsFromData() {
       if (!currentUser) return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null, totalWins: 0, bestWinStreak: 0, dayStreak: 0, avgScore: null, gameScores: {} };
 
-      // Get all solo_scores entries for this user
       const { data: entries, error } = await supabaseClient
         .from('solo_scores')
         .select('game_id, score, created_at')
         .eq('user_id', currentUser.id);
 
-      // Get user_stats for additional data (wins, streaks)
       const { data: userStats } = await supabaseClient
         .from('user_stats')
         .select('*')
@@ -1504,12 +1792,10 @@
         return { gamesPlayed: 0, playtime: 0, personalBests: 0, bestRank: null, favoriteGame: null, favoriteGamePlays: 0, leastPlayedGame: null, totalWins, bestWinStreak, dayStreak, avgScore: null, gameScores: {} };
       }
 
-      // Count games played (total entries)
       const gamesPlayed = entries.length;
-
-      // Count plays per game and track best scores
       const gameCounts = {};
       const gameScores = {};
+      
       entries.forEach(e => {
         gameCounts[e.game_id] = (gameCounts[e.game_id] || 0) + 1;
         const config = SOLO_GAMES[e.game_id];
@@ -1524,43 +1810,30 @@
         }
       });
 
-      // Calculate average score (normalized)
       let totalNormalized = 0, scoreCount = 0;
       Object.entries(gameScores).forEach(([gameId, score]) => {
         const config = SOLO_GAMES[gameId];
-        if (config) {
-          scoreCount++;
-          // Simple normalization - just count valid scores
-          totalNormalized += score;
-        }
+        if (config) { scoreCount++; totalNormalized += score; }
       });
       const avgScore = scoreCount > 0 ? Math.round(totalNormalized / scoreCount) : null;
 
-      // Find favorite (most played) and least played
       let favoriteGame = null, favoriteGamePlays = 0, leastPlayedGame = null, leastPlays = Infinity;
       Object.entries(gameCounts).forEach(([game, count]) => {
         if (count > favoriteGamePlays) { favoriteGame = game; favoriteGamePlays = count; }
         if (count < leastPlays) { leastPlayedGame = game; leastPlays = count; }
       });
 
-      // Find a game they haven't tried yet
       const playedGames = new Set(Object.keys(gameCounts));
       const allGameIds = Object.keys(SOLO_GAMES);
       const unplayedGame = allGameIds.find(g => !playedGames.has(g));
       if (unplayedGame) leastPlayedGame = unplayedGame;
 
-      // Playtime estimation (assume ~30 seconds per game on average)
-      const playtime = userStats?.total_playtime_minutes || Math.round(gamesPlayed * 0.5); // in minutes
-
-      // Personal bests - count unique games played
+      const playtime = userStats?.total_playtime_minutes || Math.round(gamesPlayed * 0.5);
       const personalBests = Object.keys(gameCounts).length;
 
-      // Best rank - find best ranking across all games
       let bestRank = null;
       for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
         if (!gameCounts[gameId]) continue;
-
-        // Get user's best score for this game
         const { data: userBest } = await supabaseClient
           .from('solo_scores')
           .select('score')
@@ -1571,7 +1844,6 @@
           .maybeSingle();
 
         if (userBest) {
-          // Count how many are better
           let countQuery = supabaseClient
             .from('solo_scores')
             .select('user_id', { count: 'exact', head: true })
@@ -1594,7 +1866,6 @@
       const container = document.getElementById('game-scores-grid');
       if (!container) return;
 
-      // Build HTML for all games, showing icon, name, times played, best score
       let html = '';
       for (const [gameId, config] of Object.entries(SOLO_GAMES)) {
         const score = gameScores[gameId];
@@ -1616,20 +1887,18 @@
         `;
       }
 
-      container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: var(--text-muted); grid-column: 1 / -1;">No game scores yet. Play some games to see your scores here!</div>';
+      container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: var(--text-muted); grid-column: 1 / -1;">No game scores yet. Play some games!</div>';
     }
 
     async function loadProfile() {
       const user = await checkSession();
       if (!user) { window.location.href = '/login'; return; }
       currentUser = user;
-      // Auth handled by header.js
 
       const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
       if (error) { console.error('Profile error:', error); showStatus('Error loading profile', 'error'); return; }
       currentProfile = profile;
 
-      // Cache for header.js
       const initial = (profile.display_name || profile.email || 'U').charAt(0).toUpperCase();
       localStorage.setItem('tgco_header_label', initial);
 
@@ -1641,7 +1910,6 @@
       document.getElementById('account-type').value = profile.account_type === 'premium' ? 'Premium' : 'Free';
       document.getElementById('member-since').value = new Date(profile.created_at).toLocaleDateString();
 
-      // Load cosmetics including avatar
       if (profile.cosmetics && typeof profile.cosmetics === 'object') {
         cosmetics = { ...cosmetics, ...profile.cosmetics };
         if (profile.cosmetics.avatar) selectedAvatar = profile.cosmetics.avatar;
@@ -1649,9 +1917,9 @@
       document.getElementById('sidebar-avatar').textContent = selectedAvatar;
       if (cosmetics.title) document.getElementById('sidebar-title').textContent = cosmetics.title;
 
-      // XP from profile (or default to 0)
       const xp = profile.xp || 0;
       const level = getLevelFromXP(xp);
+      currentLevel = level;
       const { needed, percentage } = getXPProgress(xp);
       const isMaxLevel = level >= 100;
       const prestige = profile.prestige || 0;
@@ -1660,7 +1928,6 @@
       document.getElementById('sidebar-level-badge').textContent = `LVL ${level}`;
       document.getElementById('xp-current').textContent = xp.toLocaleString();
       
-      // Prestige badge
       const prestigeBadge = document.getElementById('sidebar-prestige-badge');
       if (prestige > 0) {
         prestigeBadge.textContent = prestige >= 10 ? 'P★' : `P${prestige}`;
@@ -1677,7 +1944,6 @@
       
       document.getElementById('xp-bar-fill').style.width = `${percentage}%`;
       
-      // Streak display
       const streak = profile.current_streak || 0;
       const streakEl = document.getElementById('xp-streak');
       if (streak > 0) {
@@ -1690,7 +1956,6 @@
         streakEl.style.borderColor = 'var(--border)';
       }
 
-      // Show prestige button if max level and not max prestige
       const prestigeBtn = document.getElementById('prestige-btn');
       if (isMaxLevel && prestige < 10) {
         prestigeBtn.style.display = 'flex';
@@ -1698,7 +1963,7 @@
         prestigeBtn.style.display = 'none';
       }
 
-      // Compute stats from actual data
+      // Compute stats
       const stats = await computeStatsFromData();
       const playtime = formatPlaytime(stats.playtime);
       const bestRankDisplay = stats.bestRank ? `#${stats.bestRank}` : '#--';
@@ -1711,17 +1976,13 @@
       document.getElementById('stat-playtime-2').textContent = playtime;
       document.getElementById('stat-personal-bests-2').textContent = stats.personalBests;
       document.getElementById('stat-best-rank-2').textContent = bestRankDisplay;
-
-      // Additional stats
       document.getElementById('stat-total-wins').textContent = stats.totalWins.toLocaleString();
       document.getElementById('stat-win-streak').textContent = stats.bestWinStreak;
       document.getElementById('stat-day-streak').textContent = stats.dayStreak;
       document.getElementById('stat-avg-score').textContent = stats.avgScore !== null ? stats.avgScore.toLocaleString() : '--';
 
-      // Render per-game scores
       renderGameScores(stats.gameScores, stats.gameCounts);
 
-      // Favorite games
       if (stats.favoriteGame && SOLO_GAMES[stats.favoriteGame]) {
         document.getElementById('fav-name').textContent = SOLO_GAMES[stats.favoriteGame].name;
         document.getElementById('fav-plays').textContent = `${stats.favoriteGamePlays || 0} plays`;
@@ -1739,15 +2000,16 @@
         document.getElementById('premium-cta').style.display = 'none';
         document.getElementById('premium-active-banner').style.display = 'flex';
         document.getElementById('sidebar-premium-badge').style.display = 'inline-block';
-        unlockCosmeticsForPremium();
       } else {
         document.getElementById('premium-cta').style.display = 'block';
         document.getElementById('premium-active-banner').style.display = 'none';
         document.getElementById('sidebar-premium-badge').style.display = 'none';
-        lockCosmeticsForFreeUsers();
       }
 
-      initCosmeticsUI();
+      // Setup cosmetics with level unlocks
+      setupCosmeticsUI(level, prestige);
+      initCosmeticsUI(level, prestige);
+      renderLevelRewards(level, prestige);
       loadLeaderboardRanks();
     }
 
@@ -1796,7 +2058,7 @@
       container.innerHTML = html || '<p style="color: var(--text-muted); text-align: center;">No rankings yet</p>';
     }
 
-    function initCosmeticsUI() {
+    function initCosmeticsUI(level, prestige) {
       selectOption('badge-options', cosmetics.badge_icon || '');
       selectOption('border-options', cosmetics.border_style || 'solid');
       selectColor(cosmetics.border_color || 'gold');
@@ -1813,12 +2075,81 @@
       }
       updatePreview();
 
-      document.querySelectorAll('#badge-options .option-item').forEach(i => { i.addEventListener('click', () => { if (!isPremium) return; cosmetics.badge_icon = i.dataset.value || null; selectOption('badge-options', i.dataset.value); updatePreview(); }); });
-      document.querySelectorAll('#border-options .option-item').forEach(i => { i.addEventListener('click', () => { if (!isPremium) return; cosmetics.border_style = i.dataset.value; selectOption('border-options', i.dataset.value); updatePreview(); }); });
-      document.querySelectorAll('#color-options .color-option').forEach(i => { i.addEventListener('click', () => { if (!isPremium) return; cosmetics.border_color = i.dataset.value; selectColor(i.dataset.value); updatePreview(); }); });
-      document.querySelectorAll('#effect-options .option-item').forEach(i => { i.addEventListener('click', () => { if (!isPremium) return; cosmetics.name_effect = i.dataset.value; selectOption('effect-options', i.dataset.value); updatePreview(); }); });
-      document.querySelectorAll('#entrance-options .option-item').forEach(i => { i.addEventListener('click', () => { if (!isPremium) return; cosmetics.entrance_animation = i.dataset.value; selectOption('entrance-options', i.dataset.value); }); });
-      document.querySelectorAll('#title-options .title-option').forEach(i => { i.addEventListener('click', () => { if (!isPremium) return; cosmetics.title = i.dataset.value || null; selectTitle(i.dataset.value); document.getElementById('custom-title-input').value = ''; document.getElementById('custom-title-count').textContent = '0'; updatePreview(); }); });
+      // Badge options
+      document.querySelectorAll('#badge-options .option-item').forEach(i => { 
+        i.addEventListener('click', () => { 
+          if (i.classList.contains('level-locked')) {
+            showStatus(`Unlock at ${i.dataset.unlockLevel}!`, 'error');
+            return;
+          }
+          cosmetics.badge_icon = i.dataset.value || null; 
+          selectOption('badge-options', i.dataset.value); 
+          updatePreview(); 
+        }); 
+      });
+      
+      // Border options
+      document.querySelectorAll('#border-options .option-item').forEach(i => { 
+        i.addEventListener('click', () => { 
+          if (i.classList.contains('level-locked')) {
+            showStatus(`Unlock at ${i.dataset.unlockLevel}!`, 'error');
+            return;
+          }
+          cosmetics.border_style = i.dataset.value; 
+          selectOption('border-options', i.dataset.value); 
+          updatePreview(); 
+        }); 
+      });
+      
+      // Color options
+      document.querySelectorAll('#color-options .color-option').forEach(i => { 
+        i.addEventListener('click', () => { 
+          if (i.classList.contains('level-locked')) {
+            showStatus('Unlock by leveling up or Premium!', 'error');
+            return;
+          }
+          cosmetics.border_color = i.dataset.value; 
+          selectColor(i.dataset.value); 
+          updatePreview(); 
+        }); 
+      });
+      
+      // Effect options
+      document.querySelectorAll('#effect-options .option-item').forEach(i => { 
+        i.addEventListener('click', () => { 
+          if (i.classList.contains('level-locked')) {
+            showStatus(`Unlock at ${i.dataset.unlockLevel}!`, 'error');
+            return;
+          }
+          cosmetics.name_effect = i.dataset.value; 
+          selectOption('effect-options', i.dataset.value); 
+          updatePreview(); 
+        }); 
+      });
+      
+      // Entrance options
+      document.querySelectorAll('#entrance-options .option-item').forEach(i => { 
+        i.addEventListener('click', () => { 
+          if (i.classList.contains('level-locked')) {
+            showStatus(`Unlock at ${i.dataset.unlockLevel}!`, 'error');
+            return;
+          }
+          cosmetics.entrance_animation = i.dataset.value; 
+          selectOption('entrance-options', i.dataset.value); 
+        }); 
+      });
+      
+      // Title options (premium only)
+      document.querySelectorAll('#title-options .title-option').forEach(i => { 
+        i.addEventListener('click', () => { 
+          if (!isPremium) return;
+          cosmetics.title = i.dataset.value || null; 
+          selectTitle(i.dataset.value); 
+          document.getElementById('custom-title-input').value = ''; 
+          document.getElementById('custom-title-count').textContent = '0'; 
+          updatePreview(); 
+        }); 
+      });
 
       const customInput = document.getElementById('custom-title-input');
       customInput.addEventListener('input', (e) => {
@@ -1851,13 +2182,44 @@
     function playEntranceAnimation() {
       const np = document.getElementById('preview-nameplate');
       np.style.animation = 'none'; void np.offsetWidth;
-      const m = { fade: 'entranceFade', slide: 'entranceSlide', pop: 'entrancePop', lightning: 'entranceLightning', fire: 'entranceFire', sparkle: 'entranceSparkle', smoke: 'entranceSmoke', glitch: 'entranceGlitch' };
+      const m = { fade: 'entranceFade', slide: 'entranceSlide', pop: 'entrancePop', lightning: 'entranceLightning', fire: 'entranceFire', sparkle: 'entranceSparkle', smoke: 'entranceSmoke', glitch: 'entranceGlitch', matrix: 'entranceMatrix', bounce: 'entranceBounce' };
       np.style.animation = `${m[cosmetics.entrance_animation] || 'entranceFade'} 0.6s ease both`;
     }
 
     document.getElementById('save-cosmetics').addEventListener('click', async () => {
-      if (!isPremium) { showStatus('Upgrade to Premium!', 'error'); return; }
       if (cosmetics.title && containsProfanity(cosmetics.title)) { showStatus('Title contains inappropriate language.', 'error'); return; }
+      
+      // Validate that selected cosmetics are actually unlocked
+      const level = currentLevel;
+      const prestige = currentProfile?.prestige || 0;
+      
+      if (!isPremium) {
+        if (cosmetics.badge_icon && !isUnlockedByLevel('badge', cosmetics.badge_icon, level, prestige)) {
+          showStatus('Badge not unlocked! Level up or go Premium.', 'error');
+          return;
+        }
+        if (cosmetics.border_color && !isUnlockedByLevel('color', cosmetics.border_color, level, prestige)) {
+          showStatus('Border color not unlocked! Level up or go Premium.', 'error');
+          return;
+        }
+        if (cosmetics.border_style && cosmetics.border_style !== 'solid' && !isUnlockedByLevel('border', cosmetics.border_style, level, prestige)) {
+          showStatus('Border style not unlocked! Level up or go Premium.', 'error');
+          return;
+        }
+        if (cosmetics.name_effect && cosmetics.name_effect !== 'none' && !isUnlockedByLevel('effect', cosmetics.name_effect, level, prestige)) {
+          showStatus('Name effect not unlocked! Level up or go Premium.', 'error');
+          return;
+        }
+        if (cosmetics.entrance_animation && cosmetics.entrance_animation !== 'fade' && !isUnlockedByLevel('entrance', cosmetics.entrance_animation, level, prestige)) {
+          showStatus('Entrance animation not unlocked! Level up or go Premium.', 'error');
+          return;
+        }
+        if (cosmetics.title) {
+          showStatus('Custom titles require Premium!', 'error');
+          return;
+        }
+      }
+      
       const { error } = await supabaseClient.from('profiles').update({ cosmetics }).eq('id', currentUser.id);
       if (error) { showStatus('Error: ' + error.message, 'error'); return; }
       document.getElementById('sidebar-title').textContent = cosmetics.title || '';
@@ -1905,103 +2267,24 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); });
     document.getElementById('manage-sub-btn')?.addEventListener('click', openModal);
 
-    loadProfile();
-  </script>
-
-  <!-- SOCIAL.JS - Friends sidebar, parties, DMs etc -->
-  <script src="/social.js"></script>
-    <script src="/header.js"></script>
-  <script src="/js/engagement.js"></script>
-  <script src="/js/profile-engagement-ui.js"></script>
-  <script>
-    // Initialize engagement UI on page load
-    window.profileEngagementUI = null;
-
-    async function initEngagementUI() {
-      console.log('[Profile] initEngagementUI called');
-      console.log('[Profile] ProfileEngagementUI:', !!window.ProfileEngagementUI);
-      console.log('[Profile] supabaseClient:', !!window.supabaseClient);
-
-      if (!window.profileEngagementUI && window.ProfileEngagementUI && window.supabaseClient) {
-        try {
-          window.profileEngagementUI = new ProfileEngagementUI(window.supabaseClient);
-          await window.profileEngagementUI.init();
-          console.log('[Profile] ProfileEngagementUI initialized successfully');
-        } catch (e) {
-          console.error('[Profile] Error initializing ProfileEngagementUI:', e);
-        }
-      }
-      return window.profileEngagementUI;
-    }
-
-    // Initialize when supabase is ready
-    async function startEngagement() {
-      console.log('[Profile] startEngagement called');
-
-      // Wait for supabase
-      let tries = 0;
-      while (!window.supabaseClient && tries < 50) {
-        await new Promise(r => setTimeout(r, 100));
-        tries++;
-      }
-
-      console.log('[Profile] supabaseClient ready after', tries, 'tries:', !!window.supabaseClient);
-
-      if (window.supabaseClient) {
-        const ui = await initEngagementUI();
-        if (ui) {
-          console.log('[Profile] Rendering engagement sections...');
-          try {
-            await ui.renderChallengesSection();
-            await ui.renderAchievementsSection();
-            await ui.renderReferralSection();
-            if (typeof ui.renderStatsSection === 'function') {
-              ui.renderStatsSection();
-            }
-            console.log('[Profile] All sections rendered');
-          } catch (e) {
-            console.error('[Profile] Error rendering sections:', e);
-          }
-        } else {
-          console.log('[Profile] UI not initialized, cannot render');
-        }
-      } else {
-        console.error('[Profile] supabaseClient not available');
-      }
-    }
-
-    // Start engagement UI
-    startEngagement();
-
-    // Sidebar navigation - switch sections
+    // Sidebar navigation
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
       btn.addEventListener('click', async () => {
         const section = btn.dataset.section;
-
-        // Update active button
         document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        // Update active section
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
         const targetSection = document.getElementById(section + '-section');
         if (targetSection) targetSection.classList.add('active');
-
-        // Render engagement content if needed (in case not yet loaded)
-        const ui = window.profileEngagementUI;
-        if (ui) {
-          if (section === 'challenges') {
-            await ui.renderChallengesSection();
-          } else if (section === 'achievements') {
-            await ui.renderAchievementsSection();
-          } else if (section === 'referrals') {
-            await ui.renderReferralSection();
-          } else if (section === 'stats' && typeof ui.renderStatsSection === 'function') {
-            ui.renderStatsSection();
-          }
-        }
       });
     });
+
+    loadProfile();
   </script>
+
+  <script src="/social.js"></script>
+  <script src="/header.js"></script>
+  <script src="/js/engagement.js"></script>
+  <script src="/js/profile-engagement-ui.js"></script>
 </body>
 </html>
