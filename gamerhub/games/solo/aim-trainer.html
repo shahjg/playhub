@@ -784,11 +784,11 @@
 
             <div class="leaderboard-section">
                 <div class="lb-header">
-                    <h3 class="lb-title">🏆 Leaderboard</h3>
+                    <h3 class="lb-title">Leaderboard</h3>
                     <div class="lb-tabs" id="lb-tabs">
-                        <button class="lb-tab active" data-tab="global">Global</button>
-                        <button class="lb-tab" data-tab="today">Today</button>
-                        <button class="lb-tab" data-tab="friends">Friends</button>
+                        <button class="lb-tab active" id="tab-today">Today</button>
+                        <button class="lb-tab" id="tab-personal">My Best</button>
+                        <button class="lb-tab" id="tab-friends">Friends</button>
                     </div>
                 </div>
                 
@@ -801,6 +801,21 @@
                 </div>
                 
                 <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
+
+                <div class="global-preview" id="global-preview">
+                    <div class="global-preview-header">
+                        <div class="global-preview-title">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/></svg>
+                            Global Top 3
+                        </div>
+                    </div>
+                    <div class="global-preview-list" id="global-preview-list"><div class="lb-empty">Loading...</div></div>
+                    <a href="../../leaderboards.html?game=aim-trainer-30" id="view-full-link" class="view-full-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        View Full Leaderboard
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -846,26 +861,23 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let targetCount = 30;
-    let currentUserId = null;
+    // ADDED: Friends support
     let friendIds = [];
-    let currentTab = 'global';
-
-    const targetBtns = document.querySelectorAll('.target-btn');
-
-    function getGameId() { return `aim-trainer-${targetCount}`; }
-
-    // Load friends (no status filter - your table doesn't have that column)
     async function loadFriends() {
-        if (!currentUserId) return;
+        const { data: s } = await supabaseClient.auth.getSession();
+        if (!s?.session?.user) return;
+        const uid = s.session.user.id;
         try {
-            const { data } = await supabaseClient
-                .from('friendships')
-                .select('user_id,friend_id')
-                .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`);
-            if (data) friendIds = data.map(f => f.user_id === currentUserId ? f.friend_id : f.user_id);
+            const { data } = await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${uid},friend_id.eq.${uid}`);
+            if (data) friendIds = data.map(f => f.user_id === uid ? f.friend_id : f.user_id);
         } catch (e) {}
     }
+
+    let targetCount = 30;
+    const targetBtns = document.querySelectorAll('.target-btn');
+    const viewFullLink = document.getElementById('view-full-link');
+
+    function getGameId() { return `aim-trainer-${targetCount}`; }
 
     targetBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -874,10 +886,13 @@
             btn.classList.add('active');
             targetCount = parseInt(btn.dataset.count);
             boardSubtitle.textContent = `Hit ${targetCount} targets as fast as you can`;
+            viewFullLink.href = `../../leaderboards.html?game=${getGameId()}`;
             updateBestDisplay();
-            fetchLeaderboard(currentTab);
+            fetchLeaderboard();
+            fetchGlobalTop3();
         });
     });
+
 
     let gameState = 'idle';
     let targetsHit = 0;
@@ -886,6 +901,7 @@
     let lastTargetTime = 0;
     let currentScore = 0;
     let bestScores = { 15: null, 30: null, 50: null };
+    let currentUser = null;
 
     const gameBoard = document.getElementById('game-board');
     const boardContent = document.getElementById('board-content');
@@ -900,9 +916,6 @@
     const statHits = document.getElementById('stat-hits');
     const statBest = document.getElementById('stat-best');
     const statAvg = document.getElementById('stat-avg');
-    const lbTabs = document.getElementById('lb-tabs');
-    const lbLoginGate = document.getElementById('lb-login-gate');
-    const lbList = document.getElementById('lb-list');
 
     function updateBestDisplay() {
         statBest.textContent = bestScores[targetCount] ? bestScores[targetCount] + ' TPM' : '—';
@@ -1000,8 +1013,8 @@
 
     async function checkAuthForSave() {
         const { data } = await supabaseClient.auth.getSession();
-        const user = data.session?.user;
-        if (user) {
+        currentUser = data.session?.user;
+        if (currentUser) {
             saveBtn.textContent = 'Save to Leaderboard';
             saveBtn.disabled = false;
             saveBtn.onclick = saveScore;
@@ -1012,118 +1025,135 @@
     }
 
     async function saveScore() {
-        if (!currentUserId) return;
+        if (!currentUser) return;
         saveBtn.textContent = 'Saving...';
         saveBtn.disabled = true;
-        const { error } = await supabaseClient.from('solo_scores').insert({ user_id: currentUserId, game_id: getGameId(), score: currentScore });
+        const { error } = await supabaseClient.from('solo_scores').insert({ user_id: currentUser.id, game_id: getGameId(), score: currentScore });
         if (error) {
             saveBtn.textContent = 'Error Saving';
             setTimeout(() => { saveBtn.textContent = 'Save to Leaderboard'; saveBtn.disabled = false; }, 2000);
         } else {
             saveBtn.textContent = 'Saved!';
-            fetchLeaderboard(currentTab);
+            fetchLeaderboard();
+            fetchGlobalTop3();
         }
     }
 
-    // Tab click handlers
-    document.querySelectorAll('.lb-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentTab = tab.dataset.tab;
-            fetchLeaderboard(currentTab);
-        });
-    });
+    let currentLeaderboardType = 'today';
+    const tabToday = document.getElementById('tab-today');
+    const tabPersonal = document.getElementById('tab-personal');
+    const tabFriends = document.getElementById('tab-friends');
+    const lbTabs = document.getElementById('lb-tabs');
+    const lbLoginGate = document.getElementById('lb-login-gate');
+    const lbList = document.getElementById('lb-list');
+    const globalPreview = document.getElementById('global-preview');
+    const globalPreviewList = document.getElementById('global-preview-list');
 
     function updateLeaderboardVisibility(isLoggedIn) {
         if (isLoggedIn) {
             lbTabs.style.display = 'flex';
             lbList.style.display = 'flex';
             lbLoginGate.style.display = 'none';
-            fetchLeaderboard(currentTab);
+            globalPreview.style.display = 'block';
+            fetchLeaderboard();
+            fetchGlobalTop3();
         } else {
             lbTabs.style.display = 'none';
             lbList.style.display = 'none';
             lbLoginGate.style.display = 'block';
+            globalPreview.style.display = 'none';
         }
     }
 
+    tabToday.addEventListener('click', () => { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); tabFriends.classList.remove('active'); fetchLeaderboard(); });
+    tabPersonal.addEventListener('click', () => { currentLeaderboardType = 'personal'; tabPersonal.classList.add('active'); tabToday.classList.remove('active'); tabFriends.classList.remove('active'); fetchLeaderboard(); });
+    tabFriends.addEventListener('click', () => { currentLeaderboardType = 'friends'; tabFriends.classList.add('active'); tabToday.classList.remove('active'); tabPersonal.classList.remove('active'); fetchLeaderboard(); });
+
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        if (session?.user) {
-            currentUserId = session.user.id;
-            await loadFriends();
-            updateLeaderboardVisibility(true);
-        } else {
-            currentUserId = null;
-            friendIds = [];
+        if (session?.user) updateLeaderboardVisibility(true);
+        else {
             updateLeaderboardVisibility(false);
+            if (currentLeaderboardType === 'personal' || currentLeaderboardType === 'friends') { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); tabFriends.classList.remove('active'); }
         }
     });
 
-    async function fetchLeaderboard(tab) {
+    async function fetchLeaderboard() {
         lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
         const gameId = getGameId();
-        
-        let query = supabaseClient
-            .from('solo_scores')
-            .select('score,user_id,created_at')
-            .eq('game_id', gameId)
-            .order('score', { ascending: false })
-            .limit(50);
 
-        if (tab === 'today') {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            query = query.gte('created_at', today.toISOString());
-        } else if (tab === 'friends') {
-            if (!friendIds.length) {
-                lbList.innerHTML = '<div class="lb-empty">Add friends to see their scores</div>';
-                return;
-            }
-            query = query.in('user_id', [...friendIds, currentUserId]);
-        }
-
-        const { data, error } = await query;
-
-        if (error || !data?.length) {
-            if (tab === 'friends') {
-                lbList.innerHTML = '<div class="lb-empty">None of your friends have played this game yet</div>';
-            } else if (tab === 'today') {
-                lbList.innerHTML = '<div class="lb-empty">No scores today yet. Be the first!</div>';
-            } else {
-                lbList.innerHTML = '<div class="lb-empty">No scores yet</div>';
-            }
+        // ADDED: Friends tab
+        if (currentLeaderboardType === 'friends') {
+            if (!friendIds.length) { lbList.innerHTML = '<div class="lb-empty">Add friends to see scores</div>'; return; }
+            const { data, error } = await supabaseClient.from('solo_scores').select('score, user_id').eq('game_id', gameId).in('user_id', [...friendIds]).order('score', { ascending: false }).limit(10);
+            if (error || !data?.length) { lbList.innerHTML = '<div class="lb-empty">No friend scores yet</div>'; return; }
+            const userIds = data.map(e => e.user_id);
+            const { data: profiles } = await supabaseClient.from('profiles').select('id, display_name, gamer_tag').in('id', userIds);
+            const profileMap = {}; profiles?.forEach(p => profileMap[p.id] = p);
+            lbList.innerHTML = '';
+            data.forEach((entry, i) => {
+                const profile = profileMap[entry.user_id];
+                const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+                const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : '';
+                const row = document.createElement('div');
+                row.className = `lb-row ${topClass}`;
+                row.innerHTML = `<div class="lb-rank">${i + 1}</div><div class="lb-name">${escapeHtml(name)}</div><div class="lb-score">${entry.score} TPM</div>`;
+                lbList.appendChild(row);
+            });
             return;
         }
 
-        // Dedupe to best score per user
-        const best = new Map();
-        data.forEach(e => {
-            if (!best.has(e.user_id) || e.score > best.get(e.user_id).score)
-                best.set(e.user_id, e);
-        });
-        const deduped = Array.from(best.values()).sort((a, b) => b.score - a.score);
-
-        // Get profiles
-        const userIds = [...new Set(deduped.map(e => e.user_id))];
-        const { data: profiles } = await supabaseClient.from('profiles').select('id,display_name,gamer_tag').in('id', userIds);
-        const pm = {};
-        profiles?.forEach(p => pm[p.id] = p);
-
-        // Render
+        if (currentLeaderboardType === 'personal') {
+            const { data: sessionData } = await supabaseClient.auth.getSession();
+            const user = sessionData?.session?.user;
+            if (!user) { lbList.innerHTML = '<div class="lb-empty">Sign in to see your scores</div>'; return; }
+            const { data, error } = await supabaseClient.from('solo_scores').select('score, created_at').eq('game_id', gameId).eq('user_id', user.id).order('score', { ascending: false }).limit(10);
+            if (error || !data?.length) { lbList.innerHTML = '<div class="lb-empty">No scores yet. Play to set your record!</div>'; return; }
+            lbList.innerHTML = '';
+            data.forEach((entry, i) => {
+                const date = new Date(entry.created_at);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const row = document.createElement('div');
+                row.className = `lb-row ${i === 0 ? 'top-1' : ''}`;
+                row.innerHTML = `<div class="lb-rank">${i + 1}</div><div class="lb-name">${dateStr}</div><div class="lb-score">${entry.score} TPM</div>`;
+                lbList.appendChild(row);
+            });
+            return;
+        }
+        const today = new Date(); today.setHours(0,0,0,0);
+        const { data, error } = await supabaseClient.from('solo_scores').select('score, created_at, user_id').eq('game_id', gameId).gte('created_at', today.toISOString()).order('score', { ascending: false }).limit(10);
+        if (error || !data?.length) { lbList.innerHTML = '<div class="lb-empty">No scores today yet. Be the first!</div>'; return; }
+        const userIds = data.map(e => e.user_id);
+        const { data: profiles } = await supabaseClient.from('profiles').select('id, display_name, gamer_tag').in('id', userIds);
+        const profileMap = {}; profiles?.forEach(p => profileMap[p.id] = p);
         lbList.innerHTML = '';
-        deduped.slice(0, 10).forEach((e, i) => {
-            const p = pm[e.user_id];
-            const name = p?.display_name || p?.gamer_tag || 'Anonymous';
-            const isMe = e.user_id === currentUserId;
+        data.forEach((entry, i) => {
+            const profile = profileMap[entry.user_id];
+            const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
             const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : '';
             const row = document.createElement('div');
             row.className = `lb-row ${topClass}`;
-            row.innerHTML = `
-                <div class="lb-rank">${i + 1}</div>
-                <div class="lb-name">${escapeHtml(name)}${isMe ? ' <small style="opacity:0.6">(you)</small>' : ''}</div>
-                <div class="lb-score">${e.score} TPM</div>`;
+            row.innerHTML = `<div class="lb-rank">${i + 1}</div><div class="lb-name">${escapeHtml(name)}</div><div class="lb-score">${entry.score} TPM</div>`;
             lbList.appendChild(row);
+        });
+    }
+
+    async function fetchGlobalTop3() {
+        globalPreviewList.innerHTML = '<div class="lb-empty">Loading...</div>';
+        const gameId = getGameId();
+        const { data, error } = await supabaseClient.from('solo_scores').select('score, user_id').eq('game_id', gameId).order('score', { ascending: false }).limit(3);
+        if (error || !data?.length) { globalPreviewList.innerHTML = '<div class="lb-empty">No global scores yet</div>'; return; }
+        const userIds = data.map(e => e.user_id);
+        const { data: profiles } = await supabaseClient.from('profiles').select('id, display_name, gamer_tag').in('id', userIds);
+        const profileMap = {}; profiles?.forEach(p => profileMap[p.id] = p);
+        globalPreviewList.innerHTML = '';
+        data.forEach((entry, i) => {
+            const profile = profileMap[entry.user_id];
+            const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+            const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : 'top-3';
+            const row = document.createElement('div');
+            row.className = `lb-row ${topClass}`;
+            row.innerHTML = `<div class="lb-rank">${i + 1}</div><div class="lb-name">${escapeHtml(name)}</div><div class="lb-score">${entry.score} TPM</div>`;
+            globalPreviewList.appendChild(row);
         });
     }
 
@@ -1131,13 +1161,8 @@
 
     (async function init() {
         const { data } = await supabaseClient.auth.getSession();
-        if (data.session?.user) {
-            currentUserId = data.session.user.id;
-            await loadFriends();
-            updateLeaderboardVisibility(true);
-        } else {
-            updateLeaderboardVisibility(false);
-        }
+        await loadFriends();
+        updateLeaderboardVisibility(!!data.session?.user);
     })();
 </script>
 
