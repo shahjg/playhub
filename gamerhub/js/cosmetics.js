@@ -34,19 +34,35 @@ const COSMETIC_COLORS = {
 
 // ========== BACKGROUND COLORS ==========
 const BG_COLORS = {
+  // Basic solid colors
   default: 'rgba(255, 255, 255, 0.03)',
   midnight: 'linear-gradient(135deg, #0f0f19, #1a1a2e)',
   charcoal: 'linear-gradient(135deg, #1f2937, #374151)',
   navy: 'linear-gradient(135deg, #1e3a5f, #0f172a)',
   wine: 'linear-gradient(135deg, #4a1942, #2d1326)',
   forest: 'linear-gradient(135deg, #14532d, #052e16)',
-  royal: 'linear-gradient(135deg, #312e81, #1e1b4b)',
   ember: 'linear-gradient(135deg, #7c2d12, #431407)',
   ocean: 'linear-gradient(135deg, #164e63, #083344)',
-  'sunset-bg': 'linear-gradient(135deg, #7c2d12, #581c87)',
-  aurora: 'linear-gradient(135deg, #14532d, #164e63, #312e81)',
-  galaxy: 'linear-gradient(135deg, #0f0f19, #312e81, #581c87)'
+  // Animated/Special backgrounds
+  rainbow: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171)',
+  holographic: 'linear-gradient(135deg, rgba(255,0,128,0.3), rgba(0,255,255,0.3), rgba(255,255,0,0.3), rgba(128,0,255,0.3))',
+  fire: 'linear-gradient(180deg, rgba(255,68,0,0.4), rgba(255,165,0,0.3), rgba(255,0,0,0.2))',
+  ice: 'linear-gradient(180deg, rgba(103,232,249,0.4), rgba(6,182,212,0.3), rgba(8,145,178,0.2))',
+  matrix: 'linear-gradient(180deg, rgba(0,255,65,0.2), rgba(0,100,0,0.3))',
+  camo: 'linear-gradient(135deg, #2d3a2d, #1a2f1a, #3d4a3d, #1f2f1f)',
+  'desert-camo': 'linear-gradient(135deg, #8b7355, #a08060, #6b5344, #9a8070)',
+  arctic: 'linear-gradient(135deg, #e8f4f8, #c5d8e0, #a0c4d0, #ddeef4)',
+  lava: 'linear-gradient(135deg, #1a0a0a, #3d0f0f, #5c1a1a, #2a0808)',
+  galaxy: 'radial-gradient(ellipse at 30% 20%, rgba(138,43,226,0.4), transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(0,191,255,0.3), transparent 50%), linear-gradient(135deg, #0a0a1a, #1a0a2a)',
+  aurora: 'linear-gradient(135deg, rgba(0,255,128,0.2), rgba(0,128,255,0.2), rgba(128,0,255,0.2))',
+  'neon-pink': 'linear-gradient(135deg, rgba(255,20,147,0.3), rgba(255,105,180,0.2), rgba(199,21,133,0.3))',
+  golden: 'linear-gradient(135deg, rgba(255,215,0,0.3), rgba(218,165,32,0.25), rgba(255,193,37,0.3))',
+  void: 'radial-gradient(ellipse at center, rgba(20,0,40,0.9), rgba(0,0,0,0.95))',
+  electric: 'linear-gradient(135deg, rgba(0,191,255,0.3), rgba(30,144,255,0.25), rgba(0,0,255,0.2))'
 };
+
+// Animated background classes (for CSS)
+const BG_ANIMATED = ['rainbow', 'holographic', 'fire', 'ice', 'matrix', 'lava', 'galaxy', 'aurora', 'neon-pink', 'golden', 'void', 'electric'];
 
 // ========== BACKGROUND PATTERNS ==========
 const BACKGROUND_PATTERNS = {
@@ -144,48 +160,58 @@ const LEVEL_REWARDS = [
   { level: 78, type: 'background', value: 'brushedmetal', name: 'Brushed Metal', icon: '🔩' },
   { level: 80, type: 'border', value: 'pulse', name: 'Pulse Border', icon: '◉' },
   { level: 82, type: 'background', value: 'circuit', name: 'Circuit Pattern', icon: '🔌' },
+  { level: 83, type: 'bgColor', value: 'desert-camo', name: 'Desert Camo BG', icon: '🏜️' },
   { level: 85, type: 'badge', value: '🏆', name: 'Trophy Badge', icon: '🏆' },
   { level: 87, type: 'bgColor', value: 'midnight', name: 'Midnight BG', icon: '🌙' },
   { level: 88, type: 'background', value: 'starfield', name: 'Starfield', icon: '⭐' },
   { level: 90, type: 'color', value: 'gold', name: 'Gold Border', icon: '💛' },
+  { level: 92, type: 'bgColor', value: 'arctic', name: 'Arctic BG', icon: '🧊' },
   { level: 95, type: 'entrance', value: 'lightning', name: 'Lightning Entrance', icon: '⚡' },
+  { level: 97, type: 'bgColor', value: 'lava', name: 'Lava BG', icon: '🌋' },
   { level: 100, type: 'effect', value: 'neon', name: 'Neon Text', icon: '◈' },
+  { level: 100, type: 'bgColor', value: 'golden', name: 'Golden BG', icon: '✨' },
 ];
 
 // ========== PRESTIGE REWARDS ==========
 // Exclusive rewards for prestiging (resetting at max level)
 const PRESTIGE_REWARDS = [
   { prestige: 1, type: 'badge', value: '🌟', name: 'P1 - Prestige Star', icon: '🌟' },
-  { prestige: 1, type: 'background', value: 'holographic', name: 'P1 - Holographic BG', icon: '🌈' },
-  { prestige: 1, type: 'bgColor', value: 'royal', name: 'P1 - Royal BG', icon: '👑' },
+  { prestige: 1, type: 'background', value: 'holographic', name: 'P1 - Holographic Pattern', icon: '🌈' },
+  { prestige: 1, type: 'bgColor', value: 'camo', name: 'P1 - Camo BG', icon: '🪖' },
   { prestige: 2, type: 'color', value: 'platinum', name: 'P2 - Platinum Border', icon: '🤍' },
   { prestige: 2, type: 'podium', value: 'neon', name: 'P2 - Neon Podium', icon: '💡' },
-  { prestige: 2, type: 'bgColor', value: 'aurora', name: 'P2 - Aurora BG', icon: '🌌' },
+  { prestige: 2, type: 'bgColor', value: 'rainbow', name: 'P2 - Rainbow BG', icon: '🌈' },
   { prestige: 3, type: 'entrance', value: 'fire', name: 'P3 - Fire Entrance', icon: '🔥' },
-  { prestige: 3, type: 'background', value: 'fire', name: 'P3 - Fire BG', icon: '🔥' },
+  { prestige: 3, type: 'background', value: 'fire', name: 'P3 - Fire Pattern', icon: '🔥' },
+  { prestige: 3, type: 'bgColor', value: 'fire', name: 'P3 - Fire BG', icon: '🔥' },
   { prestige: 4, type: 'effect', value: 'fire', name: 'P4 - Fire Text', icon: '🔥' },
   { prestige: 4, type: 'podium', value: 'flames', name: 'P4 - Flames Podium', icon: '🔥' },
   { prestige: 4, type: 'bgColor', value: 'galaxy', name: 'P4 - Galaxy BG', icon: '🌌' },
   { prestige: 5, type: 'color', value: 'rainbow', name: 'P5 - Rainbow Border', icon: '🌈' },
   { prestige: 5, type: 'podium', value: 'holographic', name: 'P5 - Holographic Podium', icon: '🌈' },
-  { prestige: 5, type: 'bgColor', value: 'sunset-bg', name: 'P5 - Sunset BG', icon: '🌅' },
+  { prestige: 5, type: 'bgColor', value: 'holographic', name: 'P5 - Holographic BG', icon: '🌈' },
   { prestige: 6, type: 'badge', value: '💫', name: 'P6 - Cosmic Badge', icon: '💫' },
-  { prestige: 6, type: 'background', value: 'matrix', name: 'P6 - Matrix BG', icon: '▼' },
+  { prestige: 6, type: 'background', value: 'matrix', name: 'P6 - Matrix Pattern', icon: '▼' },
+  { prestige: 6, type: 'bgColor', value: 'matrix', name: 'P6 - Matrix BG', icon: '▼' },
   { prestige: 7, type: 'effect', value: 'ice', name: 'P7 - Ice Text', icon: '❄️' },
   { prestige: 7, type: 'podium', value: 'crystal', name: 'P7 - Crystal Podium', icon: '💎' },
+  { prestige: 7, type: 'bgColor', value: 'ice', name: 'P7 - Ice BG', icon: '❄️' },
   { prestige: 8, type: 'entrance', value: 'matrix', name: 'P8 - Matrix Entrance', icon: '▼' },
   { prestige: 8, type: 'podium', value: 'cyber', name: 'P8 - Cyber Podium', icon: '🤖' },
+  { prestige: 8, type: 'bgColor', value: 'electric', name: 'P8 - Electric BG', icon: '⚡' },
   { prestige: 9, type: 'effect', value: 'glitch', name: 'P9 - Glitch Text', icon: '⚠' },
-  { prestige: 9, type: 'background', value: 'pulse', name: 'P9 - Pulse BG', icon: '◉' },
+  { prestige: 9, type: 'background', value: 'pulse', name: 'P9 - Pulse Pattern', icon: '◉' },
+  { prestige: 9, type: 'bgColor', value: 'neon-pink', name: 'P9 - Neon Pink BG', icon: '💗' },
   { prestige: 10, type: 'badge', value: '🐉', name: 'P10 - Dragon Badge', icon: '🐉' },
   { prestige: 10, type: 'podium', value: 'cosmic', name: 'P10 - Cosmic Podium', icon: '🌌' },
+  { prestige: 10, type: 'bgColor', value: 'void', name: 'P10 - Void BG', icon: '🕳️' },
 ];
 
 // ========== PREMIUM EXCLUSIVE ==========
 const PREMIUM_EXCLUSIVE = {
   colors: ['obsidian', 'rose', 'sunset', 'toxic'],
   backgrounds: ['holographic', 'matrix', 'fire', 'pulse'],
-  bgColors: ['royal', 'aurora', 'galaxy', 'sunset-bg'],
+  bgColors: ['rainbow', 'holographic', 'fire', 'ice', 'matrix', 'lava', 'galaxy', 'aurora', 'neon-pink', 'golden', 'void', 'electric'],
   podiums: ['royal', 'void', 'nature'],
   effects: ['fire', 'ice', 'glitch'],
   badges: ['😎', '🎮', '🎯', '🚀', '💀', '🤖', '👾', '🦄', '🐉', '👻']
@@ -378,6 +404,33 @@ const COSMETICS_STYLES = `
   .tgco-bg-matrix { animation: tgcoMatrixRain 3s linear infinite !important; }
   .tgco-bg-fire { animation: tgcoFireFlickerBG 0.5s ease-in-out infinite !important; }
   .tgco-bg-pulse { animation: tgcoPulseBG 2s ease-in-out infinite !important; }
+
+  /* Animated Background Colors */
+  @keyframes tgcoBgRainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+  @keyframes tgcoBgHolo { 0%, 100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+  @keyframes tgcoBgFire { 0% { filter: brightness(1); } 100% { filter: brightness(1.3); } }
+  @keyframes tgcoBgIce { 0%, 100% { filter: brightness(1) hue-rotate(0deg); } 50% { filter: brightness(1.2) hue-rotate(10deg); } }
+  @keyframes tgcoBgMatrix { 0% { opacity: 0.85; } 50% { opacity: 1; } 100% { opacity: 0.85; } }
+  @keyframes tgcoBgLava { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+  @keyframes tgcoBgGalaxy { 0%, 100% { filter: brightness(1) saturate(1); } 50% { filter: brightness(1.2) saturate(1.3); } }
+  @keyframes tgcoBgAurora { 0%, 100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+  @keyframes tgcoBgNeonPink { 0%, 100% { box-shadow: inset 0 0 10px rgba(255,20,147,0.5); } 50% { box-shadow: inset 0 0 25px rgba(255,20,147,0.8); } }
+  @keyframes tgcoBgGolden { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+  @keyframes tgcoBgVoid { 0%, 100% { filter: brightness(0.8); } 50% { filter: brightness(1); } }
+  @keyframes tgcoBgElectric { 0%, 100% { filter: brightness(1); } 25% { filter: brightness(1.4); } 50% { filter: brightness(1); } 75% { filter: brightness(1.3); } }
+
+  .tgco-bgc-rainbow { background-size: 200% 100% !important; animation: tgcoBgRainbow 2s linear infinite !important; }
+  .tgco-bgc-holographic { background-size: 400% 400% !important; animation: tgcoBgHolo 3s ease infinite !important; }
+  .tgco-bgc-fire { animation: tgcoBgFire 0.5s ease-in-out infinite alternate !important; }
+  .tgco-bgc-ice { animation: tgcoBgIce 2s ease-in-out infinite !important; }
+  .tgco-bgc-matrix { animation: tgcoBgMatrix 1s linear infinite !important; }
+  .tgco-bgc-lava { animation: tgcoBgLava 2s ease-in-out infinite !important; }
+  .tgco-bgc-galaxy { animation: tgcoBgGalaxy 4s ease-in-out infinite !important; }
+  .tgco-bgc-aurora { background-size: 200% 200% !important; animation: tgcoBgAurora 3s ease infinite !important; }
+  .tgco-bgc-neon-pink { animation: tgcoBgNeonPink 1.5s ease-in-out infinite !important; }
+  .tgco-bgc-golden { animation: tgcoBgGolden 2s ease-in-out infinite !important; }
+  .tgco-bgc-void { animation: tgcoBgVoid 3s ease-in-out infinite !important; }
+  .tgco-bgc-electric { animation: tgcoBgElectric 1s ease-in-out infinite !important; }
 
   /* Compact mode for player lists */
   .tgco-nameplate.compact { padding: 5px 10px; gap: 6px; }
@@ -609,6 +662,11 @@ function renderNameplate(options) {
     if (bgStyle.backgroundSize) styles.push(`background-size: ${bgStyle.backgroundSize}`);
     
     if (styles.length) styleAttr = `style="${styles.join('; ')};"`;
+    
+    // Add animation class for animated backgrounds
+    if (c.background_color && BG_ANIMATED.includes(c.background_color)) {
+      classes.push(`tgco-bgc-${c.background_color}`);
+    }
   }
 
   const nameStyle = hasCosmetics ? `style="color: ${color};"` : '';
@@ -688,6 +746,11 @@ function renderPlayerCard(options) {
     const bgStyle = getBackgroundStyle(c.background_color, c.background_pattern);
     cardStyle += ` background: ${bgStyle.background};`;
     if (bgStyle.backgroundSize) cardStyle += ` background-size: ${bgStyle.backgroundSize};`;
+    
+    // Add animation class for animated backgrounds
+    if (c.background_color && BG_ANIMATED.includes(c.background_color)) {
+      cardClasses.push(`tgco-bgc-${c.background_color}`);
+    }
   }
   
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
@@ -776,11 +839,15 @@ function renderLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<span class="lb-title">${escapeHtml(c.title)}</span>` : '';
 
-  // Apply background color
+  // Apply background color + animation class
   let itemStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
     itemStyle = `style="background: ${bgColor} !important;"`;
+    // Add animation class for animated backgrounds
+    if (BG_ANIMATED.includes(c.background_color)) {
+      classes.push(`tgco-bgc-${c.background_color}`);
+    }
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="lb-rank">${rank}</span><div class="lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -815,11 +882,14 @@ function renderMiniLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<span class="mini-lb-title">${escapeHtml(c.title)}</span>` : '';
 
-  // Apply background color
+  // Apply background color + animation class
   let itemStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
     itemStyle = `style="background: ${bgColor} !important;"`;
+    if (BG_ANIMATED.includes(c.background_color)) {
+      classes.push(`tgco-bgc-${c.background_color}`);
+    }
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="mini-lb-rank">${rank}</span><div class="mini-lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="mini-lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -854,11 +924,14 @@ function renderWinnerCard(options) {
   const crown = showCrown ? '<div class="winner-crown">👑</div>' : '';
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
 
-  // Apply background color
+  // Apply background color + animation class
   let cardStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
     cardStyle = `style="background: ${bgColor} !important;"`;
+    if (BG_ANIMATED.includes(c.background_color)) {
+      classes.push(`tgco-bgc-${c.background_color}`);
+    }
   }
 
   return `<div class="${classes.join(' ')}" ${cardStyle}>${crown}<div class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</div>${title}<div class="winner-score">${score.toLocaleString()} points</div></div>`.trim();
@@ -893,11 +966,14 @@ function renderGlobalLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<div class="global-lb-title">${escapeHtml(c.title)}</div>` : '';
 
-  // Apply background color
+  // Apply background color + animation class
   let itemStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
     itemStyle = `style="background: ${bgColor} !important;"`;
+    if (BG_ANIMATED.includes(c.background_color)) {
+      classes.push(`tgco-bgc-${c.background_color}`);
+    }
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="global-lb-rank ${rankClass}">#${rank}</span><div class="global-lb-info"><div class="global-lb-name"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span></div>${title}${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}</div><span class="global-lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -985,6 +1061,7 @@ if (typeof window !== 'undefined') {
     getUnlockRequirement,
     COSMETIC_COLORS,
     BG_COLORS,
+    BG_ANIMATED,
     BACKGROUND_PATTERNS,
     PODIUM_STYLES,
     DEFAULT_COSMETICS,
