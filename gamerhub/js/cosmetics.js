@@ -1,14 +1,14 @@
 /**
- * TheGaming.co Cosmetics Renderer v2.5
+ * TheGaming.co Cosmetics Renderer v2.6
  * 
- * Now with Level-Based Unlocks, Background Patterns & Podium Styles!
+ * Now with Level-Based Unlocks, Background Patterns, Background Colors & Podium Styles!
  * Free users can earn cosmetics by leveling up.
  * Premium unlocks everything instantly.
  * 
  * Usage:
  *   const html = renderNameplate({
  *     name: 'PlayerName',
- *     cosmetics: { badge_icon: '👑', border_color: 'gold', ... },
+ *     cosmetics: { badge_icon: '👑', border_color: 'gold', background_color: 'navy', ... },
  *     isPremium: true,
  *     level: 50,
  *     prestige: 0,
@@ -30,6 +30,22 @@ const COSMETIC_COLORS = {
   sunset: '#f97316',
   toxic: '#84cc16',
   rainbow: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc)'
+};
+
+// ========== BACKGROUND COLORS ==========
+const BG_COLORS = {
+  default: 'rgba(255, 255, 255, 0.03)',
+  midnight: 'linear-gradient(135deg, #0f0f19, #1a1a2e)',
+  charcoal: 'linear-gradient(135deg, #1f2937, #374151)',
+  navy: 'linear-gradient(135deg, #1e3a5f, #0f172a)',
+  wine: 'linear-gradient(135deg, #4a1942, #2d1326)',
+  forest: 'linear-gradient(135deg, #14532d, #052e16)',
+  royal: 'linear-gradient(135deg, #312e81, #1e1b4b)',
+  ember: 'linear-gradient(135deg, #7c2d12, #431407)',
+  ocean: 'linear-gradient(135deg, #164e63, #083344)',
+  'sunset-bg': 'linear-gradient(135deg, #7c2d12, #581c87)',
+  aurora: 'linear-gradient(135deg, #14532d, #164e63, #312e81)',
+  galaxy: 'linear-gradient(135deg, #0f0f19, #312e81, #581c87)'
 };
 
 // ========== BACKGROUND PATTERNS ==========
@@ -84,6 +100,7 @@ const DEFAULT_COSMETICS = {
   title: null,
   entrance_animation: 'fade',
   background_pattern: 'none',
+  background_color: 'default',
   podium_style: 'default'
 };
 
@@ -97,31 +114,38 @@ const LEVEL_REWARDS = [
   { level: 15, type: 'color', value: 'emerald', name: 'Emerald Border', icon: '💚' },
   { level: 18, type: 'background', value: 'grid', name: 'Grid Pattern', icon: '▦' },
   { level: 20, type: 'badge', value: '🔥', name: 'Fire Badge', icon: '🔥' },
+  { level: 22, type: 'bgColor', value: 'charcoal', name: 'Charcoal BG', icon: '⬛' },
   { level: 25, type: 'effect', value: 'shadow', name: 'Shadow Text', icon: '▣' },
   { level: 28, type: 'background', value: 'lines', name: 'Lines Pattern', icon: '≡' },
   { level: 30, type: 'color', value: 'ruby', name: 'Ruby Border', icon: '❤️' },
   { level: 32, type: 'background', value: 'zebra', name: 'Zebra Pattern', icon: '🦓' },
   { level: 35, type: 'entrance', value: 'pop', name: 'Pop Entrance', icon: '●' },
+  { level: 37, type: 'bgColor', value: 'navy', name: 'Navy BG', icon: '🔵' },
   { level: 38, type: 'background', value: 'camo', name: 'Camo Pattern', icon: '🌲' },
   { level: 40, type: 'badge', value: '💎', name: 'Diamond Badge', icon: '💎' },
   { level: 42, type: 'background', value: 'diagonal', name: 'Diagonal Pattern', icon: '╱' },
   { level: 45, type: 'border', value: 'glow', name: 'Glow Border', icon: '✦' },
+  { level: 47, type: 'bgColor', value: 'forest', name: 'Forest BG', icon: '🌲' },
   { level: 48, type: 'background', value: 'honeycomb', name: 'Honeycomb Pattern', icon: '⬡' },
   { level: 50, type: 'color', value: 'diamond', name: 'Diamond Border', icon: '💠' },
   { level: 52, type: 'background', value: 'leopard', name: 'Leopard Pattern', icon: '🐆' },
   { level: 55, type: 'effect', value: 'glow', name: 'Glow Text', icon: '✨' },
+  { level: 57, type: 'bgColor', value: 'wine', name: 'Wine BG', icon: '🍷' },
   { level: 58, type: 'background', value: 'tiger', name: 'Tiger Pattern', icon: '🐯' },
   { level: 60, type: 'badge', value: '👑', name: 'Crown Badge', icon: '👑' },
   { level: 62, type: 'background', value: 'carbonfiber', name: 'Carbon Fiber', icon: '⬛' },
   { level: 65, type: 'entrance', value: 'sparkle', name: 'Sparkle Entrance', icon: '✧' },
+  { level: 67, type: 'bgColor', value: 'ember', name: 'Ember BG', icon: '🔥' },
   { level: 68, type: 'background', value: 'snowcamo', name: 'Snow Camo', icon: '❄️' },
   { level: 70, type: 'color', value: 'amethyst', name: 'Amethyst Border', icon: '💜' },
   { level: 72, type: 'background', value: 'digitalcamo', name: 'Digital Camo', icon: '🔲' },
   { level: 75, type: 'effect', value: 'shimmer', name: 'Shimmer Text', icon: '≋' },
+  { level: 77, type: 'bgColor', value: 'ocean', name: 'Ocean BG', icon: '🌊' },
   { level: 78, type: 'background', value: 'brushedmetal', name: 'Brushed Metal', icon: '🔩' },
   { level: 80, type: 'border', value: 'pulse', name: 'Pulse Border', icon: '◉' },
   { level: 82, type: 'background', value: 'circuit', name: 'Circuit Pattern', icon: '🔌' },
   { level: 85, type: 'badge', value: '🏆', name: 'Trophy Badge', icon: '🏆' },
+  { level: 87, type: 'bgColor', value: 'midnight', name: 'Midnight BG', icon: '🌙' },
   { level: 88, type: 'background', value: 'starfield', name: 'Starfield', icon: '⭐' },
   { level: 90, type: 'color', value: 'gold', name: 'Gold Border', icon: '💛' },
   { level: 95, type: 'entrance', value: 'lightning', name: 'Lightning Entrance', icon: '⚡' },
@@ -133,14 +157,18 @@ const LEVEL_REWARDS = [
 const PRESTIGE_REWARDS = [
   { prestige: 1, type: 'badge', value: '🌟', name: 'P1 - Prestige Star', icon: '🌟' },
   { prestige: 1, type: 'background', value: 'holographic', name: 'P1 - Holographic BG', icon: '🌈' },
+  { prestige: 1, type: 'bgColor', value: 'royal', name: 'P1 - Royal BG', icon: '👑' },
   { prestige: 2, type: 'color', value: 'platinum', name: 'P2 - Platinum Border', icon: '🤍' },
   { prestige: 2, type: 'podium', value: 'neon', name: 'P2 - Neon Podium', icon: '💡' },
+  { prestige: 2, type: 'bgColor', value: 'aurora', name: 'P2 - Aurora BG', icon: '🌌' },
   { prestige: 3, type: 'entrance', value: 'fire', name: 'P3 - Fire Entrance', icon: '🔥' },
   { prestige: 3, type: 'background', value: 'fire', name: 'P3 - Fire BG', icon: '🔥' },
   { prestige: 4, type: 'effect', value: 'fire', name: 'P4 - Fire Text', icon: '🔥' },
   { prestige: 4, type: 'podium', value: 'flames', name: 'P4 - Flames Podium', icon: '🔥' },
+  { prestige: 4, type: 'bgColor', value: 'galaxy', name: 'P4 - Galaxy BG', icon: '🌌' },
   { prestige: 5, type: 'color', value: 'rainbow', name: 'P5 - Rainbow Border', icon: '🌈' },
   { prestige: 5, type: 'podium', value: 'holographic', name: 'P5 - Holographic Podium', icon: '🌈' },
+  { prestige: 5, type: 'bgColor', value: 'sunset-bg', name: 'P5 - Sunset BG', icon: '🌅' },
   { prestige: 6, type: 'badge', value: '💫', name: 'P6 - Cosmic Badge', icon: '💫' },
   { prestige: 6, type: 'background', value: 'matrix', name: 'P6 - Matrix BG', icon: '▼' },
   { prestige: 7, type: 'effect', value: 'ice', name: 'P7 - Ice Text', icon: '❄️' },
@@ -157,6 +185,7 @@ const PRESTIGE_REWARDS = [
 const PREMIUM_EXCLUSIVE = {
   colors: ['obsidian', 'rose', 'sunset', 'toxic'],
   backgrounds: ['holographic', 'matrix', 'fire', 'pulse'],
+  bgColors: ['royal', 'aurora', 'galaxy', 'sunset-bg'],
   podiums: ['royal', 'void', 'nature'],
   effects: ['fire', 'ice', 'glitch'],
   badges: ['😎', '🎮', '🎯', '🚀', '💀', '🤖', '👾', '🦄', '🐉', '👻']
@@ -176,6 +205,7 @@ function isCosmeticUnlocked(type, value, options = {}) {
   if (type === 'entrance' && value === 'fade') return true;
   if (type === 'badge' && !value) return true; // "None" badge
   if (type === 'background' && value === 'none') return true;
+  if (type === 'bgColor' && value === 'default') return true;
   if (type === 'podium' && value === 'default') return true;
   
   // Check level rewards
@@ -198,6 +228,22 @@ function getUnlockRequirement(type, value) {
   if (prestigeReward) return { type: 'prestige', value: prestigeReward.prestige };
   
   return { type: 'premium', value: null };
+}
+
+// ========== HELPER: Get combined background style ==========
+function getBackgroundStyle(bgColorKey, patternKey) {
+  const bgColor = BG_COLORS[bgColorKey] || BG_COLORS.default;
+  const pattern = BACKGROUND_PATTERNS[patternKey];
+  
+  if (!pattern || pattern.css === 'none') {
+    return { background: bgColor, backgroundSize: null };
+  }
+  
+  // Combine pattern with background color
+  return {
+    background: `${pattern.css}, ${bgColor}`,
+    backgroundSize: pattern.size ? `${pattern.size}, 100% 100%` : null
+  };
 }
 
 // ========== CSS STYLES ==========
@@ -527,9 +573,10 @@ function renderNameplate(options) {
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
   if (cosmetics.entrance_animation && isCosmeticUnlocked('entrance', cosmetics.entrance_animation, unlockOpts)) c.entrance_animation = cosmetics.entrance_animation;
   if (cosmetics.background_pattern && isCosmeticUnlocked('background', cosmetics.background_pattern, unlockOpts)) c.background_pattern = cosmetics.background_pattern;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background_pattern !== 'none';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background_pattern !== 'none' || c.background_color !== 'default';
   const isRainbow = c.border_color === 'rainbow';
   const color = isRainbow ? '#c084fc' : (COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray);
 
@@ -555,10 +602,12 @@ function renderNameplate(options) {
   if (hasCosmetics) {
     const styles = [];
     if (!isRainbow) { styles.push(`--tgco-color: ${color}`); styles.push(`border-color: ${color}`); }
-    if (pattern && pattern.css && pattern.css !== 'none') {
-      styles.push(`background-image: ${pattern.css}`);
-      if (pattern.size) styles.push(`background-size: ${pattern.size}`);
-    }
+    
+    // Apply background color + pattern
+    const bgStyle = getBackgroundStyle(c.background_color, c.background_pattern);
+    styles.push(`background: ${bgStyle.background}`);
+    if (bgStyle.backgroundSize) styles.push(`background-size: ${bgStyle.backgroundSize}`);
+    
     if (styles.length) styleAttr = `style="${styles.join('; ')};"`;
   }
 
@@ -606,9 +655,11 @@ function renderPlayerCard(options) {
   if (cosmetics.border_style && isCosmeticUnlocked('border', cosmetics.border_style, unlockOpts)) c.border_style = cosmetics.border_style;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
   if (cosmetics.entrance_animation && isCosmeticUnlocked('entrance', cosmetics.entrance_animation, unlockOpts)) c.entrance_animation = cosmetics.entrance_animation;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
+  if (cosmetics.background_pattern && isCosmeticUnlocked('background', cosmetics.background_pattern, unlockOpts)) c.background_pattern = cosmetics.background_pattern;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title;
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background_color !== 'default' || c.background_pattern !== 'none';
   const isRainbow = c.border_color === 'rainbow';
   const color = isRainbow ? '#c084fc' : (hasCosmetics ? (COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray) : 'rgba(255,255,255,0.1)');
 
@@ -625,16 +676,23 @@ function renderPlayerCard(options) {
   const hostBadge = isHost ? '<span class="host-badge">HOST</span>' : '';
   const title = (hasCosmetics && c.title) ? `<span class="player-title">${escapeHtml(c.title)}</span>` : '';
 
-  let borderStyle = '';
+  let cardStyle = '';
   if (hasCosmetics && !isRainbow) {
-    borderStyle = `border-color: ${color};`;
-    if (c.border_style === 'glow') borderStyle += ` box-shadow: 0 0 15px ${color}, 0 0 30px ${color};`;
-    if (c.border_style === 'pulse') borderStyle += ` --tgco-color: ${color};`;
+    cardStyle = `border-color: ${color};`;
+    if (c.border_style === 'glow') cardStyle += ` box-shadow: 0 0 15px ${color}, 0 0 30px ${color};`;
+    if (c.border_style === 'pulse') cardStyle += ` --tgco-color: ${color};`;
+  }
+  
+  // Apply background color + pattern
+  if (hasCosmetics && (c.background_color !== 'default' || c.background_pattern !== 'none')) {
+    const bgStyle = getBackgroundStyle(c.background_color, c.background_pattern);
+    cardStyle += ` background: ${bgStyle.background};`;
+    if (bgStyle.backgroundSize) cardStyle += ` background-size: ${bgStyle.backgroundSize};`;
   }
   
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
 
-  return `<div class="${cardClasses.join(' ')}" style="${borderStyle}"><div class="player-info">${badge}<div class="player-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${escapeHtml(name)}</span>${title}</div></div>${hostBadge}</div>`.trim();
+  return `<div class="${cardClasses.join(' ')}" style="${cardStyle}"><div class="player-info">${badge}<div class="player-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${escapeHtml(name)}</span>${title}</div></div>${hostBadge}</div>`.trim();
 }
 
 /**
@@ -651,10 +709,11 @@ function renderPodiumItem(options) {
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
   if (cosmetics.podium_style && isCosmeticUnlocked('podium', cosmetics.podium_style, unlockOpts)) c.podium_style = cosmetics.podium_style;
   if (cosmetics.background_pattern && isCosmeticUnlocked('background', cosmetics.background_pattern, unlockOpts)) c.background_pattern = cosmetics.background_pattern;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
   if (cosmetics.avatar) c.avatar = cosmetics.avatar;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.podium_style !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.podium_style !== 'default' || c.background_color !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || (rank === 1 ? '#ffd700' : rank === 2 ? '#c0c0c0' : '#cd7f32');
 
   const classes = ['tgco-podium', `rank-${rank}`];
@@ -669,9 +728,10 @@ function renderPodiumItem(options) {
   const avatarDisplay = c.avatar || c.badge_icon || name.charAt(0).toUpperCase();
 
   let bgStyle = '';
-  if (pattern && pattern.css && pattern.css !== 'none') {
-    bgStyle = `background-image: ${pattern.css};`;
-    if (pattern.size) bgStyle += ` background-size: ${pattern.size};`;
+  if (c.background_color !== 'default' || (pattern && pattern.css && pattern.css !== 'none')) {
+    const bg = getBackgroundStyle(c.background_color, c.background_pattern);
+    bgStyle = `background: ${bg.background};`;
+    if (bg.backgroundSize) bgStyle += ` background-size: ${bg.backgroundSize};`;
   }
 
   const podiumColorStyle = c.podium_style !== 'default' ? `--podium-color: ${color};` : '';
@@ -694,9 +754,10 @@ function renderLeaderboardItem(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['lb-item'];
@@ -715,7 +776,14 @@ function renderLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<span class="lb-title">${escapeHtml(c.title)}</span>` : '';
 
-  return `<div class="${classes.join(' ')}"><span class="lb-rank">${rank}</span><div class="lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="lb-score">${score.toLocaleString()}</span></div>`.trim();
+  // Apply background color
+  let itemStyle = '';
+  if (hasCosmetics && c.background_color !== 'default') {
+    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
+    itemStyle = `style="background: ${bgColor};"`;
+  }
+
+  return `<div class="${classes.join(' ')}" ${itemStyle}><span class="lb-rank">${rank}</span><div class="lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="lb-score">${score.toLocaleString()}</span></div>`.trim();
 }
 
 /**
@@ -730,9 +798,10 @@ function renderMiniLeaderboardItem(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['mini-lb-item'];
@@ -746,7 +815,14 @@ function renderMiniLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<span class="mini-lb-title">${escapeHtml(c.title)}</span>` : '';
 
-  return `<div class="${classes.join(' ')}"><span class="mini-lb-rank">${rank}</span><div class="mini-lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="mini-lb-score">${score.toLocaleString()}</span></div>`.trim();
+  // Apply background color
+  let itemStyle = '';
+  if (hasCosmetics && c.background_color !== 'default') {
+    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
+    itemStyle = `style="background: ${bgColor};"`;
+  }
+
+  return `<div class="${classes.join(' ')}" ${itemStyle}><span class="mini-lb-rank">${rank}</span><div class="mini-lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="mini-lb-score">${score.toLocaleString()}</span></div>`.trim();
 }
 
 /**
@@ -761,9 +837,10 @@ function renderWinnerCard(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || '#fbbf24';
   
   const classes = ['winner-card'];
@@ -777,7 +854,14 @@ function renderWinnerCard(options) {
   const crown = showCrown ? '<div class="winner-crown">👑</div>' : '';
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
 
-  return `<div class="${classes.join(' ')}">${crown}<div class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</div>${title}<div class="winner-score">${score.toLocaleString()} points</div></div>`.trim();
+  // Apply background color
+  let cardStyle = '';
+  if (hasCosmetics && c.background_color !== 'default') {
+    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
+    cardStyle = `style="background: ${bgColor};"`;
+  }
+
+  return `<div class="${classes.join(' ')}" ${cardStyle}>${crown}<div class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</div>${title}<div class="winner-score">${score.toLocaleString()} points</div></div>`.trim();
 }
 
 /**
@@ -792,9 +876,10 @@ function renderGlobalLeaderboardItem(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
+  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title;
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['global-lb-item'];
@@ -808,7 +893,14 @@ function renderGlobalLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<div class="global-lb-title">${escapeHtml(c.title)}</div>` : '';
 
-  return `<div class="${classes.join(' ')}"><span class="global-lb-rank ${rankClass}">#${rank}</span><div class="global-lb-info"><div class="global-lb-name"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span></div>${title}${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}</div><span class="global-lb-score">${score.toLocaleString()}</span></div>`.trim();
+  // Apply background color
+  let itemStyle = '';
+  if (hasCosmetics && c.background_color !== 'default') {
+    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
+    itemStyle = `style="background: ${bgColor};"`;
+  }
+
+  return `<div class="${classes.join(' ')}" ${itemStyle}><span class="global-lb-rank ${rankClass}">#${rank}</span><div class="global-lb-info"><div class="global-lb-name"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span></div>${title}${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}</div><span class="global-lb-score">${score.toLocaleString()}</span></div>`.trim();
 }
 
 /**
@@ -892,6 +984,7 @@ if (typeof window !== 'undefined') {
     isCosmeticUnlocked,
     getUnlockRequirement,
     COSMETIC_COLORS,
+    BG_COLORS,
     BACKGROUND_PATTERNS,
     PODIUM_STYLES,
     DEFAULT_COSMETICS,
