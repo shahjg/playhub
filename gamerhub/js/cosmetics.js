@@ -32,79 +32,478 @@ const COSMETIC_COLORS = {
   rainbow: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc)'
 };
 
-// ========== BACKGROUND COLORS ==========
-const BG_COLORS = {
-  // Basic solid colors
-  default: 'rgba(255, 255, 255, 0.03)',
-  midnight: 'linear-gradient(135deg, #0f0f19, #1a1a2e)',
-  charcoal: 'linear-gradient(135deg, #1f2937, #374151)',
-  navy: 'linear-gradient(135deg, #1e3a5f, #0f172a)',
-  wine: 'linear-gradient(135deg, #4a1942, #2d1326)',
-  forest: 'linear-gradient(135deg, #14532d, #052e16)',
-  ember: 'linear-gradient(135deg, #7c2d12, #431407)',
-  ocean: 'linear-gradient(135deg, #164e63, #083344)',
-  // Animated/Special backgrounds
-  rainbow: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171)',
-  holographic: 'linear-gradient(135deg, rgba(255,0,128,0.3), rgba(0,255,255,0.3), rgba(255,255,0,0.3), rgba(128,0,255,0.3))',
-  fire: 'linear-gradient(180deg, rgba(255,68,0,0.4), rgba(255,165,0,0.3), rgba(255,0,0,0.2))',
-  ice: 'linear-gradient(180deg, rgba(103,232,249,0.4), rgba(6,182,212,0.3), rgba(8,145,178,0.2))',
-  matrix: 'linear-gradient(180deg, rgba(0,255,65,0.2), rgba(0,100,0,0.3))',
-  camo: 'linear-gradient(135deg, #2d3a2d, #1a2f1a, #3d4a3d, #1f2f1f)',
-  'desert-camo': 'linear-gradient(135deg, #8b7355, #a08060, #6b5344, #9a8070)',
-  arctic: 'linear-gradient(135deg, #e8f4f8, #c5d8e0, #a0c4d0, #ddeef4)',
-  lava: 'linear-gradient(135deg, #1a0a0a, #3d0f0f, #5c1a1a, #2a0808)',
-  galaxy: 'radial-gradient(ellipse at 30% 20%, rgba(138,43,226,0.4), transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(0,191,255,0.3), transparent 50%), linear-gradient(135deg, #0a0a1a, #1a0a2a)',
-  aurora: 'linear-gradient(135deg, rgba(0,255,128,0.2), rgba(0,128,255,0.2), rgba(128,0,255,0.2))',
-  'neon-pink': 'linear-gradient(135deg, rgba(255,20,147,0.3), rgba(255,105,180,0.2), rgba(199,21,133,0.3))',
-  golden: 'linear-gradient(135deg, rgba(255,215,0,0.3), rgba(218,165,32,0.25), rgba(255,193,37,0.3))',
-  void: 'radial-gradient(ellipse at center, rgba(20,0,40,0.9), rgba(0,0,0,0.95))',
-  electric: 'linear-gradient(135deg, rgba(0,191,255,0.3), rgba(30,144,255,0.25), rgba(0,0,255,0.2))'
+// ========== UNIFIED BACKGROUNDS (replaces both bg color and pattern) ==========
+const BACKGROUNDS = {
+  // === SOLID COLORS ===
+  default: { 
+    name: 'Default', 
+    css: 'linear-gradient(135deg, rgba(15,15,25,0.95), rgba(20,20,35,0.95))', 
+    category: 'solid' 
+  },
+  midnight: { 
+    name: 'Midnight', 
+    css: 'linear-gradient(135deg, #0f0f19, #1a1a2e)', 
+    category: 'solid' 
+  },
+  charcoal: { 
+    name: 'Charcoal', 
+    css: 'linear-gradient(135deg, #1f2937, #374151)', 
+    category: 'solid' 
+  },
+  navy: { 
+    name: 'Navy', 
+    css: 'linear-gradient(135deg, #1e3a5f, #0f172a)', 
+    category: 'solid' 
+  },
+  wine: { 
+    name: 'Wine', 
+    css: 'linear-gradient(135deg, #4a1942, #2d1326)', 
+    category: 'solid' 
+  },
+  forest: { 
+    name: 'Forest', 
+    css: 'linear-gradient(135deg, #14532d, #052e16)', 
+    category: 'solid' 
+  },
+  ember: { 
+    name: 'Ember', 
+    css: 'linear-gradient(135deg, #7c2d12, #431407)', 
+    category: 'solid' 
+  },
+  ocean: { 
+    name: 'Ocean', 
+    css: 'linear-gradient(135deg, #0c4a6e, #082f49)', 
+    category: 'solid' 
+  },
+  royal: { 
+    name: 'Royal Purple', 
+    css: 'linear-gradient(135deg, #4c1d95, #2e1065)', 
+    category: 'solid' 
+  },
+  bloodmoon: { 
+    name: 'Blood Moon', 
+    css: 'linear-gradient(135deg, #7f1d1d, #450a0a)', 
+    category: 'solid' 
+  },
+
+  // === CAMO PRINTS ===
+  'military-camo': { 
+    name: 'Military Camo', 
+    css: `
+      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(34,85,51,0.8) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 70% 60%, rgba(85,107,47,0.7) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 70% at 40% 80%, rgba(47,79,47,0.75) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 80% 20%, rgba(60,90,60,0.6) 0%, transparent 45%),
+      linear-gradient(135deg, #2d3a2d, #1a2f1a)
+    `,
+    category: 'camo' 
+  },
+  'desert-camo': { 
+    name: 'Desert Camo', 
+    css: `
+      radial-gradient(ellipse 70% 60% at 25% 35%, rgba(194,178,128,0.7) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 65% 55%, rgba(139,119,101,0.6) 0%, transparent 50%),
+      radial-gradient(ellipse 80% 40% at 45% 75%, rgba(160,140,120,0.65) 0%, transparent 45%),
+      radial-gradient(ellipse 50% 60% at 85% 25%, rgba(180,160,130,0.5) 0%, transparent 40%),
+      linear-gradient(135deg, #8b7355, #6b5344)
+    `,
+    category: 'camo' 
+  },
+  'arctic-camo': { 
+    name: 'Arctic Camo', 
+    css: `
+      radial-gradient(ellipse 80% 50% at 20% 40%, rgba(230,240,250,0.5) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 70% at 70% 30%, rgba(200,220,235,0.45) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 40% at 50% 70%, rgba(180,200,220,0.4) 0%, transparent 45%),
+      radial-gradient(ellipse 50% 60% at 30% 80%, rgba(160,180,200,0.35) 0%, transparent 40%),
+      linear-gradient(135deg, #94a3b8, #64748b)
+    `,
+    category: 'camo' 
+  },
+  'digital-camo': { 
+    name: 'Digital Camo', 
+    css: `
+      repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(50,50,50,0.4) 4px, rgba(50,50,50,0.4) 8px),
+      repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(70,70,70,0.35) 4px, rgba(70,70,70,0.35) 8px),
+      repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(40,40,40,0.3) 6px, rgba(40,40,40,0.3) 12px),
+      linear-gradient(135deg, #374151, #1f2937)
+    `,
+    category: 'camo' 
+  },
+  'pink-camo': { 
+    name: 'Pink Camo', 
+    css: `
+      radial-gradient(ellipse 70% 60% at 25% 30%, rgba(255,105,180,0.5) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 70% 60%, rgba(255,20,147,0.4) 0%, transparent 50%),
+      radial-gradient(ellipse 80% 45% at 40% 75%, rgba(219,112,147,0.45) 0%, transparent 45%),
+      radial-gradient(ellipse 55% 65% at 85% 20%, rgba(255,182,193,0.35) 0%, transparent 40%),
+      linear-gradient(135deg, #9d174d, #831843)
+    `,
+    category: 'camo' 
+  },
+
+  // === ANIMAL PRINTS ===
+  'leopard': { 
+    name: 'Leopard', 
+    css: `
+      radial-gradient(ellipse 25% 35% at 15% 25%, rgba(0,0,0,0.6) 30%, rgba(139,90,43,0.4) 31%, transparent 70%),
+      radial-gradient(ellipse 30% 25% at 45% 55%, rgba(0,0,0,0.6) 30%, rgba(139,90,43,0.4) 31%, transparent 70%),
+      radial-gradient(ellipse 25% 30% at 75% 35%, rgba(0,0,0,0.6) 30%, rgba(139,90,43,0.4) 31%, transparent 70%),
+      radial-gradient(ellipse 28% 25% at 30% 80%, rgba(0,0,0,0.6) 30%, rgba(139,90,43,0.4) 31%, transparent 70%),
+      radial-gradient(ellipse 22% 32% at 85% 75%, rgba(0,0,0,0.6) 30%, rgba(139,90,43,0.4) 31%, transparent 70%),
+      linear-gradient(135deg, #92400e, #78350f)
+    `,
+    category: 'animal' 
+  },
+  'tiger': { 
+    name: 'Tiger', 
+    css: `
+      repeating-linear-gradient(
+        100deg,
+        transparent 0px, transparent 15px,
+        rgba(0,0,0,0.7) 15px, rgba(0,0,0,0.7) 25px,
+        transparent 25px, transparent 40px
+      ),
+      linear-gradient(135deg, #ea580c, #c2410c)
+    `,
+    category: 'animal' 
+  },
+  'zebra': { 
+    name: 'Zebra', 
+    css: `
+      repeating-linear-gradient(
+        110deg,
+        rgba(255,255,255,0.9) 0px, rgba(255,255,255,0.9) 20px,
+        rgba(0,0,0,0.85) 20px, rgba(0,0,0,0.85) 40px
+      ),
+      linear-gradient(135deg, #1f2937, #111827)
+    `,
+    category: 'animal' 
+  },
+  'snakeskin': { 
+    name: 'Snakeskin', 
+    css: `
+      radial-gradient(ellipse 50% 30% at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 41%, rgba(0,0,0,0.3) 45%, transparent 46%),
+      linear-gradient(135deg, #365314, #1a2e05)
+    `,
+    size: '20px 35px',
+    category: 'animal' 
+  },
+
+  // === PREMIUM MATERIALS ===
+  'carbon-fiber': { 
+    name: 'Carbon Fiber', 
+    css: `
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.5) 0px, rgba(0,0,0,0.5) 1px, transparent 1px, transparent 4px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,0.5) 0px, rgba(0,0,0,0.5) 1px, transparent 1px, transparent 4px),
+      repeating-linear-gradient(90deg, transparent, rgba(60,60,60,0.1) 1px, rgba(60,60,60,0.1) 2px, transparent 3px),
+      linear-gradient(135deg, #1f2937, #111827)
+    `,
+    category: 'material' 
+  },
+  'brushed-steel': { 
+    name: 'Brushed Steel', 
+    css: `
+      repeating-linear-gradient(90deg, 
+        rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.06) 1px, 
+        rgba(0,0,0,0.02) 1px, rgba(0,0,0,0.02) 2px,
+        rgba(255,255,255,0.04) 2px, rgba(255,255,255,0.04) 3px
+      ),
+      linear-gradient(180deg, rgba(148,163,184,0.2), rgba(100,116,139,0.3)),
+      linear-gradient(135deg, #475569, #334155)
+    `,
+    category: 'material' 
+  },
+  'diamond-plate': { 
+    name: 'Diamond Plate', 
+    css: `
+      linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+      linear-gradient(225deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+      linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+      linear-gradient(315deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+      linear-gradient(135deg, #52525b, #3f3f46)
+    `,
+    size: '20px 20px',
+    category: 'material' 
+  },
+
+  // === ANIMATED EFFECTS ===
+  'rainbow-wave': { 
+    name: 'Rainbow Wave', 
+    css: 'linear-gradient(90deg, #ff0000, #ff8800, #ffff00, #00ff00, #00ffff, #0088ff, #8800ff, #ff0088, #ff0000)',
+    size: '400% 100%',
+    animated: 'rainbowWave',
+    category: 'animated' 
+  },
+  'nyan-trail': { 
+    name: 'Nyan Trail', 
+    css: `
+      linear-gradient(90deg, 
+        #ff0000 0%, #ff0000 14.28%,
+        #ff9900 14.28%, #ff9900 28.57%,
+        #ffff00 28.57%, #ffff00 42.85%,
+        #33ff00 42.85%, #33ff00 57.14%,
+        #0099ff 57.14%, #0099ff 71.42%,
+        #6633ff 71.42%, #6633ff 85.71%,
+        #ff0000 85.71%
+      )
+    `,
+    size: '300% 100%',
+    animated: 'nyanTrail',
+    category: 'animated' 
+  },
+  'fire': { 
+    name: 'Inferno', 
+    css: `
+      radial-gradient(ellipse 80% 50% at 50% 100%, rgba(255,200,0,0.6) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 30% 90%, rgba(255,100,0,0.5) 0%, transparent 45%),
+      radial-gradient(ellipse 60% 40% at 70% 90%, rgba(255,50,0,0.5) 0%, transparent 45%),
+      linear-gradient(0deg, rgba(255,100,0,0.4) 0%, rgba(200,50,0,0.2) 30%, transparent 60%),
+      linear-gradient(135deg, #1c1917, #0c0a09)
+    `,
+    animated: 'fireFlicker',
+    category: 'animated' 
+  },
+  'ice-crystal': { 
+    name: 'Ice Crystal', 
+    css: `
+      radial-gradient(ellipse at 20% 30%, rgba(150,220,255,0.4) 0%, transparent 40%),
+      radial-gradient(ellipse at 80% 20%, rgba(100,200,255,0.3) 0%, transparent 35%),
+      radial-gradient(ellipse at 50% 70%, rgba(180,230,255,0.35) 0%, transparent 45%),
+      radial-gradient(ellipse at 30% 80%, rgba(200,240,255,0.25) 0%, transparent 30%),
+      linear-gradient(135deg, #0c4a6e, #082f49, #0e7490)
+    `,
+    animated: 'iceShimmer',
+    category: 'animated' 
+  },
+  'matrix': { 
+    name: 'Matrix Code', 
+    css: `
+      repeating-linear-gradient(0deg, 
+        transparent 0px, transparent 20px, 
+        rgba(0,255,65,0.1) 20px, rgba(0,255,65,0.15) 21px
+      ),
+      repeating-linear-gradient(90deg, 
+        transparent 0px, transparent 30px, 
+        rgba(0,255,65,0.05) 30px, rgba(0,255,65,0.08) 31px
+      ),
+      linear-gradient(180deg, rgba(0,50,0,0.8), rgba(0,20,0,0.95))
+    `,
+    animated: 'matrixRain',
+    category: 'animated' 
+  },
+  'galaxy': { 
+    name: 'Galaxy', 
+    css: `
+      radial-gradient(ellipse 2px 2px at 20% 30%, white, transparent),
+      radial-gradient(ellipse 1px 1px at 40% 70%, white, transparent),
+      radial-gradient(ellipse 2px 2px at 60% 20%, white, transparent),
+      radial-gradient(ellipse 1px 1px at 80% 60%, white, transparent),
+      radial-gradient(ellipse 1px 1px at 10% 80%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(ellipse 1px 1px at 90% 40%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(ellipse 50% 50% at 30% 40%, rgba(138,43,226,0.4), transparent 60%),
+      radial-gradient(ellipse 40% 60% at 70% 60%, rgba(59,130,246,0.3), transparent 50%),
+      linear-gradient(135deg, #0a0a1f, #1a0a2e, #0a1a2f)
+    `,
+    animated: 'galaxyRotate',
+    category: 'animated' 
+  },
+  'aurora': { 
+    name: 'Aurora Borealis', 
+    css: `
+      radial-gradient(ellipse 100% 50% at 50% 0%, rgba(0,255,128,0.3), transparent 50%),
+      radial-gradient(ellipse 80% 40% at 30% 20%, rgba(0,200,255,0.25), transparent 45%),
+      radial-gradient(ellipse 80% 40% at 70% 15%, rgba(128,0,255,0.2), transparent 40%),
+      linear-gradient(180deg, rgba(0,50,50,0.3) 0%, transparent 40%),
+      linear-gradient(135deg, #0f172a, #1e1b4b)
+    `,
+    animated: 'auroraWave',
+    category: 'animated' 
+  },
+  'holographic': { 
+    name: 'Holographic', 
+    css: `
+      linear-gradient(135deg, 
+        rgba(255,0,128,0.3) 0%, 
+        rgba(0,255,255,0.3) 25%, 
+        rgba(255,255,0,0.3) 50%, 
+        rgba(128,0,255,0.3) 75%, 
+        rgba(255,0,128,0.3) 100%
+      )
+    `,
+    size: '400% 400%',
+    animated: 'holoShift',
+    category: 'animated' 
+  },
+  'lava-flow': { 
+    name: 'Lava Flow', 
+    css: `
+      radial-gradient(ellipse 40% 30% at 20% 70%, rgba(255,100,0,0.6), transparent),
+      radial-gradient(ellipse 50% 40% at 60% 80%, rgba(255,50,0,0.5), transparent),
+      radial-gradient(ellipse 30% 35% at 80% 60%, rgba(255,150,0,0.4), transparent),
+      linear-gradient(0deg, rgba(255,69,0,0.3) 0%, rgba(139,0,0,0.2) 40%, rgba(50,0,0,0.9) 100%)
+    `,
+    animated: 'lavaFlow',
+    category: 'animated' 
+  },
+  'electric-storm': { 
+    name: 'Electric Storm', 
+    css: `
+      radial-gradient(ellipse at 30% 50%, rgba(0,150,255,0.3), transparent 50%),
+      radial-gradient(ellipse at 70% 40%, rgba(100,200,255,0.25), transparent 45%),
+      linear-gradient(180deg, rgba(0,50,100,0.4), rgba(0,0,50,0.9))
+    `,
+    animated: 'electricPulse',
+    category: 'animated' 
+  },
+  'void': { 
+    name: 'Void', 
+    css: `
+      radial-gradient(ellipse at center, rgba(80,0,120,0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at center, rgba(0,0,0,0.95) 30%, rgba(20,0,40,0.98) 100%)
+    `,
+    animated: 'voidPulse',
+    category: 'animated' 
+  },
+  'synthwave': { 
+    name: 'Synthwave Grid', 
+    css: `
+      linear-gradient(transparent 0%, rgba(255,0,128,0.1) 50%, rgba(255,0,128,0.3) 100%),
+      repeating-linear-gradient(90deg, rgba(255,0,128,0.15) 0px, rgba(255,0,128,0.15) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 0px, rgba(0,255,255,0.1) 1px, transparent 1px, transparent 40px),
+      linear-gradient(180deg, #0a0015 0%, #1a0030 100%)
+    `,
+    category: 'animated',
+    animated: 'synthwaveScroll'
+  },
+  'starfield': { 
+    name: 'Starfield', 
+    css: `
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(2px 2px at 50% 30%, rgba(255,255,255,1), transparent),
+      radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.85), transparent),
+      radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.75), transparent),
+      radial-gradient(2px 2px at 85% 45%, rgba(255,255,255,0.95), transparent),
+      radial-gradient(1px 1px at 45% 95%, rgba(255,255,255,0.6), transparent),
+      linear-gradient(135deg, #030712, #0f172a)
+    `,
+    size: '200px 200px',
+    animated: 'starTwinkle',
+    category: 'animated' 
+  }
 };
 
-// Animated background classes (for CSS)
-const BG_ANIMATED = ['rainbow', 'holographic', 'fire', 'ice', 'matrix', 'lava', 'galaxy', 'aurora', 'neon-pink', 'golden', 'void', 'electric'];
-
-// ========== BACKGROUND PATTERNS ==========
-const BACKGROUND_PATTERNS = {
-  none: { name: 'None', css: 'none', size: null },
-  // Geometric
-  dots: { name: 'Dots', css: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)', size: '10px 10px' },
-  grid: { name: 'Grid', css: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', size: '20px 20px' },
-  lines: { name: 'Lines', css: 'repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 11px)', size: null },
-  honeycomb: { name: 'Honeycomb', css: 'radial-gradient(circle farthest-side at 0% 50%, transparent 47%, rgba(255,255,255,0.08) 49%, transparent 51%), radial-gradient(circle farthest-side at 100% 50%, transparent 47%, rgba(255,255,255,0.08) 49%, transparent 51%)', size: '30px 52px' },
-  diagonal: { name: 'Diagonal', css: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px)', size: null },
-  // Camo
-  camo: { name: 'Military', css: 'radial-gradient(ellipse at 20% 30%, rgba(34,85,51,0.5) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(85,107,47,0.4) 0%, transparent 40%), radial-gradient(ellipse at 40% 80%, rgba(47,79,47,0.5) 0%, transparent 45%)', size: '100px 100px' },
-  snowcamo: { name: 'Snow Camo', css: 'radial-gradient(ellipse at 25% 35%, rgba(200,200,210,0.3) 0%, transparent 45%), radial-gradient(ellipse at 65% 55%, rgba(180,180,195,0.25) 0%, transparent 40%), radial-gradient(ellipse at 45% 75%, rgba(220,220,230,0.3) 0%, transparent 50%)', size: '80px 80px' },
-  digitalcamo: { name: 'Digital', css: 'linear-gradient(90deg, rgba(60,60,60,0.4) 25%, transparent 25%), linear-gradient(90deg, transparent 75%, rgba(80,80,80,0.3) 75%), linear-gradient(rgba(50,50,50,0.35) 25%, transparent 25%), linear-gradient(transparent 75%, rgba(70,70,70,0.3) 75%)', size: '8px 8px' },
-  // Animal
-  zebra: { name: 'Zebra', css: 'repeating-linear-gradient(75deg, transparent, transparent 15px, rgba(255,255,255,0.08) 15px, rgba(255,255,255,0.08) 30px)', size: null },
-  leopard: { name: 'Leopard', css: 'radial-gradient(ellipse at 30% 30%, rgba(139,90,43,0.3) 0%, transparent 35%), radial-gradient(ellipse at 70% 70%, rgba(139,90,43,0.25) 0%, transparent 30%), radial-gradient(ellipse at 50% 50%, rgba(101,67,33,0.2) 0%, transparent 40%)', size: '60px 60px' },
-  tiger: { name: 'Tiger', css: 'repeating-linear-gradient(80deg, transparent, transparent 8px, rgba(0,0,0,0.15) 8px, rgba(0,0,0,0.15) 16px)', size: null },
-  // Premium
-  carbonfiber: { name: 'Carbon Fiber', css: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3) 1px, transparent 1px, transparent 4px), repeating-linear-gradient(-45deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3) 1px, transparent 1px, transparent 4px)', size: '8px 8px' },
-  brushedmetal: { name: 'Brushed Metal', css: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04) 1px, transparent 1px, transparent 3px)', size: null },
-  circuit: { name: 'Circuit', css: 'linear-gradient(90deg, transparent 49%, rgba(0,255,136,0.1) 49%, rgba(0,255,136,0.1) 51%, transparent 51%), linear-gradient(transparent 49%, rgba(0,255,136,0.1) 49%, rgba(0,255,136,0.1) 51%, transparent 51%)', size: '30px 30px' },
-  starfield: { name: 'Starfield', css: 'radial-gradient(1px 1px at 10% 20%, white, transparent), radial-gradient(1px 1px at 30% 60%, white, transparent), radial-gradient(1px 1px at 50% 30%, white, transparent), radial-gradient(1px 1px at 70% 80%, white, transparent), radial-gradient(1px 1px at 90% 40%, white, transparent)', size: '100px 100px' },
-  // Animated (Premium)
-  holographic: { name: 'Holographic', css: 'linear-gradient(135deg, rgba(255,0,128,0.1), rgba(0,255,255,0.1), rgba(255,255,0,0.1), rgba(128,0,255,0.1))', size: '400% 400%', animated: true },
-  matrix: { name: 'Matrix', css: 'linear-gradient(180deg, transparent, rgba(0,255,65,0.03))', size: '100% 200%', animated: true },
-  fire: { name: 'Fire', css: 'linear-gradient(180deg, rgba(255,68,0,0.15), rgba(255,165,0,0.1), transparent)', size: '100% 200%', animated: true },
-  pulse: { name: 'Pulse', css: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.2), transparent 70%)', size: '200% 200%', animated: true }
-};
+// For backwards compatibility
+const BG_COLORS = Object.fromEntries(
+  Object.entries(BACKGROUNDS).map(([key, val]) => [key, val.css])
+);
+const BACKGROUND_PATTERNS = { none: { name: 'None', css: 'none', size: null } }; // deprecated
+const BG_ANIMATED = Object.entries(BACKGROUNDS)
+  .filter(([_, val]) => val.animated)
+  .map(([key]) => key);
 
 // ========== PODIUM STYLES ==========
+// ========== PODIUM STYLES (with actual visual decorations) ==========
 const PODIUM_STYLES = {
-  default: { name: 'Classic', description: 'Traditional gold/silver/bronze' },
-  flames: { name: 'Flames', description: 'Fiery animated border' },
-  neon: { name: 'Neon', description: 'Bright neon glow' },
-  crystal: { name: 'Crystal', description: 'Icy diamond shimmer' },
-  cosmic: { name: 'Cosmic', description: 'Starry space theme' },
-  holographic: { name: 'Holographic', description: 'Rainbow shifting colors' },
-  royal: { name: 'Royal', description: 'Elegant gold trim' },
-  cyber: { name: 'Cyber', description: 'Glitchy tech aesthetic' },
-  nature: { name: 'Nature', description: 'Earthy organic feel' },
-  void: { name: 'Void', description: 'Dark mysterious aura' }
+  default: { 
+    name: 'Classic', 
+    description: 'Traditional gold podium',
+    decorations: [] 
+  },
+  champion: { 
+    name: 'Champion', 
+    description: 'Trophy & laurel wreath',
+    decorations: ['trophy', 'laurel-wreath'],
+    borderGlow: '#ffd700'
+  },
+  confetti: { 
+    name: 'Confetti Party', 
+    description: 'Falling confetti celebration',
+    decorations: ['confetti-fall'],
+    animated: true
+  },
+  sparkle: { 
+    name: 'Sparkle', 
+    description: 'Twinkling star particles',
+    decorations: ['sparkles'],
+    animated: true
+  },
+  flames: { 
+    name: 'Inferno', 
+    description: 'Rising flames & embers',
+    decorations: ['flames-bottom', 'ember-particles'],
+    borderGlow: '#ff4500',
+    animated: true
+  },
+  neon: { 
+    name: 'Neon Glow', 
+    description: 'Bright neon with scan lines',
+    decorations: ['neon-glow', 'scan-lines'],
+    borderGlow: '#00ffff',
+    animated: true
+  },
+  crystal: { 
+    name: 'Crystal Ice', 
+    description: 'Ice crystals & frost',
+    decorations: ['ice-crystals', 'frost-particles'],
+    borderGlow: '#67e8f9',
+    animated: true
+  },
+  cosmic: { 
+    name: 'Cosmic', 
+    description: 'Stars, planets & nebula',
+    decorations: ['stars', 'nebula-glow', 'orbit-rings'],
+    borderGlow: '#8b5cf6',
+    animated: true
+  },
+  royal: { 
+    name: 'Royal', 
+    description: 'Crown, ribbons & gold trim',
+    decorations: ['crown-top', 'ribbons-hanging', 'gold-trim'],
+    borderGlow: '#ffd700'
+  },
+  cyber: { 
+    name: 'Cyber', 
+    description: 'Glitch effects & data streams',
+    decorations: ['glitch-overlay', 'data-stream'],
+    borderGlow: '#00ff88',
+    animated: true
+  },
+  nature: { 
+    name: 'Nature', 
+    description: 'Vines, leaves & flowers',
+    decorations: ['vine-border', 'floating-leaves'],
+    borderGlow: '#22c55e',
+    animated: true
+  },
+  void: { 
+    name: 'Void', 
+    description: 'Dark energy & portal effect',
+    decorations: ['void-portal', 'dark-particles'],
+    borderGlow: '#6366f1',
+    animated: true
+  },
+  legendary: { 
+    name: 'Legendary', 
+    description: 'Ultimate combo of effects',
+    decorations: ['trophy', 'confetti-fall', 'sparkles', 'ribbons-hanging', 'gold-trim'],
+    borderGlow: 'rainbow',
+    animated: true
+  },
+  streamer: { 
+    name: 'Streamer', 
+    description: 'Party streamers & balloons',
+    decorations: ['streamers', 'balloons'],
+    animated: true
+  },
+  military: { 
+    name: 'Military', 
+    description: 'Medals, stars & honor',
+    decorations: ['medal-badge', 'honor-stars'],
+    borderGlow: '#b8860b'
+  }
 };
 
 // ========== DEFAULT COSMETICS ==========
@@ -115,9 +514,11 @@ const DEFAULT_COSMETICS = {
   name_effect: 'none',
   title: null,
   entrance_animation: 'fade',
+  background: 'default',  // Unified background (replaces background_color + background_pattern)
+  podium_style: 'default',
+  // Legacy compatibility
   background_pattern: 'none',
-  background_color: 'default',
-  podium_style: 'default'
+  background_color: 'default'
 };
 
 // ========== LEVEL REWARDS SYSTEM ==========
@@ -125,94 +526,106 @@ const DEFAULT_COSMETICS = {
 const LEVEL_REWARDS = [
   { level: 1, type: 'color', value: 'gray', name: 'Gray Border', icon: '⬜' },
   { level: 5, type: 'badge', value: '⭐', name: 'Star Badge', icon: '⭐' },
-  { level: 8, type: 'background', value: 'dots', name: 'Dots Pattern', icon: '⚬' },
   { level: 10, type: 'entrance', value: 'slide', name: 'Slide Entrance', icon: '→' },
   { level: 15, type: 'color', value: 'emerald', name: 'Emerald Border', icon: '💚' },
-  { level: 18, type: 'background', value: 'grid', name: 'Grid Pattern', icon: '▦' },
+  { level: 18, type: 'background', value: 'charcoal', name: 'Charcoal', icon: '⬛' },
   { level: 20, type: 'badge', value: '🔥', name: 'Fire Badge', icon: '🔥' },
-  { level: 22, type: 'bgColor', value: 'charcoal', name: 'Charcoal BG', icon: '⬛' },
   { level: 25, type: 'effect', value: 'shadow', name: 'Shadow Text', icon: '▣' },
-  { level: 28, type: 'background', value: 'lines', name: 'Lines Pattern', icon: '≡' },
+  { level: 28, type: 'background', value: 'midnight', name: 'Midnight', icon: '🌙' },
   { level: 30, type: 'color', value: 'ruby', name: 'Ruby Border', icon: '❤️' },
-  { level: 32, type: 'background', value: 'zebra', name: 'Zebra Pattern', icon: '🦓' },
+  { level: 32, type: 'background', value: 'zebra', name: 'Zebra Print', icon: '🦓' },
   { level: 35, type: 'entrance', value: 'pop', name: 'Pop Entrance', icon: '●' },
-  { level: 37, type: 'bgColor', value: 'navy', name: 'Navy BG', icon: '🔵' },
-  { level: 38, type: 'background', value: 'camo', name: 'Camo Pattern', icon: '🌲' },
+  { level: 37, type: 'background', value: 'navy', name: 'Navy', icon: '🔵' },
   { level: 40, type: 'badge', value: '💎', name: 'Diamond Badge', icon: '💎' },
-  { level: 42, type: 'background', value: 'diagonal', name: 'Diagonal Pattern', icon: '╱' },
+  { level: 42, type: 'background', value: 'military-camo', name: 'Military Camo', icon: '🪖' },
   { level: 45, type: 'border', value: 'glow', name: 'Glow Border', icon: '✦' },
-  { level: 47, type: 'bgColor', value: 'forest', name: 'Forest BG', icon: '🌲' },
-  { level: 48, type: 'background', value: 'honeycomb', name: 'Honeycomb Pattern', icon: '⬡' },
+  { level: 47, type: 'background', value: 'forest', name: 'Forest', icon: '🌲' },
   { level: 50, type: 'color', value: 'diamond', name: 'Diamond Border', icon: '💠' },
-  { level: 52, type: 'background', value: 'leopard', name: 'Leopard Pattern', icon: '🐆' },
+  { level: 52, type: 'background', value: 'leopard', name: 'Leopard Print', icon: '🐆' },
   { level: 55, type: 'effect', value: 'glow', name: 'Glow Text', icon: '✨' },
-  { level: 57, type: 'bgColor', value: 'wine', name: 'Wine BG', icon: '🍷' },
-  { level: 58, type: 'background', value: 'tiger', name: 'Tiger Pattern', icon: '🐯' },
+  { level: 57, type: 'background', value: 'wine', name: 'Wine', icon: '🍷' },
   { level: 60, type: 'badge', value: '👑', name: 'Crown Badge', icon: '👑' },
-  { level: 62, type: 'background', value: 'carbonfiber', name: 'Carbon Fiber', icon: '⬛' },
+  { level: 62, type: 'background', value: 'tiger', name: 'Tiger Print', icon: '🐯' },
   { level: 65, type: 'entrance', value: 'sparkle', name: 'Sparkle Entrance', icon: '✧' },
-  { level: 67, type: 'bgColor', value: 'ember', name: 'Ember BG', icon: '🔥' },
-  { level: 68, type: 'background', value: 'snowcamo', name: 'Snow Camo', icon: '❄️' },
+  { level: 67, type: 'background', value: 'desert-camo', name: 'Desert Camo', icon: '🏜️' },
   { level: 70, type: 'color', value: 'amethyst', name: 'Amethyst Border', icon: '💜' },
-  { level: 72, type: 'background', value: 'digitalcamo', name: 'Digital Camo', icon: '🔲' },
+  { level: 72, type: 'background', value: 'digital-camo', name: 'Digital Camo', icon: '🔲' },
   { level: 75, type: 'effect', value: 'shimmer', name: 'Shimmer Text', icon: '≋' },
-  { level: 77, type: 'bgColor', value: 'ocean', name: 'Ocean BG', icon: '🌊' },
-  { level: 78, type: 'background', value: 'brushedmetal', name: 'Brushed Metal', icon: '🔩' },
+  { level: 77, type: 'background', value: 'ocean', name: 'Ocean', icon: '🌊' },
+  { level: 78, type: 'background', value: 'arctic-camo', name: 'Arctic Camo', icon: '❄️' },
   { level: 80, type: 'border', value: 'pulse', name: 'Pulse Border', icon: '◉' },
-  { level: 82, type: 'background', value: 'circuit', name: 'Circuit Pattern', icon: '🔌' },
-  { level: 83, type: 'bgColor', value: 'desert-camo', name: 'Desert Camo BG', icon: '🏜️' },
+  { level: 82, type: 'background', value: 'carbon-fiber', name: 'Carbon Fiber', icon: '⬛' },
   { level: 85, type: 'badge', value: '🏆', name: 'Trophy Badge', icon: '🏆' },
-  { level: 87, type: 'bgColor', value: 'midnight', name: 'Midnight BG', icon: '🌙' },
-  { level: 88, type: 'background', value: 'starfield', name: 'Starfield', icon: '⭐' },
+  { level: 87, type: 'background', value: 'brushed-steel', name: 'Brushed Steel', icon: '🔩' },
   { level: 90, type: 'color', value: 'gold', name: 'Gold Border', icon: '💛' },
-  { level: 92, type: 'bgColor', value: 'arctic', name: 'Arctic BG', icon: '🧊' },
+  { level: 92, type: 'background', value: 'pink-camo', name: 'Pink Camo', icon: '💗' },
   { level: 95, type: 'entrance', value: 'lightning', name: 'Lightning Entrance', icon: '⚡' },
-  { level: 97, type: 'bgColor', value: 'lava', name: 'Lava BG', icon: '🌋' },
+  { level: 97, type: 'background', value: 'snakeskin', name: 'Snakeskin', icon: '🐍' },
   { level: 100, type: 'effect', value: 'neon', name: 'Neon Text', icon: '◈' },
-  { level: 100, type: 'bgColor', value: 'golden', name: 'Golden BG', icon: '✨' },
+  { level: 100, type: 'background', value: 'diamond-plate', name: 'Diamond Plate', icon: '💠' },
+  // Podium styles at higher levels
+  { level: 30, type: 'podium', value: 'sparkle', name: 'Sparkle Podium', icon: '✨' },
+  { level: 50, type: 'podium', value: 'confetti', name: 'Confetti Podium', icon: '🎊' },
+  { level: 70, type: 'podium', value: 'champion', name: 'Champion Podium', icon: '🏆' },
+  { level: 90, type: 'podium', value: 'military', name: 'Military Podium', icon: '🎖️' },
 ];
 
 // ========== PRESTIGE REWARDS ==========
 // Exclusive rewards for prestiging (resetting at max level)
 const PRESTIGE_REWARDS = [
+  // Prestige 1 - Rainbow & Sparkles
   { prestige: 1, type: 'badge', value: '🌟', name: 'P1 - Prestige Star', icon: '🌟' },
-  { prestige: 1, type: 'background', value: 'holographic', name: 'P1 - Holographic Pattern', icon: '🌈' },
-  { prestige: 1, type: 'bgColor', value: 'camo', name: 'P1 - Camo BG', icon: '🪖' },
+  { prestige: 1, type: 'background', value: 'rainbow-wave', name: 'P1 - Rainbow Wave', icon: '🌈' },
+  { prestige: 1, type: 'podium', value: 'sparkle', name: 'P1 - Sparkle Podium', icon: '✨' },
+  // Prestige 2 - Neon & Nyan
   { prestige: 2, type: 'color', value: 'platinum', name: 'P2 - Platinum Border', icon: '🤍' },
+  { prestige: 2, type: 'background', value: 'nyan-trail', name: 'P2 - Nyan Trail', icon: '🐱' },
   { prestige: 2, type: 'podium', value: 'neon', name: 'P2 - Neon Podium', icon: '💡' },
-  { prestige: 2, type: 'bgColor', value: 'rainbow', name: 'P2 - Rainbow BG', icon: '🌈' },
+  // Prestige 3 - Fire
   { prestige: 3, type: 'entrance', value: 'fire', name: 'P3 - Fire Entrance', icon: '🔥' },
-  { prestige: 3, type: 'background', value: 'fire', name: 'P3 - Fire Pattern', icon: '🔥' },
-  { prestige: 3, type: 'bgColor', value: 'fire', name: 'P3 - Fire BG', icon: '🔥' },
+  { prestige: 3, type: 'background', value: 'fire', name: 'P3 - Inferno', icon: '🔥' },
+  { prestige: 3, type: 'podium', value: 'flames', name: 'P3 - Flames Podium', icon: '🔥' },
+  // Prestige 4 - Galaxy & Cosmic
   { prestige: 4, type: 'effect', value: 'fire', name: 'P4 - Fire Text', icon: '🔥' },
-  { prestige: 4, type: 'podium', value: 'flames', name: 'P4 - Flames Podium', icon: '🔥' },
-  { prestige: 4, type: 'bgColor', value: 'galaxy', name: 'P4 - Galaxy BG', icon: '🌌' },
+  { prestige: 4, type: 'background', value: 'galaxy', name: 'P4 - Galaxy', icon: '🌌' },
+  { prestige: 4, type: 'podium', value: 'cosmic', name: 'P4 - Cosmic Podium', icon: '🌌' },
+  // Prestige 5 - Rainbow & Holo
   { prestige: 5, type: 'color', value: 'rainbow', name: 'P5 - Rainbow Border', icon: '🌈' },
-  { prestige: 5, type: 'podium', value: 'holographic', name: 'P5 - Holographic Podium', icon: '🌈' },
-  { prestige: 5, type: 'bgColor', value: 'holographic', name: 'P5 - Holographic BG', icon: '🌈' },
+  { prestige: 5, type: 'background', value: 'holographic', name: 'P5 - Holographic', icon: '🌈' },
+  { prestige: 5, type: 'podium', value: 'confetti', name: 'P5 - Confetti Podium', icon: '🎊' },
+  // Prestige 6 - Matrix & Cyber
   { prestige: 6, type: 'badge', value: '💫', name: 'P6 - Cosmic Badge', icon: '💫' },
-  { prestige: 6, type: 'background', value: 'matrix', name: 'P6 - Matrix Pattern', icon: '▼' },
-  { prestige: 6, type: 'bgColor', value: 'matrix', name: 'P6 - Matrix BG', icon: '▼' },
+  { prestige: 6, type: 'background', value: 'matrix', name: 'P6 - Matrix Code', icon: '▼' },
+  { prestige: 6, type: 'podium', value: 'cyber', name: 'P6 - Cyber Podium', icon: '🤖' },
+  // Prestige 7 - Ice & Crystal
   { prestige: 7, type: 'effect', value: 'ice', name: 'P7 - Ice Text', icon: '❄️' },
+  { prestige: 7, type: 'background', value: 'ice-crystal', name: 'P7 - Ice Crystal', icon: '❄️' },
   { prestige: 7, type: 'podium', value: 'crystal', name: 'P7 - Crystal Podium', icon: '💎' },
-  { prestige: 7, type: 'bgColor', value: 'ice', name: 'P7 - Ice BG', icon: '❄️' },
+  // Prestige 8 - Electric Storm
   { prestige: 8, type: 'entrance', value: 'matrix', name: 'P8 - Matrix Entrance', icon: '▼' },
-  { prestige: 8, type: 'podium', value: 'cyber', name: 'P8 - Cyber Podium', icon: '🤖' },
-  { prestige: 8, type: 'bgColor', value: 'electric', name: 'P8 - Electric BG', icon: '⚡' },
+  { prestige: 8, type: 'background', value: 'electric-storm', name: 'P8 - Electric Storm', icon: '⚡' },
+  { prestige: 8, type: 'podium', value: 'streamer', name: 'P8 - Streamer Podium', icon: '🎈' },
+  // Prestige 9 - Aurora & Synthwave
   { prestige: 9, type: 'effect', value: 'glitch', name: 'P9 - Glitch Text', icon: '⚠' },
-  { prestige: 9, type: 'background', value: 'pulse', name: 'P9 - Pulse Pattern', icon: '◉' },
-  { prestige: 9, type: 'bgColor', value: 'neon-pink', name: 'P9 - Neon Pink BG', icon: '💗' },
+  { prestige: 9, type: 'background', value: 'aurora', name: 'P9 - Aurora Borealis', icon: '🌌' },
+  { prestige: 9, type: 'background', value: 'synthwave', name: 'P9 - Synthwave Grid', icon: '🕹️' },
+  // Prestige 10 - Legendary & Void
   { prestige: 10, type: 'badge', value: '🐉', name: 'P10 - Dragon Badge', icon: '🐉' },
-  { prestige: 10, type: 'podium', value: 'cosmic', name: 'P10 - Cosmic Podium', icon: '🌌' },
-  { prestige: 10, type: 'bgColor', value: 'void', name: 'P10 - Void BG', icon: '🕳️' },
+  { prestige: 10, type: 'background', value: 'void', name: 'P10 - Void', icon: '🕳️' },
+  { prestige: 10, type: 'background', value: 'lava-flow', name: 'P10 - Lava Flow', icon: '🌋' },
+  { prestige: 10, type: 'background', value: 'starfield', name: 'P10 - Starfield', icon: '⭐' },
+  { prestige: 10, type: 'podium', value: 'legendary', name: 'P10 - Legendary Podium', icon: '👑' },
 ];
 
 // ========== PREMIUM EXCLUSIVE ==========
 const PREMIUM_EXCLUSIVE = {
   colors: ['obsidian', 'rose', 'sunset', 'toxic'],
-  backgrounds: ['holographic', 'matrix', 'fire', 'pulse'],
-  bgColors: ['rainbow', 'holographic', 'fire', 'ice', 'matrix', 'lava', 'galaxy', 'aurora', 'neon-pink', 'golden', 'void', 'electric'],
-  podiums: ['royal', 'void', 'nature'],
+  backgrounds: [
+    // All animated/special backgrounds are premium
+    'rainbow-wave', 'nyan-trail', 'fire', 'ice-crystal', 'matrix', 'galaxy', 
+    'aurora', 'holographic', 'lava-flow', 'electric-storm', 'void', 'synthwave', 'starfield'
+  ],
+  podiums: ['royal', 'void', 'nature', 'legendary'],
   effects: ['fire', 'ice', 'glitch'],
   badges: ['😎', '🎮', '🎯', '🚀', '💀', '🤖', '👾', '🦄', '🐉', '👻']
 };
@@ -230,17 +643,29 @@ function isCosmeticUnlocked(type, value, options = {}) {
   if (type === 'effect' && value === 'none') return true;
   if (type === 'entrance' && value === 'fade') return true;
   if (type === 'badge' && !value) return true; // "None" badge
-  if (type === 'background' && value === 'none') return true;
-  if (type === 'bgColor' && value === 'default') return true;
+  if (type === 'background' && value === 'default') return true;
+  if (type === 'bgColor' && value === 'default') return true; // Legacy compat
   if (type === 'podium' && value === 'default') return true;
   
   // Check level rewards
   const levelReward = LEVEL_REWARDS.find(r => r.type === type && r.value === value);
   if (levelReward && level >= levelReward.level) return true;
   
+  // Also check background type for old bgColor lookups (backwards compat)
+  if (type === 'bgColor') {
+    const bgLevelReward = LEVEL_REWARDS.find(r => r.type === 'background' && r.value === value);
+    if (bgLevelReward && level >= bgLevelReward.level) return true;
+  }
+  
   // Check prestige rewards
   const prestigeReward = PRESTIGE_REWARDS.find(r => r.type === type && r.value === value);
   if (prestigeReward && prestige >= prestigeReward.prestige) return true;
+  
+  // Also check background type for old bgColor lookups (backwards compat)
+  if (type === 'bgColor') {
+    const bgPrestigeReward = PRESTIGE_REWARDS.find(r => r.type === 'background' && r.value === value);
+    if (bgPrestigeReward && prestige >= bgPrestigeReward.prestige) return true;
+  }
   
   return false;
 }
@@ -256,20 +681,45 @@ function getUnlockRequirement(type, value) {
   return { type: 'premium', value: null };
 }
 
-// ========== HELPER: Get combined background style ==========
-function getBackgroundStyle(bgColorKey, patternKey) {
-  const bgColor = BG_COLORS[bgColorKey] || BG_COLORS.default;
-  const pattern = BACKGROUND_PATTERNS[patternKey];
-  
-  if (!pattern || pattern.css === 'none') {
-    return { background: bgColor, backgroundSize: null };
+// ========== HELPER: Get unified background style ==========
+function getBackgroundStyle(backgroundKey, legacyPatternKey = null) {
+  // New unified system - check BACKGROUNDS first
+  const bg = BACKGROUNDS[backgroundKey];
+  if (bg) {
+    return {
+      background: bg.css,
+      backgroundSize: bg.size || null,
+      animated: bg.animated || null
+    };
   }
   
-  // Combine pattern with background color
+  // Legacy fallback - check BG_COLORS 
+  const bgColor = BG_COLORS[backgroundKey] || BG_COLORS.default;
+  const pattern = legacyPatternKey ? BACKGROUND_PATTERNS[legacyPatternKey] : null;
+  
+  if (!pattern || pattern.css === 'none') {
+    return { background: bgColor, backgroundSize: null, animated: null };
+  }
+  
+  // Combine pattern with background color (legacy)
   return {
     background: `${pattern.css}, ${bgColor}`,
-    backgroundSize: pattern.size ? `${pattern.size}, 100% 100%` : null
+    backgroundSize: pattern.size ? `${pattern.size}, 100% 100%` : null,
+    animated: pattern.animated || null
   };
+}
+
+// Helper to get animation class for background
+function getBackgroundAnimClass(backgroundKey) {
+  const bg = BACKGROUNDS[backgroundKey];
+  if (bg && bg.animated) {
+    return `tgco-bg-${backgroundKey}`;
+  }
+  // Legacy check
+  if (BG_ANIMATED.includes(backgroundKey)) {
+    return `tgco-bgc-${backgroundKey}`;
+  }
+  return null;
 }
 
 // ========== CSS STYLES ==========
@@ -405,32 +855,52 @@ const COSMETICS_STYLES = `
   .tgco-bg-fire { animation: tgcoFireFlickerBG 0.5s ease-in-out infinite !important; }
   .tgco-bg-pulse { animation: tgcoPulseBG 2s ease-in-out infinite !important; }
 
-  /* Animated Background Colors */
+  /* ========== UNIFIED BACKGROUND ANIMATIONS ========== */
+  @keyframes tgcoBgRainbowWave { 0% { background-position: 0% 50%; } 100% { background-position: 400% 50%; } }
+  @keyframes tgcoBgNyanTrail { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+  @keyframes tgcoBgFireFlicker { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.2); } }
+  @keyframes tgcoBgIceShimmer { 0%, 100% { filter: brightness(1) hue-rotate(0deg); } 50% { filter: brightness(1.15) hue-rotate(5deg); } }
+  @keyframes tgcoBgMatrixRain { 0% { background-position: 0 0; } 100% { background-position: 0 100px; } }
+  @keyframes tgcoBgGalaxyRotate { 0% { filter: saturate(1) brightness(1); } 50% { filter: saturate(1.2) brightness(1.1); } 100% { filter: saturate(1) brightness(1); } }
+  @keyframes tgcoBgAuroraWave { 0%, 100% { filter: hue-rotate(0deg) brightness(1); } 50% { filter: hue-rotate(20deg) brightness(1.15); } }
+  @keyframes tgcoBgHoloShift { 0% { background-position: 0% 0%; } 100% { background-position: 400% 400%; } }
+  @keyframes tgcoBgLavaFlow { 0%, 100% { filter: brightness(1); background-position: 0 0; } 50% { filter: brightness(1.3); background-position: 0 10px; } }
+  @keyframes tgcoBgElectricPulse { 0%, 100% { filter: brightness(1); } 25% { filter: brightness(1.4); } 50% { filter: brightness(0.9); } 75% { filter: brightness(1.3); } }
+  @keyframes tgcoBgVoidPulse { 0%, 100% { filter: brightness(0.9); } 50% { filter: brightness(1.1); } }
+  @keyframes tgcoBgSynthwave { 0% { background-position: 0 0; } 100% { background-position: 0 80px; } }
+  @keyframes tgcoBgStarTwinkle { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+
+  /* Apply animations to unified backgrounds */
+  .tgco-bg-rainbow-wave { background-size: 400% 100% !important; animation: tgcoBgRainbowWave 3s linear infinite !important; }
+  .tgco-bg-nyan-trail { background-size: 300% 100% !important; animation: tgcoBgNyanTrail 2s linear infinite !important; }
+  .tgco-bg-fire { animation: tgcoBgFireFlicker 0.8s ease-in-out infinite !important; }
+  .tgco-bg-ice-crystal { animation: tgcoBgIceShimmer 3s ease-in-out infinite !important; }
+  .tgco-bg-matrix { animation: tgcoBgMatrixRain 2s linear infinite !important; }
+  .tgco-bg-galaxy { animation: tgcoBgGalaxyRotate 6s ease-in-out infinite !important; }
+  .tgco-bg-aurora { animation: tgcoBgAuroraWave 5s ease-in-out infinite !important; }
+  .tgco-bg-holographic { background-size: 400% 400% !important; animation: tgcoBgHoloShift 4s linear infinite !important; }
+  .tgco-bg-lava-flow { animation: tgcoBgLavaFlow 2s ease-in-out infinite !important; }
+  .tgco-bg-electric-storm { animation: tgcoBgElectricPulse 1.5s ease-in-out infinite !important; }
+  .tgco-bg-void { animation: tgcoBgVoidPulse 4s ease-in-out infinite !important; }
+  .tgco-bg-synthwave { animation: tgcoBgSynthwave 3s linear infinite !important; }
+  .tgco-bg-starfield { animation: tgcoBgStarTwinkle 2s ease-in-out infinite !important; }
+
+  /* Legacy animated background color classes (backwards compat) */
   @keyframes tgcoBgRainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
   @keyframes tgcoBgHolo { 0%, 100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
-  @keyframes tgcoBgFire { 0% { filter: brightness(1); } 100% { filter: brightness(1.3); } }
-  @keyframes tgcoBgIce { 0%, 100% { filter: brightness(1) hue-rotate(0deg); } 50% { filter: brightness(1.2) hue-rotate(10deg); } }
-  @keyframes tgcoBgMatrix { 0% { opacity: 0.85; } 50% { opacity: 1; } 100% { opacity: 0.85; } }
-  @keyframes tgcoBgLava { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
-  @keyframes tgcoBgGalaxy { 0%, 100% { filter: brightness(1) saturate(1); } 50% { filter: brightness(1.2) saturate(1.3); } }
-  @keyframes tgcoBgAurora { 0%, 100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
-  @keyframes tgcoBgNeonPink { 0%, 100% { box-shadow: inset 0 0 10px rgba(255,20,147,0.5); } 50% { box-shadow: inset 0 0 25px rgba(255,20,147,0.8); } }
-  @keyframes tgcoBgGolden { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
-  @keyframes tgcoBgVoid { 0%, 100% { filter: brightness(0.8); } 50% { filter: brightness(1); } }
-  @keyframes tgcoBgElectric { 0%, 100% { filter: brightness(1); } 25% { filter: brightness(1.4); } 50% { filter: brightness(1); } 75% { filter: brightness(1.3); } }
 
-  .tgco-bgc-rainbow { background-size: 200% 100% !important; animation: tgcoBgRainbow 2s linear infinite !important; }
-  .tgco-bgc-holographic { background-size: 400% 400% !important; animation: tgcoBgHolo 3s ease infinite !important; }
-  .tgco-bgc-fire { animation: tgcoBgFire 0.5s ease-in-out infinite alternate !important; }
-  .tgco-bgc-ice { animation: tgcoBgIce 2s ease-in-out infinite !important; }
-  .tgco-bgc-matrix { animation: tgcoBgMatrix 1s linear infinite !important; }
-  .tgco-bgc-lava { animation: tgcoBgLava 2s ease-in-out infinite !important; }
-  .tgco-bgc-galaxy { animation: tgcoBgGalaxy 4s ease-in-out infinite !important; }
-  .tgco-bgc-aurora { background-size: 200% 200% !important; animation: tgcoBgAurora 3s ease infinite !important; }
-  .tgco-bgc-neon-pink { animation: tgcoBgNeonPink 1.5s ease-in-out infinite !important; }
-  .tgco-bgc-golden { animation: tgcoBgGolden 2s ease-in-out infinite !important; }
-  .tgco-bgc-void { animation: tgcoBgVoid 3s ease-in-out infinite !important; }
-  .tgco-bgc-electric { animation: tgcoBgElectric 1s ease-in-out infinite !important; }
+  .tgco-bgc-rainbow-wave, .tgco-bgc-rainbow { background-size: 400% 100% !important; animation: tgcoBgRainbowWave 3s linear infinite !important; }
+  .tgco-bgc-nyan-trail { background-size: 300% 100% !important; animation: tgcoBgNyanTrail 2s linear infinite !important; }
+  .tgco-bgc-fire { animation: tgcoBgFireFlicker 0.8s ease-in-out infinite !important; }
+  .tgco-bgc-ice-crystal { animation: tgcoBgIceShimmer 3s ease-in-out infinite !important; }
+  .tgco-bgc-matrix { animation: tgcoBgMatrixRain 2s linear infinite !important; }
+  .tgco-bgc-galaxy { animation: tgcoBgGalaxyRotate 6s ease-in-out infinite !important; }
+  .tgco-bgc-aurora { animation: tgcoBgAuroraWave 5s ease-in-out infinite !important; }
+  .tgco-bgc-holographic { background-size: 400% 400% !important; animation: tgcoBgHoloShift 4s linear infinite !important; }
+  .tgco-bgc-lava-flow { animation: tgcoBgLavaFlow 2s ease-in-out infinite !important; }
+  .tgco-bgc-electric-storm { animation: tgcoBgElectricPulse 1.5s ease-in-out infinite !important; }
+  .tgco-bgc-void { animation: tgcoBgVoidPulse 4s ease-in-out infinite !important; }
+  .tgco-bgc-synthwave { animation: tgcoBgSynthwave 3s linear infinite !important; }
 
   /* Compact mode for player lists */
   .tgco-nameplate.compact { padding: 5px 10px; gap: 6px; }
@@ -452,7 +922,7 @@ const COSMETICS_STYLES = `
     border-radius: 16px;
     text-align: center;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     min-height: 140px;
     transition: all 0.3s ease;
   }
@@ -488,20 +958,318 @@ const COSMETICS_STYLES = `
 
   .tgco-podium-meta { font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
 
-  /* Podium Style Variations */
-  .tgco-podium.podium-flames { border-image: linear-gradient(180deg, #ff4500, #ff8c00, #ffd700) 1; animation: tgcoPodiumFlames 0.5s ease-in-out infinite alternate; }
-  .tgco-podium.podium-neon { box-shadow: 0 0 20px var(--podium-color), 0 0 40px var(--podium-color), inset 0 0 20px rgba(255,255,255,0.05); }
-  .tgco-podium.podium-crystal { background: linear-gradient(135deg, rgba(103,232,249,0.1), rgba(6,182,212,0.05)) !important; border-color: #67e8f9 !important; box-shadow: 0 0 30px rgba(103,232,249,0.2); }
-  .tgco-podium.podium-cosmic { background: radial-gradient(ellipse at top, rgba(139,92,246,0.2), transparent), radial-gradient(ellipse at bottom, rgba(59,130,246,0.15), transparent) !important; }
-  .tgco-podium.podium-holographic { border-color: transparent !important; background: linear-gradient(rgba(15,15,25,0.9), rgba(15,15,25,0.9)) padding-box, linear-gradient(135deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box !important; background-size: 100% 100%, 400% 400% !important; animation: tgcoRainbow 4s linear infinite; }
-  .tgco-podium.podium-royal { border-color: #ffd700 !important; background: linear-gradient(180deg, rgba(255,215,0,0.12), rgba(139,69,19,0.08)) !important; box-shadow: inset 0 0 30px rgba(255,215,0,0.1); }
-  .tgco-podium.podium-cyber { border-color: #00ff88 !important; background: linear-gradient(180deg, rgba(0,255,136,0.08), rgba(0,0,0,0.3)) !important; box-shadow: 0 0 15px rgba(0,255,136,0.3); animation: tgcoPodiumCyber 2s ease-in-out infinite; }
-  .tgco-podium.podium-nature { border-color: #34d399 !important; background: linear-gradient(180deg, rgba(52,211,153,0.1), rgba(16,185,129,0.05)) !important; }
-  .tgco-podium.podium-void { border-color: #6366f1 !important; background: radial-gradient(ellipse at center, rgba(99,102,241,0.15), rgba(0,0,0,0.5)) !important; animation: tgcoPodiumVoid 3s ease-in-out infinite; }
+  /* ========== PODIUM DECORATION ELEMENTS ========== */
+  .tgco-podium-decorations { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; overflow: visible; }
 
-  @keyframes tgcoPodiumFlames { 0% { box-shadow: 0 -5px 20px rgba(255,69,0,0.4), 0 -10px 30px rgba(255,140,0,0.3); } 100% { box-shadow: 0 -8px 25px rgba(255,69,0,0.5), 0 -15px 40px rgba(255,140,0,0.4); } }
-  @keyframes tgcoPodiumCyber { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
-  @keyframes tgcoPodiumVoid { 0%, 100% { box-shadow: 0 0 30px rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 50px rgba(99,102,241,0.5); } }
+  /* CHAMPION - Trophy & Laurel Wreath */
+  .tgco-podium.podium-champion .tgco-podium-decorations::before {
+    content: '🏆';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.5rem;
+    filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));
+    animation: tgcoTrophyBounce 2s ease-in-out infinite;
+  }
+  .tgco-podium.podium-champion .tgco-podium-decorations::after {
+    content: '🌿';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 1.5rem;
+    opacity: 0.7;
+  }
+  .tgco-podium.podium-champion { box-shadow: 0 0 40px rgba(255,215,0,0.3), inset 0 0 20px rgba(255,215,0,0.1); }
+  @keyframes tgcoTrophyBounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-5px); } }
+
+  /* CONFETTI - Falling confetti particles */
+  .tgco-podium.podium-confetti { overflow: hidden; }
+  .tgco-podium.podium-confetti .tgco-podium-decorations::before,
+  .tgco-podium.podium-confetti .tgco-podium-decorations::after {
+    content: '🎊';
+    position: absolute;
+    font-size: 1.2rem;
+    animation: tgcoConfettiFall 3s linear infinite;
+  }
+  .tgco-podium.podium-confetti .tgco-podium-decorations::before { left: 20%; animation-delay: 0s; }
+  .tgco-podium.podium-confetti .tgco-podium-decorations::after { left: 70%; animation-delay: 1.5s; content: '🎉'; }
+  @keyframes tgcoConfettiFall { 
+    0% { top: -20px; opacity: 1; transform: rotate(0deg) translateX(0); } 
+    100% { top: 110%; opacity: 0.3; transform: rotate(360deg) translateX(20px); } 
+  }
+
+  /* SPARKLE - Twinkling stars */
+  .tgco-podium.podium-sparkle .tgco-podium-decorations::before,
+  .tgco-podium.podium-sparkle .tgco-podium-decorations::after {
+    content: '✨';
+    position: absolute;
+    font-size: 1rem;
+    animation: tgcoSparkle 1.5s ease-in-out infinite;
+  }
+  .tgco-podium.podium-sparkle .tgco-podium-decorations::before { top: 10%; left: 10%; animation-delay: 0s; }
+  .tgco-podium.podium-sparkle .tgco-podium-decorations::after { top: 15%; right: 10%; animation-delay: 0.75s; content: '⭐'; }
+  .tgco-podium.podium-sparkle { box-shadow: 0 0 30px rgba(255,255,255,0.2); }
+  @keyframes tgcoSparkle { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+
+  /* FLAMES - Rising fire & embers */
+  .tgco-podium.podium-flames {
+    border-color: #ff4500 !important;
+    box-shadow: 0 0 30px rgba(255,69,0,0.4), 0 -10px 40px rgba(255,140,0,0.3);
+  }
+  .tgco-podium.podium-flames .tgco-podium-decorations::before {
+    content: '🔥';
+    position: absolute;
+    bottom: -5px;
+    left: 20%;
+    font-size: 1.8rem;
+    animation: tgcoFlameRise 0.8s ease-in-out infinite alternate;
+  }
+  .tgco-podium.podium-flames .tgco-podium-decorations::after {
+    content: '🔥';
+    position: absolute;
+    bottom: -5px;
+    right: 20%;
+    font-size: 1.5rem;
+    animation: tgcoFlameRise 0.6s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes tgcoFlameRise { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-8px) scale(1.1); } }
+
+  /* NEON - Bright glow with scan lines */
+  .tgco-podium.podium-neon {
+    border-color: #00ffff !important;
+    box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px rgba(0,255,255,0.3);
+    animation: tgcoNeonPulse 2s ease-in-out infinite;
+  }
+  .tgco-podium.podium-neon .tgco-podium-decorations::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
+    pointer-events: none;
+  }
+  @keyframes tgcoNeonPulse { 0%, 100% { box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff; } 50% { box-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff, 0 0 80px rgba(0,255,255,0.5); } }
+
+  /* CRYSTAL - Ice crystals & frost */
+  .tgco-podium.podium-crystal {
+    border-color: #67e8f9 !important;
+    background: linear-gradient(135deg, rgba(103,232,249,0.15), rgba(6,182,212,0.08)) !important;
+    box-shadow: 0 0 30px rgba(103,232,249,0.3), inset 0 0 20px rgba(255,255,255,0.1);
+  }
+  .tgco-podium.podium-crystal .tgco-podium-decorations::before {
+    content: '❄️';
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 1.2rem;
+    animation: tgcoSnowfall 4s linear infinite;
+  }
+  .tgco-podium.podium-crystal .tgco-podium-decorations::after {
+    content: '💎';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5rem;
+    animation: tgcoSparkle 2s ease-in-out infinite;
+  }
+  @keyframes tgcoSnowfall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(150px) rotate(360deg); opacity: 0; } }
+
+  /* COSMIC - Stars & nebula */
+  .tgco-podium.podium-cosmic {
+    border-color: #8b5cf6 !important;
+    background: radial-gradient(ellipse at top, rgba(139,92,246,0.25), transparent 60%), 
+                radial-gradient(ellipse at bottom, rgba(59,130,246,0.2), transparent 50%),
+                linear-gradient(135deg, rgba(15,15,35,0.95), rgba(30,20,50,0.95)) !important;
+    box-shadow: 0 0 40px rgba(139,92,246,0.3);
+  }
+  .tgco-podium.podium-cosmic .tgco-podium-decorations::before {
+    content: '🌟';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 0.9rem;
+    animation: tgcoStarTwinkle 1.5s ease-in-out infinite;
+  }
+  .tgco-podium.podium-cosmic .tgco-podium-decorations::after {
+    content: '🪐';
+    position: absolute;
+    top: -20px;
+    right: -10px;
+    font-size: 2rem;
+    animation: tgcoOrbit 8s linear infinite;
+  }
+  @keyframes tgcoStarTwinkle { 0%, 100% { opacity: 0.5; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } }
+  @keyframes tgcoOrbit { 0% { transform: rotate(0deg) translateX(5px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(5px) rotate(-360deg); } }
+
+  /* ROYAL - Crown & ribbons */
+  .tgco-podium.podium-royal {
+    border-color: #ffd700 !important;
+    background: linear-gradient(180deg, rgba(255,215,0,0.2), rgba(139,69,19,0.12)) !important;
+    box-shadow: 0 0 40px rgba(255,215,0,0.25), inset 0 0 30px rgba(255,215,0,0.1);
+  }
+  .tgco-podium.podium-royal .tgco-podium-decorations::before {
+    content: '👑';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    filter: drop-shadow(0 0 8px rgba(255,215,0,0.6));
+  }
+  .tgco-podium.podium-royal .tgco-podium-decorations::after {
+    content: '🎀';
+    position: absolute;
+    top: 0;
+    right: -5px;
+    font-size: 1.5rem;
+    transform: rotate(15deg);
+  }
+
+  /* CYBER - Glitch & data */
+  .tgco-podium.podium-cyber {
+    border-color: #00ff88 !important;
+    background: linear-gradient(180deg, rgba(0,255,136,0.1), rgba(0,50,30,0.5)) !important;
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+    animation: tgcoCyberGlitch 3s ease-in-out infinite;
+  }
+  .tgco-podium.podium-cyber .tgco-podium-decorations::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,255,136,0.05) 2px, rgba(0,255,136,0.05) 4px);
+  }
+  .tgco-podium.podium-cyber .tgco-podium-decorations::after {
+    content: '⚡';
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 1.2rem;
+    animation: tgcoDataPulse 0.5s ease-in-out infinite;
+  }
+  @keyframes tgcoCyberGlitch { 0%, 90%, 100% { transform: translateX(0); } 92% { transform: translateX(-2px); } 94% { transform: translateX(2px); } 96% { transform: translateX(-1px); } }
+  @keyframes tgcoDataPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* NATURE - Vines & leaves */
+  .tgco-podium.podium-nature {
+    border-color: #22c55e !important;
+    background: linear-gradient(180deg, rgba(34,197,94,0.12), rgba(21,128,61,0.08)) !important;
+    box-shadow: 0 0 25px rgba(34,197,94,0.2);
+  }
+  .tgco-podium.podium-nature .tgco-podium-decorations::before {
+    content: '🌿';
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 1.3rem;
+    transform: rotate(-30deg);
+  }
+  .tgco-podium.podium-nature .tgco-podium-decorations::after {
+    content: '🍃';
+    position: absolute;
+    top: 20%;
+    right: 5px;
+    font-size: 1rem;
+    animation: tgcoLeafFloat 4s ease-in-out infinite;
+  }
+  @keyframes tgcoLeafFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(10px) rotate(15deg); } }
+
+  /* VOID - Dark energy portal */
+  .tgco-podium.podium-void {
+    border-color: #6366f1 !important;
+    background: radial-gradient(ellipse at center, rgba(99,102,241,0.2), rgba(0,0,0,0.9)) !important;
+    box-shadow: 0 0 50px rgba(99,102,241,0.4), inset 0 0 30px rgba(0,0,0,0.5);
+    animation: tgcoVoidPulse 3s ease-in-out infinite;
+  }
+  .tgco-podium.podium-void .tgco-podium-decorations::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80%;
+    height: 80%;
+    transform: translate(-50%, -50%);
+    border: 2px solid rgba(99,102,241,0.3);
+    border-radius: 50%;
+    animation: tgcoVoidRing 4s linear infinite;
+  }
+  @keyframes tgcoVoidPulse { 0%, 100% { box-shadow: 0 0 30px rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 60px rgba(99,102,241,0.5), 0 0 80px rgba(99,102,241,0.2); } }
+  @keyframes tgcoVoidRing { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.8); opacity: 0.5; } 100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.2); opacity: 0; } }
+
+  /* LEGENDARY - Ultimate combo */
+  .tgco-podium.podium-legendary {
+    border: 3px solid transparent !important;
+    background: linear-gradient(rgba(15,15,25,0.9), rgba(15,15,25,0.9)) padding-box,
+                linear-gradient(90deg, #ff0000, #ff8800, #ffff00, #00ff00, #00ffff, #0088ff, #ff0088, #ff0000) border-box !important;
+    background-size: 100% 100%, 300% 100% !important;
+    animation: tgcoLegendaryRainbow 3s linear infinite, tgcoLegendaryPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 40px rgba(255,215,0,0.4), 0 0 60px rgba(255,100,0,0.2);
+  }
+  .tgco-podium.podium-legendary .tgco-podium-decorations::before {
+    content: '👑';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.5rem;
+    filter: drop-shadow(0 0 15px rgba(255,215,0,0.8));
+    animation: tgcoTrophyBounce 1.5s ease-in-out infinite;
+  }
+  .tgco-podium.podium-legendary .tgco-podium-decorations::after {
+    content: '✨';
+    position: absolute;
+    top: 10%;
+    right: 10%;
+    font-size: 1.5rem;
+    animation: tgcoSparkle 1s ease-in-out infinite;
+  }
+  @keyframes tgcoLegendaryRainbow { 0% { background-position: 0 0, 0% 50%; } 100% { background-position: 0 0, 300% 50%; } }
+  @keyframes tgcoLegendaryPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+
+  /* STREAMER - Party streamers & balloons */
+  .tgco-podium.podium-streamer {
+    box-shadow: 0 0 30px rgba(255,100,200,0.3);
+  }
+  .tgco-podium.podium-streamer .tgco-podium-decorations::before {
+    content: '🎈';
+    position: absolute;
+    top: -15px;
+    left: 10px;
+    font-size: 1.8rem;
+    animation: tgcoBalloonFloat 3s ease-in-out infinite;
+  }
+  .tgco-podium.podium-streamer .tgco-podium-decorations::after {
+    content: '🎊';
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    font-size: 1.5rem;
+    animation: tgcoBalloonFloat 3s ease-in-out infinite reverse;
+  }
+  @keyframes tgcoBalloonFloat { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-10px) rotate(5deg); } }
+
+  /* MILITARY - Medals & honor */
+  .tgco-podium.podium-military {
+    border-color: #b8860b !important;
+    background: linear-gradient(180deg, rgba(184,134,11,0.15), rgba(139,90,43,0.1)) !important;
+    box-shadow: 0 0 25px rgba(184,134,11,0.3);
+  }
+  .tgco-podium.podium-military .tgco-podium-decorations::before {
+    content: '🎖️';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+  }
+  .tgco-podium.podium-military .tgco-podium-decorations::after {
+    content: '⭐';
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 1rem;
+    color: #ffd700;
+  }
 
   /* Player Cards (for waiting rooms) */
   .player-card { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
@@ -625,11 +1393,13 @@ function renderNameplate(options) {
   if (cosmetics.border_style && isCosmeticUnlocked('border', cosmetics.border_style, unlockOpts)) c.border_style = cosmetics.border_style;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
   if (cosmetics.entrance_animation && isCosmeticUnlocked('entrance', cosmetics.entrance_animation, unlockOpts)) c.entrance_animation = cosmetics.entrance_animation;
-  if (cosmetics.background_pattern && isCosmeticUnlocked('background', cosmetics.background_pattern, unlockOpts)) c.background_pattern = cosmetics.background_pattern;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
+  
+  // Unified background (with backwards compat)
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background_pattern !== 'none' || c.background_color !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background !== 'default';
   const isRainbow = c.border_color === 'rainbow';
   const color = isRainbow ? '#c084fc' : (COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray);
 
@@ -642,8 +1412,9 @@ function renderNameplate(options) {
   }
   if (mode !== 'default') classes.push(mode);
 
-  const pattern = BACKGROUND_PATTERNS[c.background_pattern];
-  if (pattern && pattern.animated) classes.push(`tgco-bg-${c.background_pattern}`);
+  // Add animation class for animated backgrounds
+  const bgAnimClass = getBackgroundAnimClass(c.background);
+  if (bgAnimClass) classes.push(bgAnimClass);
 
   const nameClasses = ['tgco-name'];
   if (hasCosmetics && c.name_effect && c.name_effect !== 'none') nameClasses.push(`tgco-effect-${c.name_effect}`);
@@ -656,17 +1427,12 @@ function renderNameplate(options) {
     const styles = [];
     if (!isRainbow) { styles.push(`--tgco-color: ${color}`); styles.push(`border-color: ${color}`); }
     
-    // Apply background color + pattern
-    const bgStyle = getBackgroundStyle(c.background_color, c.background_pattern);
-    styles.push(`background: ${bgStyle.background}`);
+    // Apply unified background
+    const bgStyle = getBackgroundStyle(c.background);
+    styles.push(`background: ${bgStyle.background} !important`);
     if (bgStyle.backgroundSize) styles.push(`background-size: ${bgStyle.backgroundSize}`);
     
     if (styles.length) styleAttr = `style="${styles.join('; ')};"`;
-    
-    // Add animation class for animated backgrounds
-    if (c.background_color && BG_ANIMATED.includes(c.background_color)) {
-      classes.push(`tgco-bgc-${c.background_color}`);
-    }
   }
 
   const nameStyle = hasCosmetics ? `style="color: ${color};"` : '';
@@ -713,11 +1479,13 @@ function renderPlayerCard(options) {
   if (cosmetics.border_style && isCosmeticUnlocked('border', cosmetics.border_style, unlockOpts)) c.border_style = cosmetics.border_style;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
   if (cosmetics.entrance_animation && isCosmeticUnlocked('entrance', cosmetics.entrance_animation, unlockOpts)) c.entrance_animation = cosmetics.entrance_animation;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
-  if (cosmetics.background_pattern && isCosmeticUnlocked('background', cosmetics.background_pattern, unlockOpts)) c.background_pattern = cosmetics.background_pattern;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
+  
+  // Unified background
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background_color !== 'default' || c.background_pattern !== 'none';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.border_style !== 'solid' || c.name_effect !== 'none' || c.title || c.background !== 'default';
   const isRainbow = c.border_color === 'rainbow';
   const color = isRainbow ? '#c084fc' : (hasCosmetics ? (COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray) : 'rgba(255,255,255,0.1)');
 
@@ -741,16 +1509,14 @@ function renderPlayerCard(options) {
     if (c.border_style === 'pulse') cardStyle += ` --tgco-color: ${color};`;
   }
   
-  // Apply background color + pattern
-  if (hasCosmetics && (c.background_color !== 'default' || c.background_pattern !== 'none')) {
-    const bgStyle = getBackgroundStyle(c.background_color, c.background_pattern);
-    cardStyle += ` background: ${bgStyle.background};`;
+  // Apply unified background
+  if (hasCosmetics && c.background !== 'default') {
+    const bgStyle = getBackgroundStyle(c.background);
+    cardStyle += ` background: ${bgStyle.background} !important;`;
     if (bgStyle.backgroundSize) cardStyle += ` background-size: ${bgStyle.backgroundSize};`;
     
-    // Add animation class for animated backgrounds
-    if (c.background_color && BG_ANIMATED.includes(c.background_color)) {
-      cardClasses.push(`tgco-bgc-${c.background_color}`);
-    }
+    const bgAnimClass = getBackgroundAnimClass(c.background);
+    if (bgAnimClass) cardClasses.push(bgAnimClass);
   }
   
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
@@ -771,19 +1537,22 @@ function renderPodiumItem(options) {
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
   if (cosmetics.podium_style && isCosmeticUnlocked('podium', cosmetics.podium_style, unlockOpts)) c.podium_style = cosmetics.podium_style;
-  if (cosmetics.background_pattern && isCosmeticUnlocked('background', cosmetics.background_pattern, unlockOpts)) c.background_pattern = cosmetics.background_pattern;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
   if (cosmetics.avatar) c.avatar = cosmetics.avatar;
+  
+  // Unified background
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.podium_style !== 'default' || c.background_color !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.podium_style !== 'default' || c.background !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || (rank === 1 ? '#ffd700' : rank === 2 ? '#c0c0c0' : '#cd7f32');
 
   const classes = ['tgco-podium', `rank-${rank}`];
   if (c.podium_style && c.podium_style !== 'default') classes.push(`podium-${c.podium_style}`);
 
-  const pattern = BACKGROUND_PATTERNS[c.background_pattern];
-  if (pattern && pattern.animated) classes.push(`tgco-bg-${c.background_pattern}`);
+  // Add animation class for animated backgrounds
+  const bgAnimClass = getBackgroundAnimClass(c.background);
+  if (bgAnimClass) classes.push(bgAnimClass);
 
   const nameClasses = ['tgco-podium-name'];
   if (hasCosmetics && c.name_effect && c.name_effect !== 'none') nameClasses.push(`tgco-effect-${c.name_effect}`);
@@ -791,9 +1560,9 @@ function renderPodiumItem(options) {
   const avatarDisplay = c.avatar || c.badge_icon || name.charAt(0).toUpperCase();
 
   let bgStyle = '';
-  if (c.background_color !== 'default' || (pattern && pattern.css && pattern.css !== 'none')) {
-    const bg = getBackgroundStyle(c.background_color, c.background_pattern);
-    bgStyle = `background: ${bg.background};`;
+  if (c.background !== 'default') {
+    const bg = getBackgroundStyle(c.background);
+    bgStyle = `background: ${bg.background} !important;`;
     if (bg.backgroundSize) bgStyle += ` background-size: ${bg.backgroundSize};`;
   }
 
@@ -802,7 +1571,10 @@ function renderPodiumItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const scoreText = scoreUnit ? `${score.toLocaleString()} ${scoreUnit}` : score.toLocaleString();
 
-  return `<div class="${classes.join(' ')}" style="${bgStyle}${podiumColorStyle}"><div class="tgco-podium-rank">${rank}</div><div class="tgco-podium-label">${rankLabels[rank] || ''}</div><div class="tgco-podium-avatar">${avatarDisplay}</div><div class="${nameClasses.join(' ')}" style="${nameStyle}">${escapeHtml(name)}</div>${c.title ? `<div class="tgco-podium-title">${escapeHtml(c.title)}</div>` : ''}<div class="tgco-podium-score">${scoreText}</div>${meta ? `<div class="tgco-podium-meta">${escapeHtml(meta)}</div>` : ''}</div>`.trim();
+  // Add decorations container for podium styles
+  const decorationsHtml = c.podium_style !== 'default' ? '<div class="tgco-podium-decorations"></div>' : '';
+
+  return `<div class="${classes.join(' ')}" style="${bgStyle}${podiumColorStyle}">${decorationsHtml}<div class="tgco-podium-rank">${rank}</div><div class="tgco-podium-label">${rankLabels[rank] || ''}</div><div class="tgco-podium-avatar">${avatarDisplay}</div><div class="${nameClasses.join(' ')}" style="${nameStyle}">${escapeHtml(name)}</div>${c.title ? `<div class="tgco-podium-title">${escapeHtml(c.title)}</div>` : ''}<div class="tgco-podium-score">${scoreText}</div>${meta ? `<div class="tgco-podium-meta">${escapeHtml(meta)}</div>` : ''}</div>`.trim();
 }
 
 /**
@@ -817,10 +1589,13 @@ function renderLeaderboardItem(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
+  
+  // Unified background
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['lb-item'];
@@ -839,15 +1614,13 @@ function renderLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<span class="lb-title">${escapeHtml(c.title)}</span>` : '';
 
-  // Apply background color + animation class
+  // Apply unified background
   let itemStyle = '';
-  if (hasCosmetics && c.background_color !== 'default') {
-    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    itemStyle = `style="background: ${bgColor} !important;"`;
-    // Add animation class for animated backgrounds
-    if (BG_ANIMATED.includes(c.background_color)) {
-      classes.push(`tgco-bgc-${c.background_color}`);
-    }
+  if (hasCosmetics && c.background !== 'default') {
+    const bgStyle = getBackgroundStyle(c.background);
+    itemStyle = `style="background: ${bgStyle.background} !important;"`;
+    const bgAnimClass = getBackgroundAnimClass(c.background);
+    if (bgAnimClass) classes.push(bgAnimClass);
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="lb-rank">${rank}</span><div class="lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -865,10 +1638,13 @@ function renderMiniLeaderboardItem(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
+  
+  // Unified background
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['mini-lb-item'];
@@ -882,14 +1658,13 @@ function renderMiniLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<span class="mini-lb-title">${escapeHtml(c.title)}</span>` : '';
 
-  // Apply background color + animation class
+  // Apply unified background
   let itemStyle = '';
-  if (hasCosmetics && c.background_color !== 'default') {
-    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    itemStyle = `style="background: ${bgColor} !important;"`;
-    if (BG_ANIMATED.includes(c.background_color)) {
-      classes.push(`tgco-bgc-${c.background_color}`);
-    }
+  if (hasCosmetics && c.background !== 'default') {
+    const bgStyle = getBackgroundStyle(c.background);
+    itemStyle = `style="background: ${bgStyle.background} !important;"`;
+    const bgAnimClass = getBackgroundAnimClass(c.background);
+    if (bgAnimClass) classes.push(bgAnimClass);
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="mini-lb-rank">${rank}</span><div class="mini-lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="mini-lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -907,10 +1682,13 @@ function renderWinnerCard(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
+  
+  // Unified background
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || '#fbbf24';
   
   const classes = ['winner-card'];
@@ -924,14 +1702,13 @@ function renderWinnerCard(options) {
   const crown = showCrown ? '<div class="winner-crown">👑</div>' : '';
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
 
-  // Apply background color + animation class
+  // Apply unified background
   let cardStyle = '';
-  if (hasCosmetics && c.background_color !== 'default') {
-    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    cardStyle = `style="background: ${bgColor} !important;"`;
-    if (BG_ANIMATED.includes(c.background_color)) {
-      classes.push(`tgco-bgc-${c.background_color}`);
-    }
+  if (hasCosmetics && c.background !== 'default') {
+    const bgStyle = getBackgroundStyle(c.background);
+    cardStyle = `style="background: ${bgStyle.background} !important;"`;
+    const bgAnimClass = getBackgroundAnimClass(c.background);
+    if (bgAnimClass) classes.push(bgAnimClass);
   }
 
   return `<div class="${classes.join(' ')}" ${cardStyle}>${crown}<div class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</div>${title}<div class="winner-score">${score.toLocaleString()} points</div></div>`.trim();
@@ -949,10 +1726,13 @@ function renderGlobalLeaderboardItem(options) {
   if (cosmetics.badge_icon && isCosmeticUnlocked('badge', cosmetics.badge_icon, unlockOpts)) c.badge_icon = cosmetics.badge_icon;
   if (cosmetics.border_color && isCosmeticUnlocked('color', cosmetics.border_color, unlockOpts)) c.border_color = cosmetics.border_color;
   if (cosmetics.name_effect && isCosmeticUnlocked('effect', cosmetics.name_effect, unlockOpts)) c.name_effect = cosmetics.name_effect;
-  if (cosmetics.background_color && isCosmeticUnlocked('bgColor', cosmetics.background_color, unlockOpts)) c.background_color = cosmetics.background_color;
   if (isPremium && cosmetics.title) c.title = cosmetics.title;
+  
+  // Unified background
+  const bgKey = cosmetics.background || cosmetics.background_color || 'default';
+  if (isCosmeticUnlocked('background', bgKey, unlockOpts)) c.background = bgKey;
 
-  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background_color !== 'default';
+  const hasCosmetics = c.badge_icon || c.border_color !== 'gray' || c.name_effect !== 'none' || c.title || c.background !== 'default';
   const color = COSMETIC_COLORS[c.border_color] || COSMETIC_COLORS.gray;
   
   const classes = ['global-lb-item'];
@@ -966,13 +1746,13 @@ function renderGlobalLeaderboardItem(options) {
   const nameStyle = hasCosmetics ? `color: ${color};` : '';
   const title = (hasCosmetics && c.title) ? `<div class="global-lb-title">${escapeHtml(c.title)}</div>` : '';
 
-  // Apply background color + animation class
+  // Apply unified background
   let itemStyle = '';
-  if (hasCosmetics && c.background_color !== 'default') {
-    const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    itemStyle = `style="background: ${bgColor} !important;"`;
-    if (BG_ANIMATED.includes(c.background_color)) {
-      classes.push(`tgco-bgc-${c.background_color}`);
+  if (hasCosmetics && c.background !== 'default') {
+    const bgStyle = getBackgroundStyle(c.background);
+    itemStyle = `style="background: ${bgStyle.background} !important;"`;
+    const bgAnimClass = getBackgroundAnimClass(c.background);
+    if (bgAnimClass) classes.push(bgAnimClass);
     }
   }
 
@@ -1060,9 +1840,10 @@ if (typeof window !== 'undefined') {
     isCosmeticUnlocked,
     getUnlockRequirement,
     COSMETIC_COLORS,
-    BG_COLORS,
+    BACKGROUNDS,        // New unified backgrounds
+    BG_COLORS,          // Legacy compat
     BG_ANIMATED,
-    BACKGROUND_PATTERNS,
+    BACKGROUND_PATTERNS, // Legacy compat (deprecated)
     PODIUM_STYLES,
     DEFAULT_COSMETICS,
     LEVEL_REWARDS,
