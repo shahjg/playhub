@@ -1753,7 +1753,6 @@ function renderGlobalLeaderboardItem(options) {
     itemStyle = `style="background: ${bgStyle.background} !important;"`;
     const bgAnimClass = getBackgroundAnimClass(c.background);
     if (bgAnimClass) classes.push(bgAnimClass);
-    }
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="global-lb-rank ${rankClass}">#${rank}</span><div class="global-lb-info"><div class="global-lb-name"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span></div>${title}${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}</div><span class="global-lb-score">${score.toLocaleString()}</span></div>`.trim();
