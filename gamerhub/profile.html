@@ -1360,11 +1360,35 @@
     let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎', currentLevel = 1, currentPrestige = 0;
     let cosmetics = { border_style: 'solid', border_color: 'gray', badge_icon: null, name_effect: 'none', title: null, entrance_animation: 'fade', background_pattern: 'none', avatar: '😎' };
 
-    // Use cosmetics.js data
-    const LEVEL_THRESHOLDS = window.TGCOCosmetics?.LEVEL_THRESHOLDS || [];
+    // Use cosmetics.js data with fallbacks
+    const LEVEL_THRESHOLDS = window.TGCOCosmetics?.LEVEL_THRESHOLDS || [
+      0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200,
+      4000, 5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000,
+      26000, 30500, 35500, 41000, 47000, 54000, 62000, 71000, 81000, 92000,
+      104000, 117000, 131000, 146000, 162000, 180000, 199000, 220000, 242000, 266000,
+      292000, 320000, 350000, 382000, 416000, 452000, 490000, 530000, 572000, 616000,
+      665000, 718000, 775000, 836000, 901000, 970000, 1043000, 1120000, 1201000, 1286000,
+      1375000, 1468000, 1565000, 1666000, 1771000, 1880000, 1993000, 2110000, 2231000, 2356000,
+      2485000, 2618000, 2755000, 2896000, 3041000, 3190000, 3343000, 3500000, 3661000, 3826000,
+      3995000, 4168000, 4345000, 4526000, 4711000, 4900000, 5093000, 5290000, 5491000, 5696000,
+      5905000, 6118000, 6335000, 6556000, 6781000, 7010000, 7243000, 7480000, 7721000, 7966000
+    ];
     const LEVEL_REWARDS = window.TGCOCosmetics?.LEVEL_REWARDS || [];
     const PRESTIGE_REWARDS = window.TGCOCosmetics?.PRESTIGE_REWARDS || [];
-    const COSMETIC_COLORS = window.TGCOCosmetics?.COSMETIC_COLORS || {};
+    const COSMETIC_COLORS = window.TGCOCosmetics?.COSMETIC_COLORS || {
+      gray: '#6b7280',
+      gold: '#fbbf24',
+      diamond: '#67e8f9',
+      ruby: '#f87171',
+      emerald: '#34d399',
+      amethyst: '#c084fc',
+      platinum: '#e2e8f0',
+      obsidian: '#1e1b4b',
+      rose: '#fb7185',
+      sunset: '#f97316',
+      toxic: '#84cc16',
+      rainbow: '#c084fc'
+    };
     const BACKGROUND_PATTERNS = window.TGCOCosmetics?.BACKGROUND_PATTERNS || {};
     const DEFAULT_COSMETICS = window.TGCOCosmetics?.DEFAULT_COSMETICS || cosmetics;
 
@@ -1500,11 +1524,24 @@
     ];
 
     // Background pattern options
-    const BACKGROUND_OPTIONS = Object.entries(BACKGROUND_PATTERNS).map(([key, val]) => ({
-      value: key,
-      icon: key === 'none' ? '✕' : '▦',
-      label: val.name
-    }));
+    const BACKGROUND_OPTIONS = Object.keys(BACKGROUND_PATTERNS).length > 0 
+      ? Object.entries(BACKGROUND_PATTERNS).map(([key, val]) => ({
+          value: key,
+          icon: key === 'none' ? '✕' : '▦',
+          label: val.name || key
+        }))
+      : [
+          { value: 'none', icon: '✕', label: 'None' },
+          { value: 'dots', icon: '⚬', label: 'Dots' },
+          { value: 'grid', icon: '▦', label: 'Grid' },
+          { value: 'lines', icon: '≡', label: 'Lines' },
+          { value: 'diagonal', icon: '╱', label: 'Diagonal' },
+          { value: 'honeycomb', icon: '⬡', label: 'Honeycomb' },
+          { value: 'camo', icon: '🌲', label: 'Camo' },
+          { value: 'zebra', icon: '🦓', label: 'Zebra' },
+          { value: 'carbonfiber', icon: '⬛', label: 'Carbon' },
+          { value: 'starfield', icon: '⭐', label: 'Stars' },
+        ];
 
     // Title options
     const TITLE_OPTIONS = [
@@ -1519,7 +1556,17 @@
     const blockedWords = ['fuck', 'shit', 'ass', 'bitch', 'dick', 'pussy', 'cock', 'cunt', 'nigger', 'faggot', 'retard'];
 
     function containsProfanity(text) { return blockedWords.some(word => text.toLowerCase().includes(word)); }
-    function getLevelFromXP(xp) { return window.TGCOCosmetics?.getLevelFromXP(xp) || 1; }
+    
+    function getLevelFromXP(xp) { 
+      if (window.TGCOCosmetics?.getLevelFromXP) {
+        return window.TGCOCosmetics.getLevelFromXP(xp);
+      }
+      // Fallback calculation
+      for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+        if (xp >= LEVEL_THRESHOLDS[i]) return i + 1;
+      }
+      return 1;
+    }
     
     function getXPProgress(xp) { 
       const level = getLevelFromXP(xp); 
@@ -1538,7 +1585,29 @@
 
     // Check if cosmetic is unlocked
     function isCosmeticUnlocked(type, value) {
-      return window.TGCOCosmetics?.isCosmeticUnlocked(type, value, { isPremium, level: currentLevel, prestige: currentPrestige }) || false;
+      // Premium unlocks everything
+      if (isPremium) return true;
+      
+      // Use TGCOCosmetics if available
+      if (window.TGCOCosmetics?.isCosmeticUnlocked) {
+        return window.TGCOCosmetics.isCosmeticUnlocked(type, value, { isPremium, level: currentLevel, prestige: currentPrestige });
+      }
+      
+      // Fallback: check level rewards manually
+      const levelReward = LEVEL_REWARDS.find(r => r.type === type && r.value === value);
+      if (levelReward && currentLevel >= levelReward.level) return true;
+      
+      const prestigeReward = PRESTIGE_REWARDS.find(r => r.type === type && r.value === value);
+      if (prestigeReward && currentPrestige >= prestigeReward.prestige) return true;
+      
+      // Base unlocks
+      if (type === 'color' && value === 'gray') return true;
+      if (type === 'border' && value === 'solid') return true;
+      if (type === 'effect' && value === 'none') return true;
+      if (type === 'entrance' && value === 'fade') return true;
+      if (type === 'background' && value === 'none') return true;
+      
+      return false;
     }
 
     // Get required level for a cosmetic
@@ -1553,34 +1622,66 @@
     // Update the live preview using TGCOCosmetics
     function updatePreview() {
       const container = document.getElementById('cosmetics-preview-container');
-      if (!container || !window.TGCOCosmetics) return;
+      if (!container) return;
 
       const displayName = document.getElementById('display-name')?.value || currentProfile?.display_name || 'Player';
       
-      container.innerHTML = window.TGCOCosmetics.renderNameplate({
-        name: displayName,
-        cosmetics: cosmetics,
-        isPremium: isPremium,
-        level: currentLevel,
-        prestige: currentPrestige,
-        showEntrance: false
-      });
+      // Try using TGCOCosmetics renderer
+      if (window.TGCOCosmetics?.renderNameplate) {
+        container.innerHTML = window.TGCOCosmetics.renderNameplate({
+          name: displayName,
+          cosmetics: cosmetics,
+          isPremium: isPremium,
+          level: currentLevel,
+          prestige: currentPrestige,
+          showEntrance: false
+        });
+      } else {
+        // Fallback rendering
+        const color = COSMETIC_COLORS[cosmetics.border_color] || '#6b7280';
+        const isRainbow = cosmetics.border_color === 'rainbow';
+        const badge = cosmetics.badge_icon ? `<span style="font-size: 1.1rem; margin-right: 8px;">${cosmetics.badge_icon}</span>` : '';
+        const title = cosmetics.title ? `<span style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.5); margin-top: 2px;">${cosmetics.title}</span>` : '';
+        
+        let borderStyle = isRainbow 
+          ? 'border-color: transparent; background: linear-gradient(rgba(15,15,25,0.95), rgba(15,15,25,0.95)) padding-box, linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;'
+          : `border-color: ${color};`;
+        
+        container.innerHTML = `
+          <div style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 2px solid; ${borderStyle}">
+            ${badge}
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-size: 1rem; font-weight: 600; color: ${isRainbow ? '#c084fc' : color};">${displayName}</span>
+              ${title}
+            </div>
+          </div>
+        `;
+      }
     }
 
     function playEntranceAnimation() {
       const container = document.getElementById('cosmetics-preview-container');
-      if (!container || !window.TGCOCosmetics) return;
+      if (!container) return;
 
       const displayName = document.getElementById('display-name')?.value || currentProfile?.display_name || 'Player';
       
-      container.innerHTML = window.TGCOCosmetics.renderNameplate({
-        name: displayName,
-        cosmetics: cosmetics,
-        isPremium: isPremium,
-        level: currentLevel,
-        prestige: currentPrestige,
-        showEntrance: true
-      });
+      if (window.TGCOCosmetics?.renderNameplate) {
+        container.innerHTML = window.TGCOCosmetics.renderNameplate({
+          name: displayName,
+          cosmetics: cosmetics,
+          isPremium: isPremium,
+          level: currentLevel,
+          prestige: currentPrestige,
+          showEntrance: true
+        });
+      } else {
+        // Trigger a simple animation
+        updatePreview();
+        const nameplate = container.firstElementChild;
+        if (nameplate) {
+          nameplate.style.animation = 'fadeIn 0.5s ease';
+        }
+      }
     }
 
     // Render level rewards section
@@ -1718,10 +1819,12 @@
 
     // Build cosmetics option grids
     function buildCosmeticsUI() {
+      console.log('Building cosmetics UI - isPremium:', isPremium, 'level:', currentLevel);
+      
       // Badge options
       const badgeGrid = document.getElementById('badge-options');
       badgeGrid.innerHTML = BADGE_OPTIONS.map(opt => {
-        const unlocked = !opt.value || isCosmeticUnlocked('badge', opt.value);
+        const unlocked = isPremium || !opt.value || isCosmeticUnlocked('badge', opt.value);
         const lockAttr = !unlocked ? `data-unlock-level="${getRequiredLevel('badge', opt.value)}"` : '';
         return `<div class="option-item ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" ${lockAttr}>
           <span class="option-icon">${opt.icon}</span>
@@ -1732,14 +1835,14 @@
       // Color options
       const colorGrid = document.getElementById('color-options');
       colorGrid.innerHTML = COLOR_OPTIONS.map(opt => {
-        const unlocked = isCosmeticUnlocked('color', opt.value);
+        const unlocked = isPremium || isCosmeticUnlocked('color', opt.value);
         return `<div class="color-option ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" style="background: ${opt.bg};" title="${opt.label}"></div>`;
       }).join('');
 
       // Border options
       const borderGrid = document.getElementById('border-options');
       borderGrid.innerHTML = BORDER_OPTIONS.map(opt => {
-        const unlocked = opt.value === 'solid' || isCosmeticUnlocked('border', opt.value);
+        const unlocked = isPremium || opt.value === 'solid' || isCosmeticUnlocked('border', opt.value);
         const lockAttr = !unlocked ? `data-unlock-level="${getRequiredLevel('border', opt.value)}"` : '';
         return `<div class="option-item ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" ${lockAttr}>
           <span class="option-icon">${opt.icon}</span>
@@ -1750,7 +1853,7 @@
       // Effect options
       const effectGrid = document.getElementById('effect-options');
       effectGrid.innerHTML = EFFECT_OPTIONS.map(opt => {
-        const unlocked = opt.value === 'none' || isCosmeticUnlocked('effect', opt.value);
+        const unlocked = isPremium || opt.value === 'none' || isCosmeticUnlocked('effect', opt.value);
         const lockAttr = !unlocked ? `data-unlock-level="${getRequiredLevel('effect', opt.value)}"` : '';
         return `<div class="option-item ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" ${lockAttr}>
           <span class="option-icon">${opt.icon}</span>
@@ -1761,7 +1864,7 @@
       // Entrance options
       const entranceGrid = document.getElementById('entrance-options');
       entranceGrid.innerHTML = ENTRANCE_OPTIONS.map(opt => {
-        const unlocked = opt.value === 'fade' || isCosmeticUnlocked('entrance', opt.value);
+        const unlocked = isPremium || opt.value === 'fade' || isCosmeticUnlocked('entrance', opt.value);
         const lockAttr = !unlocked ? `data-unlock-level="${getRequiredLevel('entrance', opt.value)}"` : '';
         return `<div class="option-item ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" ${lockAttr}>
           <span class="option-icon">${opt.icon}</span>
@@ -1772,7 +1875,7 @@
       // Background options
       const backgroundGrid = document.getElementById('background-options');
       backgroundGrid.innerHTML = BACKGROUND_OPTIONS.map(opt => {
-        const unlocked = opt.value === 'none' || isCosmeticUnlocked('background', opt.value);
+        const unlocked = isPremium || opt.value === 'none' || isCosmeticUnlocked('background', opt.value);
         const lockAttr = !unlocked ? `data-unlock-level="${getRequiredLevel('background', opt.value)}"` : '';
         return `<div class="option-item ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" ${lockAttr}>
           <span class="option-icon">${opt.icon}</span>
@@ -2316,19 +2419,24 @@
       ld.style.display = 'inline-flex';
       
       try {
+        // Try the Railway backend first
         const r = await fetch(`${RAILWAY_URL}/create-checkout-session`, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ 
             userId: currentUser.id, 
-            email: currentUser.email,
-            priceAmount: 200 // $2.00 in cents
+            email: currentUser.email
           }) 
         });
         
         if (!r.ok) {
           const errorText = await r.text();
           console.error('Server response:', r.status, errorText);
+          
+          // If server fails, show Ko-fi fallback
+          if (confirm('Payment server is temporarily unavailable. Would you like to subscribe via Ko-fi instead?\n\nYou can also try again later.')) {
+            window.open('https://ko-fi.com/thegamingco', '_blank');
+          }
           throw new Error(`Server error: ${r.status}`);
         }
         
@@ -2340,7 +2448,6 @@
         }
       } catch (e) { 
         console.error('Upgrade error:', e);
-        showStatus('Unable to start checkout. Please try again or contact support.', 'error'); 
         btn.disabled = false; 
         txt.style.display = 'inline'; 
         ld.style.display = 'none'; 
