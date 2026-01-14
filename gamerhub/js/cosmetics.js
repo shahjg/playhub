@@ -780,7 +780,7 @@ function renderLeaderboardItem(options) {
   let itemStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    itemStyle = `style="background: ${bgColor};"`;
+    itemStyle = `style="background: ${bgColor} !important;"`;
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="lb-rank">${rank}</span><div class="lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -819,7 +819,7 @@ function renderMiniLeaderboardItem(options) {
   let itemStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    itemStyle = `style="background: ${bgColor};"`;
+    itemStyle = `style="background: ${bgColor} !important;"`;
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="mini-lb-rank">${rank}</span><div class="mini-lb-name-wrapper"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span>${title}</div><span class="mini-lb-score">${score.toLocaleString()}</span></div>`.trim();
@@ -858,7 +858,7 @@ function renderWinnerCard(options) {
   let cardStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    cardStyle = `style="background: ${bgColor};"`;
+    cardStyle = `style="background: ${bgColor} !important;"`;
   }
 
   return `<div class="${classes.join(' ')}" ${cardStyle}>${crown}<div class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</div>${title}<div class="winner-score">${score.toLocaleString()} points</div></div>`.trim();
@@ -897,7 +897,7 @@ function renderGlobalLeaderboardItem(options) {
   let itemStyle = '';
   if (hasCosmetics && c.background_color !== 'default') {
     const bgColor = BG_COLORS[c.background_color] || BG_COLORS.default;
-    itemStyle = `style="background: ${bgColor};"`;
+    itemStyle = `style="background: ${bgColor} !important;"`;
   }
 
   return `<div class="${classes.join(' ')}" ${itemStyle}><span class="global-lb-rank ${rankClass}">#${rank}</span><div class="global-lb-info"><div class="global-lb-name"><span class="${nameClasses.join(' ')}" style="${nameStyle}">${badge}${escapeHtml(name)}</span></div>${title}${stats ? `<div class="global-lb-stats">${escapeHtml(stats)}</div>` : ''}</div><span class="global-lb-score">${score.toLocaleString()}</span></div>`.trim();
