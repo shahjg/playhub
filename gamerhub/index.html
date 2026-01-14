@@ -61,6 +61,9 @@
     {"@context":"https://schema.org","@type":"WebSite","name":"TheGaming.co","url":"https://thegaming.co/","description":"Free party games, trivia, and skill tests for 1-100+ players","potentialAction":{"@type":"SearchAction","target":"https://thegaming.co/search?q={search_term_string}","query-input":"required name=search_term_string"}}
     </script>
 
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/js/cosmetics.js"></script>
+
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--pink:#ff6b9d;--pink-dark:#e84a7f;--blue:#4facfe;--blue-dark:#0077cc;--purple:#a855f7;--purple-dark:#7c3aed;--teal:#00d9a5;--teal-dark:#00b386;--gold:#ffd700;--dark:#0a0a0f;--orange:#ff9f43;--orange-dark:#e67e22}
@@ -278,65 +281,139 @@
         .panel-party:hover .panel-cta{box-shadow:0 15px 45px rgba(168,85,247,0.5)}
         .panel-games{margin-top:25px;font-size:0.9rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
 
-        .leaderboards-teaser{position:relative;padding:120px 20px;background:linear-gradient(135deg,#0a0a0f 0%,#1a0f1f 50%,#0f1a1a 100%);border-top:3px solid rgba(255,215,0,0.3);border-bottom:3px solid rgba(255,215,0,0.3);overflow:hidden}
+        /* ========== TOP GAMERS LEADERBOARD SECTION ========== */
+        .leaderboards-teaser{position:relative;padding:100px 20px 120px;background:linear-gradient(135deg,#0a0a0f 0%,#1a0f1f 50%,#0f1a1a 100%);border-top:3px solid rgba(255,215,0,0.3);border-bottom:3px solid rgba(255,215,0,0.3);overflow:hidden}
         .leaderboards-teaser::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(255,215,0,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 50%,rgba(255,107,157,0.15) 0%,transparent 50%)}
-        .leaderboards-teaser-content{max-width:800px;margin:0 auto;position:relative;z-index:1;text-align:center}
-        .leaderboards-teaser h2{font-size:clamp(2.5rem,6vw,4.5rem);margin-bottom:20px;background:linear-gradient(135deg,#ffd700 0%,#ffed4a 50%,#ffd700 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px;line-height:1.1}
-        .leaderboards-teaser p{font-size:clamp(1.1rem,2.5vw,1.4rem);color:rgba(255,255,255,0.9);margin-bottom:45px;line-height:1.7;font-weight:500}
+        .leaderboards-teaser-content{max-width:900px;margin:0 auto;position:relative;z-index:1;text-align:center}
+        .leaderboards-teaser h2{font-size:clamp(2.5rem,6vw,4.5rem);margin-bottom:15px;background:linear-gradient(135deg,#ffd700 0%,#ffed4a 50%,#ffd700 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px;line-height:1.1}
+        .leaderboards-teaser p{font-size:clamp(1rem,2vw,1.2rem);color:rgba(255,255,255,0.7);margin-bottom:40px;line-height:1.6}
+        
+        /* Top Gamers Podium */
+        .top-gamers-podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-width:700px;margin:0 auto 50px;align-items:end}
+        .top-gamer-spot{text-align:center;padding:20px 16px;border-radius:16px;position:relative;transition:transform 0.3s}
+        .top-gamer-spot:hover{transform:translateY(-5px)}
+        
+        .top-gamer-spot.rank-1{order:2;background:linear-gradient(180deg,rgba(255,215,0,0.2),rgba(255,215,0,0.03));border:2px solid #ffd700;min-height:220px;box-shadow:0 0 60px rgba(255,215,0,0.2)}
+        .top-gamer-spot.rank-2{order:1;background:linear-gradient(180deg,rgba(192,192,192,0.15),rgba(192,192,192,0.03));border:2px solid #c0c0c0;min-height:180px}
+        .top-gamer-spot.rank-3{order:3;background:linear-gradient(180deg,rgba(205,127,50,0.15),rgba(205,127,50,0.03));border:2px solid #cd7f32;min-height:160px}
+        
+        .top-gamer-rank{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;margin-bottom:4px}
+        .top-gamer-spot.rank-1 .top-gamer-rank{color:#ffd700;font-size:2.2rem;text-shadow:0 0 20px rgba(255,215,0,0.5)}
+        .top-gamer-spot.rank-2 .top-gamer-rank{color:#c0c0c0}
+        .top-gamer-spot.rank-3 .top-gamer-rank{color:#cd7f32}
+        
+        .top-gamer-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
+        .top-gamer-spot.rank-1 .top-gamer-label{color:rgba(255,215,0,0.7)}
+        .top-gamer-spot.rank-2 .top-gamer-label{color:rgba(192,192,192,0.7)}
+        .top-gamer-spot.rank-3 .top-gamer-label{color:rgba(205,127,50,0.7)}
+        
+        .top-gamer-avatar{width:56px;height:56px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:3px solid rgba(255,255,255,0.2)}
+        .top-gamer-spot.rank-1 .top-gamer-avatar{width:70px;height:70px;font-size:2rem;border-color:rgba(255,215,0,0.5);background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,215,0,0.1))}
+        .top-gamer-spot.rank-2 .top-gamer-avatar{border-color:rgba(192,192,192,0.4);background:linear-gradient(135deg,rgba(192,192,192,0.25),rgba(192,192,192,0.1))}
+        .top-gamer-spot.rank-3 .top-gamer-avatar{border-color:rgba(205,127,50,0.4);background:linear-gradient(135deg,rgba(205,127,50,0.25),rgba(205,127,50,0.1))}
+        
+        .top-gamer-name{font-weight:700;font-size:1rem;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 5px}
+        .top-gamer-spot.rank-1 .top-gamer-name{font-size:1.15rem}
+        .top-gamer-name.premium{background:linear-gradient(90deg,#fbbf24,#f59e0b,#fcd34d,#fbbf24);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldShimmer 3s linear infinite}
+        @keyframes goldShimmer{0%{background-position:0% center}100%{background-position:200% center}}
+        
+        .top-gamer-title{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,0.5);margin-bottom:8px;min-height:14px}
+        
+        .top-gamer-score{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px}
+        .top-gamer-spot.rank-1 .top-gamer-score{color:#ffd700;font-size:1.5rem}
+        .top-gamer-spot.rank-2 .top-gamer-score{color:#c0c0c0}
+        .top-gamer-spot.rank-3 .top-gamer-score{color:#cd7f32}
+        
+        .top-gamer-games{font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:4px}
+        
+        .podium-loading{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-width:700px;margin:0 auto}
+        .podium-shimmer{height:160px;border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 100%);background-size:200% 100%;animation:shimmerMove 1.5s infinite}
+        .podium-shimmer.tall{height:200px}
+        .podium-shimmer:nth-child(1){order:1}
+        .podium-shimmer:nth-child(2){order:2}
+        .podium-shimmer:nth-child(3){order:3}
+        @keyframes shimmerMove{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        
+        .podium-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.5)}
+        .podium-empty p{margin-bottom:10px}
+        
         .leaderboards-btn{display:inline-flex;align-items:center;gap:12px;padding:20px 50px;border-radius:50px;font-weight:800;font-size:1.1rem;letter-spacing:2px;text-transform:uppercase;background:linear-gradient(135deg,#ffd700,#ffed4a,#ffd700);background-size:200% 100%;color:#0a0a0f;text-decoration:none;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:0 15px 50px rgba(255,215,0,0.4);position:relative;overflow:hidden}
         .leaderboards-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);transition:left 0.5s}
         .leaderboards-btn:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 20px 60px rgba(255,215,0,0.6);background-position:100% 0}
         .leaderboards-btn:hover::before{left:100%}
         .leaderboards-btn:active{transform:translateY(-2px) scale(1)}
+        
+        @media(max-width:600px){
+            .top-gamers-podium{gap:10px;padding:0 10px}
+            .top-gamer-spot{padding:15px 10px}
+            .top-gamer-spot.rank-1{min-height:180px}
+            .top-gamer-spot.rank-2{min-height:150px}
+            .top-gamer-spot.rank-3{min-height:140px}
+            .top-gamer-avatar{width:44px;height:44px;font-size:1.2rem}
+            .top-gamer-spot.rank-1 .top-gamer-avatar{width:54px;height:54px;font-size:1.5rem}
+            .top-gamer-name{font-size:0.85rem}
+            .top-gamer-score{font-size:1.1rem}
+        }
 
-        .support-section{background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 50%,#0f0f1a 100%);padding:100px 20px;position:relative;overflow:hidden}
+        /* ========== COMPACT SUPPORT SECTION ========== */
+        .support-section{background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 50%,#0f0f1a 100%);padding:70px 20px;position:relative;overflow:hidden}
         .support-bg{position:absolute;inset:0;overflow:hidden}
-        .support-bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.4;will-change:transform}
-        .support-bg-orb:nth-child(1){width:400px;height:400px;background:var(--pink);top:-150px;left:-100px}
-        .support-bg-orb:nth-child(2){width:300px;height:300px;background:var(--purple);bottom:-100px;right:-50px}
-        .support-bg-orb:nth-child(3){width:250px;height:250px;background:var(--gold);top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.2}
+        .support-bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.3;will-change:transform}
+        .support-bg-orb:nth-child(1){width:300px;height:300px;background:var(--pink);top:-100px;left:-80px}
+        .support-bg-orb:nth-child(2){width:250px;height:250px;background:var(--purple);bottom:-80px;right:-50px}
+        .support-bg-orb:nth-child(3){width:200px;height:200px;background:var(--gold);top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.15}
         .support-container{max-width:900px;margin:0 auto;position:relative;z-index:1}
-        .support-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
-        .support-left h2{font-size:3.5rem;line-height:1.1;margin-bottom:20px}
-        .support-left h2 .highlight{background:linear-gradient(135deg,var(--gold),#ffed4a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .support-left>p{font-size:1.1rem;color:rgba(255,255,255,0.6);line-height:1.8;margin-bottom:35px}
-        .support-perks{display:flex;flex-direction:column;gap:15px;margin-bottom:35px}
-        .perk-item{display:flex;align-items:center;gap:15px;font-size:1rem;color:rgba(255,255,255,0.8)}
-        .perk-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
-        .support-cta-group{display:flex;gap:15px;flex-wrap:wrap}
-        .support-btn{padding:16px 32px;border-radius:50px;font-weight:700;font-size:0.95rem;letter-spacing:1px;text-transform:uppercase;text-decoration:none;transition:all 0.3s;cursor:pointer;border:none}
-        .support-btn-primary{background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;box-shadow:0 10px 40px rgba(255,107,157,0.3)}
-        .support-btn-primary:hover{transform:translateY(-3px);box-shadow:0 15px 50px rgba(255,107,157,0.4)}
+        
+        .support-compact{display:flex;flex-direction:column;align-items:center;text-align:center;gap:30px}
+        
+        .support-header h2{font-size:2.5rem;line-height:1.1;margin-bottom:10px}
+        .support-header h2 .highlight{background:linear-gradient(135deg,var(--gold),#ffed4a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .support-header>p{font-size:1rem;color:rgba(255,255,255,0.6);line-height:1.6;max-width:500px;margin:0 auto}
+        
+        .support-perks-row{display:flex;justify-content:center;gap:30px;flex-wrap:wrap}
+        .perk-item{display:flex;align-items:center;gap:10px;font-size:0.9rem;color:rgba(255,255,255,0.8)}
+        .perk-icon{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+        
+        .support-bottom{display:flex;align-items:center;gap:40px;flex-wrap:wrap;justify-content:center}
+        
+        .support-cta-group{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+        .support-btn{padding:14px 28px;border-radius:50px;font-weight:700;font-size:0.85rem;letter-spacing:1px;text-transform:uppercase;text-decoration:none;transition:all 0.3s;cursor:pointer;border:none}
+        .support-btn-primary{background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;box-shadow:0 8px 30px rgba(255,107,157,0.3)}
+        .support-btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,107,157,0.4)}
         .support-btn-secondary{background:transparent;color:#fff;border:2px solid rgba(255,255,255,0.3)}
         .support-btn-secondary:hover{border-color:#fff;background:rgba(255,255,255,0.1)}
-        .support-right{position:relative}
-        .leaderboard-preview{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:30px;position:relative}
-        .leaderboard-preview::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,215,0,0.5),transparent)}
-        .leaderboard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}
-        .leaderboard-header h4{font-size:1.3rem;display:flex;align-items:center;gap:10px}
-        .leaderboard-header a{font-size:0.85rem;color:var(--pink);text-decoration:none;font-weight:600}
-        .leaderboard-header a:hover{text-decoration:underline}
-        .leaderboard-list{display:flex;flex-direction:column;gap:12px}
-        .leaderboard-item{display:flex;align-items:center;gap:15px;padding:12px 15px;background:rgba(255,255,255,0.02);border-radius:10px;transition:all 0.3s}
-        .leaderboard-item:hover{background:rgba(255,255,255,0.05)}
-        .leaderboard-item.gold{background:linear-gradient(135deg,rgba(255,215,0,0.1) 0%,rgba(255,215,0,0.02) 100%);border:1px solid rgba(255,215,0,0.2)}
-        .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;width:30px;text-align:center}
-        .leaderboard-item.gold .lb-rank{color:var(--gold)}
-        .leaderboard-item:nth-child(2) .lb-rank{color:#c0c0c0}
-        .leaderboard-item:nth-child(3) .lb-rank{color:#cd7f32}
-        .lb-name{flex:1;font-weight:600;font-size:0.95rem}
-        .lb-amount{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--pink)}
-        .leaderboard-item.gold .lb-amount{color:var(--gold)}
-        .leaderboard-cta{text-align:center;margin-top:25px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08)}
-        .leaderboard-cta p{font-size:0.9rem;color:rgba(255,255,255,0.5)}
-        .leaderboard-cta span{color:var(--gold);font-weight:600}
-        .supporters-loading{display:flex;flex-direction:column;gap:12px}
-        .loading-shimmer{height:48px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 100%);background-size:200% 100%;animation:shimmerMove 1.5s infinite}
-        @keyframes shimmerMove{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        .supporters-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.5)}
-        .supporters-empty p{margin-bottom:15px;font-size:1rem}
+        
+        .leaderboard-mini{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px 24px;min-width:280px}
+        .leaderboard-mini-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+        .leaderboard-mini-header h4{font-size:1rem;display:flex;align-items:center;gap:8px;letter-spacing:1px}
+        .leaderboard-mini-header a{font-size:0.75rem;color:var(--pink);text-decoration:none;font-weight:600}
+        .leaderboard-mini-header a:hover{text-decoration:underline}
+        .leaderboard-mini-list{display:flex;flex-direction:column;gap:8px}
+        .leaderboard-mini-item{display:flex;align-items:center;gap:12px;padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:8px;transition:all 0.2s}
+        .leaderboard-mini-item:hover{background:rgba(255,255,255,0.05)}
+        .leaderboard-mini-item.gold{background:linear-gradient(135deg,rgba(255,215,0,0.1) 0%,rgba(255,215,0,0.02) 100%);border:1px solid rgba(255,215,0,0.2)}
+        .lb-mini-rank{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;width:24px;text-align:center}
+        .leaderboard-mini-item.gold .lb-mini-rank{color:var(--gold)}
+        .leaderboard-mini-item:nth-child(2) .lb-mini-rank{color:#c0c0c0}
+        .leaderboard-mini-item:nth-child(3) .lb-mini-rank{color:#cd7f32}
+        .lb-mini-name{flex:1;font-weight:600;font-size:0.85rem}
+        .lb-mini-amount{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--pink)}
+        .leaderboard-mini-item.gold .lb-mini-amount{color:var(--gold)}
+        
+        .supporters-loading{display:flex;flex-direction:column;gap:8px}
+        .loading-shimmer{height:36px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 100%);background-size:200% 100%;animation:shimmerMove 1.5s infinite}
+        .supporters-empty{text-align:center;padding:20px 10px;color:rgba(255,255,255,0.5);font-size:0.85rem}
         .supporters-empty a{color:var(--pink);text-decoration:none;font-weight:600}
         .supporters-empty a:hover{text-decoration:underline}
+        
+        @media(max-width:700px){
+            .support-section{padding:50px 20px}
+            .support-perks-row{gap:15px}
+            .perk-item{font-size:0.8rem}
+            .perk-icon{width:32px;height:32px;font-size:0.9rem}
+            .support-bottom{flex-direction:column;gap:25px}
+            .leaderboard-mini{width:100%;max-width:320px}
+        }
 
         footer{background:#000;position:relative;overflow:hidden}
         .footer-border{height:3px;background:linear-gradient(90deg,var(--pink),var(--blue),var(--purple),var(--pink));background-size:300% 100%;animation:gradientSlide 6s linear infinite}
@@ -360,10 +437,10 @@
         .footer-legal a:hover{color:#fff}
 
         @media(min-width:1440px){.hero-content{max-width:1000px}.hero-title{font-size:5.5rem}.support-container{max-width:1000px}.leaderboards-teaser-content{max-width:900px}}
-        @media(max-width:900px){.categories-section{flex-direction:column;min-height:auto}.category-panel{min-height:380px;padding:50px 25px}.category-panel:hover{flex:1}.category-panel:not(:last-child)::after{top:auto;bottom:0;left:10%;right:10%;width:auto;height:1px;background:linear-gradient(to right,transparent,rgba(0,0,0,0.1),transparent)}.support-grid{grid-template-columns:1fr;gap:50px}.support-left{text-align:center}.support-perks{align-items:center}.support-cta-group{justify-content:center}}
-        @media(max-width:700px){header{height:56px;padding:0 14px;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.nav-inner{gap:12px}.header-logo{font-size:1.4rem;letter-spacing:3px}.header-actions{gap:12px}.hero{min-height:50vh;padding:80px 20px 50px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}.hero-tagline{font-size:0.95rem;letter-spacing:3px}.hero-steps{font-size:0.95rem;letter-spacing:1px}.hero-steps::before,.hero-steps::after{width:25px;margin-left:10px;margin-right:10px}.category-panel{min-height:320px;padding:40px 20px}.panel-icon{font-size:3.5rem;margin-bottom:20px}.panel-desc{font-size:0.95rem}.panel-cta{padding:14px 30px;font-size:0.9rem}.leaderboards-teaser{padding:80px 20px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}.leaderboards-teaser h2{letter-spacing:2px}.leaderboards-btn{padding:18px 40px;font-size:1rem}.support-section{padding:80px 20px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}.footer-main{padding:40px 20px 25px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right));padding-bottom:max(25px,env(safe-area-inset-bottom))}.footer-links{grid-template-columns:1fr;gap:30px}}
-        @media(max-width:600px){.hero-title{font-size:2.8rem}.hero-players{font-size:1.4rem;letter-spacing:2px}.hero-steps{font-size:0.85rem}.hero-steps::before,.hero-steps::after{display:none}.free-badge{padding:12px 28px;font-size:0.9rem;letter-spacing:2px}.panel-content h2{font-size:2.5rem}.support-left h2{font-size:2.5rem}.support-cta-group{flex-direction:column;width:100%}.support-btn{width:100%;text-align:center}.leaderboards-btn{padding:16px 35px;font-size:0.95rem;letter-spacing:1px}}
-        @media(max-width:375px){.header-logo{font-size:1.2rem;letter-spacing:2px}.hero{padding:70px 15px 40px}.hero-title{font-size:2.4rem}.hero-players{font-size:1.2rem}.hero-tagline{font-size:0.85rem;letter-spacing:2px}.hero-steps{font-size:0.8rem}.free-badge{padding:10px 24px;font-size:0.85rem}.category-panel{min-height:280px;padding:35px 15px}.panel-icon{font-size:3rem}.panel-content h2{font-size:2.2rem}.panel-players{font-size:1.1rem}.panel-desc{font-size:0.9rem}.panel-cta{padding:12px 25px;font-size:0.85rem}.panel-games{font-size:0.8rem}.leaderboards-teaser h2{font-size:2rem}.leaderboards-teaser p{font-size:1rem}.support-left h2{font-size:2.2rem}.support-left>p{font-size:1rem}.leaderboard-preview{padding:20px}}
+        @media(max-width:900px){.categories-section{flex-direction:column;min-height:auto}.category-panel{min-height:380px;padding:50px 25px}.category-panel:hover{flex:1}.category-panel:not(:last-child)::after{top:auto;bottom:0;left:10%;right:10%;width:auto;height:1px;background:linear-gradient(to right,transparent,rgba(0,0,0,0.1),transparent)}}
+        @media(max-width:700px){header{height:56px;padding:0 14px;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.nav-inner{gap:12px}.header-logo{font-size:1.4rem;letter-spacing:3px}.header-actions{gap:12px}.hero{min-height:50vh;padding:80px 20px 50px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}.hero-tagline{font-size:0.95rem;letter-spacing:3px}.hero-steps{font-size:0.95rem;letter-spacing:1px}.hero-steps::before,.hero-steps::after{width:25px;margin-left:10px;margin-right:10px}.category-panel{min-height:320px;padding:40px 20px}.panel-icon{font-size:3.5rem;margin-bottom:20px}.panel-desc{font-size:0.95rem}.panel-cta{padding:14px 30px;font-size:0.9rem}.leaderboards-teaser{padding:60px 20px 80px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}.leaderboards-teaser h2{letter-spacing:2px}.leaderboards-btn{padding:18px 40px;font-size:1rem}.footer-main{padding:40px 20px 25px;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right));padding-bottom:max(25px,env(safe-area-inset-bottom))}.footer-links{grid-template-columns:1fr;gap:30px}}
+        @media(max-width:600px){.hero-title{font-size:2.8rem}.hero-players{font-size:1.4rem;letter-spacing:2px}.hero-steps{font-size:0.85rem}.hero-steps::before,.hero-steps::after{display:none}.free-badge{padding:12px 28px;font-size:0.9rem;letter-spacing:2px}.panel-content h2{font-size:2.5rem}.leaderboards-btn{padding:16px 35px;font-size:0.95rem;letter-spacing:1px}}
+        @media(max-width:375px){.header-logo{font-size:1.2rem;letter-spacing:2px}.hero{padding:70px 15px 40px}.hero-title{font-size:2.4rem}.hero-players{font-size:1.2rem}.hero-tagline{font-size:0.85rem;letter-spacing:2px}.hero-steps{font-size:0.8rem}.free-badge{padding:10px 24px;font-size:0.85rem}.category-panel{min-height:280px;padding:35px 15px}.panel-icon{font-size:3rem}.panel-content h2{font-size:2.2rem}.panel-players{font-size:1.1rem}.panel-desc{font-size:0.9rem}.panel-cta{padding:12px 25px;font-size:0.85rem}.panel-games{font-size:0.8rem}.leaderboards-teaser h2{font-size:2rem}.leaderboards-teaser p{font-size:1rem}}
         @supports(-webkit-touch-callout:none){.categories-section{min-height:-webkit-fill-available}}
         @media(max-height:500px) and (orientation:landscape){.hero{min-height:auto;padding:80px 20px 40px}.category-panel{min-height:350px}}
     </style>
@@ -590,46 +667,59 @@
             </a>
         </section>
 
+        <!-- TOP GAMERS LEADERBOARD -->
         <section class="leaderboards-teaser" aria-label="Leaderboards">
             <div class="leaderboards-teaser-content">
                 <h2>THINK YOU'RE GOOD?</h2>
-                <p>See how you stack up against <span style="color:var(--gold);font-weight:700">thousands of players</span> worldwide. Compete across all games and climb the ranks.</p>
-                <a href="leaderboards.html" class="leaderboards-btn">View Rankings →</a>
+                <p>See how you stack up against <span style="color:var(--gold);font-weight:700">thousands of players</span> worldwide.</p>
+                
+                <div class="top-gamers-podium" id="top-gamers-podium">
+                    <div class="podium-loading">
+                        <div class="podium-shimmer"></div>
+                        <div class="podium-shimmer tall"></div>
+                        <div class="podium-shimmer"></div>
+                    </div>
+                </div>
+                
+                <a href="leaderboards.html" class="leaderboards-btn">View All Rankings →</a>
             </div>
         </section>
 
+        <!-- COMPACT SUPPORT SECTION -->
         <section class="support-section" aria-label="Support TheGaming.co">
             <div class="support-bg" aria-hidden="true">
                 <div class="support-bg-orb"></div><div class="support-bg-orb"></div><div class="support-bg-orb"></div>
             </div>
             <div class="support-container">
-                <div class="support-grid">
-                    <div class="support-left">
-                        <h2>SUPPORT<br><span class="highlight">THEGAMING.CO</span></h2>
-                        <p>Help keep the games free and the servers running. Your support keeps TheGaming.co 100% free — forever.</p>
-                        <div class="support-perks">
-                            <div class="perk-item"><div class="perk-icon">⚡</div><span>Keep the site running & ad-free</span></div>
-                            <div class="perk-item"><div class="perk-icon">🏆</div><span>Join our Hall of Champions</span></div>
-                            <div class="perk-item"><div class="perk-icon">✨</div><span>Your name displayed forever</span></div>
-                        </div>
+                <div class="support-compact">
+                    <div class="support-header">
+                        <h2>SUPPORT <span class="highlight">THEGAMING.CO</span></h2>
+                        <p>Help keep the games free and the servers running.</p>
+                    </div>
+                    
+                    <div class="support-perks-row">
+                        <div class="perk-item"><div class="perk-icon">⚡</div><span>Keep site ad-free</span></div>
+                        <div class="perk-item"><div class="perk-icon">🏆</div><span>Hall of Champions</span></div>
+                        <div class="perk-item"><div class="perk-icon">✨</div><span>Name displayed forever</span></div>
+                    </div>
+                    
+                    <div class="support-bottom">
                         <div class="support-cta-group">
                             <a href="https://ko-fi.com/thegamingco" class="support-btn support-btn-primary" target="_blank" rel="noopener noreferrer">Support Now</a>
                             <a href="supporters.html" class="support-btn support-btn-secondary">Hall of Champions →</a>
                         </div>
-                    </div>
-                    <div class="support-right">
-                        <div class="leaderboard-preview">
-                            <div class="leaderboard-header">
-                                <h4>HALL OF CHAMPIONS</h4>
+                        
+                        <div class="leaderboard-mini">
+                            <div class="leaderboard-mini-header">
+                                <h4>🏆 TOP SUPPORTERS</h4>
                                 <a href="supporters.html">See all →</a>
                             </div>
-                            <div class="leaderboard-list" id="supporters-list">
+                            <div class="leaderboard-mini-list" id="supporters-list">
                                 <div class="supporters-loading">
-                                    <div class="loading-shimmer"></div><div class="loading-shimmer"></div><div class="loading-shimmer"></div>
+                                    <div class="loading-shimmer"></div>
+                                    <div class="loading-shimmer"></div>
+                                    <div class="loading-shimmer"></div>
                                 </div>
-                            </div>
-                            <div class="leaderboard-cta">
-                                <p>Support with <span>any amount</span> to get listed</p>
                             </div>
                         </div>
                     </div>
@@ -680,52 +770,173 @@
     </footer>
 
     <script>
-    (function(){
-        var s = document.createElement('script');
-        s.src = 'https://unpkg.com/@supabase/supabase-js@2';
-        s.onload = initSupabase;
-        document.body.appendChild(s);
-    })();
+    const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
 
-    function initSupabase() {
-        const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
+    // ========== TOP GAMERS PODIUM ==========
+    const TOP_GAMER_GAMES = ['reaction-time','typing-test-60','aim-trainer-30','chimp-test','number-memory','sequence-memory','visual-memory','verbal-memory','math-speed-add','2048','snake','sky-hop','highway-dodge','dash-run'];
+    const ASC_GAMES = ['reaction-time','minesweeper'];
+    const TIER_POINTS = {top1:1000, top5:800, top10:600, top25:400, top50:200, rest:100};
 
-        async function loadTopSupporters() {
-            const supportersList = document.getElementById('supporters-list');
-            if (!supportersList) return;
-            try {
-                let { data: supporters, error } = await supabaseClient.from('supporters_leaderboard').select('display_name, lifetime_total, donation_count').limit(5);
-                if (error) {
-                    const result = await supabaseClient.from('supporters').select('display_name, amount').eq('is_public', true).order('amount', { ascending: false }).limit(5);
-                    supporters = result.data;
-                    error = result.error;
+    async function loadTopGamers() {
+        const podiumContainer = document.getElementById('top-gamers-podium');
+        if (!podiumContainer) return;
+
+        try {
+            const { data: allScores, error } = await supabaseClient
+                .from('solo_scores')
+                .select('score,user_id,game_id')
+                .in('game_id', TOP_GAMER_GAMES);
+
+            if (error || !allScores || allScores.length === 0) {
+                podiumContainer.innerHTML = '<div class="podium-empty"><p>🎮 Play games to appear on the leaderboard!</p></div>';
+                return;
+            }
+
+            // Calculate points per user
+            const gameScores = {};
+            TOP_GAMER_GAMES.forEach(gid => gameScores[gid] = new Map());
+            
+            allScores.forEach(s => {
+                if (gameScores[s.game_id]) {
+                    const existing = gameScores[s.game_id].get(s.user_id);
+                    const isAsc = ASC_GAMES.includes(s.game_id);
+                    if (!existing || (isAsc ? s.score < existing : s.score > existing)) {
+                        gameScores[s.game_id].set(s.user_id, s.score);
+                    }
                 }
-                if (error) throw error;
-                if (!supporters || supporters.length === 0) {
-                    supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first champion!</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support Now →</a></div>';
+            });
+
+            const userPoints = new Map();
+            TOP_GAMER_GAMES.forEach(gid => {
+                const scores = Array.from(gameScores[gid].entries());
+                if (scores.length === 0) return;
+                const isAsc = ASC_GAMES.includes(gid);
+                scores.sort((a, b) => isAsc ? a[1] - b[1] : b[1] - a[1]);
+                const total = scores.length;
+                scores.forEach(([uid], idx) => {
+                    const rank = idx + 1;
+                    const pct = rank / total;
+                    let pts = TIER_POINTS.rest;
+                    if (pct <= 0.01) pts = TIER_POINTS.top1;
+                    else if (pct <= 0.05) pts = TIER_POINTS.top5;
+                    else if (pct <= 0.10) pts = TIER_POINTS.top10;
+                    else if (pct <= 0.25) pts = TIER_POINTS.top25;
+                    else if (pct <= 0.50) pts = TIER_POINTS.top50;
+                    if (!userPoints.has(uid)) userPoints.set(uid, { total: 0, count: 0 });
+                    const u = userPoints.get(uid);
+                    u.total += pts;
+                    u.count++;
+                });
+            });
+
+            const rankings = [];
+            userPoints.forEach((data, uid) => {
+                if (data.count >= 3) {
+                    rankings.push({ user_id: uid, totalPoints: data.total, gamesPlayed: data.count });
+                }
+            });
+            rankings.sort((a, b) => b.totalPoints - a.totalPoints);
+
+            if (rankings.length === 0) {
+                podiumContainer.innerHTML = '<div class="podium-empty"><p>🎮 Play at least 3 games to appear here!</p></div>';
+                return;
+            }
+
+            // Get top 3
+            const top3 = rankings.slice(0, 3);
+            const ids = top3.map(r => r.user_id);
+            const { data: profiles } = await supabaseClient
+                .from('profiles')
+                .select('id,display_name,gamer_tag,cosmetics,is_premium,xp,prestige')
+                .in('id', ids);
+            
+            const pm = {};
+            if (profiles) profiles.forEach(p => pm[p.id] = p);
+
+            // Render podium
+            let html = '';
+            [2, 1, 3].forEach(rank => {
+                const entry = top3[rank - 1];
+                if (!entry) {
+                    html += `<div class="top-gamer-spot rank-${rank}"><div class="top-gamer-rank">#${rank}</div><div class="top-gamer-label">${rank === 1 ? 'CHAMPION' : rank === 2 ? '2ND PLACE' : '3RD PLACE'}</div><div class="top-gamer-avatar">?</div><div class="top-gamer-name">---</div><div class="top-gamer-title"></div><div class="top-gamer-score">-</div></div>`;
                     return;
                 }
-                const leaderboardHTML = supporters.map((supporter, index) => {
-                    const rank = index + 1;
-                    const isGold = rank === 1;
-                    const rankDisplay = isGold ? '👑' : rank;
-                    const amount = supporter.lifetime_total ? parseFloat(supporter.lifetime_total).toFixed(0) : parseFloat(supporter.amount).toFixed(0);
-                    const safeName = supporter.display_name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                    return `<div class="leaderboard-item ${isGold ? 'gold' : ''}"><span class="lb-rank">${rankDisplay}</span><span class="lb-name">${safeName}</span><span class="lb-amount">$${amount}</span></div>`;
-                }).join('');
-                supportersList.innerHTML = leaderboardHTML;
-            } catch (error) {
-                supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first champion!</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support Now →</a></div>';
-            }
+
+                const p = pm[entry.user_id];
+                const name = p?.display_name || p?.gamer_tag || 'Player_' + entry.user_id.substring(0, 6);
+                const isPremium = p?.is_premium === true;
+                const cosmetics = p?.cosmetics || {};
+                const avatar = cosmetics.avatar || cosmetics.badge_icon || name.charAt(0).toUpperCase();
+                const title = cosmetics.title || '';
+                const nameClass = isPremium ? 'top-gamer-name premium' : 'top-gamer-name';
+                const label = rank === 1 ? 'CHAMPION' : rank === 2 ? '2ND PLACE' : '3RD PLACE';
+
+                html += `
+                    <div class="top-gamer-spot rank-${rank}">
+                        <div class="top-gamer-rank">#${rank}</div>
+                        <div class="top-gamer-label">${label}</div>
+                        <div class="top-gamer-avatar">${avatar}</div>
+                        <div class="${nameClass}">${escapeHtml(name)}</div>
+                        <div class="top-gamer-title">${escapeHtml(title)}</div>
+                        <div class="top-gamer-score">${entry.totalPoints.toLocaleString()} pts</div>
+                        <div class="top-gamer-games">${entry.gamesPlayed} games</div>
+                    </div>
+                `;
+            });
+
+            podiumContainer.innerHTML = html;
+        } catch (err) {
+            console.error('Error loading top gamers:', err);
+            podiumContainer.innerHTML = '<div class="podium-empty"><p>🎮 Play games to appear on the leaderboard!</p></div>';
         }
-        loadTopSupporters();
-        setInterval(loadTopSupporters, 5 * 60 * 1000);
     }
 
-    // DAILY CAROUSEL
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ========== SUPPORTERS ==========
+    async function loadTopSupporters() {
+        const supportersList = document.getElementById('supporters-list');
+        if (!supportersList) return;
+        try {
+            let { data: supporters, error } = await supabaseClient.from('supporters_leaderboard').select('display_name, lifetime_total, donation_count').limit(3);
+            if (error) {
+                const result = await supabaseClient.from('supporters').select('display_name, amount').eq('is_public', true).order('amount', { ascending: false }).limit(3);
+                supporters = result.data;
+                error = result.error;
+            }
+            if (error) throw error;
+            if (!supporters || supporters.length === 0) {
+                supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first!</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support Now →</a></div>';
+                return;
+            }
+            const leaderboardHTML = supporters.map((supporter, index) => {
+                const rank = index + 1;
+                const isGold = rank === 1;
+                const rankDisplay = isGold ? '👑' : rank;
+                const amount = supporter.lifetime_total ? parseFloat(supporter.lifetime_total).toFixed(0) : parseFloat(supporter.amount).toFixed(0);
+                const safeName = supporter.display_name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                return `<div class="leaderboard-mini-item ${isGold ? 'gold' : ''}"><span class="lb-mini-rank">${rankDisplay}</span><span class="lb-mini-name">${safeName}</span><span class="lb-mini-amount">$${amount}</span></div>`;
+            }).join('');
+            supportersList.innerHTML = leaderboardHTML;
+        } catch (error) {
+            supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first!</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support →</a></div>';
+        }
+    }
+
+    // Load on page ready
+    loadTopGamers();
+    loadTopSupporters();
+    setInterval(loadTopSupporters, 5 * 60 * 1000);
+
+    // ========== DAILY CAROUSEL ==========
     (function() {
         const track = document.getElementById('dailyCarouselTrack');
         const dotsContainer = document.getElementById('dailyCarouselDots');
