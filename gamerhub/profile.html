@@ -1299,6 +1299,13 @@
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
           </div>
 
+          <div class="card" id="podium-section">
+            <h3 class="card-title">Podium Style</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">How you appear on leaderboard podiums (top 3)</p>
+            <div class="option-grid" id="podium-options"></div>
+            <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
+          </div>
+
           <div class="card" id="title-section">
             <h3 class="card-title">Title</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem;">Shows below your name</p>
@@ -1365,7 +1372,7 @@
     window.supabaseClient = supabaseClient;
 
     let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎', currentLevel = 1, currentPrestige = 0;
-    let cosmetics = { border_style: 'solid', border_color: 'gray', badge_icon: null, name_effect: 'none', title: null, entrance_animation: 'fade', background_pattern: 'none', background_color: 'default', avatar: '😎' };
+    let cosmetics = { border_style: 'solid', border_color: 'gray', badge_icon: null, name_effect: 'none', title: null, entrance_animation: 'fade', background_pattern: 'none', background_color: 'default', podium_style: 'default', avatar: '😎' };
 
     // Use cosmetics.js data with fallbacks
     const LEVEL_THRESHOLDS = window.TGCOCosmetics?.LEVEL_THRESHOLDS || [
@@ -1508,6 +1515,20 @@
       { value: 'sunset-bg', bg: 'linear-gradient(135deg, #7c2d12, #581c87)', label: 'Sunset' },
       { value: 'aurora', bg: 'linear-gradient(135deg, #14532d, #164e63, #312e81)', label: 'Aurora' },
       { value: 'galaxy', bg: 'linear-gradient(135deg, #0f0f19, #312e81, #581c87)', label: 'Galaxy' },
+    ];
+
+    // Podium style options
+    const PODIUM_OPTIONS = [
+      { value: 'default', icon: '🏆', label: 'Classic' },
+      { value: 'flames', icon: '🔥', label: 'Flames' },
+      { value: 'neon', icon: '💡', label: 'Neon' },
+      { value: 'crystal', icon: '💎', label: 'Crystal' },
+      { value: 'cosmic', icon: '🌌', label: 'Cosmic' },
+      { value: 'holographic', icon: '🌈', label: 'Holographic' },
+      { value: 'royal', icon: '👑', label: 'Royal' },
+      { value: 'cyber', icon: '🤖', label: 'Cyber' },
+      { value: 'nature', icon: '🌿', label: 'Nature' },
+      { value: 'void', icon: '🌑', label: 'Void' },
     ];
 
     // Border options
@@ -1919,6 +1940,19 @@
         }).join('');
       }
 
+      // Podium style options
+      const podiumGrid = document.getElementById('podium-options');
+      if (podiumGrid) {
+        podiumGrid.innerHTML = PODIUM_OPTIONS.map(opt => {
+          const unlocked = isPremium || opt.value === 'default' || isCosmeticUnlocked('podium', opt.value);
+          const lockAttr = !unlocked ? `data-unlock-level="${getRequiredLevel('podium', opt.value)}"` : '';
+          return `<div class="option-item ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" ${lockAttr}>
+            <span class="option-icon">${opt.icon}</span>
+            <span class="option-label">${opt.label}</span>
+          </div>`;
+        }).join('');
+      }
+
       // Title options
       const titleGrid = document.getElementById('title-options');
       titleGrid.innerHTML = TITLE_OPTIONS.map(t => `<div class="title-option" data-value="${t}">${t || 'None'}</div>`).join('');
@@ -2038,6 +2072,20 @@
         });
       });
 
+      // Podium style clicks
+      document.querySelectorAll('#podium-options .option-item').forEach(item => {
+        item.addEventListener('click', () => {
+          if (item.classList.contains('level-locked')) {
+            showStatus(`Unlock at ${item.dataset.unlockLevel}!`, 'error');
+            return;
+          }
+          cosmetics.podium_style = item.dataset.value;
+          document.querySelectorAll('#podium-options .option-item').forEach(i => i.classList.remove('selected'));
+          item.classList.add('selected');
+          updatePreview();
+        });
+      });
+
       // Title clicks
       document.querySelectorAll('#title-options .title-option').forEach(item => {
         item.addEventListener('click', () => {
@@ -2074,6 +2122,7 @@
       selectCosmeticOption('effect-options', '.option-item', cosmetics.name_effect || 'none');
       selectCosmeticOption('entrance-options', '.option-item', cosmetics.entrance_animation || 'fade');
       selectCosmeticOption('background-options', '.option-item', cosmetics.background_pattern || 'none');
+      selectCosmeticOption('podium-options', '.option-item', cosmetics.podium_style || 'default');
 
       // Title selection
       const presetTitles = TITLE_OPTIONS;
