@@ -1292,6 +1292,13 @@
             <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
           </div>
 
+          <div class="card" id="bg-color-section">
+            <h3 class="card-title">Background Color</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Color of your nameplate background</p>
+            <div class="color-grid" id="bg-color-options"></div>
+            <div class="lock-overlay" style="display: none;">Upgrade to Unlock</div>
+          </div>
+
           <div class="card" id="title-section">
             <h3 class="card-title">Title</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem;">Shows below your name</p>
@@ -1358,7 +1365,7 @@
     window.supabaseClient = supabaseClient;
 
     let currentUser = null, currentProfile = null, isPremium = false, selectedAvatar = '😎', currentLevel = 1, currentPrestige = 0;
-    let cosmetics = { border_style: 'solid', border_color: 'gray', badge_icon: null, name_effect: 'none', title: null, entrance_animation: 'fade', background_pattern: 'none', avatar: '😎' };
+    let cosmetics = { border_style: 'solid', border_color: 'gray', badge_icon: null, name_effect: 'none', title: null, entrance_animation: 'fade', background_pattern: 'none', background_color: 'default', avatar: '😎' };
 
     // Use cosmetics.js data with fallbacks
     const LEVEL_THRESHOLDS = window.TGCOCosmetics?.LEVEL_THRESHOLDS || [
@@ -1471,7 +1478,7 @@
       { value: '🎸', icon: '🎸', label: 'Rock' },
     ];
 
-    // Color options
+    // Color options (for border)
     const COLOR_OPTIONS = [
       { value: 'gray', bg: '#6b7280', label: 'Gray' },
       { value: 'gold', bg: 'linear-gradient(135deg, #fbbf24, #f59e0b)', label: 'Gold' },
@@ -1485,6 +1492,22 @@
       { value: 'sunset', bg: 'linear-gradient(135deg, #f97316, #ea580c)', label: 'Sunset' },
       { value: 'toxic', bg: 'linear-gradient(135deg, #84cc16, #65a30d)', label: 'Toxic' },
       { value: 'rainbow', bg: 'linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc)', label: 'Rainbow' },
+    ];
+
+    // Background color options
+    const BG_COLOR_OPTIONS = [
+      { value: 'default', bg: 'rgba(15,15,25,0.95)', label: 'Default' },
+      { value: 'midnight', bg: 'linear-gradient(135deg, #0f0f19, #1a1a2e)', label: 'Midnight' },
+      { value: 'charcoal', bg: 'linear-gradient(135deg, #1f2937, #374151)', label: 'Charcoal' },
+      { value: 'navy', bg: 'linear-gradient(135deg, #1e3a5f, #0f172a)', label: 'Navy' },
+      { value: 'wine', bg: 'linear-gradient(135deg, #4a1942, #2d1326)', label: 'Wine' },
+      { value: 'forest', bg: 'linear-gradient(135deg, #14532d, #052e16)', label: 'Forest' },
+      { value: 'royal', bg: 'linear-gradient(135deg, #312e81, #1e1b4b)', label: 'Royal' },
+      { value: 'ember', bg: 'linear-gradient(135deg, #7c2d12, #431407)', label: 'Ember' },
+      { value: 'ocean', bg: 'linear-gradient(135deg, #164e63, #083344)', label: 'Ocean' },
+      { value: 'sunset-bg', bg: 'linear-gradient(135deg, #7c2d12, #581c87)', label: 'Sunset' },
+      { value: 'aurora', bg: 'linear-gradient(135deg, #14532d, #164e63, #312e81)', label: 'Aurora' },
+      { value: 'galaxy', bg: 'linear-gradient(135deg, #0f0f19, #312e81, #581c87)', label: 'Galaxy' },
     ];
 
     // Border options
@@ -1643,12 +1666,16 @@
         const badge = cosmetics.badge_icon ? `<span style="font-size: 1.1rem; margin-right: 8px;">${cosmetics.badge_icon}</span>` : '';
         const title = cosmetics.title ? `<span style="display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.5); margin-top: 2px;">${cosmetics.title}</span>` : '';
         
+        // Get background color
+        const bgColorOpt = BG_COLOR_OPTIONS.find(opt => opt.value === cosmetics.background_color);
+        const bgColor = bgColorOpt ? bgColorOpt.bg : 'rgba(15,15,25,0.95)';
+        
         let borderStyle = isRainbow 
-          ? 'border-color: transparent; background: linear-gradient(rgba(15,15,25,0.95), rgba(15,15,25,0.95)) padding-box, linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;'
-          : `border-color: ${color};`;
+          ? `border-color: transparent; background: ${bgColor} padding-box, linear-gradient(90deg, #f87171, #fbbf24, #34d399, #67e8f9, #c084fc, #f87171) border-box;`
+          : `border-color: ${color}; background: ${bgColor};`;
         
         container.innerHTML = `
-          <div style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 2px solid; ${borderStyle}">
+          <div style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 10px; border: 2px solid; ${borderStyle}">
             ${badge}
             <div style="display: flex; flex-direction: column;">
               <span style="font-size: 1rem; font-weight: 600; color: ${isRainbow ? '#c084fc' : color};">${displayName}</span>
@@ -1883,6 +1910,15 @@
         </div>`;
       }).join('');
 
+      // Background color options
+      const bgColorGrid = document.getElementById('bg-color-options');
+      if (bgColorGrid) {
+        bgColorGrid.innerHTML = BG_COLOR_OPTIONS.map(opt => {
+          const unlocked = isPremium || opt.value === 'default' || isCosmeticUnlocked('bgColor', opt.value);
+          return `<div class="color-option ${!unlocked ? 'level-locked' : ''}" data-value="${opt.value}" style="background: ${opt.bg};" title="${opt.label}"></div>`;
+        }).join('');
+      }
+
       // Title options
       const titleGrid = document.getElementById('title-options');
       titleGrid.innerHTML = TITLE_OPTIONS.map(t => `<div class="title-option" data-value="${t}">${t || 'None'}</div>`).join('');
@@ -1928,6 +1964,20 @@
           }
           cosmetics.border_color = item.dataset.value;
           document.querySelectorAll('#color-options .color-option').forEach(i => i.classList.remove('selected'));
+          item.classList.add('selected');
+          updatePreview();
+        });
+      });
+
+      // Background color clicks
+      document.querySelectorAll('#bg-color-options .color-option').forEach(item => {
+        item.addEventListener('click', () => {
+          if (item.classList.contains('level-locked')) {
+            showStatus('Unlock by leveling up or Premium!', 'error');
+            return;
+          }
+          cosmetics.background_color = item.dataset.value;
+          document.querySelectorAll('#bg-color-options .color-option').forEach(i => i.classList.remove('selected'));
           item.classList.add('selected');
           updatePreview();
         });
@@ -2019,6 +2069,7 @@
       // Set initial selections
       selectCosmeticOption('badge-options', '.option-item', cosmetics.badge_icon || '');
       selectCosmeticOption('color-options', '.color-option', cosmetics.border_color || 'gray');
+      selectCosmeticOption('bg-color-options', '.color-option', cosmetics.background_color || 'default');
       selectCosmeticOption('border-options', '.option-item', cosmetics.border_style || 'solid');
       selectCosmeticOption('effect-options', '.option-item', cosmetics.name_effect || 'none');
       selectCosmeticOption('entrance-options', '.option-item', cosmetics.entrance_animation || 'fade');
@@ -2282,6 +2333,13 @@
 
       // Premium status
       isPremium = profile.account_type === 'premium';
+      console.log('Profile loaded:', { 
+        account_type: profile.account_type, 
+        isPremium, 
+        level: currentLevel,
+        prestige: currentPrestige 
+      });
+      
       if (isPremium) {
         document.getElementById('premium-cta').style.display = 'none';
         document.getElementById('premium-active-banner').style.display = 'flex';
@@ -2370,6 +2428,10 @@
         }
         if (cosmetics.background_pattern && cosmetics.background_pattern !== 'none' && !isCosmeticUnlocked('background', cosmetics.background_pattern)) {
           showStatus('Background pattern not unlocked! Level up or go Premium.', 'error');
+          return;
+        }
+        if (cosmetics.background_color && cosmetics.background_color !== 'default' && !isCosmeticUnlocked('bgColor', cosmetics.background_color)) {
+          showStatus('Background color not unlocked! Level up or go Premium.', 'error');
           return;
         }
         if (cosmetics.title) {
