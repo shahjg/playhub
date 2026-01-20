@@ -16,7 +16,7 @@
     
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--gold:#ffd700;--gold-dark:#c9a800;--gold-glow:rgba(255,215,0,0.3);--silver:#c0c0c0;--bronze:#cd7f32;--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#08080c}
+        :root{--gold:#ffd700;--gold-dark:#c9a800;--gold-glow:rgba(255,215,0,0.3);--silver:#c0c0c0;--bronze:#cd7f32;--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#08080c;--orange:#ff6b35}
         body{font-family:'Inter',sans-serif;background:var(--dark);color:#fff;min-height:100vh}
         h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
         a{color:inherit;text-decoration:none}
@@ -53,6 +53,10 @@
         .variant-btn{padding:8px 14px;border-radius:16px;background:rgba(255,215,0,0.02);border:1px solid rgba(255,215,0,0.08);font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.4);transition:all 0.25s}
         .variant-btn:hover{color:var(--gold);border-color:rgba(255,215,0,0.2)}
         .variant-btn.active{background:rgba(255,215,0,0.1);border-color:var(--gold);color:var(--gold)}
+        
+        /* Aim trainer specific - orange accent */
+        .variant-filter.aim-filter .variant-btn.active{background:rgba(255,107,53,0.15);border-color:var(--orange);color:var(--orange)}
+        .variant-filter.aim-filter .variant-btn:hover{color:var(--orange);border-color:rgba(255,107,53,0.3)}
 
         .top-gamer-info{text-align:center;padding:16px 20px;margin-bottom:16px;background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(255,107,157,0.04));border:1px solid rgba(168,85,247,0.2);border-radius:16px;display:none}
         .top-gamer-info.show{display:block}
@@ -181,9 +185,38 @@
                 <div class="top-gamer-info" id="top-gamer-info">
                     <p>🏆 <strong>Top Gamer</strong> ranks players by total points earned across all solo games. Higher ranks = more points per game. Play more games to climb!</p>
                 </div>
-                <div class="variant-filter" id="duration-filter"><button class="variant-btn" data-duration="15">15s</button><button class="variant-btn" data-duration="30">30s</button><button class="variant-btn active" data-duration="60">60s</button><button class="variant-btn" data-duration="120">2m</button></div>
-                <div class="variant-filter" id="target-filter"><button class="variant-btn" data-targets="15">15</button><button class="variant-btn active" data-targets="30">30</button><button class="variant-btn" data-targets="50">50</button></div>
-                <div class="variant-filter" id="operation-filter"><button class="variant-btn active" data-op="add">+</button><button class="variant-btn" data-op="sub">−</button><button class="variant-btn" data-op="mul">×</button><button class="variant-btn" data-op="div">÷</button></div>
+                
+                <!-- Typing Test Duration Filter -->
+                <div class="variant-filter" id="duration-filter">
+                    <button class="variant-btn" data-duration="15">15s</button>
+                    <button class="variant-btn" data-duration="30">30s</button>
+                    <button class="variant-btn active" data-duration="60">60s</button>
+                    <button class="variant-btn" data-duration="120">2m</button>
+                </div>
+                
+                <!-- Aim Trainer Mode Filter -->
+                <div class="variant-filter aim-filter" id="aim-mode-filter">
+                    <button class="variant-btn active" data-mode="flick">🎯 Flick</button>
+                    <button class="variant-btn" data-mode="tracking">🔄 Tracking</button>
+                    <button class="variant-btn" data-mode="precision">🔬 Precision</button>
+                    <button class="variant-btn" data-mode="speed">⚡ Speed</button>
+                </div>
+                
+                <!-- Aim Trainer Target Count Filter -->
+                <div class="variant-filter aim-filter" id="target-filter">
+                    <button class="variant-btn" data-targets="15">15</button>
+                    <button class="variant-btn active" data-targets="30">30</button>
+                    <button class="variant-btn" data-targets="50">50</button>
+                </div>
+                
+                <!-- Math Speed Operation Filter -->
+                <div class="variant-filter" id="operation-filter">
+                    <button class="variant-btn active" data-op="add">+</button>
+                    <button class="variant-btn" data-op="sub">−</button>
+                    <button class="variant-btn" data-op="mul">×</button>
+                    <button class="variant-btn" data-op="div">÷</button>
+                </div>
+                
                 <div class="leaderboard-panel" id="leaderboard-panel">
                     <div class="panel-header">
                         <div class="panel-title"><h2>TOP PLAYERS</h2><span class="panel-badge" id="panel-badge">Reaction Time</span></div>
@@ -217,7 +250,7 @@
         const GAMES = {
             'reaction-time': { name: 'Reaction Time', unit: 'ms', asc: true, url: '/games/solo/reaction-time.html', table: 'solo_scores' },
             'typing-test': { name: 'Typing Test', unit: 'WPM', asc: false, url: '/games/solo/typing-test.html', table: 'solo_scores', durations: true },
-            'aim-trainer': { name: 'Aim Trainer', unit: 'TPM', asc: false, url: '/games/solo/aim-trainer.html', table: 'solo_scores', targets: true },
+            'aim-trainer': { name: 'Aim Trainer', unit: 'ms', asc: true, url: '/games/solo/aim-trainer.html', table: 'solo_scores', aimModes: true, targets: true },
             'chimp-test': { name: 'Chimp Test', unit: 'Level', asc: false, url: '/games/solo/chimp-test.html', table: 'solo_scores' },
             'number-memory': { name: 'Number Memory', unit: 'Digits', asc: false, url: '/games/solo/number-memory.html', table: 'solo_scores' },
             'sequence-memory': { name: 'Sequence Memory', unit: 'Level', asc: false, url: '/games/solo/sequence-memory.html', table: 'solo_scores' },
@@ -237,8 +270,26 @@
             'weebdle': { name: 'Weebdle', unit: 'Guesses', asc: true, url: '/weebdle.html', table: 'daily_scores', daily: true }
         };
 
-        const TOP_GAMER_GAMES = ['reaction-time','typing-test-60','aim-trainer-30','chimp-test','number-memory','sequence-memory','visual-memory','verbal-memory','math-speed-add','2048','snake','sky-hop','highway-dodge','dash-run'];
-        const ASC_GAMES = ['reaction-time','minesweeper'];
+        // Top Gamer tracks primary modes - flick with medium size
+        const TOP_GAMER_GAMES = [
+            'reaction-time',
+            'typing-test-60',
+            'aim-flick-medium-30',  // Updated aim trainer format
+            'chimp-test',
+            'number-memory',
+            'sequence-memory',
+            'visual-memory',
+            'verbal-memory',
+            'math-speed-add',
+            '2048',
+            'snake',
+            'sky-hop',
+            'highway-dodge',
+            'dash-run'
+        ];
+        
+        // Games where lower score is better
+        const ASC_GAMES = ['reaction-time', 'minesweeper', 'aim-flick-medium-30', 'aim-flick-medium-15', 'aim-flick-medium-50', 'aim-tracking-medium-30', 'aim-precision-medium-30', 'aim-speed-medium-30'];
         const TIER_POINTS = {top1:1000, top5:800, top10:600, top25:400, top50:200, rest:100};
 
         const COSMETIC_COLORS = window.TGCOCosmetics ? window.TGCOCosmetics.COSMETIC_COLORS : {
@@ -248,68 +299,201 @@
             rainbow: '#c084fc'
         };
 
-        let cat='solo', game='reaction-time', duration=60, targets=30, op='add', tab='global';
+        let cat='solo', game='reaction-time', duration=60, targets=30, aimMode='flick', op='add', tab='global';
         let loggedIn=false, userId=null, friends=[];
 
         const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
         const soloEl=$('#solo-games'), dailyEl=$('#daily-games'), topGamerInfo=$('#top-gamer-info');
-        const durFilter=$('#duration-filter'), tgtFilter=$('#target-filter'), opFilter=$('#operation-filter');
+        const durFilter=$('#duration-filter'), tgtFilter=$('#target-filter'), opFilter=$('#operation-filter'), aimModeFilter=$('#aim-mode-filter');
         const badge=$('#panel-badge'), panelTabs=$('#panel-tabs'), mobSelect=$('#mobile-tab-select');
         const gate=$('#lb-login-gate'), content=$('#lb-content'), list=$('#lb-list');
         const playLink=$('#play-link'), playCta=$('#play-cta'), panel=$('#leaderboard-panel');
 
+        // Category buttons
         $$('.cat-btn').forEach(btn=>{btn.addEventListener('click',function(){
             cat=this.dataset.cat;
             $$('.cat-btn').forEach(b=>b.classList.remove('active'));
             this.classList.add('active');
-            if(cat==='solo'){soloEl.classList.remove('hidden');dailyEl.classList.add('hidden');topGamerInfo.classList.remove('show');panelTabs.style.display='';mobSelect.style.display='';playCta.style.display='';panel.classList.remove('top-gamer-panel');game='reaction-time';}
-            else if(cat==='daily'){soloEl.classList.add('hidden');dailyEl.classList.remove('hidden');topGamerInfo.classList.remove('show');panelTabs.style.display='';mobSelect.style.display='';playCta.style.display='';panel.classList.remove('top-gamer-panel');game='connections';}
-            else if(cat==='top-gamer'){soloEl.classList.add('hidden');dailyEl.classList.add('hidden');topGamerInfo.classList.add('show');panelTabs.style.display='none';mobSelect.style.display='none';playCta.style.display='none';panel.classList.add('top-gamer-panel');game=null;}
+            if(cat==='solo'){
+                soloEl.classList.remove('hidden');
+                dailyEl.classList.add('hidden');
+                topGamerInfo.classList.remove('show');
+                panelTabs.style.display='';
+                mobSelect.style.display='';
+                playCta.style.display='';
+                panel.classList.remove('top-gamer-panel');
+                game='reaction-time';
+            } else if(cat==='daily'){
+                soloEl.classList.add('hidden');
+                dailyEl.classList.remove('hidden');
+                topGamerInfo.classList.remove('show');
+                panelTabs.style.display='';
+                mobSelect.style.display='';
+                playCta.style.display='';
+                panel.classList.remove('top-gamer-panel');
+                game='connections';
+            } else if(cat==='top-gamer'){
+                soloEl.classList.add('hidden');
+                dailyEl.classList.add('hidden');
+                topGamerInfo.classList.add('show');
+                panelTabs.style.display='none';
+                mobSelect.style.display='none';
+                playCta.style.display='none';
+                panel.classList.add('top-gamer-panel');
+                game=null;
+            }
             $$('.game-btn').forEach(b=>b.classList.remove('active'));
             if(game)$(`[data-game="${game}"]`)?.classList.add('active');
             updateUI();load();
         });});
-        $$('.game-btn').forEach(btn=>{btn.addEventListener('click',function(){game=this.dataset.game;$$('.game-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
-        durFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){duration=parseInt(this.dataset.duration);durFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
-        tgtFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){targets=parseInt(this.dataset.targets);tgtFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
-        opFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){op=this.dataset.op;opFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
-        $$('.panel-tab').forEach(btn=>{btn.addEventListener('click',function(){tab=this.dataset.type;$$('.panel-tab').forEach(b=>b.classList.remove('active'));this.classList.add('active');mobSelect.value=tab;load();});});
-        mobSelect.addEventListener('change',function(){tab=this.value;$$('.panel-tab').forEach(b=>b.classList.toggle('active',b.dataset.type===tab));load();});
+        
+        // Game buttons
+        $$('.game-btn').forEach(btn=>{btn.addEventListener('click',function(){
+            game=this.dataset.game;
+            $$('.game-btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            updateUI();load();
+        });});
+        
+        // Duration filter (typing test)
+        durFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){
+            duration=parseInt(this.dataset.duration);
+            durFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            updateUI();load();
+        });});
+        
+        // Aim mode filter
+        aimModeFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){
+            aimMode=this.dataset.mode;
+            aimModeFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            updateUI();load();
+        });});
+        
+        // Target count filter (aim trainer)
+        tgtFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){
+            targets=parseInt(this.dataset.targets);
+            tgtFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            updateUI();load();
+        });});
+        
+        // Operation filter (math speed)
+        opFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){
+            op=this.dataset.op;
+            opFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            updateUI();load();
+        });});
+        
+        // Tab buttons
+        $$('.panel-tab').forEach(btn=>{btn.addEventListener('click',function(){
+            tab=this.dataset.type;
+            $$('.panel-tab').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            mobSelect.value=tab;
+            load();
+        });});
+        mobSelect.addEventListener('change',function(){
+            tab=this.value;
+            $$('.panel-tab').forEach(b=>b.classList.toggle('active',b.dataset.type===tab));
+            load();
+        });
 
         function updateUI(){
-            if(cat==='top-gamer'){badge.textContent='Total Score';badge.classList.add('top-gamer');durFilter.classList.remove('show');tgtFilter.classList.remove('show');opFilter.classList.remove('show');return;}
+            if(cat==='top-gamer'){
+                badge.textContent='Total Score';
+                badge.classList.add('top-gamer');
+                durFilter.classList.remove('show');
+                tgtFilter.classList.remove('show');
+                opFilter.classList.remove('show');
+                aimModeFilter.classList.remove('show');
+                return;
+            }
             badge.classList.remove('top-gamer');
-            const g=GAMES[game];if(!g)return;
-            durFilter.classList.toggle('show',!!g.durations);tgtFilter.classList.toggle('show',!!g.targets);opFilter.classList.toggle('show',!!g.ops);
+            const g=GAMES[game];
+            if(!g)return;
+            
+            // Show/hide appropriate filters
+            durFilter.classList.toggle('show',!!g.durations);
+            tgtFilter.classList.toggle('show',!!g.targets);
+            opFilter.classList.toggle('show',!!g.ops);
+            aimModeFilter.classList.toggle('show',!!g.aimModes);
+            
+            // Build badge text
             let b=g.name;
-            if(g.durations)b+=duration>=60?` • ${duration/60}m`:` • ${duration}s`;
-            if(g.targets)b+=` • ${targets}`;
-            if(g.ops)b+=` • ${({add:'+',sub:'−',mul:'×',div:'÷'})[op]}`;
-            badge.textContent=b;playLink.href=g.url;
+            if(g.durations) b+=duration>=60?` • ${duration/60}m`:` • ${duration}s`;
+            if(g.aimModes) {
+                const modeNames = {flick:'Flick',tracking:'Tracking',precision:'Precision',speed:'Speed'};
+                b+=` • ${modeNames[aimMode]}`;
+            }
+            if(g.targets) b+=` • ${targets}`;
+            if(g.ops) b+=` • ${({add:'+',sub:'−',mul:'×',div:'÷'})[op]}`;
+            badge.textContent=b;
+            playLink.href=g.url;
         }
-        function getGameId(){if(game==='typing-test')return`typing-test-${duration}`;if(game==='aim-trainer')return`aim-trainer-${targets}`;if(game==='math-speed')return`math-speed-${op}`;return game;}
-        function clearPodium(){[1,2,3].forEach(i=>{const c=$(`#podium-${i}`);if(c)c.innerHTML='';});}
-        function getName(p,uid){if(p&&p.display_name)return p.display_name;if(p&&p.gamer_tag)return p.gamer_tag;return'Player_'+uid.substring(0,6);}
+        
+        function getGameId(){
+            if(game==='typing-test') return`typing-test-${duration}`;
+            if(game==='aim-trainer') return`aim-${aimMode}-medium-${targets}`;  // New format
+            if(game==='math-speed') return`math-speed-${op}`;
+            return game;
+        }
+        
+        function clearPodium(){
+            [1,2,3].forEach(i=>{
+                const c=$(`#podium-${i}`);
+                if(c) c.innerHTML='';
+            });
+        }
+        
+        function getName(p,uid){
+            if(p&&p.display_name) return p.display_name;
+            if(p&&p.gamer_tag) return p.gamer_tag;
+            return'Player_'+uid.substring(0,6);
+        }
         function isPremium(p){return p&&p.is_premium===true;}
         function fmtScore(e,g){return`${e.score} ${g.unit}`;}
         function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 
         async function load(){
-            if(!loggedIn)return;
+            if(!loggedIn) return;
             if(cat==='top-gamer'){loadTopGamer();return;}
-            clearPodium();list.innerHTML='<div class="lb-empty">Loading...</div>';
-            const g=GAMES[game];if(!g)return;
+            clearPodium();
+            list.innerHTML='<div class="lb-empty">Loading...</div>';
+            const g=GAMES[game];
+            if(!g) return;
             const gid=getGameId();
             let q;
-            if(g.daily){q=sb.from(g.table).select('score,user_id,puzzle_date').eq('game_type',game);}
-            else{q=sb.from(g.table).select('score,user_id,created_at').eq('game_id',gid);}
+            if(g.daily){
+                q=sb.from(g.table).select('score,user_id,puzzle_date').eq('game_type',game);
+            } else {
+                q=sb.from(g.table).select('score,user_id,created_at').eq('game_id',gid);
+            }
             q=q.order('score',{ascending:g.asc}).limit(100);
-            if(tab==='today'){const t=new Date();t.setHours(0,0,0,0);q=g.daily?q.eq('puzzle_date',t.toISOString().split('T')[0]):q.gte('created_at',t.toISOString());}
-            else if(tab==='week'){const w=new Date();w.setDate(w.getDate()-7);q=g.daily?q.gte('puzzle_date',w.toISOString().split('T')[0]):q.gte('created_at',w.toISOString());}
-            else if(tab==='friends'){if(!friends.length){$('#podium').style.display='none';list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">👥</div>Add friends to see their scores here.</div>';return;}q=q.in('user_id',[...friends,userId]);}
+            if(tab==='today'){
+                const t=new Date();t.setHours(0,0,0,0);
+                q=g.daily?q.eq('puzzle_date',t.toISOString().split('T')[0]):q.gte('created_at',t.toISOString());
+            } else if(tab==='week'){
+                const w=new Date();w.setDate(w.getDate()-7);
+                q=g.daily?q.gte('puzzle_date',w.toISOString().split('T')[0]):q.gte('created_at',w.toISOString());
+            } else if(tab==='friends'){
+                if(!friends.length){
+                    $('#podium').style.display='none';
+                    list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">👥</div>Add friends to see their scores here.</div>';
+                    return;
+                }
+                q=q.in('user_id',[...friends,userId]);
+            }
             const{data,error}=await q;
-            if(error||!data||!data.length){clearPodium();list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet. Be the first!</div>';return;}
-            const best=new Map();data.forEach(e=>{if(!best.has(e.user_id))best.set(e.user_id,e);});
+            if(error||!data||!data.length){
+                clearPodium();
+                list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet. Be the first!</div>';
+                return;
+            }
+            const best=new Map();
+            data.forEach(e=>{if(!best.has(e.user_id))best.set(e.user_id,e);});
             const rows=Array.from(best.values());
             const ids=rows.map(r=>r.user_id);
             const{data:profs}=await sb.from('profiles').select('id,display_name,gamer_tag,cosmetics,is_premium,xp,prestige').in('id',ids);
@@ -318,20 +502,34 @@
         }
 
         async function loadTopGamer(){
-            clearPodium();list.innerHTML='<div class="lb-empty">Calculating rankings...</div>';
+            clearPodium();
+            list.innerHTML='<div class="lb-empty">Calculating rankings...</div>';
             const{data:allScores,error}=await sb.from('solo_scores').select('score,user_id,game_id').in('game_id',TOP_GAMER_GAMES);
-            if(error||!allScores||!allScores.length){list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet!</div>';return;}
-            const gameScores={};TOP_GAMER_GAMES.forEach(gid=>gameScores[gid]=new Map());
-            allScores.forEach(s=>{if(gameScores[s.game_id]){const existing=gameScores[s.game_id].get(s.user_id);const isAsc=ASC_GAMES.includes(s.game_id);if(!existing||(isAsc?s.score<existing:s.score>existing)){gameScores[s.game_id].set(s.user_id,s.score);}}});
+            if(error||!allScores||!allScores.length){
+                list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet!</div>';
+                return;
+            }
+            const gameScores={};
+            TOP_GAMER_GAMES.forEach(gid=>gameScores[gid]=new Map());
+            allScores.forEach(s=>{
+                if(gameScores[s.game_id]){
+                    const existing=gameScores[s.game_id].get(s.user_id);
+                    const isAsc=ASC_GAMES.some(g=>s.game_id.startsWith(g.split('-')[0]) || s.game_id === g);
+                    if(!existing||(isAsc?s.score<existing:s.score>existing)){
+                        gameScores[s.game_id].set(s.user_id,s.score);
+                    }
+                }
+            });
             const userPoints=new Map();
             TOP_GAMER_GAMES.forEach(gid=>{
                 const scores=Array.from(gameScores[gid].entries());
-                if(scores.length===0)return;
-                const isAsc=ASC_GAMES.includes(gid);
+                if(scores.length===0) return;
+                const isAsc=ASC_GAMES.some(g=>gid.startsWith(g.split('-')[0]) || gid === g);
                 scores.sort((a,b)=>isAsc?a[1]-b[1]:b[1]-a[1]);
                 const total=scores.length;
                 scores.forEach(([uid],idx)=>{
-                    const rank=idx+1;const pct=rank/total;
+                    const rank=idx+1;
+                    const pct=rank/total;
                     let pts=TIER_POINTS.rest;
                     if(pct<=0.01)pts=TIER_POINTS.top1;
                     else if(pct<=0.05)pts=TIER_POINTS.top5;
@@ -343,9 +541,16 @@
                 });
             });
             const rankings=[];
-            userPoints.forEach((data,uid)=>{if(data.count>=3){rankings.push({user_id:uid,totalPoints:data.total,gamesPlayed:data.count});}});
+            userPoints.forEach((data,uid)=>{
+                if(data.count>=3){
+                    rankings.push({user_id:uid,totalPoints:data.total,gamesPlayed:data.count});
+                }
+            });
             rankings.sort((a,b)=>b.totalPoints-a.totalPoints);
-            if(rankings.length===0){list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🎮</div>Play at least 3 different games to appear on Top Gamer rankings!</div>';return;}
+            if(rankings.length===0){
+                list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🎮</div>Play at least 3 different games to appear on Top Gamer rankings!</div>';
+                return;
+            }
             const ids=rankings.map(r=>r.user_id);
             const{data:profs}=await sb.from('profiles').select('id,display_name,gamer_tag,cosmetics,is_premium,xp,prestige').in('id',ids);
             const pm={};if(profs)profs.forEach(p=>pm[p.id]=p);
@@ -379,7 +584,10 @@
             });
             
             list.innerHTML='';
-            if(rows.length<=3){list.innerHTML='<div class="lb-empty" style="padding:20px">More players needed!</div>';return;}
+            if(rows.length<=3){
+                list.innerHTML='<div class="lb-empty" style="padding:20px">More players needed!</div>';
+                return;
+            }
             
             // Use cosmetics renderer for list items
             rows.slice(3).forEach((e,i)=>{
@@ -431,7 +639,10 @@
             });
             
             list.innerHTML='';
-            if(rankings.length<=3){list.innerHTML='<div class="lb-empty" style="padding:20px">More players needed!</div>';return;}
+            if(rankings.length<=3){
+                list.innerHTML='<div class="lb-empty" style="padding:20px">More players needed!</div>';
+                return;
+            }
             
             // Use cosmetics renderer for list items
             rankings.slice(3).forEach((e,i)=>{
@@ -456,15 +667,42 @@
         }
 
         async function init(){
-            try{const{data}=await sb.auth.getSession();
-            if(data&&data.session&&data.session.user){loggedIn=true;userId=data.session.user.id;
-            const{data:fr}=await sb.from('friendships').select('user_id,friend_id').or(`user_id.eq.${userId},friend_id.eq.${userId}`);
-            if(fr)friends=fr.map(f=>f.user_id===userId?f.friend_id:f.user_id);}}catch(e){}
-            if(loggedIn){content.style.display='block';gate.style.display='none';load();}
-            else{content.style.display='none';gate.style.display='block';}
+            try{
+                const{data}=await sb.auth.getSession();
+                if(data&&data.session&&data.session.user){
+                    loggedIn=true;
+                    userId=data.session.user.id;
+                    const{data:fr}=await sb.from('friendships').select('user_id,friend_id').or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+                    if(fr) friends=fr.map(f=>f.user_id===userId?f.friend_id:f.user_id);
+                }
+            } catch(e){}
+            if(loggedIn){
+                content.style.display='block';
+                gate.style.display='none';
+                load();
+            } else {
+                content.style.display='none';
+                gate.style.display='block';
+            }
         }
-        sb.auth.onAuthStateChange((ev,sess)=>{if(sess&&sess.user){loggedIn=true;userId=sess.user.id;content.style.display='block';gate.style.display='none';load();}else{loggedIn=false;userId=null;content.style.display='none';gate.style.display='block';}});
-        updateUI();init();
+        
+        sb.auth.onAuthStateChange((ev,sess)=>{
+            if(sess&&sess.user){
+                loggedIn=true;
+                userId=sess.user.id;
+                content.style.display='block';
+                gate.style.display='none';
+                load();
+            } else {
+                loggedIn=false;
+                userId=null;
+                content.style.display='none';
+                gate.style.display='block';
+            }
+        });
+        
+        updateUI();
+        init();
     })();
     </script>
 </body>
