@@ -788,6 +788,7 @@
                     <div class="lb-tabs" id="lb-tabs">
                         <button class="lb-tab active" id="tab-today">Today</button>
                         <button class="lb-tab" id="tab-personal">My Best</button>
+                        <button class="lb-tab" id="tab-friends">Friends</button>
                     </div>
                 </div>
                 
@@ -859,6 +860,18 @@
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ADDED: Friends support
+    let friendIds = [];
+    async function loadFriends() {
+        const { data: s } = await supabaseClient.auth.getSession();
+        if (!s?.session?.user) return;
+        const uid = s.session.user.id;
+        try {
+            const { data } = await supabaseClient.from('friendships').select('user_id,friend_id').or(`user_id.eq.${uid},friend_id.eq.${uid}`);
+            if (data) friendIds = data.map(f => f.user_id === uid ? f.friend_id : f.user_id);
+        } catch (e) {}
+    }
 
     let targetCount = 30;
     const targetBtns = document.querySelectorAll('.target-btn');
@@ -1029,6 +1042,7 @@
     let currentLeaderboardType = 'today';
     const tabToday = document.getElementById('tab-today');
     const tabPersonal = document.getElementById('tab-personal');
+    const tabFriends = document.getElementById('tab-friends');
     const lbTabs = document.getElementById('lb-tabs');
     const lbLoginGate = document.getElementById('lb-login-gate');
     const lbList = document.getElementById('lb-list');
@@ -1051,20 +1065,43 @@
         }
     }
 
-    tabToday.addEventListener('click', () => { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); fetchLeaderboard(); });
-    tabPersonal.addEventListener('click', () => { currentLeaderboardType = 'personal'; tabPersonal.classList.add('active'); tabToday.classList.remove('active'); fetchLeaderboard(); });
+    tabToday.addEventListener('click', () => { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); tabFriends.classList.remove('active'); fetchLeaderboard(); });
+    tabPersonal.addEventListener('click', () => { currentLeaderboardType = 'personal'; tabPersonal.classList.add('active'); tabToday.classList.remove('active'); tabFriends.classList.remove('active'); fetchLeaderboard(); });
+    tabFriends.addEventListener('click', () => { currentLeaderboardType = 'friends'; tabFriends.classList.add('active'); tabToday.classList.remove('active'); tabPersonal.classList.remove('active'); fetchLeaderboard(); });
 
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) updateLeaderboardVisibility(true);
         else {
             updateLeaderboardVisibility(false);
-            if (currentLeaderboardType === 'personal') { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); }
+            if (currentLeaderboardType === 'personal' || currentLeaderboardType === 'friends') { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); tabFriends.classList.remove('active'); }
         }
     });
 
     async function fetchLeaderboard() {
         lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
         const gameId = getGameId();
+
+        // ADDED: Friends tab
+        if (currentLeaderboardType === 'friends') {
+            if (!friendIds.length) { lbList.innerHTML = '<div class="lb-empty">Add friends to see scores</div>'; return; }
+            const { data, error } = await supabaseClient.from('solo_scores').select('score, user_id').eq('game_id', gameId).in('user_id', [...friendIds]).order('score', { ascending: false }).limit(10);
+            if (error || !data?.length) { lbList.innerHTML = '<div class="lb-empty">No friend scores yet</div>'; return; }
+            const userIds = data.map(e => e.user_id);
+            const { data: profiles } = await supabaseClient.from('profiles').select('id, display_name, gamer_tag').in('id', userIds);
+            const profileMap = {}; profiles?.forEach(p => profileMap[p.id] = p);
+            lbList.innerHTML = '';
+            data.forEach((entry, i) => {
+                const profile = profileMap[entry.user_id];
+                const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+                const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : '';
+                const row = document.createElement('div');
+                row.className = `lb-row ${topClass}`;
+                row.innerHTML = `<div class="lb-rank">${i + 1}</div><div class="lb-name">${escapeHtml(name)}</div><div class="lb-score">${entry.score} TPM</div>`;
+                lbList.appendChild(row);
+            });
+            return;
+        }
+
         if (currentLeaderboardType === 'personal') {
             const { data: sessionData } = await supabaseClient.auth.getSession();
             const user = sessionData?.session?.user;
@@ -1124,6 +1161,7 @@
 
     (async function init() {
         const { data } = await supabaseClient.auth.getSession();
+        await loadFriends();
         updateLeaderboardVisibility(!!data.session?.user);
     })();
 </script>

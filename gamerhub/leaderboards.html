@@ -9,33 +9,26 @@
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="/js/cosmetics.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --gold:#ffd700;--gold-dark:#c9a800;--gold-glow:rgba(255,215,0,0.3);
-            --silver:#c0c0c0;--bronze:#cd7f32;
-            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;
-            --dark:#08080c;
-        }
+        :root{--gold:#ffd700;--gold-dark:#c9a800;--gold-glow:rgba(255,215,0,0.3);--silver:#c0c0c0;--bronze:#cd7f32;--pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;--teal:#00d9a5;--dark:#08080c}
         body{font-family:'Inter',sans-serif;background:var(--dark);color:#fff;min-height:100vh}
         h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
         a{color:inherit;text-decoration:none}
         button{cursor:pointer;font-family:inherit}
 
         .page-bg{position:fixed;inset:0;background:radial-gradient(ellipse 120% 60% at 50% -10%,rgba(255,215,0,0.12) 0%,transparent 50%),linear-gradient(180deg,#0a0a10 0%,#08080c 100%);pointer-events:none;z-index:0}
-        
         .page-content{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;padding-top:60px}
-
         .hero{padding:70px 20px 40px;text-align:center}
         .trophy-icon{width:70px;height:70px;margin:0 auto 20px}
         .trophy-icon svg{width:100%;height:100%;filter:drop-shadow(0 0 30px var(--gold-glow))}
         .hero-title{font-size:clamp(3rem,10vw,5rem);letter-spacing:8px;background:linear-gradient(180deg,#ffffff 20%,var(--gold) 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .hero-subtitle{font-size:1rem;color:rgba(255,215,0,0.5);letter-spacing:3px;text-transform:uppercase;margin-top:12px}
-
         main{flex:1;padding:16px 20px 80px}
         .container{max-width:900px;margin:0 auto}
 
@@ -43,6 +36,9 @@
         .cat-btn{padding:10px 18px;border-radius:25px;background:rgba(255,215,0,0.03);border:1px solid rgba(255,215,0,0.1);font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.5);transition:all 0.25s;text-transform:uppercase;letter-spacing:0.5px}
         .cat-btn:hover{color:var(--gold);border-color:rgba(255,215,0,0.25)}
         .cat-btn.active{background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05));border-color:var(--gold);color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.12)}
+        .cat-btn.top-gamer-btn{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(255,107,157,0.05));border-color:rgba(168,85,247,0.3)}
+        .cat-btn.top-gamer-btn:hover{border-color:rgba(168,85,247,0.5);color:var(--purple)}
+        .cat-btn.top-gamer-btn.active{background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(255,107,157,0.1));border-color:var(--purple);color:var(--purple);box-shadow:0 0 20px rgba(168,85,247,0.2)}
 
         .game-selector{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:16px}
         .game-selector.hidden{display:none}
@@ -58,105 +54,62 @@
         .variant-btn:hover{color:var(--gold);border-color:rgba(255,215,0,0.2)}
         .variant-btn.active{background:rgba(255,215,0,0.1);border-color:var(--gold);color:var(--gold)}
 
+        .top-gamer-info{text-align:center;padding:16px 20px;margin-bottom:16px;background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(255,107,157,0.04));border:1px solid rgba(168,85,247,0.2);border-radius:16px;display:none}
+        .top-gamer-info.show{display:block}
+        .top-gamer-info p{color:rgba(255,255,255,0.6);font-size:0.85rem;line-height:1.5}
+        .top-gamer-info strong{color:var(--purple)}
+
         .leaderboard-panel{background:rgba(12,12,18,0.6);border-radius:20px;overflow:hidden;border:1px solid rgba(255,215,0,0.1);backdrop-filter:blur(10px);box-shadow:0 0 80px rgba(255,215,0,0.03),0 30px 60px rgba(0,0,0,0.4)}
+        .leaderboard-panel.top-gamer-panel{border-color:rgba(168,85,247,0.2)}
         .panel-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(255,215,0,0.08);flex-wrap:wrap;gap:12px;background:linear-gradient(180deg,rgba(255,215,0,0.04),transparent)}
+        .top-gamer-panel .panel-header{background:linear-gradient(180deg,rgba(168,85,247,0.06),transparent);border-bottom-color:rgba(168,85,247,0.1)}
         .panel-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .panel-title h2{font-size:1.2rem;letter-spacing:3px;color:white}
         .panel-badge{padding:4px 10px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.15);border-radius:6px;font-size:0.62rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px}
-        
+        .panel-badge.top-gamer{background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.3);color:var(--purple)}
         .panel-tabs{display:flex;gap:3px;background:rgba(0,0,0,0.3);padding:3px;border-radius:8px}
         .panel-tab{padding:8px 14px;border-radius:5px;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,0.4);background:transparent;border:none;transition:all 0.25s;white-space:nowrap}
         .panel-tab:hover{color:white}
         .panel-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);box-shadow:0 4px 15px rgba(255,215,0,0.25)}
         .panel-tab.friends{color:rgba(168,85,247,0.7)}
         .panel-tab.friends.active{background:linear-gradient(135deg,var(--purple),var(--pink));color:white}
-
         .panel-body{padding:20px}
-
-        /* Clan Tags */
-        .clan-tag{font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:3px;margin-right:6px;text-transform:uppercase;letter-spacing:0.5px;display:inline-block}
-        .clan-tag.gold{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000}
-        .clan-tag.red{background:linear-gradient(135deg,#ff4444,#cc0000);color:#fff}
-        .clan-tag.blue{background:linear-gradient(135deg,#4facfe,#0066ff);color:#fff}
-        .clan-tag.purple{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff}
-        .clan-tag.green{background:linear-gradient(135deg,#00d9a5,#00b386);color:#000}
-        .clan-tag.pink{background:linear-gradient(135deg,#ff6b9d,#e84a7f);color:#fff}
-        .clan-tag.rainbow{background:linear-gradient(90deg,#ff0000,#ff8000,#ffff00,#00ff00,#00ffff,#0080ff,#8000ff);background-size:200% 100%;animation:rainbowSlide 2s linear infinite;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
-        @keyframes rainbowSlide{0%{background-position:0% 50%}100%{background-position:200% 50%}}
-
-        /* Premium Badge */
-        .premium-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:0.5rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px}
-        .premium-badge.gold{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a00}
-        .premium-badge.diamond{background:linear-gradient(135deg,#b9f2ff,#e0c3fc);color:#333}
-
-        /* Premium Name Effects */
-        .name-gold{background:linear-gradient(90deg,#ffd700,#ffcc00,#ffd700);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 2s ease infinite}
-        .name-diamond{background:linear-gradient(90deg,#b9f2ff,#ffffff,#e0c3fc);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 2s ease infinite}
-        .name-fire{background:linear-gradient(90deg,#ff4500,#ff8c00,#ffd700);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 1.5s ease infinite}
-        .name-ice{background:linear-gradient(90deg,#00d4ff,#ffffff,#00d4ff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 2s ease infinite}
-        @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 
         /* Podium */
         .podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;align-items:end}
         .podium-spot{text-align:center;padding:18px 10px;border-radius:16px;position:relative;transition:transform 0.3s}
         .podium-spot:hover{transform:translateY(-4px)}
-        
         .podium-spot.gold{background:linear-gradient(180deg,rgba(255,215,0,0.15),rgba(255,215,0,0.02));border:2px solid var(--gold);order:2;padding-top:28px;padding-bottom:28px;min-height:200px;box-shadow:0 0 50px rgba(255,215,0,0.15)}
         .podium-spot.silver{background:linear-gradient(180deg,rgba(192,192,192,0.12),rgba(192,192,192,0.02));border:2px solid var(--silver);order:1;min-height:170px}
         .podium-spot.bronze{background:linear-gradient(180deg,rgba(205,127,50,0.12),rgba(205,127,50,0.02));border:2px solid var(--bronze);order:3;min-height:150px}
-        
         .podium-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1;margin-bottom:4px}
         .podium-spot.gold .podium-rank{color:var(--gold);font-size:2.5rem;text-shadow:0 0 20px var(--gold-glow)}
         .podium-spot.silver .podium-rank{color:var(--silver)}
         .podium-spot.bronze .podium-rank{color:var(--bronze)}
-        
         .podium-label{font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
         .podium-spot.gold .podium-label{color:var(--gold)}
         .podium-spot.silver .podium-label{color:var(--silver)}
         .podium-spot.bronze .podium-label{color:var(--bronze)}
-        
-        .podium-avatar{width:40px;height:40px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;text-transform:uppercase}
-        .podium-spot.gold .podium-avatar{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);width:52px;height:52px;font-size:1.2rem;box-shadow:0 4px 20px rgba(255,215,0,0.4)}
-        .podium-spot.silver .podium-avatar{background:linear-gradient(135deg,var(--silver),#8a9aa8);color:var(--dark)}
-        .podium-spot.bronze .podium-avatar{background:linear-gradient(135deg,var(--bronze),#a56528);color:white}
-        
-        .podium-clan{margin-bottom:4px;min-height:18px}
-        .podium-name{font-weight:700;font-size:0.85rem;color:white;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+        .podium-avatar{width:40px;height:40px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;text-transform:uppercase;background:linear-gradient(135deg,var(--pink),var(--purple));color:white}
+        .podium-spot.gold .podium-avatar{width:52px;height:52px;font-size:1.2rem}
+        .podium-name{font-weight:700;font-size:0.85rem;color:white;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
         .podium-spot.gold .podium-name{font-size:1rem}
-        .podium-premium{margin-bottom:6px;min-height:16px}
         .podium-score{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px}
         .podium-spot.gold .podium-score{color:var(--gold);font-size:1.4rem}
         .podium-spot.silver .podium-score{color:var(--silver)}
         .podium-spot.bronze .podium-score{color:var(--bronze)}
+        .podium-games{font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:4px}
+        .podium-title{font-size:0.6rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
 
         /* List */
         .lb-list{display:flex;flex-direction:column;gap:6px}
-        .lb-row{display:grid;grid-template-columns:36px 36px 1fr auto;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,215,0,0.015);border-radius:12px;transition:all 0.25s;border:1px solid transparent}
-        .lb-row:hover{background:rgba(255,215,0,0.04);border-color:rgba(255,215,0,0.08);transform:translateX(4px)}
-        .lb-row.you{background:linear-gradient(90deg,rgba(168,85,247,0.12),rgba(168,85,247,0.02));border:1px solid rgba(168,85,247,0.3)}
-        .lb-row.premium-gold{background:linear-gradient(90deg,rgba(255,215,0,0.06),transparent);border:1px solid rgba(255,215,0,0.15)}
-        .lb-row.premium-diamond{background:linear-gradient(90deg,rgba(185,242,255,0.06),transparent);border:1px solid rgba(185,242,255,0.15)}
-        
-        .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:rgba(255,215,0,0.4);text-align:center}
-        .lb-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;text-transform:uppercase}
-        
-        .lb-player{display:flex;flex-direction:column;min-width:0}
-        .lb-name-row{display:flex;align-items:center;flex-wrap:wrap;gap:2px}
-        .lb-name{font-weight:600;font-size:0.85rem;color:white}
-        .lb-meta{display:flex;align-items:center;gap:8px;margin-top:2px}
-        .lb-you-badge{font-size:0.6rem;color:var(--purple);font-weight:700;text-transform:uppercase}
-        .lb-date{font-size:0.65rem;color:rgba(255,255,255,0.35)}
-        .lb-score{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:1px}
-        
         .lb-empty{text-align:center;padding:50px 20px;color:rgba(255,255,255,0.4);font-size:0.9rem}
         .lb-empty-icon{font-size:3rem;margin-bottom:16px;opacity:0.5}
-
         .lb-login-gate{text-align:center;padding:60px 20px}
         .lb-login-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;background:linear-gradient(135deg,#ffffff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
         .lb-login-desc{color:rgba(255,255,255,0.5);font-size:0.9rem;max-width:300px;margin:0 auto 24px;line-height:1.6}
         .btn-gold{padding:14px 28px;border-radius:10px;border:none;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;display:inline-block;transition:all 0.3s;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);box-shadow:0 6px 25px rgba(255,215,0,0.25)}
         .btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 35px rgba(255,215,0,0.35)}
-
         .play-cta{margin-top:24px;text-align:center}
         .play-cta a{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:50px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.2);color:var(--gold);font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;transition:all 0.3s}
         .play-cta a:hover{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--dark);border-color:transparent;transform:translateY(-2px)}
@@ -174,56 +127,33 @@
         .footer-column a:hover{color:var(--pink)}
         .footer-bottom{padding-top:30px;border-top:1px solid rgba(255,255,255,0.08);text-align:center}
         .footer-copyright{font-size:0.85rem;color:rgba(255,255,255,0.4)}
-
         .mobile-tab-select{display:none;width:100%;padding:14px 18px;border-radius:12px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,215,0,0.2);color:var(--gold);font-size:0.9rem;font-weight:600;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffd700' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
         .mobile-tab-select option{background:#0c0c12;color:white}
-
         @media(max-width:700px){
-            .hero{padding:50px 20px 30px}
-            .trophy-icon{width:50px;height:50px}
-            .hero-title{font-size:2.5rem;letter-spacing:4px}
+            .hero{padding:50px 20px 30px}.trophy-icon{width:50px;height:50px}.hero-title{font-size:2.5rem;letter-spacing:4px}
             .game-selector{overflow-x:auto;justify-content:flex-start;padding-bottom:8px;margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px;scrollbar-width:none;flex-wrap:nowrap}
-            .game-selector::-webkit-scrollbar{display:none}
-            .game-btn{flex-shrink:0}
-            .panel-tabs{display:none}
-            .mobile-tab-select{display:block!important}
-            .podium{gap:8px}
-            .podium-spot{padding:14px 8px}
-            .podium-spot.gold{min-height:175px}
-            .podium-spot.silver{min-height:150px}
-            .podium-spot.bronze{min-height:135px}
-            .lb-row{grid-template-columns:32px 32px 1fr auto;gap:10px;padding:10px 12px}
+            .game-selector::-webkit-scrollbar{display:none}.game-btn{flex-shrink:0}.panel-tabs{display:none}.mobile-tab-select{display:block!important}
+            .podium{gap:8px}.podium-spot{padding:14px 8px}.podium-spot.gold{min-height:175px}.podium-spot.silver{min-height:150px}.podium-spot.bronze{min-height:135px}
             .footer-links{grid-template-columns:1fr;gap:30px}
         }
     </style>
 </head>
 <body>
     <div class="page-bg"></div>
-
     <div class="page-content">
         <div id="site-header"></div>
-
         <section class="hero">
-            <div class="trophy-icon">
-                <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 8h24v4H20z" fill="#c9a800"/>
-                    <path d="M18 12h28v20c0 8-6 14-14 14s-14-6-14-14V12z" fill="#ffd700" stroke="#c9a800" stroke-width="2"/>
-                    <path d="M18 16H8c0 8 4 12 10 12v-12zM46 16h10c0 8-4 12-10 12v-12z" fill="#ffd700" stroke="#c9a800" stroke-width="2"/>
-                    <rect x="26" y="46" width="12" height="6" fill="#c9a800"/>
-                    <rect x="22" y="52" width="20" height="4" rx="1" fill="#ffd700" stroke="#c9a800" stroke-width="1"/>
-                </svg>
-            </div>
+            <div class="trophy-icon"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M20 8h24v4H20z" fill="#c9a800"/><path d="M18 12h28v20c0 8-6 14-14 14s-14-6-14-14V12z" fill="#ffd700" stroke="#c9a800" stroke-width="2"/><path d="M18 16H8c0 8 4 12 10 12v-12zM46 16h10c0 8-4 12-10 12v-12z" fill="#ffd700" stroke="#c9a800" stroke-width="2"/><rect x="26" y="46" width="12" height="6" fill="#c9a800"/><rect x="22" y="52" width="20" height="4" rx="1" fill="#ffd700" stroke="#c9a800" stroke-width="1"/></svg></div>
             <h1 class="hero-title">LEADERBOARDS</h1>
             <p class="hero-subtitle">Compete globally. Prove you're the best.</p>
         </section>
-
         <main>
             <div class="container">
                 <div class="game-categories">
                     <button class="cat-btn active" data-cat="solo">Solo Games</button>
                     <button class="cat-btn" data-cat="daily">Daily Challenge</button>
+                    <button class="cat-btn top-gamer-btn" data-cat="top-gamer">🏆 Top Gamer</button>
                 </div>
-
                 <div class="game-selector" id="solo-games">
                     <button class="game-btn active" data-game="reaction-time">⚡ Reaction</button>
                     <button class="game-btn" data-game="typing-test">⌨️ Typing</button>
@@ -237,8 +167,10 @@
                     <button class="game-btn" data-game="2048">🧩 2048</button>
                     <button class="game-btn" data-game="snake">🐍 Snake</button>
                     <button class="game-btn" data-game="minesweeper">💣 Mines</button>
+                    <button class="game-btn" data-game="sky-hop">🐦 Sky Hop</button>
+                    <button class="game-btn" data-game="highway-dodge">🚗 Highway</button>
+                    <button class="game-btn" data-game="dash-run">🏃 Dash Run</button>
                 </div>
-
                 <div class="game-selector hidden" id="daily-games">
                     <button class="game-btn featured active" data-game="connections">🔗 Connections</button>
                     <button class="game-btn featured" data-game="gamedle">🎮 Gamedle</button>
@@ -246,133 +178,35 @@
                     <button class="game-btn featured" data-game="jobdle">💼 Jobdle</button>
                     <button class="game-btn featured" data-game="weebdle">🎌 Weebdle</button>
                 </div>
-
-                <div class="variant-filter" id="duration-filter">
-                    <button class="variant-btn" data-duration="15">15s</button>
-                    <button class="variant-btn" data-duration="30">30s</button>
-                    <button class="variant-btn active" data-duration="60">60s</button>
-                    <button class="variant-btn" data-duration="120">2m</button>
+                <div class="top-gamer-info" id="top-gamer-info">
+                    <p>🏆 <strong>Top Gamer</strong> ranks players by total points earned across all solo games. Higher ranks = more points per game. Play more games to climb!</p>
                 </div>
-
-                <div class="variant-filter" id="target-filter">
-                    <button class="variant-btn" data-targets="15">15</button>
-                    <button class="variant-btn active" data-targets="30">30</button>
-                    <button class="variant-btn" data-targets="50">50</button>
-                </div>
-
-                <div class="variant-filter" id="operation-filter">
-                    <button class="variant-btn active" data-op="add">+</button>
-                    <button class="variant-btn" data-op="sub">−</button>
-                    <button class="variant-btn" data-op="mul">×</button>
-                    <button class="variant-btn" data-op="div">÷</button>
-                </div>
-
-                <div class="leaderboard-panel">
+                <div class="variant-filter" id="duration-filter"><button class="variant-btn" data-duration="15">15s</button><button class="variant-btn" data-duration="30">30s</button><button class="variant-btn active" data-duration="60">60s</button><button class="variant-btn" data-duration="120">2m</button></div>
+                <div class="variant-filter" id="target-filter"><button class="variant-btn" data-targets="15">15</button><button class="variant-btn active" data-targets="30">30</button><button class="variant-btn" data-targets="50">50</button></div>
+                <div class="variant-filter" id="operation-filter"><button class="variant-btn active" data-op="add">+</button><button class="variant-btn" data-op="sub">−</button><button class="variant-btn" data-op="mul">×</button><button class="variant-btn" data-op="div">÷</button></div>
+                <div class="leaderboard-panel" id="leaderboard-panel">
                     <div class="panel-header">
-                        <div class="panel-title">
-                            <h2>TOP PLAYERS</h2>
-                            <span class="panel-badge" id="panel-badge">Reaction Time</span>
-                        </div>
-                        <div class="panel-tabs">
-                            <button class="panel-tab active" data-type="global">Global</button>
-                            <button class="panel-tab" data-type="today">Today</button>
-                            <button class="panel-tab" data-type="week">Week</button>
-                            <button class="panel-tab friends" data-type="friends">Friends</button>
-                        </div>
-                        <select class="mobile-tab-select" id="mobile-tab-select">
-                            <option value="global">🌍 Global Rankings</option>
-                            <option value="today">📅 Today</option>
-                            <option value="week">📆 This Week</option>
-                            <option value="friends">👥 Friends</option>
-                        </select>
+                        <div class="panel-title"><h2>TOP PLAYERS</h2><span class="panel-badge" id="panel-badge">Reaction Time</span></div>
+                        <div class="panel-tabs" id="panel-tabs"><button class="panel-tab active" data-type="global">Global</button><button class="panel-tab" data-type="today">Today</button><button class="panel-tab" data-type="week">Week</button><button class="panel-tab friends" data-type="friends">Friends</button></div>
+                        <select class="mobile-tab-select" id="mobile-tab-select"><option value="global">🌍 Global Rankings</option><option value="today">📅 Today</option><option value="week">📆 This Week</option><option value="friends">👥 Friends</option></select>
                     </div>
-
                     <div class="panel-body">
-                        <div class="lb-login-gate" id="lb-login-gate" style="display:none">
-                            <h3 class="lb-login-title">Sign In to View</h3>
-                            <p class="lb-login-desc">Log in to see leaderboards, save scores, and compete globally.</p>
-                            <a href="/login.html" class="btn-gold">Log In</a>
-                        </div>
-
+                        <div class="lb-login-gate" id="lb-login-gate" style="display:none"><h3 class="lb-login-title">Sign In to View</h3><p class="lb-login-desc">Log in to see leaderboards, save scores, and compete globally.</p><a href="/login.html" class="btn-gold">Log In</a></div>
                         <div id="lb-content">
                             <div class="podium" id="podium">
-                                <div class="podium-spot silver" id="podium-2">
-                                    <div class="podium-rank">2</div>
-                                    <div class="podium-label">Silver</div>
-                                    <div class="podium-avatar">—</div>
-                                    <div class="podium-clan"></div>
-                                    <div class="podium-name">—</div>
-                                    <div class="podium-premium"></div>
-                                    <div class="podium-score">—</div>
-                                </div>
-                                <div class="podium-spot gold" id="podium-1">
-                                    <div class="podium-rank">1</div>
-                                    <div class="podium-label">Champion</div>
-                                    <div class="podium-avatar">—</div>
-                                    <div class="podium-clan"></div>
-                                    <div class="podium-name">—</div>
-                                    <div class="podium-premium"></div>
-                                    <div class="podium-score">—</div>
-                                </div>
-                                <div class="podium-spot bronze" id="podium-3">
-                                    <div class="podium-rank">3</div>
-                                    <div class="podium-label">Bronze</div>
-                                    <div class="podium-avatar">—</div>
-                                    <div class="podium-clan"></div>
-                                    <div class="podium-name">—</div>
-                                    <div class="podium-premium"></div>
-                                    <div class="podium-score">—</div>
-                                </div>
+                                <div id="podium-2"></div>
+                                <div id="podium-1"></div>
+                                <div id="podium-3"></div>
                             </div>
                             <div class="lb-list" id="lb-list"></div>
                         </div>
                     </div>
                 </div>
-
-                <div class="play-cta">
-                    <a href="/games/solo/reaction-time.html" id="play-link">
-                        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        Play Now
-                    </a>
-                </div>
+                <div class="play-cta" id="play-cta"><a href="/games/solo/reaction-time.html" id="play-link"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now</a></div>
             </div>
         </main>
-
-        <footer>
-            <div class="footer-border"></div>
-            <div class="footer-main">
-                <div class="footer-links">
-                    <div class="footer-column">
-                        <h5>GAMES</h5>
-                        <ul>
-                            <li><a href="/solo.html">Solo</a></li>
-                            <li><a href="/duos.html">Duos</a></li>
-                            <li><a href="/squad-games.html">Squad</a></li>
-                            <li><a href="/party-games.html">Party</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-column">
-                        <h5>COMMUNITY</h5>
-                        <ul>
-                            <li><a href="/leaderboards.html">Leaderboards</a></li>
-                            <li><a href="/supporters.html">Hall of Champions</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-column">
-                        <h5>COMPANY</h5>
-                        <ul>
-                            <li><a href="/about.html">About</a></li>
-                            <li><a href="/contact.html">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="footer-bottom">
-                    <p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p>
-                </div>
-            </div>
-        </footer>
+        <footer><div class="footer-border"></div><div class="footer-main"><div class="footer-links"><div class="footer-column"><h5>GAMES</h5><ul><li><a href="/solo.html">Solo</a></li><li><a href="/duos.html">Duos</a></li><li><a href="/squad-games.html">Squad</a></li><li><a href="/party-games.html">Party</a></li></ul></div><div class="footer-column"><h5>COMMUNITY</h5><ul><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/supporters.html">Hall of Champions</a></li></ul></div><div class="footer-column"><h5>COMPANY</h5><ul><li><a href="/about.html">About</a></li><li><a href="/contact.html">Contact</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copyright">© 2025 TheGaming.co — Free games, forever.</p></div></div></footer>
     </div>
-
     <script src="/header.js"></script>
     <script>
     (function() {
@@ -393,6 +227,9 @@
             '2048': { name: '2048', unit: 'Score', asc: false, url: '/2048.html', table: 'solo_scores' },
             'snake': { name: 'Snake', unit: 'Score', asc: false, url: '/snake.html', table: 'solo_scores' },
             'minesweeper': { name: 'Minesweeper', unit: 'sec', asc: true, url: '/minesweeper.html', table: 'solo_scores' },
+            'sky-hop': { name: 'Sky Hop', unit: 'Score', asc: false, url: '/games/solo/sky-hop.html', table: 'solo_scores' },
+            'highway-dodge': { name: 'Highway Dodge', unit: 'Score', asc: false, url: '/games/solo/highway-dodge.html', table: 'solo_scores' },
+            'dash-run': { name: 'Dash Run', unit: 'Score', asc: false, url: '/games/solo/dash-run.html', table: 'solo_scores' },
             'connections': { name: 'Connections', unit: 'Score', asc: true, url: '/connections.html', table: 'daily_scores', daily: true },
             'gamedle': { name: 'Gamedle', unit: 'Guesses', asc: true, url: '/gamedle.html', table: 'daily_scores', daily: true },
             'athletedle': { name: 'Athletedle', unit: 'Guesses', asc: true, url: '/athletedle.html', table: 'daily_scores', daily: true },
@@ -400,332 +237,234 @@
             'weebdle': { name: 'Weebdle', unit: 'Guesses', asc: true, url: '/weebdle.html', table: 'daily_scores', daily: true }
         };
 
-        let cat = 'solo', game = 'reaction-time', duration = 60, targets = 30, op = 'add', tab = 'global';
-        let loggedIn = false, userId = null, friends = [];
+        const TOP_GAMER_GAMES = ['reaction-time','typing-test-60','aim-trainer-30','chimp-test','number-memory','sequence-memory','visual-memory','verbal-memory','math-speed-add','2048','snake','sky-hop','highway-dodge','dash-run'];
+        const ASC_GAMES = ['reaction-time','minesweeper'];
+        const TIER_POINTS = {top1:1000, top5:800, top10:600, top25:400, top50:200, rest:100};
 
-        const $ = s => document.querySelector(s);
-        const $$ = s => document.querySelectorAll(s);
+        const COSMETIC_COLORS = window.TGCOCosmetics ? window.TGCOCosmetics.COSMETIC_COLORS : {
+            gray: '#6b7280', gold: '#fbbf24', diamond: '#67e8f9', ruby: '#f87171',
+            emerald: '#34d399', amethyst: '#c084fc', platinum: '#e2e8f0',
+            obsidian: '#1e1b4b', rose: '#fb7185', sunset: '#f97316', toxic: '#84cc16',
+            rainbow: '#c084fc'
+        };
 
-        const soloEl = $('#solo-games');
-        const dailyEl = $('#daily-games');
-        const durFilter = $('#duration-filter');
-        const tgtFilter = $('#target-filter');
-        const opFilter = $('#operation-filter');
-        const badge = $('#panel-badge');
-        const mobSelect = $('#mobile-tab-select');
-        const gate = $('#lb-login-gate');
-        const content = $('#lb-content');
-        const list = $('#lb-list');
-        const playLink = $('#play-link');
+        let cat='solo', game='reaction-time', duration=60, targets=30, op='add', tab='global';
+        let loggedIn=false, userId=null, friends=[];
 
-        // Category clicks
-        $$('.cat-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                cat = this.dataset.cat;
-                $$('.cat-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                if (cat === 'solo') {
-                    soloEl.classList.remove('hidden');
-                    dailyEl.classList.add('hidden');
-                    game = 'reaction-time';
-                } else {
-                    soloEl.classList.add('hidden');
-                    dailyEl.classList.remove('hidden');
-                    game = 'connections';
-                }
-                
-                $$('.game-btn').forEach(b => b.classList.remove('active'));
-                $(`[data-game="${game}"]`).classList.add('active');
-                updateUI();
-                load();
-            });
-        });
+        const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+        const soloEl=$('#solo-games'), dailyEl=$('#daily-games'), topGamerInfo=$('#top-gamer-info');
+        const durFilter=$('#duration-filter'), tgtFilter=$('#target-filter'), opFilter=$('#operation-filter');
+        const badge=$('#panel-badge'), panelTabs=$('#panel-tabs'), mobSelect=$('#mobile-tab-select');
+        const gate=$('#lb-login-gate'), content=$('#lb-content'), list=$('#lb-list');
+        const playLink=$('#play-link'), playCta=$('#play-cta'), panel=$('#leaderboard-panel');
 
-        // Game clicks
-        $$('.game-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                game = this.dataset.game;
-                $$('.game-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                updateUI();
-                load();
-            });
-        });
+        $$('.cat-btn').forEach(btn=>{btn.addEventListener('click',function(){
+            cat=this.dataset.cat;
+            $$('.cat-btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            if(cat==='solo'){soloEl.classList.remove('hidden');dailyEl.classList.add('hidden');topGamerInfo.classList.remove('show');panelTabs.style.display='';mobSelect.style.display='';playCta.style.display='';panel.classList.remove('top-gamer-panel');game='reaction-time';}
+            else if(cat==='daily'){soloEl.classList.add('hidden');dailyEl.classList.remove('hidden');topGamerInfo.classList.remove('show');panelTabs.style.display='';mobSelect.style.display='';playCta.style.display='';panel.classList.remove('top-gamer-panel');game='connections';}
+            else if(cat==='top-gamer'){soloEl.classList.add('hidden');dailyEl.classList.add('hidden');topGamerInfo.classList.add('show');panelTabs.style.display='none';mobSelect.style.display='none';playCta.style.display='none';panel.classList.add('top-gamer-panel');game=null;}
+            $$('.game-btn').forEach(b=>b.classList.remove('active'));
+            if(game)$(`[data-game="${game}"]`)?.classList.add('active');
+            updateUI();load();
+        });});
+        $$('.game-btn').forEach(btn=>{btn.addEventListener('click',function(){game=this.dataset.game;$$('.game-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
+        durFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){duration=parseInt(this.dataset.duration);durFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
+        tgtFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){targets=parseInt(this.dataset.targets);tgtFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
+        opFilter.querySelectorAll('.variant-btn').forEach(btn=>{btn.addEventListener('click',function(){op=this.dataset.op;opFilter.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateUI();load();});});
+        $$('.panel-tab').forEach(btn=>{btn.addEventListener('click',function(){tab=this.dataset.type;$$('.panel-tab').forEach(b=>b.classList.remove('active'));this.classList.add('active');mobSelect.value=tab;load();});});
+        mobSelect.addEventListener('change',function(){tab=this.value;$$('.panel-tab').forEach(b=>b.classList.toggle('active',b.dataset.type===tab));load();});
 
-        // Duration filter
-        durFilter.querySelectorAll('.variant-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                duration = parseInt(this.dataset.duration);
-                durFilter.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                updateUI();
-                load();
-            });
-        });
-
-        // Target filter
-        tgtFilter.querySelectorAll('.variant-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                targets = parseInt(this.dataset.targets);
-                tgtFilter.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                updateUI();
-                load();
-            });
-        });
-
-        // Op filter
-        opFilter.querySelectorAll('.variant-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                op = this.dataset.op;
-                opFilter.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                updateUI();
-                load();
-            });
-        });
-
-        // Tab clicks
-        $$('.panel-tab').forEach(btn => {
-            btn.addEventListener('click', function() {
-                tab = this.dataset.type;
-                $$('.panel-tab').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                mobSelect.value = tab;
-                load();
-            });
-        });
-
-        mobSelect.addEventListener('change', function() {
-            tab = this.value;
-            $$('.panel-tab').forEach(b => b.classList.toggle('active', b.dataset.type === tab));
-            load();
-        });
-
-        function updateUI() {
-            const g = GAMES[game];
-            durFilter.classList.toggle('show', !!g.durations);
-            tgtFilter.classList.toggle('show', !!g.targets);
-            opFilter.classList.toggle('show', !!g.ops);
-            
-            let b = g.name;
-            if (g.durations) b += duration >= 60 ? ` • ${duration/60}m` : ` • ${duration}s`;
-            if (g.targets) b += ` • ${targets}`;
-            if (g.ops) b += ` • ${({add:'+',sub:'−',mul:'×',div:'÷'})[op]}`;
-            badge.textContent = b;
-            playLink.href = g.url;
+        function updateUI(){
+            if(cat==='top-gamer'){badge.textContent='Total Score';badge.classList.add('top-gamer');durFilter.classList.remove('show');tgtFilter.classList.remove('show');opFilter.classList.remove('show');return;}
+            badge.classList.remove('top-gamer');
+            const g=GAMES[game];if(!g)return;
+            durFilter.classList.toggle('show',!!g.durations);tgtFilter.classList.toggle('show',!!g.targets);opFilter.classList.toggle('show',!!g.ops);
+            let b=g.name;
+            if(g.durations)b+=duration>=60?` • ${duration/60}m`:` • ${duration}s`;
+            if(g.targets)b+=` • ${targets}`;
+            if(g.ops)b+=` • ${({add:'+',sub:'−',mul:'×',div:'÷'})[op]}`;
+            badge.textContent=b;playLink.href=g.url;
         }
+        function getGameId(){if(game==='typing-test')return`typing-test-${duration}`;if(game==='aim-trainer')return`aim-trainer-${targets}`;if(game==='math-speed')return`math-speed-${op}`;return game;}
+        function clearPodium(){[1,2,3].forEach(i=>{const c=$(`#podium-${i}`);if(c)c.innerHTML='';});}
+        function getName(p,uid){if(p&&p.display_name)return p.display_name;if(p&&p.gamer_tag)return p.gamer_tag;return'Player_'+uid.substring(0,6);}
+        function isPremium(p){return p&&p.is_premium===true;}
+        function fmtScore(e,g){return`${e.score} ${g.unit}`;}
+        function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 
-        function getGameId() {
-            if (game === 'typing-test') return `typing-test-${duration}`;
-            if (game === 'aim-trainer') return `aim-trainer-${targets}`;
-            if (game === 'math-speed') return `math-speed-${op}`;
-            return game;
-        }
-
-        function clearPodium() {
-            [1,2,3].forEach(i => {
-                const s = $(`#podium-${i}`);
-                s.querySelector('.podium-avatar').textContent = '—';
-                s.querySelector('.podium-clan').innerHTML = '';
-                s.querySelector('.podium-name').textContent = '—';
-                s.querySelector('.podium-name').className = 'podium-name';
-                s.querySelector('.podium-premium').innerHTML = '';
-                s.querySelector('.podium-score').textContent = '—';
-            });
-        }
-
-        async function load() {
-            if (!loggedIn) return;
-            
-            clearPodium();
-            list.innerHTML = '<div class="lb-empty">Loading...</div>';
-            
-            const g = GAMES[game];
-            const gid = getGameId();
-            
+        async function load(){
+            if(!loggedIn)return;
+            if(cat==='top-gamer'){loadTopGamer();return;}
+            clearPodium();list.innerHTML='<div class="lb-empty">Loading...</div>';
+            const g=GAMES[game];if(!g)return;
+            const gid=getGameId();
             let q;
-            if (g.daily) {
-                q = sb.from(g.table).select('score,user_id,puzzle_date').eq('game_type', game);
-            } else {
-                q = sb.from(g.table).select('score,user_id,created_at').eq('game_id', gid);
-            }
-            
-            q = q.order('score', { ascending: g.asc }).limit(100);
-            
-            if (tab === 'today') {
-                const t = new Date(); t.setHours(0,0,0,0);
-                q = g.daily ? q.eq('puzzle_date', t.toISOString().split('T')[0]) : q.gte('created_at', t.toISOString());
-            } else if (tab === 'week') {
-                const w = new Date(); w.setDate(w.getDate() - 7);
-                q = g.daily ? q.gte('puzzle_date', w.toISOString().split('T')[0]) : q.gte('created_at', w.toISOString());
-            } else if (tab === 'friends') {
-                if (!friends.length) {
-                    $('#podium').style.display = 'none';
-                    list.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">👥</div>Add friends to see their scores here.</div>';
-                    return;
-                }
-                q = q.in('user_id', [...friends, userId]);
-            }
-            
-            const { data, error } = await q;
-            
-            if (error || !data || !data.length) {
-                clearPodium();
-                list.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet. Be the first!</div>';
-                return;
-            }
-            
-            // Dedupe
-            const best = new Map();
-            data.forEach(e => { if (!best.has(e.user_id)) best.set(e.user_id, e); });
-            const rows = Array.from(best.values());
-            
-            // Get profiles
-            const ids = rows.map(r => r.user_id);
-            const { data: profs } = await sb.from('profiles').select('*').in('id', ids);
-            
-            const pm = {};
-            if (profs && profs.length > 0) {
-                profs.forEach(p => pm[p.id] = p);
-            }
-            
-            render(rows, pm, g);
+            if(g.daily){q=sb.from(g.table).select('score,user_id,puzzle_date').eq('game_type',game);}
+            else{q=sb.from(g.table).select('score,user_id,created_at').eq('game_id',gid);}
+            q=q.order('score',{ascending:g.asc}).limit(100);
+            if(tab==='today'){const t=new Date();t.setHours(0,0,0,0);q=g.daily?q.eq('puzzle_date',t.toISOString().split('T')[0]):q.gte('created_at',t.toISOString());}
+            else if(tab==='week'){const w=new Date();w.setDate(w.getDate()-7);q=g.daily?q.gte('puzzle_date',w.toISOString().split('T')[0]):q.gte('created_at',w.toISOString());}
+            else if(tab==='friends'){if(!friends.length){$('#podium').style.display='none';list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">👥</div>Add friends to see their scores here.</div>';return;}q=q.in('user_id',[...friends,userId]);}
+            const{data,error}=await q;
+            if(error||!data||!data.length){clearPodium();list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet. Be the first!</div>';return;}
+            const best=new Map();data.forEach(e=>{if(!best.has(e.user_id))best.set(e.user_id,e);});
+            const rows=Array.from(best.values());
+            const ids=rows.map(r=>r.user_id);
+            const{data:profs}=await sb.from('profiles').select('id,display_name,gamer_tag,cosmetics,is_premium,xp,prestige').in('id',ids);
+            const pm={};if(profs)profs.forEach(p=>pm[p.id]=p);
+            render(rows,pm,g);
         }
 
-        function getName(p, uid) {
-            if (p && p.display_name) return p.display_name;
-            if (p && p.gamer_tag) return p.gamer_tag;
-            return 'Player_' + uid.substring(0, 6);
+        async function loadTopGamer(){
+            clearPodium();list.innerHTML='<div class="lb-empty">Calculating rankings...</div>';
+            const{data:allScores,error}=await sb.from('solo_scores').select('score,user_id,game_id').in('game_id',TOP_GAMER_GAMES);
+            if(error||!allScores||!allScores.length){list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🏆</div>No scores yet!</div>';return;}
+            const gameScores={};TOP_GAMER_GAMES.forEach(gid=>gameScores[gid]=new Map());
+            allScores.forEach(s=>{if(gameScores[s.game_id]){const existing=gameScores[s.game_id].get(s.user_id);const isAsc=ASC_GAMES.includes(s.game_id);if(!existing||(isAsc?s.score<existing:s.score>existing)){gameScores[s.game_id].set(s.user_id,s.score);}}});
+            const userPoints=new Map();
+            TOP_GAMER_GAMES.forEach(gid=>{
+                const scores=Array.from(gameScores[gid].entries());
+                if(scores.length===0)return;
+                const isAsc=ASC_GAMES.includes(gid);
+                scores.sort((a,b)=>isAsc?a[1]-b[1]:b[1]-a[1]);
+                const total=scores.length;
+                scores.forEach(([uid],idx)=>{
+                    const rank=idx+1;const pct=rank/total;
+                    let pts=TIER_POINTS.rest;
+                    if(pct<=0.01)pts=TIER_POINTS.top1;
+                    else if(pct<=0.05)pts=TIER_POINTS.top5;
+                    else if(pct<=0.10)pts=TIER_POINTS.top10;
+                    else if(pct<=0.25)pts=TIER_POINTS.top25;
+                    else if(pct<=0.50)pts=TIER_POINTS.top50;
+                    if(!userPoints.has(uid))userPoints.set(uid,{total:0,count:0});
+                    const u=userPoints.get(uid);u.total+=pts;u.count++;
+                });
+            });
+            const rankings=[];
+            userPoints.forEach((data,uid)=>{if(data.count>=3){rankings.push({user_id:uid,totalPoints:data.total,gamesPlayed:data.count});}});
+            rankings.sort((a,b)=>b.totalPoints-a.totalPoints);
+            if(rankings.length===0){list.innerHTML='<div class="lb-empty"><div class="lb-empty-icon">🎮</div>Play at least 3 different games to appear on Top Gamer rankings!</div>';return;}
+            const ids=rankings.map(r=>r.user_id);
+            const{data:profs}=await sb.from('profiles').select('id,display_name,gamer_tag,cosmetics,is_premium,xp,prestige').in('id',ids);
+            const pm={};if(profs)profs.forEach(p=>pm[p.id]=p);
+            renderTopGamer(rankings,pm);
         }
 
-        function clanTag(p) {
-            if (!p || !p.clan_tag) return '';
-            return `<span class="clan-tag ${p.clan_color || 'gold'}">[${esc(p.clan_tag)}]</span>`;
-        }
-
-        function premBadge(p) {
-            if (!p || !p.is_premium) return '';
-            return '<span class="premium-badge gold">👑 PREMIUM</span>';
-        }
-
-        function nameClass(p) {
-            if (!p || !p.name_effect) return '';
-            return 'name-' + p.name_effect;
-        }
-
-        function fmtScore(e, g) {
-            return `${e.score} ${g.unit}`;
-        }
-
-        function esc(t) {
-            const d = document.createElement('div');
-            d.textContent = t;
-            return d.innerHTML;
-        }
-
-        function render(rows, pm, g) {
-            $('#podium').style.display = 'grid';
+        function render(rows,pm,g){
+            $('#podium').style.display='grid';
             
-            // Podium
-            [1,2,3].forEach(r => {
-                const e = rows[r-1];
-                const s = $(`#podium-${r}`);
-                if (e) {
-                    const p = pm[e.user_id];
-                    const n = getName(p, e.user_id);
-                    s.querySelector('.podium-avatar').textContent = n.charAt(0).toUpperCase();
-                    s.querySelector('.podium-clan').innerHTML = clanTag(p);
-                    const ne = s.querySelector('.podium-name');
-                    ne.textContent = n;
-                    ne.className = 'podium-name ' + nameClass(p);
-                    s.querySelector('.podium-premium').innerHTML = premBadge(p);
-                    s.querySelector('.podium-score').textContent = fmtScore(e, g);
+            // Render podium spots using cosmetics renderer
+            [1,2,3].forEach(r=>{
+                const e=rows[r-1];
+                const container=$(`#podium-${r}`);
+                if(e){
+                    const p=pm[e.user_id];
+                    const n=getName(p,e.user_id);
+                    const level=p&&p.xp?window.TGCOCosmetics.getLevelFromXP(p.xp):1;
+                    container.innerHTML=window.TGCOCosmetics.renderPodiumItem({
+                        name:n,
+                        score:e.score,
+                        rank:r,
+                        cosmetics:p?.cosmetics||{},
+                        isPremium:isPremium(p),
+                        level:level,
+                        prestige:p?.prestige||0,
+                        scoreUnit:g.unit
+                    });
+                } else {
+                    container.innerHTML='';
                 }
             });
             
-            // List
-            list.innerHTML = '';
-            if (rows.length <= 3) {
-                list.innerHTML = '<div class="lb-empty" style="padding:20px">More players needed!</div>';
-                return;
-            }
+            list.innerHTML='';
+            if(rows.length<=3){list.innerHTML='<div class="lb-empty" style="padding:20px">More players needed!</div>';return;}
             
-            rows.slice(3).forEach((e, i) => {
-                const p = pm[e.user_id];
-                const n = getName(p, e.user_id);
-                const me = e.user_id === userId;
-                const dt = new Date(e.created_at || e.puzzle_date).toLocaleDateString('en-US', {month:'short',day:'numeric'});
-                
-                let cls = 'lb-row';
-                if (me) cls += ' you';
-                else if (p && p.is_premium) cls += ' premium-gold';
-                
-                const row = document.createElement('div');
-                row.className = cls;
-                row.innerHTML = `
-                    <div class="lb-rank">${i+4}</div>
-                    <div class="lb-avatar">${esc(n.charAt(0).toUpperCase())}</div>
-                    <div class="lb-player">
-                        <div class="lb-name-row">
-                            ${clanTag(p)}
-                            <span class="lb-name ${nameClass(p)}">${esc(n)}</span>
-                            ${premBadge(p)}
-                        </div>
-                        <div class="lb-meta">
-                            ${me ? '<span class="lb-you-badge">You</span>' : `<span class="lb-date">${dt}</span>`}
-                        </div>
-                    </div>
-                    <div class="lb-score">${fmtScore(e, g)}</div>
-                `;
-                list.appendChild(row);
+            // Use cosmetics renderer for list items
+            rows.slice(3).forEach((e,i)=>{
+                const p=pm[e.user_id];
+                const n=getName(p,e.user_id);
+                const me=e.user_id===userId;
+                const level=p&&p.xp?window.TGCOCosmetics.getLevelFromXP(p.xp):1;
+                const row=document.createElement('div');
+                row.innerHTML=window.TGCOCosmetics.renderLeaderboardItem({
+                    name:n,
+                    score:e.score,
+                    rank:i+4,
+                    cosmetics:p?.cosmetics||{},
+                    isPremium:isPremium(p),
+                    level:level,
+                    prestige:p?.prestige||0,
+                    isMe:me,
+                    showRankStyling:true
+                });
+                list.appendChild(row.firstElementChild);
             });
         }
 
-        async function init() {
-            try {
-                const { data } = await sb.auth.getSession();
-                if (data && data.session && data.session.user) {
-                    loggedIn = true;
-                    userId = data.session.user.id;
-                    
-                    // Load friends
-                    const { data: fr } = await sb.from('friendships')
-                        .select('user_id,friend_id')
-                        .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
-                        .eq('status', 'accepted');
-                    if (fr) friends = fr.map(f => f.user_id === userId ? f.friend_id : f.user_id);
-                }
-            } catch(e) {}
+        function renderTopGamer(rankings,pm){
+            $('#podium').style.display='grid';
             
-            if (loggedIn) {
-                content.style.display = 'block';
-                gate.style.display = 'none';
-                load();
-            } else {
-                content.style.display = 'none';
-                gate.style.display = 'block';
-            }
+            // Render podium spots using cosmetics renderer
+            [1,2,3].forEach(r=>{
+                const e=rankings[r-1];
+                const container=$(`#podium-${r}`);
+                if(e){
+                    const p=pm[e.user_id];
+                    const n=getName(p,e.user_id);
+                    const level=p&&p.xp?window.TGCOCosmetics.getLevelFromXP(p.xp):1;
+                    container.innerHTML=window.TGCOCosmetics.renderPodiumItem({
+                        name:n,
+                        score:e.totalPoints,
+                        rank:r,
+                        cosmetics:p?.cosmetics||{},
+                        isPremium:isPremium(p),
+                        level:level,
+                        prestige:p?.prestige||0,
+                        scoreUnit:'pts',
+                        meta:`${e.gamesPlayed} games`
+                    });
+                } else {
+                    container.innerHTML='';
+                }
+            });
+            
+            list.innerHTML='';
+            if(rankings.length<=3){list.innerHTML='<div class="lb-empty" style="padding:20px">More players needed!</div>';return;}
+            
+            // Use cosmetics renderer for list items
+            rankings.slice(3).forEach((e,i)=>{
+                const p=pm[e.user_id];
+                const n=getName(p,e.user_id);
+                const me=e.user_id===userId;
+                const level=p&&p.xp?window.TGCOCosmetics.getLevelFromXP(p.xp):1;
+                const row=document.createElement('div');
+                row.innerHTML=window.TGCOCosmetics.renderLeaderboardItem({
+                    name:n,
+                    score:e.totalPoints,
+                    rank:i+4,
+                    cosmetics:p?.cosmetics||{},
+                    isPremium:isPremium(p),
+                    level:level,
+                    prestige:p?.prestige||0,
+                    isMe:me,
+                    showRankStyling:true
+                });
+                list.appendChild(row.firstElementChild);
+            });
         }
 
-        sb.auth.onAuthStateChange((ev, sess) => {
-            if (sess && sess.user) {
-                loggedIn = true;
-                userId = sess.user.id;
-                content.style.display = 'block';
-                gate.style.display = 'none';
-                load();
-            } else {
-                loggedIn = false;
-                userId = null;
-                content.style.display = 'none';
-                gate.style.display = 'block';
-            }
-        });
-
-        updateUI();
-        init();
+        async function init(){
+            try{const{data}=await sb.auth.getSession();
+            if(data&&data.session&&data.session.user){loggedIn=true;userId=data.session.user.id;
+            const{data:fr}=await sb.from('friendships').select('user_id,friend_id').or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+            if(fr)friends=fr.map(f=>f.user_id===userId?f.friend_id:f.user_id);}}catch(e){}
+            if(loggedIn){content.style.display='block';gate.style.display='none';load();}
+            else{content.style.display='none';gate.style.display='block';}
+        }
+        sb.auth.onAuthStateChange((ev,sess)=>{if(sess&&sess.user){loggedIn=true;userId=sess.user.id;content.style.display='block';gate.style.display='none';load();}else{loggedIn=false;userId=null;content.style.display='none';gate.style.display='block';}});
+        updateUI();init();
     })();
     </script>
 </body>

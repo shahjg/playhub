@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0">
+    <title>Dash Run – Endless Runner Game | TheGaming.co</title>
+    <meta name="description" content="Jump and slide to survive as long as you can!">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent:#f97316;--accent-dark:#ea580c;--accent-light:#ffedd5;
+            --gold:#ffd700;--text-dark:#1a1a2e;--text-muted:#6b7280;
+        }
+        html{
+            -webkit-tap-highlight-color:transparent;
+            touch-action:manipulation;
+            overscroll-behavior:none;
+        }
+        body{
+            font-family:'Inter',sans-serif;
+            background:linear-gradient(135deg,#fef3c7 0%,#fed7aa 50%,#fef3c7 100%);
+            color:var(--text-dark);
+            min-height:100vh;
+            min-height:100dvh;
+            min-height:-webkit-fill-available;
+            display:flex;
+            flex-direction:column;
+            overflow-x:hidden;
+            overscroll-behavior:none;
+            -webkit-overflow-scrolling:touch;
+        }
+        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        a{color:inherit;text-decoration:none}
+
+        main{
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            padding-top:60px;
+            padding-bottom:env(safe-area-inset-bottom,20px);
+        }
+        
+        .game-hero{
+            background:radial-gradient(circle at 10% 0%,#ea580c 0%,#f97316 50%,#fb923c 100%);
+            padding:clamp(20px,5vw,35px) 20px;
+            text-align:center;
+            position:relative;
+            overflow:hidden;
+        }
+        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,0.2) 0%,transparent 55%)}
+        .game-hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .game-icon{
+            width:clamp(45px,12vw,60px);
+            height:clamp(45px,12vw,60px);
+            margin:0 auto 10px;
+            animation:iconFloat 3s ease-in-out infinite;
+        }
+        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+        .game-hero-title{
+            font-size:clamp(1.8rem,7vw,3.5rem);
+            line-height:0.95;
+            margin-bottom:4px;
+            background:linear-gradient(135deg,#fff,var(--accent-light),#fff);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            background-clip:text;
+            letter-spacing:3px;
+        }
+        .game-hero-desc{font-size:clamp(0.7rem,2.5vw,0.85rem);color:rgba(255,255,255,0.8)}
+
+        .game-wrapper{
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            padding:clamp(12px,3vw,25px) clamp(10px,3vw,15px) clamp(20px,5vw,40px);
+        }
+        .game-container{
+            width:100%;
+            max-width:500px;
+            display:flex;
+            flex-direction:column;
+            gap:clamp(10px,2.5vw,16px);
+        }
+
+        .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,2vw,10px)}
+        .stat-card{
+            background:#fff;
+            border:2px solid rgba(249,115,22,0.2);
+            border-radius:clamp(10px,3vw,14px);
+            padding:clamp(6px,2vw,10px) clamp(4px,1.5vw,8px);
+            text-align:center;
+            box-shadow:0 2px 12px rgba(249,115,22,0.08);
+        }
+        .stat-label{
+            font-size:clamp(0.5rem,1.8vw,0.6rem);
+            font-weight:600;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:var(--text-muted);
+            margin-bottom:2px;
+        }
+        .stat-value{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:clamp(1.1rem,4vw,1.4rem);
+            letter-spacing:1px;
+            color:var(--accent);
+        }
+        .stat-value.best{color:var(--gold)}
+
+        .game-board{
+            background:#fff;
+            border-radius:clamp(14px,4vw,20px);
+            border:3px solid rgba(249,115,22,0.3);
+            padding:clamp(8px,2vw,12px);
+            box-shadow:0 8px 30px rgba(249,115,22,0.12);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+        }
+        
+        .canvas-wrapper{
+            position:relative;
+            border-radius:clamp(8px,2vw,12px);
+            overflow:hidden;
+            touch-action:none;
+            -webkit-touch-callout:none;
+            -webkit-user-select:none;
+            user-select:none;
+            width:100%;
+            aspect-ratio:5/3;
+            max-height:50vh;
+            background:#87ceeb;
+        }
+        #canvas{
+            display:block;
+            width:100%;
+            height:100%;
+            border-radius:inherit;
+        }
+        
+        .game-overlay{
+            position:absolute;
+            inset:0;
+            background:rgba(0,0,0,0.85);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            text-align:center;
+            padding:clamp(15px,4vw,25px);
+            border-radius:inherit;
+            backdrop-filter:blur(6px);
+            -webkit-backdrop-filter:blur(6px);
+        }
+        .game-overlay.hidden{display:none}
+        .overlay-title{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:clamp(1.6rem,6vw,2.4rem);
+            letter-spacing:3px;
+            color:#fff;
+            margin-bottom:6px;
+        }
+        .overlay-title.gameover{color:#ef4444}
+        .overlay-title.start{
+            background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+        .overlay-score{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:clamp(2.5rem,10vw,3.5rem);
+            color:var(--gold);
+            margin:10px 0;
+        }
+        .overlay-text{
+            color:rgba(255,255,255,0.7);
+            font-size:clamp(0.7rem,2.5vw,0.85rem);
+            margin-bottom:clamp(12px,3vw,18px);
+            line-height:1.4;
+        }
+        .new-best{color:var(--gold);font-weight:700;margin-bottom:10px;font-size:clamp(0.85rem,3vw,1rem)}
+        .btn{
+            padding:clamp(10px,3vw,14px) clamp(20px,6vw,32px);
+            border-radius:50px;
+            border:none;
+            font-weight:700;
+            font-size:clamp(0.8rem,3vw,0.95rem);
+            cursor:pointer;
+            transition:all 0.3s;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            font-family:'Inter',sans-serif;
+        }
+        .btn-primary{
+            background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+            color:#fff;
+            box-shadow:0 6px 20px rgba(249,115,22,0.35);
+        }
+        .btn-primary:active{
+            transform:scale(0.96);
+        }
+
+        .controls-hint{
+            margin-top:clamp(8px,2vw,12px);
+            font-size:clamp(0.65rem,2vw,0.75rem);
+            color:var(--text-muted);
+            text-align:center;
+            display:flex;
+            gap:15px;
+            justify-content:center;
+            flex-wrap:wrap;
+        }
+        .controls-hint span{
+            display:flex;
+            align-items:center;
+            gap:4px;
+        }
+
+        .get-ready{
+            position:absolute;
+            inset:0;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            background:rgba(0,0,0,0.4);
+            border-radius:inherit;
+            backdrop-filter:blur(3px);
+            -webkit-backdrop-filter:blur(3px);
+        }
+        .get-ready.show{display:flex}
+        .get-ready-text{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:clamp(2rem,10vw,3rem);
+            color:#fff;
+            text-shadow:0 4px 25px rgba(0,0,0,0.6);
+            animation:pulse 0.5s ease-in-out infinite alternate;
+        }
+        .get-ready-hint{
+            font-size:clamp(0.75rem,2.5vw,0.9rem);
+            color:rgba(255,255,255,0.9);
+            margin-top:8px;
+        }
+        @keyframes pulse{0%{transform:scale(1)}100%{transform:scale(1.06)}}
+
+        .leaderboard-section{
+            background:#fff;
+            border:2px solid rgba(249,115,22,0.2);
+            border-radius:clamp(12px,3vw,18px);
+            padding:clamp(12px,3vw,18px);
+            box-shadow:0 8px 30px rgba(249,115,22,0.12);
+        }
+        .lb-header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:clamp(10px,2.5vw,14px);
+            padding-bottom:clamp(8px,2vw,10px);
+            border-bottom:2px solid rgba(249,115,22,0.15);
+            flex-wrap:wrap;
+            gap:8px;
+        }
+        .lb-title{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:clamp(1rem,3.5vw,1.3rem);
+            letter-spacing:2px;
+        }
+        .lb-tabs{
+            display:flex;
+            gap:4px;
+            background:rgba(249,115,22,0.08);
+            padding:3px;
+            border-radius:10px;
+        }
+        .lb-tab{
+            padding:clamp(4px,1.5vw,6px) clamp(8px,2.5vw,12px);
+            border-radius:7px;
+            font-size:clamp(0.6rem,2vw,0.7rem);
+            font-weight:600;
+            text-transform:uppercase;
+            cursor:pointer;
+            color:var(--text-muted);
+            background:transparent;
+            border:none;
+        }
+        .lb-tab:hover{color:var(--accent)}
+        .lb-tab.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(249,115,22,0.15)}
+        .lb-list{display:flex;flex-direction:column;gap:5px}
+        .lb-row{
+            display:flex;
+            align-items:center;
+            gap:clamp(6px,2vw,10px);
+            padding:clamp(6px,2vw,8px) clamp(8px,2.5vw,12px);
+            background:rgba(249,115,22,0.05);
+            border-radius:10px;
+            border:1px solid transparent;
+        }
+        .lb-row:hover{background:rgba(249,115,22,0.1)}
+        .lb-row.top-1{background:linear-gradient(90deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05));border:2px solid rgba(255,215,0,0.4)}
+        .lb-row.top-2{background:linear-gradient(90deg,rgba(192,192,192,0.12),rgba(192,192,192,0.04));border:2px solid rgba(192,192,192,0.3)}
+        .lb-row.top-3{background:linear-gradient(90deg,rgba(205,127,50,0.12),rgba(205,127,50,0.04));border:2px solid rgba(205,127,50,0.3)}
+        .lb-row.premium-row{background:linear-gradient(90deg,rgba(251,191,36,0.12),rgba(251,191,36,0.03))!important;border:1px solid rgba(251,191,36,0.3)!important;box-shadow:0 0 15px rgba(251,191,36,0.1)}
+        .lb-rank{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:clamp(0.9rem,3vw,1.1rem);
+            width:clamp(22px,6vw,28px);
+            color:var(--text-muted);
+        }
+        .lb-row.top-1 .lb-rank{color:#ffd700}
+        .lb-row.top-2 .lb-rank{color:#c0c0c0}
+        .lb-row.top-3 .lb-rank{color:#cd7f32}
+        .lb-avatar{
+            width:clamp(22px,6vw,28px);
+            height:clamp(22px,6vw,28px);
+            border-radius:50%;
+            background:linear-gradient(135deg,#ec4899,#8b5cf6);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:clamp(0.55rem,2vw,0.7rem);
+            font-weight:700;
+            color:#fff;
+        }
+        .lb-avatar.premium{background:linear-gradient(135deg,#fbbf24,#f59e0b)!important;box-shadow:0 0 20px rgba(251,191,36,0.5),0 0 40px rgba(251,191,36,0.2)!important}
+        .lb-name{flex:1;font-weight:600;font-size:clamp(0.7rem,2.5vw,0.8rem)}
+        .lb-name.premium{background:linear-gradient(90deg,var(--gold),#f59e0b,#fcd34d,var(--gold))!important;background-size:200% auto!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;animation:goldShimmer 3s linear infinite!important;font-weight:700!important}
+        @keyframes goldShimmer{0%{background-position:0% center}100%{background-position:200% center}}
+        .lb-score{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.9rem,3vw,1.1rem);color:var(--accent)}
+        .lb-empty{text-align:center;padding:clamp(12px,4vw,20px);color:var(--text-muted);font-size:clamp(0.7rem,2.5vw,0.8rem)}
+
+        /* Small phone optimizations */
+        @media (max-height:600px){
+            .game-hero{padding:12px 15px}
+            .game-wrapper{padding:8px 10px 15px}
+            .game-container{gap:8px}
+            .canvas-wrapper{max-height:45vh}
+        }
+        
+        /* Landscape mode */
+        @media (orientation:landscape) and (max-height:500px){
+            main{padding-top:50px}
+            .game-hero{padding:8px 15px}
+            .game-hero-title{font-size:1.5rem}
+            .game-icon{display:none}
+            .game-hero-desc{display:none}
+            .stats-bar{gap:5px}
+            .stat-card{padding:4px 6px}
+            .canvas-wrapper{max-height:60vh}
+        }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main>
+        <section class="game-hero">
+            <div class="game-hero-content">
+                <svg class="game-icon" viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="35" r="20" fill="#fbbf24"/>
+                    <rect x="40" y="55" width="20" height="30" rx="5" fill="#f97316"/>
+                    <rect x="35" y="60" width="10" height="20" rx="3" fill="#f97316"/>
+                    <rect x="55" y="60" width="10" height="20" rx="3" fill="#f97316"/>
+                    <circle cx="45" cy="32" r="3" fill="#1e293b"/>
+                    <circle cx="55" cy="32" r="3" fill="#1e293b"/>
+                    <path d="M45 40 Q50 45 55 40" stroke="#1e293b" stroke-width="2" fill="none"/>
+                </svg>
+                <h1 class="game-hero-title">DASH RUN</h1>
+                <p class="game-hero-desc">Jump and slide to survive!</p>
+            </div>
+        </section>
+
+        <div class="game-wrapper">
+            <div class="game-container">
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-label">Score</div>
+                        <div class="stat-value" id="score-display">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Best</div>
+                        <div class="stat-value best" id="best-display">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Games</div>
+                        <div class="stat-value" id="games-display">0</div>
+                    </div>
+                </div>
+
+                <div class="game-board">
+                    <div class="canvas-wrapper" id="canvas-wrapper">
+                        <canvas id="canvas"></canvas>
+                        <div class="game-overlay" id="overlay">
+                            <div class="overlay-title start" id="overlay-title">DASH RUN</div>
+                            <div class="overlay-score hidden" id="overlay-score">0</div>
+                            <div class="new-best hidden" id="new-best">🏆 NEW BEST!</div>
+                            <p class="overlay-text" id="overlay-text">Tap to jump • Swipe down to slide<br>Speed increases over time!</p>
+                            <button class="btn btn-primary" id="start-btn">START</button>
+                        </div>
+                        <div class="get-ready" id="get-ready">
+                            <div class="get-ready-text" id="countdown-text">GET READY!</div>
+                            <div class="get-ready-hint">Tap = Jump • Swipe = Slide</div>
+                        </div>
+                    </div>
+                    <div class="controls-hint">
+                        <span>⬆️ Jump</span>
+                        <span>⬇️ Slide</span>
+                        <span>🎮 Double Jump!</span>
+                    </div>
+                </div>
+
+                <div class="leaderboard-section">
+                    <div class="lb-header">
+                        <h2 class="lb-title">🏆 Leaderboard</h2>
+                        <div class="lb-tabs">
+                            <button class="lb-tab active" data-tab="global">Global</button>
+                            <button class="lb-tab" data-tab="today">Today</button>
+                            <button class="lb-tab" data-tab="friends">Friends</button>
+                        </div>
+                    </div>
+                    <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('canvas-wrapper');
+
+// Dynamic canvas sizing
+let W, H, GROUND_Y, PLAYER_X, PLAYER_WIDTH, PLAYER_HEIGHT, scale;
+
+function resizeCanvas() {
+    const rect = wrapper.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    
+    W = rect.width;
+    H = rect.height;
+    
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    
+    // Scale game elements based on canvas size
+    scale = Math.min(W / 400, H / 240);
+    GROUND_Y = H - (40 * scale);
+    PLAYER_X = 50 * scale;
+    PLAYER_WIDTH = 30 * scale;
+    PLAYER_HEIGHT = 45 * scale;
+    
+    // Redraw if not in game
+    if (gameState !== 'playing') {
+        draw();
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+
+// Game constants - EASIER settings
+const GRAVITY = 0.35;           // Gentler gravity
+const JUMP_FORCE = -9;          // Comfortable jump
+const BASE_SPEED = 2.5;         // Start slow
+const MAX_SPEED = 6;            // Max speed cap
+const SPEED_INCREASE = 0.0008;  // Very gradual speed increase
+const MIN_OBSTACLE_GAP = 280;   // More space between obstacles
+const COIN_VALUE = 100;
+
+// Game state
+let gameState = 'idle';
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('dash_run_best') || '0');
+let gamesPlayed = parseInt(localStorage.getItem('dash_run_games') || '0');
+let currentUserId = null;
+let friendIds = [];
+let currentTab = 'global';
+
+// Player state
+let playerY = 0;
+let playerVelY = 0;
+let isJumping = false;
+let canDoubleJump = false;
+let isSliding = false;
+let slideTimer = 0;
+
+// Game objects
+let obstacles = [];
+let coins = [];
+let frameCount = 0;
+let bgOffset = 0;
+let currentSpeed = BASE_SPEED;
+
+// UI elements
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlayScore = document.getElementById('overlay-score');
+const overlayText = document.getElementById('overlay-text');
+const newBestEl = document.getElementById('new-best');
+const startBtn = document.getElementById('start-btn');
+const getReadyEl = document.getElementById('get-ready');
+const countdownText = document.getElementById('countdown-text');
+
+function updateDisplays() {
+    document.getElementById('score-display').textContent = score;
+    document.getElementById('best-display').textContent = bestScore;
+    document.getElementById('games-display').textContent = gamesPlayed;
+}
+updateDisplays();
+
+function drawBackground() {
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    skyGrad.addColorStop(0, '#87ceeb');
+    skyGrad.addColorStop(0.6, '#b0e0e6');
+    skyGrad.addColorStop(1, '#e0f7fa');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+    
+    // Sun
+    const sunSize = 25 * scale;
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(W - 40 * scale, 35 * scale, sunSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Sun glow
+    ctx.fillStyle = 'rgba(254,240,138,0.3)';
+    ctx.beginPath();
+    ctx.arc(W - 40 * scale, 35 * scale, sunSize * 1.4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Clouds (parallax)
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const cloudOffset = (bgOffset * 0.2) % (W + 150);
+    for (let i = 0; i < 3; i++) {
+        const cx = ((i * 180 + 60) - cloudOffset + W + 150) % (W + 150) - 50;
+        const cy = (30 + i * 20) * scale;
+        const cs = (18 + i * 5) * scale;
+        ctx.beginPath();
+        ctx.arc(cx, cy, cs, 0, Math.PI * 2);
+        ctx.arc(cx + cs * 1.2, cy - cs * 0.2, cs * 0.9, 0, Math.PI * 2);
+        ctx.arc(cx + cs * 2.2, cy, cs * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Distant hills
+    ctx.fillStyle = '#a7f3d0';
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    for (let x = 0; x <= W; x += W/4) {
+        ctx.quadraticCurveTo(x + W/8, GROUND_Y - 30 * scale, x + W/4, GROUND_Y);
+    }
+    ctx.lineTo(W, GROUND_Y);
+    ctx.fill();
+    
+    // Ground
+    ctx.fillStyle = '#86efac';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    
+    // Ground top line
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(0, GROUND_Y, W, 4 * scale);
+    
+    // Grass details
+    ctx.fillStyle = '#16a34a';
+    const grassSpacing = 10 * scale;
+    for (let i = 0; i < W; i += grassSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(i, GROUND_Y);
+        ctx.lineTo(i + grassSpacing/2, GROUND_Y - 5 * scale);
+        ctx.lineTo(i + grassSpacing, GROUND_Y);
+        ctx.fill();
+    }
+}
+
+function drawPlayer() {
+    ctx.save();
+    
+    const drawH = isSliding ? PLAYER_HEIGHT * 0.5 : PLAYER_HEIGHT;
+    const drawY = isSliding ? GROUND_Y - drawH : playerY;
+    
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(PLAYER_X + PLAYER_WIDTH/2, GROUND_Y + 3 * scale, PLAYER_WIDTH/2, 6 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Body
+    const bodyGrad = ctx.createLinearGradient(PLAYER_X, drawY, PLAYER_X + PLAYER_WIDTH, drawY);
+    bodyGrad.addColorStop(0, '#fb923c');
+    bodyGrad.addColorStop(0.5, '#f97316');
+    bodyGrad.addColorStop(1, '#ea580c');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.roundRect(PLAYER_X, drawY, PLAYER_WIDTH, drawH, 6 * scale);
+    ctx.fill();
+    
+    // Head
+    const headSize = (isSliding ? 10 : 13) * scale;
+    const headY = drawY - (isSliding ? 3 : 12) * scale;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(PLAYER_X + PLAYER_WIDTH/2, headY, headSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eyes
+    ctx.fillStyle = '#1e293b';
+    const eyeSize = 2.5 * scale;
+    ctx.beginPath();
+    ctx.arc(PLAYER_X + PLAYER_WIDTH/2 - 4 * scale, headY - 1 * scale, eyeSize, 0, Math.PI * 2);
+    ctx.arc(PLAYER_X + PLAYER_WIDTH/2 + 4 * scale, headY - 1 * scale, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Smile
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.5 * scale;
+    ctx.beginPath();
+    ctx.arc(PLAYER_X + PLAYER_WIDTH/2, headY, 5 * scale, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+    
+    // Running legs animation
+    if (gameState === 'playing' && !isJumping && !isSliding) {
+        const legOffset = Math.sin(frameCount * 0.4) * 4 * scale;
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath();
+        ctx.roundRect(PLAYER_X + 3 * scale, drawY + drawH - 2 * scale, 8 * scale, 8 * scale + legOffset, 3 * scale);
+        ctx.roundRect(PLAYER_X + PLAYER_WIDTH - 11 * scale, drawY + drawH - 2 * scale, 8 * scale, 8 * scale - legOffset, 3 * scale);
+        ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+function drawObstacle(obs) {
+    const obsScale = scale;
+    
+    if (obs.type === 'ground') {
+        // Crate obstacle
+        const crateGrad = ctx.createLinearGradient(obs.x, GROUND_Y - obs.height, obs.x, GROUND_Y);
+        crateGrad.addColorStop(0, '#b45309');
+        crateGrad.addColorStop(0.5, '#92400e');
+        crateGrad.addColorStop(1, '#78350f');
+        ctx.fillStyle = crateGrad;
+        ctx.beginPath();
+        ctx.roundRect(obs.x, GROUND_Y - obs.height, obs.width, obs.height, 4 * obsScale);
+        ctx.fill();
+        
+        // Crate X pattern
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 2 * obsScale;
+        ctx.beginPath();
+        ctx.moveTo(obs.x + 4 * obsScale, GROUND_Y - obs.height + 4 * obsScale);
+        ctx.lineTo(obs.x + obs.width - 4 * obsScale, GROUND_Y - 4 * obsScale);
+        ctx.moveTo(obs.x + obs.width - 4 * obsScale, GROUND_Y - obs.height + 4 * obsScale);
+        ctx.lineTo(obs.x + 4 * obsScale, GROUND_Y - 4 * obsScale);
+        ctx.stroke();
+        
+    } else if (obs.type === 'high') {
+        // High barrier with warning stripes
+        const barrierTop = GROUND_Y - obs.height - 25 * obsScale;
+        const barrierHeight = 22 * obsScale;
+        
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.roundRect(obs.x, barrierTop, obs.width, barrierHeight, 4 * obsScale);
+        ctx.fill();
+        
+        // Warning stripes
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(obs.x, barrierTop, obs.width, barrierHeight, 4 * obsScale);
+        ctx.clip();
+        
+        ctx.fillStyle = '#fbbf24';
+        const stripeW = 8 * obsScale;
+        for (let sx = obs.x - barrierHeight; sx < obs.x + obs.width + barrierHeight; sx += stripeW * 2) {
+            ctx.beginPath();
+            ctx.moveTo(sx, barrierTop + barrierHeight);
+            ctx.lineTo(sx + stripeW, barrierTop + barrierHeight);
+            ctx.lineTo(sx + stripeW + barrierHeight, barrierTop);
+            ctx.lineTo(sx + barrierHeight, barrierTop);
+            ctx.fill();
+        }
+        ctx.restore();
+        
+        // Support poles
+        ctx.fillStyle = '#71717a';
+        ctx.fillRect(obs.x + 5 * obsScale, barrierTop + barrierHeight, 4 * obsScale, GROUND_Y - barrierTop - barrierHeight);
+        ctx.fillRect(obs.x + obs.width - 9 * obsScale, barrierTop + barrierHeight, 4 * obsScale, GROUND_Y - barrierTop - barrierHeight);
+    }
+}
+
+function drawCoin(coin) {
+    const coinScale = scale;
+    const x = coin.x + 12 * coinScale;
+    const y = GROUND_Y - 50 * coinScale;
+    
+    // Glow
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.25)';
+    ctx.beginPath();
+    ctx.arc(x, y, 18 * coinScale, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Outer ring
+    ctx.fillStyle = '#16a34a';
+    ctx.beginPath();
+    ctx.arc(x, y, 13 * coinScale, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner coin
+    ctx.fillStyle = '#22c55e';
+    ctx.beginPath();
+    ctx.arc(x, y, 10 * coinScale, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Shine
+    ctx.fillStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.arc(x - 2 * coinScale, y - 2 * coinScale, 5 * coinScale, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Text
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${8 * coinScale}px Inter`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+' + COIN_VALUE, x, y + 1);
+}
+
+function drawScore() {
+    if (gameState !== 'playing') return;
+    
+    const fontSize = 28 * scale;
+    ctx.fillStyle = '#1e293b';
+    ctx.font = `bold ${fontSize}px 'Bebas Neue', sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(score, 12 * scale, 8 * scale);
+    
+    // Speed indicator
+    const speedPercent = Math.round(((currentSpeed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED)) * 100);
+    if (speedPercent > 10) {
+        ctx.font = `bold ${12 * scale}px Inter`;
+        ctx.fillStyle = speedPercent > 70 ? '#ef4444' : speedPercent > 40 ? '#f59e0b' : '#22c55e';
+        ctx.fillText(`⚡${speedPercent}%`, 12 * scale, 35 * scale);
+    }
+}
+
+function jump() {
+    if (isSliding) return;
+    
+    if (!isJumping) {
+        playerVelY = JUMP_FORCE * scale;
+        isJumping = true;
+        canDoubleJump = true;
+    } else if (canDoubleJump) {
+        playerVelY = JUMP_FORCE * 0.8 * scale;
+        canDoubleJump = false;
+    }
+}
+
+function slide() {
+    if (!isJumping && !isSliding) {
+        isSliding = true;
+        slideTimer = 30; // Longer slide duration
+    }
+}
+
+function spawnObstacle() {
+    // Bias towards ground obstacles early, mix in high obstacles later
+    const highChance = Math.min(0.35, 0.1 + score / 3000);
+    const type = Math.random() < highChance ? 'high' : 'ground';
+    
+    obstacles.push({
+        x: W + 30,
+        width: (type === 'ground' ? 35 : 50) * scale,
+        height: (type === 'ground' ? 35 : 45) * scale,
+        type
+    });
+}
+
+function spawnCoin() {
+    const lastObs = obstacles[obstacles.length - 1];
+    if (lastObs && lastObs.x > W - 100 * scale) return;
+    
+    coins.push({ x: W + 60 });
+}
+
+function update() {
+    if (gameState !== 'playing') return;
+    
+    frameCount++;
+    bgOffset += currentSpeed;
+    
+    // Gradually increase speed
+    currentSpeed = Math.min(MAX_SPEED, BASE_SPEED + frameCount * SPEED_INCREASE);
+    
+    // Score increases over time
+    if (frameCount % 8 === 0) {
+        score++;
+        document.getElementById('score-display').textContent = score;
+    }
+    
+    // Sliding logic
+    if (isSliding) {
+        slideTimer--;
+        if (slideTimer <= 0) {
+            isSliding = false;
+        }
+    }
+    
+    // Physics (only when not sliding)
+    if (!isSliding) {
+        playerVelY += GRAVITY * scale;
+        playerY += playerVelY;
+        
+        if (playerY >= GROUND_Y - PLAYER_HEIGHT) {
+            playerY = GROUND_Y - PLAYER_HEIGHT;
+            playerVelY = 0;
+            isJumping = false;
+            canDoubleJump = false;
+        }
+    }
+    
+    // Calculate dynamic gap based on speed
+    const dynamicGap = Math.max(MIN_OBSTACLE_GAP * scale * (BASE_SPEED / currentSpeed), 180 * scale);
+    
+    // Spawn obstacles
+    const rightmostObs = obstacles.length > 0 ? Math.max(...obstacles.map(o => o.x)) : -dynamicGap;
+    if (rightmostObs < W - dynamicGap) {
+        spawnObstacle();
+    }
+    
+    // Spawn coins occasionally
+    if (frameCount % 120 === 0 && Math.random() < 0.6) {
+        spawnCoin();
+    }
+    
+    // Move obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= currentSpeed;
+        if (obstacles[i].x + obstacles[i].width < 0) {
+            obstacles.splice(i, 1);
+        }
+    }
+    
+    // Move coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+        coins[i].x -= currentSpeed;
+        if (coins[i].x < -30) {
+            coins.splice(i, 1);
+        }
+    }
+    
+    // Coin collection
+    for (let i = coins.length - 1; i >= 0; i--) {
+        const coin = coins[i];
+        const coinX = coin.x + 12 * scale;
+        const coinY = GROUND_Y - 50 * scale;
+        const playerCenterX = PLAYER_X + PLAYER_WIDTH / 2;
+        const playerCenterY = playerY + PLAYER_HEIGHT / 2;
+        
+        if (Math.abs(playerCenterX - coinX) < 35 * scale && Math.abs(playerCenterY - coinY) < 45 * scale) {
+            score += COIN_VALUE;
+            document.getElementById('score-display').textContent = score;
+            coins.splice(i, 1);
+        }
+    }
+    
+    // Collision detection with forgiving hitbox
+    const playerH = isSliding ? PLAYER_HEIGHT * 0.5 : PLAYER_HEIGHT;
+    const playerTop = isSliding ? GROUND_Y - playerH : playerY;
+    
+    for (const obs of obstacles) {
+        let obsTop, obsBottom, obsLeft, obsRight;
+        
+        if (obs.type === 'ground') {
+            obsTop = GROUND_Y - obs.height;
+            obsBottom = GROUND_Y;
+            obsLeft = obs.x;
+            obsRight = obs.x + obs.width;
+        } else {
+            // High obstacle
+            obsTop = GROUND_Y - obs.height - 25 * scale;
+            obsBottom = GROUND_Y - obs.height - 3 * scale;
+            obsLeft = obs.x;
+            obsRight = obs.x + obs.width;
+        }
+        
+        // Very forgiving hitbox (generous padding)
+        const padding = 10 * scale;
+        const playerLeft = PLAYER_X + padding;
+        const playerRight = PLAYER_X + PLAYER_WIDTH - padding;
+        const pTop = playerTop + padding;
+        const pBottom = playerTop + playerH - padding;
+        
+        if (playerRight > obsLeft && playerLeft < obsRight &&
+            pBottom > obsTop && pTop < obsBottom) {
+            gameOver();
+            return;
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+    for (const coin of coins) drawCoin(coin);
+    for (const obs of obstacles) drawObstacle(obs);
+    drawPlayer();
+    drawScore();
+}
+
+let animFrame;
+function gameLoop() {
+    update();
+    draw();
+    animFrame = requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    gameState = 'ready';
+    score = 0;
+    playerY = GROUND_Y - PLAYER_HEIGHT;
+    playerVelY = 0;
+    isJumping = false;
+    canDoubleJump = false;
+    isSliding = false;
+    slideTimer = 0;
+    obstacles = [];
+    coins = [];
+    frameCount = 0;
+    bgOffset = 0;
+    currentSpeed = BASE_SPEED;
+    
+    overlay.classList.add('hidden');
+    getReadyEl.classList.add('show');
+    document.getElementById('score-display').textContent = '0';
+    
+    // Countdown
+    let count = 3;
+    countdownText.textContent = count;
+    
+    const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countdownText.textContent = count;
+        } else if (count === 0) {
+            countdownText.textContent = 'GO!';
+        } else {
+            clearInterval(countdownInterval);
+            getReadyEl.classList.remove('show');
+            gameState = 'playing';
+        }
+    }, 600);
+    
+    if (!animFrame) gameLoop();
+}
+
+async function gameOver() {
+    gameState = 'dead';
+    gamesPlayed++;
+    localStorage.setItem('dash_run_games', gamesPlayed);
+    
+    let isNewBest = false;
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('dash_run_best', bestScore);
+        isNewBest = true;
+    }
+    
+    updateDisplays();
+    
+    overlayTitle.textContent = 'GAME OVER';
+    overlayTitle.className = 'overlay-title gameover';
+    overlayScore.textContent = score;
+    overlayScore.classList.remove('hidden');
+    overlayText.textContent = 'Tap to try again';
+    startBtn.textContent = 'PLAY AGAIN';
+    newBestEl.classList.toggle('hidden', !isNewBest);
+    overlay.classList.remove('hidden');
+    
+    if (currentUserId && score > 0) {
+        await supabaseClient.from('solo_scores').insert({
+            user_id: currentUserId,
+            game_id: 'dash-run',
+            score: score
+        });
+        fetchLeaderboard(currentTab);
+    }
+}
+
+// Keyboard controls
+document.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        if (gameState === 'idle' || gameState === 'dead') {
+            startGame();
+        } else if (gameState === 'playing') {
+            jump();
+        }
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        if (gameState === 'playing') {
+            slide();
+        }
+    }
+});
+
+// Touch controls
+let touchStartY = 0;
+let touchStartTime = 0;
+const canvasWrapper = document.getElementById('canvas-wrapper');
+
+canvasWrapper.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+}, { passive: true });
+
+canvasWrapper.addEventListener('touchend', e => {
+    if (gameState === 'idle' || gameState === 'dead') {
+        startGame();
+        return;
+    }
+    
+    if (gameState !== 'playing') return;
+    
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchDuration = Date.now() - touchStartTime;
+    const diff = touchEndY - touchStartY;
+    
+    // Swipe down detection (more forgiving)
+    if (diff > 30 && touchDuration < 400) {
+        slide();
+    } else {
+        jump();
+    }
+}, { passive: true });
+
+canvasWrapper.addEventListener('click', e => {
+    if (gameState === 'idle' || gameState === 'dead') return;
+    if (gameState === 'playing') jump();
+});
+
+startBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    startGame();
+});
+
+// Auth & leaderboard
+async function loadAuth() {
+    const { data } = await supabaseClient.auth.getSession();
+    const user = data?.session?.user;
+    if (user) {
+        currentUserId = user.id;
+        loadFriends();
+    }
+    fetchLeaderboard('global');
+}
+
+async function loadFriends() {
+    if (!currentUserId) return;
+    try {
+        const { data } = await supabaseClient.from('friendships')
+            .select('user_id,friend_id')
+            .or('user_id.eq.' + currentUserId + ',friend_id.eq.' + currentUserId)
+            .eq('status', 'accepted');
+        if (data) friendIds = data.map(f => f.user_id === currentUserId ? f.friend_id : f.user_id);
+    } catch (e) {}
+}
+
+document.querySelectorAll('.lb-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        fetchLeaderboard(currentTab);
+    });
+});
+
+async function fetchLeaderboard(tab) {
+    const lbList = document.getElementById('lb-list');
+    lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
+    
+    let query = supabaseClient.from('solo_scores')
+        .select('score,user_id,created_at')
+        .eq('game_id', 'dash-run')
+        .order('score', { ascending: false })
+        .limit(50);
+    
+    if (tab === 'today') {
+        const t = new Date();
+        t.setHours(0, 0, 0, 0);
+        query = query.gte('created_at', t.toISOString());
+    } else if (tab === 'friends') {
+        if (!friendIds.length) {
+            lbList.innerHTML = '<div class="lb-empty">Add friends to see scores</div>';
+            return;
+        }
+        query = query.in('user_id', [...friendIds, currentUserId]);
+    }
+    
+    const { data, error } = await query;
+    if (error || !data || !data.length) {
+        lbList.innerHTML = '<div class="lb-empty">No scores yet</div>';
+        return;
+    }
+    
+    // Dedupe to best score per user
+    const best = new Map();
+    data.forEach(e => {
+        if (!best.has(e.user_id) || e.score > best.get(e.user_id).score) {
+            best.set(e.user_id, e);
+        }
+    });
+    const deduped = Array.from(best.values()).sort((a, b) => b.score - a.score);
+    
+    // Fetch profiles
+    const userIds = [...new Set(deduped.map(e => e.user_id))];
+    const { data: profiles } = await supabaseClient.from('profiles')
+        .select('id,display_name,gamer_tag,account_type')
+        .in('id', userIds);
+    const pm = {};
+    if (profiles) profiles.forEach(p => pm[p.id] = p);
+    
+    // Render
+    lbList.innerHTML = '';
+    deduped.slice(0, 10).forEach((e, i) => {
+        const p = pm[e.user_id];
+        const name = p ? (p.display_name || p.gamer_tag) : 'Anonymous';
+        const isPremium = p && p.account_type === 'premium';
+        const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : '';
+        const premiumClass = isPremium && i > 2 ? 'premium-row' : '';
+        
+        const row = document.createElement('div');
+        row.className = `lb-row ${topClass} ${premiumClass}`.trim();
+        row.innerHTML = `
+            <div class="lb-rank">${i + 1}</div>
+            <div class="lb-avatar${isPremium ? ' premium' : ''}">${name.charAt(0).toUpperCase()}</div>
+            <div class="lb-name${isPremium ? ' premium' : ''}">${name}</div>
+            <div class="lb-score">${e.score}</div>
+        `;
+        lbList.appendChild(row);
+    });
+}
+
+// Initialize
+resizeCanvas();
+loadAuth();
+draw();
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

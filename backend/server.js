@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const squadGames = require('./squad-games-additions');
 const socketIo = require('socket.io');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
@@ -1873,8 +1874,8 @@ io.on('connection', (socket) => {
   });
 
   // START GAME
-  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies } = data;
+ socket.on('start-game', (data) => {
+    const { roomCode, category, twoSpies, mode, variant, difficulty } = data;
     const room = rooms.get(roomCode);
     
     if (!room) {
@@ -1882,67 +1883,67 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if socket is the host
     const player = players.get(socket.id);
     if (!player || !player.isHost) {
       socket.emit('error', { message: 'Only host can start the game' });
       return;
     }
     
-    // Check minimum players (3 for most games, 2 for Categories/Word Association)
-    if (room.players.length < (room.gameType === 'categories' || room.gameType === 'word-association' ? 2 : 3)) {
-      socket.emit('error', { message: `Need at least ${room.gameType === 'categories' || room.gameType === 'word-association' ? 2 : 3} players to start` });
-      return;
-    }
+    console.log(`[GAME] Starting ${room.gameType} in ${roomCode}`);
     
-// Initialize game based on game type
-if (room.gameType === 'imposter') {
-  initImposterGame(room, category || 'random');
-} else if (room.gameType === 'spyfall') {
-  initSpyfallGame(room, category || 'random', twoSpies || false);
-} else if (room.gameType === 'werewolf') {
-  initWerewolfGame(room);
-} else if (room.gameType === 'herd-mentality') {
-  initHerdMentalityGame(room, category || 'standard');
-} else if (room.gameType === 'codenames') {
-  console.log(`Codenames starting in room ${roomCode}`);
-} else if (room.gameType === 'categories') {
-  initCategoriesGame(room);
-} else if (room.gameType === 'word-association') {
-  initWordAssociationGame(room);
-} else if (room.gameType === 'trivia-royale') {
-  partyGames.initTriviaRoyaleGame(room, category);
-} else if (room.gameType === 'this-or-that-party') {
-  partyGames.initThisOrThatPartyGame(room, category);
-} else if (room.gameType === 'hot-takes-party') {
-  partyGames.initHotTakesPartyGame(room, category);
-} else if (room.gameType === 'never-ever-party') {
-  partyGames.initNeverEverPartyGame(room, category);
-} else if (room.gameType === 'bet-or-bluff') {
-  partyGames.initBetOrBluffGame(room, category);
-} else if (room.gameType === 'sketch-guess') {
-partyGames.initSketchGuessGame(room, category || 'medium');
-}
-room.gameState = 'playing';
-// Send role assignments to each player
-if (room.gameType === 'spyfall') {
-      room.players.forEach(p => {
-        const roleData = room.gameData.roleAssignments[p.name];
-        if (roleData) {
-          io.to(p.id).emit('role-assigned', {
-            ...roleData,
-            allLocations: room.gameData.allLocations  // ✅ ADD THIS
-          });
-        }
-      });
-      room.gameData.phaseTransitionScheduled = true;
-      setTimeout(() => {
-        if (room.gameData && room.gameData.phase === 'role-reveal') {
-          startSpyfallQuestionPhase(room);
-        }
-      }, 5000);
+    // OLD GAMES (already work)
+    if (room.gameType === 'imposter') {
+        initImposterGame(room, category || 'random');
+    } else if (room.gameType === 'spyfall') {
+        initSpyfallGame(room, category || 'classic', twoSpies || false);
+    } else if (room.gameType === 'werewolf') {
+        initWerewolfGame(room);
+    } else if (room.gameType === 'herd-mentality') {
+        initHerdMentalityGame(room, category || 'standard');
+    } else if (room.gameType === 'codenames') {
+        console.log('Codenames starting');
+    } else if (room.gameType === 'categories') {
+        initCategoriesGame(room);
+    } else if (room.gameType === 'word-association') {
+        initWordAssociationGame(room);
     }
-
+    // NEW GAMES 🎉
+    else if (room.gameType === 'power-struggle') {
+        squadGames.initCoupGame(room);
+    } else if (room.gameType === 'word-bomb') {
+        squadGames.initWordBombGame(room, difficulty || 'medium');
+    } else if (room.gameType === 'ludo') {
+        squadGames.initLudoGame(room);
+    } else if (room.gameType === 'charades') {
+        squadGames.initCharadesGame(room, category || 'random', 'classic');
+    } else if (room.gameType === 'heads-up') {
+        squadGames.initCharadesGame(room, category || 'random', 'headsup');
+    } else if (room.gameType === 'secret-roles') {
+        squadGames.initAvalonGame(room, variant || 'standard');
+    } else if (room.gameType === 'fake-artist') {
+        squadGames.initFakeArtistGame(room, category || 'mixed');
+    } else if (room.gameType === 'most-likely-to') {
+        squadGames.initMostLikelyToGame(room, category || 'fun');
+    }
+    // PARTY GAMES (already work)
+    else if (room.gameType === 'trivia-royale') {
+        partyGames.initTriviaRoyaleGame(room, category);
+    } else if (room.gameType === 'this-or-that-party') {
+        partyGames.initThisOrThatPartyGame(room, category);
+    } else if (room.gameType === 'hot-takes-party') {
+        partyGames.initHotTakesPartyGame(room, category);
+    } else if (room.gameType === 'never-ever-party') {
+        partyGames.initNeverEverPartyGame(room, category);
+    } else if (room.gameType === 'bet-or-bluff') {
+        partyGames.initBetOrBluffGame(room, category);
+    } else if (room.gameType === 'sketch-guess') {
+        partyGames.initSketchGuessGame(room, category || 'random');
+    } else if (room.gameType === 'fools-gold') {
+        partyGames.initFoolsGoldGame(room, category || 'mixed');
+    } else {
+        socket.emit('error', { message: `Game "${room.gameType}" not ready yet!` });
+        return;
+    }
     // Notify all players to start
     io.to(roomCode).emit('game-started', {
       roomCode: roomCode,
@@ -2726,6 +2727,64 @@ if (room.gameType === 'spyfall') {
       }, 3000);
     }
   });
+
+    // ========== NEW GAMES HANDLERS ==========
+
+// LUDO
+socket.on('ludo-roll', (data) => {
+    const room = rooms.get(data.roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player) return;
+    squadGames.rollLudoDice(room, io);
+});
+
+socket.on('ludo-move', (data) => {
+    const room = rooms.get(data.roomCode);
+    if (!room) return;
+    squadGames.moveLudoPiece(room, data.pieceIndex, io);
+});
+
+// WORD BOMB
+socket.on('wordbomb-answer', (data) => {
+    const room = rooms.get(data.roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player) return;
+    
+    const gd = room.gameData;
+    const validation = squadGames.validateWordBombAnswer(data.word, gd.currentPrompt, gd.usedWords);
+    
+    if (validation.valid) {
+        clearTimeout(gd.turnTimeout);
+        gd.usedWords.add(data.word.toLowerCase());
+        gd.scores[player.playerName] = (gd.scores[player.playerName] || 0) + data.word.length;
+        io.to(data.roomCode).emit('wordbomb-valid', { word: data.word, scores: gd.scores });
+        squadGames.advanceWordBombTurn(room, io);
+    } else {
+        socket.emit('wordbomb-invalid', { reason: validation.reason });
+    }
+});
+
+// CHARADES
+socket.on('charades-guess', (data) => {
+    const room = rooms.get(data.roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player) return;
+    squadGames.handleCharadesGuess(room, player.playerName, data.guess, io);
+});
+
+socket.on('charades-skip', (data) => {
+    const room = rooms.get(data.roomCode);
+    if (!room) return;
+    squadGames.handleCharadesSkip(room, io);
+});
+
+// MOST LIKELY TO
+socket.on('mostlikelyto-vote', (data) => {
+    const room = rooms.get(data.roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player) return;
+    squadGames.handleMostLikelyToVote(room, player.playerName, data.target, io);
+});
 
   // ============================================
   // WORD ASSOCIATION SOCKET HANDLERS 
@@ -3645,13 +3704,13 @@ function eliminateWordAssociationPlayer(room, player, io, reason) {
       // Since the turn is now advancing, let the existing turn logic handle the next step.
       // If phase is 'playing', the client is still waiting for their turn to end.
       // If phase is 'challenge', the resolution will call the next turn.
-      if (room.gameData.phase === 'playing') {
+     if (room.gameData.phase === 'playing') {
           // Restart turn for the current player, as a life has changed
           const currentPlayer = room.gameData.playerOrder[room.gameData.currentPlayerIndex];
           setTimeout(() => startWordAssociationTurn(room, io), 2000);
       }
+    }
   }
-}
 }
 
 function resolveWordAssociationChallenge(room, io) {
