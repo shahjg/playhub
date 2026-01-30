@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ludo - TheGaming.co</title>
-    <meta name="description" content="Ludo - Classic board game for 2-4 players!">
+    <meta name="description" content="Ludo - Classic board game for 2-6 players!">
     <meta name="theme-color" content="#22c55e">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -12,7 +12,7 @@
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#051a0a;--card:#102a15;--accent:#22c55e;--glow:rgba(34,197,94,0.4);--red:#ef4444;--blue:#3b82f6;--yellow:#eab308;--green:#22c55e;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        :root{--bg:#051a0a;--card:#102a15;--accent:#22c55e;--glow:rgba(34,197,94,0.4);--red:#ef4444;--blue:#3b82f6;--yellow:#eab308;--green:#22c55e;--purple:#a855f7;--orange:#f97316;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
         body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
         .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(34,197,94,0.08) 0%,transparent 50%)}
         header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(5,26,10,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
@@ -38,6 +38,8 @@
         .cell.home-blue{background:rgba(59,130,246,0.3)}
         .cell.home-yellow{background:rgba(234,179,8,0.3)}
         .cell.home-green{background:rgba(34,197,94,0.3)}
+        .cell.home-purple{background:rgba(168,85,247,0.3)}
+        .cell.home-orange{background:rgba(249,115,22,0.3)}
         .cell.safe{background:rgba(255,255,255,0.2)}
         .cell.finish-red{background:rgba(239,68,68,0.5)}
         .cell.finish-blue{background:rgba(59,130,246,0.5)}
@@ -55,6 +57,8 @@
         .piece.blue{background:var(--blue)}
         .piece.yellow{background:var(--yellow)}
         .piece.green{background:var(--green)}
+        .piece.purple{background:var(--purple)}
+        .piece.orange{background:var(--orange)}
         .piece.selectable{animation:bounce .5s infinite}
         @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
         
@@ -70,18 +74,22 @@
         .roll-btn:disabled{opacity:.5;cursor:not-allowed}
         
         /* Players */
-        .players-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+        .players-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin-bottom:16px}
         .player-box{padding:10px;background:var(--card);border:2px solid var(--border);border-radius:10px;text-align:center}
         .player-box.current{box-shadow:0 0 15px rgba(255,255,255,0.3)}
         .player-box.red{border-color:var(--red)}
         .player-box.blue{border-color:var(--blue)}
         .player-box.yellow{border-color:var(--yellow)}
         .player-box.green{border-color:var(--green)}
+        .player-box.purple{border-color:var(--purple)}
+        .player-box.orange{border-color:var(--orange)}
         .player-color{width:16px;height:16px;border-radius:50%;margin:0 auto 6px}
         .player-color.red{background:var(--red)}
         .player-color.blue{background:var(--blue)}
         .player-color.yellow{background:var(--yellow)}
         .player-color.green{background:var(--green)}
+        .player-color.purple{background:var(--purple)}
+        .player-color.orange{background:var(--orange)}
         .player-name{font-size:.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .player-home{font-size:.65rem;color:var(--dim);margin-top:4px}
         
@@ -154,8 +162,8 @@ const playerName=localStorage.getItem('tempPlayerName');
 document.getElementById('room').textContent=roomCode||'------';
 if(!roomCode||!playerName)location.href='/lobby.html?game=ludo';
 
-const COLORS=['red','blue','yellow','green'];
-let state={players:[],pieces:{},currentTurn:'',diceValue:0,phase:'waiting',myColor:'',isMyTurn:false,selectablePieces:[],isHost:localStorage.getItem('tempIsHost')==='true'};
+const COLORS=['red','blue','yellow','green','purple','orange'];
+let state={players:[],pieces:{},currentTurn:'',diceValue:0,phase:'waiting',myColor:'',isMyTurn:false,selectablePieces:[],isHost:localStorage.getItem('tempIsHost')==='true',boardSize:4};
 
 socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
 socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;document.getElementById('actionBtn').disabled=!state.isHost;document.getElementById('actionBtn').textContent=state.isHost?'Start Game':'Waiting for host...';renderPlayers();});
@@ -166,6 +174,7 @@ socket.on('ludo-state',d=>{
     state.pieces=d.pieces;state.currentTurn=d.currentTurn;state.phase='playing';
     state.myColor=d.colors[playerName]||'';
     state.isMyTurn=d.currentTurn===playerName;
+    state.boardSize=d.boardSize||4;
     
     const banner=document.getElementById('turnBanner');
     banner.classList.toggle('my-turn',state.isMyTurn);
@@ -292,7 +301,8 @@ function rollDice(){
 
 function renderPlayers(){
     const row=document.getElementById('playersRow');
-    row.innerHTML=state.players.slice(0,4).map((p,i)=>`
+    const maxPlayers = state.boardSize === 6 ? 6 : 4;
+    row.innerHTML=state.players.slice(0, maxPlayers).map((p,i)=>`
         <div class="player-box ${COLORS[i]} ${p.name===state.currentTurn?'current':''}">
             <div class="player-color ${COLORS[i]}"></div>
             <div class="player-name">${esc(p.name)}${p.name===playerName?' (You)':''}</div>

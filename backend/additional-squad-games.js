@@ -616,10 +616,16 @@ function handleBPNextChain(room, io) {
 // ==================== POWER STRUGGLE (COUP CLONE) ====================
 
 function initPowerStruggleGame(room) {
-  // Create deck with 3 of each influence
+  // Calculate how many copies of each card we need
+  // Each player needs 2 cards, plus some in reserve
+  const playerCount = room.players.length;
+  const cardsNeeded = playerCount * 2 + 3; // Extra cards for exchange action
+  const copiesPerInfluence = Math.ceil(cardsNeeded / COUP_INFLUENCES.length);
+  
+  // Create deck with enough copies of each influence
   const deck = [];
   COUP_INFLUENCES.forEach(inf => {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < copiesPerInfluence; i++) {
       deck.push(inf);
     }
   });
@@ -649,6 +655,8 @@ function initPowerStruggleGame(room) {
     ];
     room.gameData.coins[p.id] = 2;
   });
+  
+  console.log(`Power Struggle: ${playerCount} players, ${copiesPerInfluence} copies per influence, ${deck.length} cards remaining`);
 }
 
 function sendPowerStruggleState(room, io) {

@@ -527,12 +527,12 @@ function endWordBombGame(room, io) {
 // LUDO - Complete Implementation
 // ============================================
 
-const LUDO_COLORS = ['red', 'blue', 'yellow', 'green'];
+const LUDO_COLORS = ['red', 'blue', 'yellow', 'green', 'purple', 'orange'];
 const LUDO_PATH_LENGTH = 52; // Main track
 const LUDO_HOME_LENGTH = 6; // Home stretch per color
 
 function initLudoGame(room) {
-    const playerCount = Math.min(4, room.players.length);
+    const playerCount = Math.min(6, room.players.length);
     const colors = LUDO_COLORS.slice(0, playerCount);
     
     const pieces = {};
@@ -540,10 +540,10 @@ function initLudoGame(room) {
     const homeProgress = {}; // Track pieces in home stretch
     const finishedPieces = {}; // Pieces that reached the end
     
-    room.players.slice(0, 4).forEach((player, index) => {
+    room.players.slice(0, 6).forEach((player, index) => {
         const color = colors[index];
         playerColors[player.name] = color;
-        pieces[color] = [-1, -1, -1, -1]; // -1 = in base, 0-51 = on board
+        pieces[color] = [-1, -1, -1, -1]; // -1 = in base, 0-51 = on board (extended for 6 players)
         homeProgress[color] = [0, 0, 0, 0]; // 0 = not in home, 1-6 = position in home stretch
         finishedPieces[color] = [false, false, false, false];
     });
@@ -560,32 +560,48 @@ function initLudoGame(room) {
         selectedPiece: null,
         turnTimeout: null,
         winner: null,
-        roleAssignments: {}
+        roleAssignments: {},
+        boardSize: playerCount > 4 ? 6 : 4 // Track board mode
     };
     
-    // Starting positions for each color
-    room.gameData.startPositions = {
+    // Starting positions for each color (extended for 6 players)
+    // 6-player board: positions 0-77 (13 spaces per section × 6)
+    room.gameData.startPositions = playerCount > 4 ? {
+        red: 0,
+        blue: 13,
+        yellow: 26,
+        green: 39,
+        purple: 52,
+        orange: 65
+    } : {
         red: 0,
         blue: 13,
         yellow: 26,
         green: 39
     };
     
-    // Safe spots (can't be captured)
-    room.gameData.safeSpots = [0, 8, 13, 21, 26, 34, 39, 47];
+    // Safe spots (can't be captured) - extended for 6 players
+    room.gameData.safeSpots = playerCount > 4 
+        ? [0, 8, 13, 21, 26, 34, 39, 47, 52, 60, 65, 73]
+        : [0, 8, 13, 21, 26, 34, 39, 47];
     
-    console.log(`Ludo game initialized in room ${room.code} with ${playerCount} players`);
+    // Track total board spaces
+    room.gameData.totalSpaces = playerCount > 4 ? 78 : 52;
+    
+    console.log(`Ludo game initialized in room ${room.code} with ${playerCount} players (${playerCount > 4 ? '6-player' : '4-player'} board)`);
 }
 
 function getLudoCurrentPlayer(room) {
     const gd = room.gameData;
-    const players = room.players.slice(0, 4);
+    const maxPlayers = gd.boardSize === 6 ? 6 : 4;
+    const players = room.players.slice(0, maxPlayers);
     return players[gd.currentTurnIndex];
 }
 
 function getLudoState(room) {
     const gd = room.gameData;
     const currentPlayer = getLudoCurrentPlayer(room);
+    const maxPlayers = gd.boardSize === 6 ? 6 : 4;
     
     return {
         pieces: gd.pieces,
@@ -596,7 +612,8 @@ function getLudoState(room) {
         currentColor: gd.playerColors[currentPlayer?.name],
         diceValue: gd.diceValue,
         phase: gd.phase,
-        players: room.players.slice(0, 4).map(p => ({
+        boardSize: gd.boardSize || 4,
+        players: room.players.slice(0, maxPlayers).map(p => ({
             name: p.name,
             color: gd.playerColors[p.name],
             isPremium: p.isPremium || false,

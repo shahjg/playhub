@@ -1843,8 +1843,8 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if room is full (max 15 players)
-    if (room.players.length >= 15) {
+    // Check if room is full (max 20 players)
+    if (room.players.length >= 20) {
       console.log(`Room ${roomCode} is full`);
       socket.emit('join-error', { message: 'Room is full' });
       return;
