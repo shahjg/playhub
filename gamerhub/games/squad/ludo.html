@@ -2,322 +2,623 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ludo - TheGaming.co</title>
-    <meta name="description" content="Ludo - Classic board game for 2-6 players!">
+    <meta name="description" content="Play Ludo online with friends! Classic board game for 2-6 players.">
     <meta name="theme-color" content="#22c55e">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#051a0a;--card:#102a15;--accent:#22c55e;--glow:rgba(34,197,94,0.4);--red:#ef4444;--blue:#3b82f6;--yellow:#eab308;--green:#22c55e;--purple:#a855f7;--orange:#f97316;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
-        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(34,197,94,0.08) 0%,transparent 50%)}
-        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(5,26,10,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-        .nav{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
-        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
-        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
-        .back svg{width:14px;height:14px}
-        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
-        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
-        main{position:relative;z-index:1;padding:60px 12px 24px;min-height:100vh;max-width:500px;margin:0 auto}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        .turn-banner{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px;text-align:center;margin-bottom:16px}
-        .turn-banner.my-turn{border-color:var(--accent);box-shadow:0 0 20px var(--glow)}
-        .turn-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
-        .turn-name{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px}
+        :root {
+            --bg: #0a0a12;
+            --card: #14141f;
+            --border: rgba(255,255,255,0.1);
+            --text: #fff;
+            --dim: rgba(255,255,255,0.6);
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --yellow: #eab308;
+            --green: #22c55e;
+            --purple: #a855f7;
+            --orange: #f97316;
+        }
         
-        /* Board */
-        .board-wrap{position:relative;width:100%;padding-bottom:100%;margin-bottom:16px}
-        .board{position:absolute;inset:0;display:grid;grid-template:repeat(15,1fr)/repeat(15,1fr);background:var(--card);border:2px solid var(--border);border-radius:12px;overflow:hidden}
-        .cell{border:.5px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:.5rem;position:relative}
-        .cell.path{background:rgba(255,255,255,0.1)}
-        .cell.home-red{background:rgba(239,68,68,0.3)}
-        .cell.home-blue{background:rgba(59,130,246,0.3)}
-        .cell.home-yellow{background:rgba(234,179,8,0.3)}
-        .cell.home-green{background:rgba(34,197,94,0.3)}
-        .cell.home-purple{background:rgba(168,85,247,0.3)}
-        .cell.home-orange{background:rgba(249,115,22,0.3)}
-        .cell.safe{background:rgba(255,255,255,0.2)}
-        .cell.finish-red{background:rgba(239,68,68,0.5)}
-        .cell.finish-blue{background:rgba(59,130,246,0.5)}
-        .cell.finish-yellow{background:rgba(234,179,8,0.5)}
-        .cell.finish-green{background:rgba(34,197,94,0.5)}
-        .cell.start-red{background:var(--red)}
-        .cell.start-blue{background:var(--blue)}
-        .cell.start-yellow{background:var(--yellow)}
-        .cell.start-green{background:var(--green)}
-        .cell.center{grid-area:7/7/10/10;background:linear-gradient(135deg,var(--red),var(--blue),var(--yellow),var(--green));border-radius:4px}
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
         
-        .piece{width:70%;height:70%;border-radius:50%;border:2px solid #fff;cursor:pointer;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
-        .piece:hover{transform:scale(1.1)}
-        .piece.red{background:var(--red)}
-        .piece.blue{background:var(--blue)}
-        .piece.yellow{background:var(--yellow)}
-        .piece.green{background:var(--green)}
-        .piece.purple{background:var(--purple)}
-        .piece.orange{background:var(--orange)}
-        .piece.selectable{animation:bounce .5s infinite}
-        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(239,68,68,0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(59,130,246,0.1) 0%, transparent 40%),
+                radial-gradient(circle at 20% 80%, rgba(234,179,8,0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(34,197,94,0.1) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
         
-        /* Dice */
-        .dice-section{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:16px}
-        .dice{width:60px;height:60px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#000;cursor:pointer;transition:.2s;box-shadow:0 4px 10px rgba(0,0,0,0.3)}
-        .dice:hover{transform:scale(1.05)}
-        .dice.rolling{animation:roll .5s ease}
-        @keyframes roll{0%{transform:rotate(0)}25%{transform:rotate(15deg)}50%{transform:rotate(-15deg)}75%{transform:rotate(10deg)}100%{transform:rotate(0)}}
-        .dice:disabled{opacity:.5;cursor:not-allowed}
-        .roll-btn{padding:12px 24px;background:var(--accent);border:0;border-radius:10px;color:#000;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s}
-        .roll-btn:hover{filter:brightness(1.1)}
-        .roll-btn:disabled{opacity:.5;cursor:not-allowed}
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 70px 16px 100px;
+            min-height: 100vh;
+        }
         
-        /* Players */
-        .players-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin-bottom:16px}
-        .player-box{padding:10px;background:var(--card);border:2px solid var(--border);border-radius:10px;text-align:center}
-        .player-box.current{box-shadow:0 0 15px rgba(255,255,255,0.3)}
-        .player-box.red{border-color:var(--red)}
-        .player-box.blue{border-color:var(--blue)}
-        .player-box.yellow{border-color:var(--yellow)}
-        .player-box.green{border-color:var(--green)}
-        .player-box.purple{border-color:var(--purple)}
-        .player-box.orange{border-color:var(--orange)}
-        .player-color{width:16px;height:16px;border-radius:50%;margin:0 auto 6px}
-        .player-color.red{background:var(--red)}
-        .player-color.blue{background:var(--blue)}
-        .player-color.yellow{background:var(--yellow)}
-        .player-color.green{background:var(--green)}
-        .player-color.purple{background:var(--purple)}
-        .player-color.orange{background:var(--orange)}
-        .player-name{font-size:.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .player-home{font-size:.65rem;color:var(--dim);margin-top:4px}
+        .game-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
         
-        .msg-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:.9rem;color:var(--dim);margin-bottom:16px}
+        .room-info { display: flex; align-items: center; gap: 12px; }
         
-        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
-        .btn-p{background:linear-gradient(135deg,var(--accent),#16a34a);color:#000}
-        .btn-p:hover{filter:brightness(1.1)}
-        .btn-p:disabled{opacity:.5;cursor:not-allowed}
-        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        .room-code {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            color: var(--green);
+            background: rgba(34,197,94,0.15);
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
         
-        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
-        .overlay.active{display:flex}
-        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
-        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:24px}
-        .modal-btns{display:flex;gap:12px;margin-top:24px}
-        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+        .leave-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--dim);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .leave-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--red); color: var(--red); }
+        .leave-btn svg { width: 16px; height: 16px; }
+        
+        .turn-banner {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+        }
+        
+        .turn-banner.my-turn {
+            border-color: var(--green);
+            box-shadow: 0 0 30px rgba(34,197,94,0.3);
+            background: linear-gradient(135deg, rgba(34,197,94,0.1), transparent);
+        }
+        
+        .turn-label { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+        .turn-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 3px; }
+        
+        .players-row { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+        
+        .player-card {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 8px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .player-card.current { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+        .player-card.red { border-color: var(--red); }
+        .player-card.blue { border-color: var(--blue); }
+        .player-card.yellow { border-color: var(--yellow); }
+        .player-card.green { border-color: var(--green); }
+        .player-card.purple { border-color: var(--purple); }
+        .player-card.orange { border-color: var(--orange); }
+        
+        .player-card.current.red { box-shadow: 0 8px 25px rgba(239,68,68,0.4); }
+        .player-card.current.blue { box-shadow: 0 8px 25px rgba(59,130,246,0.4); }
+        .player-card.current.yellow { box-shadow: 0 8px 25px rgba(234,179,8,0.4); }
+        .player-card.current.green { box-shadow: 0 8px 25px rgba(34,197,94,0.4); }
+        .player-card.current.purple { box-shadow: 0 8px 25px rgba(168,85,247,0.4); }
+        .player-card.current.orange { box-shadow: 0 8px 25px rgba(249,115,22,0.4); }
+        
+        .player-avatar {
+            width: 32px; height: 32px; border-radius: 50%; margin: 0 auto 6px;
+            display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        }
+        
+        .player-avatar.red { background: var(--red); }
+        .player-avatar.blue { background: var(--blue); }
+        .player-avatar.yellow { background: var(--yellow); }
+        .player-avatar.green { background: var(--green); }
+        .player-avatar.purple { background: var(--purple); }
+        .player-avatar.orange { background: var(--orange); }
+        
+        .player-name { font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .player-pieces { font-size: 0.65rem; color: var(--dim); }
+        
+        .board-container { position: relative; width: 100%; max-width: 500px; margin: 0 auto 20px; }
+        .board-svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 10px 40px rgba(0,0,0,0.5)); }
+        
+        .dice-section { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 16px; }
+        
+        .dice {
+            width: 70px; height: 70px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .dice:hover:not(.disabled) { transform: scale(1.05); }
+        .dice.disabled { opacity: 0.5; cursor: not-allowed; }
+        .dice.rolling { animation: diceRoll 0.6s ease-out; }
+        
+        @keyframes diceRoll {
+            0% { transform: rotateX(0) rotateY(0); }
+            25% { transform: rotateX(180deg) rotateY(90deg) scale(1.1); }
+            50% { transform: rotateX(360deg) rotateY(180deg); }
+            75% { transform: rotateX(540deg) rotateY(270deg) scale(1.1); }
+            100% { transform: rotateX(720deg) rotateY(360deg); }
+        }
+        
+        .dice-dots { display: grid; grid-template-columns: repeat(3, 12px); grid-template-rows: repeat(3, 12px); gap: 4px; }
+        .dice-dot { width: 12px; height: 12px; background: #1a1a2e; border-radius: 50%; opacity: 0; transition: opacity 0.2s; }
+        .dice-dot.active { opacity: 1; }
+        
+        .roll-btn {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--green), #16a34a);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(34,197,94,0.4);
+        }
+        
+        .roll-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(34,197,94,0.5); }
+        .roll-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        
+        .message-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--dim);
+            margin-bottom: 16px;
+        }
+        
+        .message-box.highlight { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.1); }
+        
+        .start-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--green), #16a34a);
+            border: none;
+            border-radius: 14px;
+            color: #000;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+        }
+        
+        .start-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(34,197,94,0.5); }
+        .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        }
+        
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: var(--card);
+            border: 2px solid var(--green);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            animation: modalPop 0.3s ease;
+        }
+        
+        @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal-trophy { font-size: 80px; margin-bottom: 16px; }
+        .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 4px; color: var(--green); margin-bottom: 8px; }
+        .modal p { color: var(--dim); margin-bottom: 24px; }
+        .modal-btns { display: flex; gap: 12px; }
+        
+        .modal-btn {
+            flex: 1; padding: 14px; border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.2s; text-decoration: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .modal-btn.secondary { background: transparent; border: 2px solid var(--border); color: var(--text); }
+        .modal-btn.primary { background: linear-gradient(135deg, var(--green), #16a34a); border: none; color: #000; }
+        
+        .piece-selectable { animation: pieceGlow 0.8s ease-in-out infinite; cursor: pointer !important; }
+        @keyframes pieceGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); } 50% { filter: drop-shadow(0 0 16px rgba(255,255,255,1)); } }
+        
+        @media (max-width: 500px) {
+            main { padding: 60px 10px 90px; }
+            .turn-name { font-size: 1.5rem; }
+            .dice { width: 60px; height: 60px; }
+            .roll-btn { padding: 12px 24px; font-size: 1.1rem; }
+        }
     </style>
 </head>
 <body>
-<div class="bg"></div>
-<header><nav class="nav">
-    <div style="display:flex;align-items:center;gap:12px">
-        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
-        <span class="badge" id="room">------</span>
-    </div>
-    <span class="logo">🎲 LUDO</span>
-    <div></div>
-</nav></header>
-
-<main>
-    <div class="turn-banner" id="turnBanner">
-        <div class="turn-lbl" id="turnLbl">Current Turn</div>
-        <div class="turn-name" id="turnName">Waiting...</div>
-    </div>
+    <div class="bg-pattern"></div>
     
-    <div class="players-row" id="playersRow"></div>
+    <main>
+        <div class="game-header">
+            <div class="room-info">
+                <a href="/squad-games.html" class="leave-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Leave
+                </a>
+                <div class="room-code" id="roomCode">------</div>
+            </div>
+            <div style="font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 2px;">🎲 LUDO</div>
+        </div>
+        
+        <div class="turn-banner" id="turnBanner">
+            <div class="turn-label" id="turnLabel">Current Turn</div>
+            <div class="turn-name" id="turnName">Waiting for players...</div>
+        </div>
+        
+        <div class="players-row" id="playersRow"></div>
+        
+        <div class="board-container">
+            <svg class="board-svg" viewBox="0 0 600 600" id="ludoBoard"></svg>
+        </div>
+        
+        <div class="dice-section">
+            <div class="dice" id="dice"><div class="dice-dots" id="diceDots"></div></div>
+            <button class="roll-btn" id="rollBtn" disabled>ROLL DICE</button>
+        </div>
+        
+        <div class="message-box" id="messageBox">Waiting for game to start...</div>
+        <button class="start-btn" id="startBtn" style="display:none;">START GAME</button>
+    </main>
     
-    <div class="board-wrap">
-        <div class="board" id="board"></div>
-    </div>
-    
-    <div class="dice-section">
-        <div class="dice" id="dice">?</div>
-        <button class="roll-btn" id="rollBtn" onclick="rollDice()" disabled>ROLL</button>
-    </div>
-    
-    <div class="msg-box" id="msgBox">Waiting for game to start...</div>
-    
-    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Start Game</button>
-</main>
-
-<div class="overlay" id="gameoverOverlay">
-    <div class="modal">
-        <h2 id="winnerTitle">🏆 WINNER!</h2>
-        <p id="winnerName" style="font-size:1.2rem;color:var(--dim);margin-bottom:16px">Player wins!</p>
-        <div class="modal-btns">
-            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
-            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+    <div class="modal-overlay" id="gameOverModal">
+        <div class="modal">
+            <div class="modal-trophy">🏆</div>
+            <h2>WINNER!</h2>
+            <p id="winnerText">Player wins the game!</p>
+            <div class="modal-btns">
+                <a href="/squad-games.html" class="modal-btn secondary">Leave</a>
+                <a href="#" class="modal-btn primary" id="playAgainBtn">Play Again</a>
+            </div>
         </div>
     </div>
-</div>
 
 <script>
-const BACKEND_URL='https://web-production-519c7.up.railway.app';
-const socket=io(BACKEND_URL,{transports:['websocket','polling']});
-const urlParams=new URLSearchParams(location.search);
-const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
-const playerName=localStorage.getItem('tempPlayerName');
-document.getElementById('room').textContent=roomCode||'------';
-if(!roomCode||!playerName)location.href='/lobby.html?game=ludo';
+const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
+const COLORS = ['red', 'blue', 'yellow', 'green', 'purple', 'orange'];
+const COLOR_HEX = { red: '#ef4444', blue: '#3b82f6', yellow: '#eab308', green: '#22c55e', purple: '#a855f7', orange: '#f97316' };
 
-const COLORS=['red','blue','yellow','green','purple','orange'];
-let state={players:[],pieces:{},currentTurn:'',diceValue:0,phase:'waiting',myColor:'',isMyTurn:false,selectablePieces:[],isHost:localStorage.getItem('tempIsHost')==='true',boardSize:4};
+let state = {
+    roomCode: '', playerName: '', isHost: false, players: [], myColor: '', currentTurn: '',
+    isMyTurn: false, phase: 'waiting', diceValue: 0, pieces: {}, selectablePieces: [], homeCount: {}
+};
 
-socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
-socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;document.getElementById('actionBtn').disabled=!state.isHost;document.getElementById('actionBtn').textContent=state.isHost?'Start Game':'Waiting for host...';renderPlayers();});
-socket.on('player-joined',d=>{state.players=d.room.players||[];renderPlayers();});
-socket.on('player-disconnected',d=>{state.players=d.room.players||[];renderPlayers();});
+const urlParams = new URLSearchParams(window.location.search);
+state.roomCode = urlParams.get('room') || localStorage.getItem('tempRoomCode') || '';
+state.playerName = localStorage.getItem('tempPlayerName') || '';
+state.isHost = localStorage.getItem('tempIsHost') === 'true';
 
-socket.on('ludo-state',d=>{
-    state.pieces=d.pieces;state.currentTurn=d.currentTurn;state.phase='playing';
-    state.myColor=d.colors[playerName]||'';
-    state.isMyTurn=d.currentTurn===playerName;
-    state.boardSize=d.boardSize||4;
+document.getElementById('roomCode').textContent = state.roomCode || '------';
+if (!state.roomCode || !state.playerName) window.location.href = '/lobby.html?game=ludo';
+
+const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+
+socket.on('connect', () => {
+    console.log('Connected');
+    socket.emit('rejoin-room', { roomCode: state.roomCode, playerName: state.playerName });
+});
+
+socket.on('room-joined', (data) => {
+    state.players = data.room?.players || [];
+    const me = state.players.find(p => p.name === state.playerName);
+    if (me) state.isHost = me.isHost;
+    updateStartButton();
+    renderPlayers();
+    renderBoard();
+});
+
+socket.on('player-joined', (data) => {
+    state.players = data.room?.players || [];
+    renderPlayers();
+    showMessage(`${data.playerName} joined`);
+});
+
+socket.on('player-disconnected', (data) => {
+    state.players = data.room?.players || [];
+    renderPlayers();
+});
+
+socket.on('ludo-state', (data) => {
+    state.pieces = data.pieces || {};
+    state.currentTurn = data.currentTurn;
+    state.myColor = data.colors?.[state.playerName] || '';
+    state.isMyTurn = data.currentTurn === state.playerName;
+    state.phase = 'playing';
+    state.homeCount = data.homeCount || {};
     
-    const banner=document.getElementById('turnBanner');
-    banner.classList.toggle('my-turn',state.isMyTurn);
-    document.getElementById('turnLbl').textContent=state.isMyTurn?'Your Turn!':'Current Turn';
-    document.getElementById('turnName').textContent=d.currentTurn;
+    document.getElementById('startBtn').style.display = 'none';
+    updateTurnBanner();
+    updateRollButton();
+    renderPlayers();
+    renderBoard();
     
-    document.getElementById('rollBtn').disabled=!state.isMyTurn||state.diceValue>0;
-    document.getElementById('msgBox').textContent=state.isMyTurn?'Roll the dice!':'Waiting for '+d.currentTurn;
-    document.getElementById('actionBtn').style.display='none';
+    showMessage(state.isMyTurn ? 'Your turn! Roll the dice' : `Waiting for ${state.currentTurn}...`, state.isMyTurn);
+});
+
+socket.on('ludo-roll', (data) => {
+    state.diceValue = data.value;
+    state.selectablePieces = data.selectablePieces || [];
+    animateDice(data.value);
     
+    setTimeout(() => {
+        if (state.isMyTurn) {
+            if (state.selectablePieces.length > 0) {
+                showMessage('Select a piece to move!', true);
+                renderBoard();
+            } else {
+                showMessage('No valid moves. Turn passes...');
+            }
+        }
+        updateRollButton();
+    }, 700);
+});
+
+socket.on('ludo-move', (data) => {
+    state.pieces = data.pieces || {};
+    state.diceValue = 0;
+    state.selectablePieces = [];
+    state.homeCount = data.homeCount || {};
     renderBoard();
     renderPlayers();
 });
 
-socket.on('ludo-roll',d=>{
-    state.diceValue=d.value;state.selectablePieces=d.selectablePieces||[];
-    const dice=document.getElementById('dice');
-    dice.textContent=d.value;
-    dice.classList.add('rolling');
-    setTimeout(()=>dice.classList.remove('rolling'),500);
-    
-    document.getElementById('rollBtn').disabled=true;
-    
-    if(state.isMyTurn){
-        if(state.selectablePieces.length>0){
-            document.getElementById('msgBox').textContent='Select a piece to move';
-            highlightPieces();
-        }else{
-            document.getElementById('msgBox').textContent='No valid moves!';
-        }
-    }
+socket.on('ludo-game-over', (data) => {
+    document.getElementById('winnerText').textContent = `${data.winner} wins!`;
+    document.getElementById('playAgainBtn').href = `/waiting-room.html?room=${state.roomCode}`;
+    document.getElementById('gameOverModal').classList.add('active');
 });
 
-socket.on('ludo-move',d=>{
-    state.pieces=d.pieces;state.diceValue=0;state.selectablePieces=[];
-    renderBoard();
-});
+socket.on('host-left', () => { alert('Host left'); window.location.href = '/squad-games.html'; });
 
-socket.on('ludo-game-over',d=>{
-    document.getElementById('winnerName').textContent=d.winner+' wins!';
-    document.getElementById('gameoverOverlay').classList.add('active');
-});
+function updateTurnBanner() {
+    const banner = document.getElementById('turnBanner');
+    banner.classList.toggle('my-turn', state.isMyTurn);
+    document.getElementById('turnLabel').textContent = state.isMyTurn ? "🎲 YOUR TURN!" : "Current Turn";
+    document.getElementById('turnName').textContent = state.currentTurn || 'Waiting...';
+}
 
-socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+function updateRollButton() {
+    document.getElementById('rollBtn').disabled = !state.isMyTurn || state.diceValue > 0 || state.phase !== 'playing';
+}
 
-function initBoard(){
-    const board=document.getElementById('board');
-    board.innerHTML='';
-    for(let r=0;r<15;r++){
-        for(let c=0;c<15;c++){
-            const cell=document.createElement('div');
-            cell.className='cell';
-            cell.dataset.row=r;
-            cell.dataset.col=c;
-            
-            // Home areas
-            if(r<6&&c<6)cell.classList.add('home-red');
-            else if(r<6&&c>8)cell.classList.add('home-blue');
-            else if(r>8&&c<6)cell.classList.add('home-yellow');
-            else if(r>8&&c>8)cell.classList.add('home-green');
-            
-            // Center
-            if(r>=6&&r<=8&&c>=6&&c<=8)cell.classList.add('center');
-            
-            // Path cells (simplified)
-            const isPath=((r===6||r===8)&&c>=0&&c<=5)||((r===6||r===8)&&c>=9&&c<=14)||
-                        ((c===6||c===8)&&r>=0&&r<=5)||((c===6||c===8)&&r>=9&&r<=14)||
-                        (r===7&&(c<6||c>8))||(c===7&&(r<6||r>8));
-            if(isPath)cell.classList.add('path');
-            
-            board.appendChild(cell);
-        }
+function updateStartButton() {
+    const btn = document.getElementById('startBtn');
+    if (state.phase === 'waiting') {
+        btn.style.display = 'block';
+        btn.disabled = !state.isHost;
+        btn.textContent = state.isHost ? 'START GAME' : 'Waiting for host...';
+    } else {
+        btn.style.display = 'none';
     }
 }
 
-function renderBoard(){
-    initBoard();
-    // Render pieces (simplified - pieces shown in home or on path)
-    Object.entries(state.pieces).forEach(([color,pieces])=>{
-        pieces.forEach((pos,i)=>{
-            if(pos>=0){
-                // Place piece on board based on position
-                const coords=getCoords(color,pos);
-                const cell=document.querySelector(`.cell[data-row="${coords.r}"][data-col="${coords.c}"]`);
-                if(cell){
-                    const piece=document.createElement('div');
-                    piece.className='piece '+color;
-                    piece.dataset.color=color;
-                    piece.dataset.index=i;
-                    piece.onclick=()=>selectPiece(color,i);
-                    cell.appendChild(piece);
-                }
+function showMessage(msg, highlight = false) {
+    const box = document.getElementById('messageBox');
+    box.textContent = msg;
+    box.classList.toggle('highlight', highlight);
+}
+
+function renderPlayers() {
+    document.getElementById('playersRow').innerHTML = state.players.map((player, index) => {
+        const color = COLORS[index] || 'red';
+        const isCurrent = player.name === state.currentTurn;
+        const isMe = player.name === state.playerName;
+        const homeCount = state.homeCount?.[color] || 0;
+        
+        return `<div class="player-card ${color} ${isCurrent ? 'current' : ''}">
+            <div class="player-avatar ${color}">🎮</div>
+            <div class="player-name">${escapeHtml(player.name)}${isMe ? ' (You)' : ''}</div>
+            <div class="player-pieces">Home: ${homeCount}/4</div>
+        </div>`;
+    }).join('');
+}
+
+function renderBoard() {
+    const svg = document.getElementById('ludoBoard');
+    
+    let html = `
+        <rect width="600" height="600" fill="#1a1a2e" rx="20"/>
+        <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+            ${Array.from({length: 16}, (_, i) => `<line x1="${i * 40}" y1="0" x2="${i * 40}" y2="600"/><line x1="0" y1="${i * 40}" x2="600" y2="${i * 40}"/>`).join('')}
+        </g>
+        
+        <!-- Home Bases -->
+        <rect x="20" y="20" width="220" height="220" rx="15" fill="rgba(239,68,68,0.25)" stroke="${COLOR_HEX.red}" stroke-width="3"/>
+        <rect x="360" y="20" width="220" height="220" rx="15" fill="rgba(59,130,246,0.25)" stroke="${COLOR_HEX.blue}" stroke-width="3"/>
+        <rect x="20" y="360" width="220" height="220" rx="15" fill="rgba(234,179,8,0.25)" stroke="${COLOR_HEX.yellow}" stroke-width="3"/>
+        <rect x="360" y="360" width="220" height="220" rx="15" fill="rgba(34,197,94,0.25)" stroke="${COLOR_HEX.green}" stroke-width="3"/>
+        
+        <!-- Home base piece spots -->
+        <circle cx="80" cy="80" r="22" fill="${COLOR_HEX.red}" opacity="0.4"/><circle cx="160" cy="80" r="22" fill="${COLOR_HEX.red}" opacity="0.4"/>
+        <circle cx="80" cy="160" r="22" fill="${COLOR_HEX.red}" opacity="0.4"/><circle cx="160" cy="160" r="22" fill="${COLOR_HEX.red}" opacity="0.4"/>
+        <circle cx="420" cy="80" r="22" fill="${COLOR_HEX.blue}" opacity="0.4"/><circle cx="500" cy="80" r="22" fill="${COLOR_HEX.blue}" opacity="0.4"/>
+        <circle cx="420" cy="160" r="22" fill="${COLOR_HEX.blue}" opacity="0.4"/><circle cx="500" cy="160" r="22" fill="${COLOR_HEX.blue}" opacity="0.4"/>
+        <circle cx="80" cy="420" r="22" fill="${COLOR_HEX.yellow}" opacity="0.4"/><circle cx="160" cy="420" r="22" fill="${COLOR_HEX.yellow}" opacity="0.4"/>
+        <circle cx="80" cy="500" r="22" fill="${COLOR_HEX.yellow}" opacity="0.4"/><circle cx="160" cy="500" r="22" fill="${COLOR_HEX.yellow}" opacity="0.4"/>
+        <circle cx="420" cy="420" r="22" fill="${COLOR_HEX.green}" opacity="0.4"/><circle cx="500" cy="420" r="22" fill="${COLOR_HEX.green}" opacity="0.4"/>
+        <circle cx="420" cy="500" r="22" fill="${COLOR_HEX.green}" opacity="0.4"/><circle cx="500" cy="500" r="22" fill="${COLOR_HEX.green}" opacity="0.4"/>
+        
+        <!-- Center -->
+        <polygon points="300,260 340,300 300,340 260,300" fill="url(#centerGrad)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        
+        <!-- Path cells -->
+        <g fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.15)" stroke-width="1">
+            ${[0,1,2,3,4,5].map(i => `<rect x="${260}" y="${20 + i * 40}" width="35" height="35" rx="4"/><rect x="${305}" y="${20 + i * 40}" width="35" height="35" rx="4"/>`).join('')}
+            ${[0,1,2,3,4,5].map(i => `<rect x="${260}" y="${360 + i * 40}" width="35" height="35" rx="4"/><rect x="${305}" y="${360 + i * 40}" width="35" height="35" rx="4"/>`).join('')}
+            ${[0,1,2,3,4,5].map(i => `<rect x="${20 + i * 40}" y="260" width="35" height="35" rx="4"/><rect x="${20 + i * 40}" y="305" width="35" height="35" rx="4"/>`).join('')}
+            ${[0,1,2,3,4,5].map(i => `<rect x="${360 + i * 40}" y="260" width="35" height="35" rx="4"/><rect x="${360 + i * 40}" y="305" width="35" height="35" rx="4"/>`).join('')}
+        </g>
+        
+        <!-- Home columns -->
+        ${[1,2,3,4,5].map(i => `<rect x="262" y="${262 - i * 38}" width="31" height="31" rx="4" fill="rgba(239,68,68,0.35)" stroke="${COLOR_HEX.red}" stroke-width="1"/>`).join('')}
+        ${[1,2,3,4,5].map(i => `<rect x="${307 + i * 38}" y="262" width="31" height="31" rx="4" fill="rgba(59,130,246,0.35)" stroke="${COLOR_HEX.blue}" stroke-width="1"/>`).join('')}
+        ${[1,2,3,4,5].map(i => `<rect x="307" y="${307 + i * 38}" width="31" height="31" rx="4" fill="rgba(234,179,8,0.35)" stroke="${COLOR_HEX.yellow}" stroke-width="1"/>`).join('')}
+        ${[1,2,3,4,5].map(i => `<rect x="${262 - i * 38}" y="307" width="31" height="31" rx="4" fill="rgba(34,197,94,0.35)" stroke="${COLOR_HEX.green}" stroke-width="1"/>`).join('')}
+        
+        <!-- Start arrows -->
+        <circle cx="60" cy="277" r="14" fill="${COLOR_HEX.red}" stroke="#fff" stroke-width="2"/><text x="60" y="282" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">▶</text>
+        <circle cx="323" cy="60" r="14" fill="${COLOR_HEX.blue}" stroke="#fff" stroke-width="2"/><text x="323" y="65" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">▼</text>
+        <circle cx="540" cy="323" r="14" fill="${COLOR_HEX.yellow}" stroke="#fff" stroke-width="2"/><text x="540" y="328" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">◀</text>
+        <circle cx="277" cy="540" r="14" fill="${COLOR_HEX.green}" stroke="#fff" stroke-width="2"/><text x="277" y="545" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">▲</text>
+        
+        <!-- Safe spots -->
+        <text x="100" y="285" text-anchor="middle" fill="#fbbf24" font-size="16">★</text>
+        <text x="323" y="105" text-anchor="middle" fill="#fbbf24" font-size="16">★</text>
+        <text x="500" y="330" text-anchor="middle" fill="#fbbf24" font-size="16">★</text>
+        <text x="277" y="505" text-anchor="middle" fill="#fbbf24" font-size="16">★</text>
+        
+        <defs><linearGradient id="centerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${COLOR_HEX.red}"/><stop offset="33%" stop-color="${COLOR_HEX.blue}"/>
+            <stop offset="66%" stop-color="${COLOR_HEX.yellow}"/><stop offset="100%" stop-color="${COLOR_HEX.green}"/>
+        </linearGradient></defs>
+    `;
+    
+    // Render pieces
+    const homePositions = {
+        red: [{x:80,y:80},{x:160,y:80},{x:80,y:160},{x:160,y:160}],
+        blue: [{x:420,y:80},{x:500,y:80},{x:420,y:160},{x:500,y:160}],
+        yellow: [{x:80,y:420},{x:160,y:420},{x:80,y:500},{x:160,y:500}],
+        green: [{x:420,y:420},{x:500,y:420},{x:420,y:500},{x:500,y:500}],
+        purple: [{x:80,y:80},{x:160,y:80},{x:80,y:160},{x:160,y:160}],
+        orange: [{x:420,y:80},{x:500,y:80},{x:420,y:160},{x:500,y:160}]
+    };
+    
+    Object.entries(state.pieces || {}).forEach(([color, pieces]) => {
+        pieces.forEach((pos, idx) => {
+            const isSelectable = state.selectablePieces.includes(idx) && color === state.myColor;
+            let cx, cy;
+            
+            if (pos === -1) {
+                const hp = homePositions[color]?.[idx] || {x:300,y:300};
+                cx = hp.x; cy = hp.y;
+            } else {
+                const bp = getBoardPos(color, pos);
+                cx = bp.x; cy = bp.y;
             }
+            
+            html += `<circle cx="${cx}" cy="${cy}" r="18" fill="${COLOR_HEX[color]}" stroke="#fff" stroke-width="3" 
+                class="${isSelectable ? 'piece-selectable' : ''}" style="cursor:${isSelectable ? 'pointer' : 'default'};filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));"
+                ${isSelectable ? `onclick="selectPiece('${color}',${idx})"` : ''}/>
+                <text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" pointer-events="none">${idx + 1}</text>`;
         });
     });
+    
+    svg.innerHTML = html;
 }
 
-function getCoords(color,pos){
-    // Simplified coordinate mapping
-    const starts={red:{r:6,c:1},blue:{r:1,c:8},yellow:{r:8,c:13},green:{r:13,c:6}};
-    if(pos===0)return starts[color];
-    // Just return a position on the path for demo
-    const pathCells=[{r:6,c:0},{r:6,c:1},{r:6,c:2},{r:6,c:3},{r:6,c:4},{r:6,c:5},{r:5,c:6},{r:4,c:6},{r:3,c:6},{r:2,c:6},{r:1,c:6},{r:0,c:6},{r:0,c:7},{r:0,c:8},{r:1,c:8},{r:2,c:8},{r:3,c:8},{r:4,c:8},{r:5,c:8},{r:6,c:9},{r:6,c:10},{r:6,c:11},{r:6,c:12},{r:6,c:13},{r:6,c:14},{r:7,c:14},{r:8,c:14},{r:8,c:13},{r:8,c:12},{r:8,c:11},{r:8,c:10},{r:8,c:9},{r:9,c:8},{r:10,c:8},{r:11,c:8},{r:12,c:8},{r:13,c:8},{r:14,c:8},{r:14,c:7},{r:14,c:6},{r:13,c:6},{r:12,c:6},{r:11,c:6},{r:10,c:6},{r:9,c:6},{r:8,c:5},{r:8,c:4},{r:8,c:3},{r:8,c:2},{r:8,c:1},{r:8,c:0},{r:7,c:0}];
-    return pathCells[pos%pathCells.length];
+function getBoardPos(color, pos) {
+    const path = [
+        {x:60,y:280},{x:100,y:280},{x:140,y:280},{x:180,y:280},{x:220,y:280},{x:260,y:220},{x:260,y:180},{x:260,y:140},{x:260,y:100},{x:260,y:60},
+        {x:280,y:40},{x:320,y:40},{x:340,y:60},{x:340,y:100},{x:340,y:140},{x:340,y:180},{x:340,y:220},{x:380,y:260},{x:420,y:260},{x:460,y:260},
+        {x:500,y:260},{x:540,y:260},{x:560,y:280},{x:560,y:320},{x:540,y:340},{x:500,y:340},{x:460,y:340},{x:420,y:340},{x:380,y:340},{x:340,y:380},
+        {x:340,y:420},{x:340,y:460},{x:340,y:500},{x:340,y:540},{x:320,y:560},{x:280,y:560},{x:260,y:540},{x:260,y:500},{x:260,y:460},{x:260,y:420},
+        {x:260,y:380},{x:220,y:340},{x:180,y:340},{x:140,y:340},{x:100,y:340},{x:60,y:340},{x:40,y:320},{x:40,y:280}
+    ];
+    const offsets = {red:0,blue:13,yellow:26,green:39,purple:0,orange:13};
+    const actualPos = (pos + (offsets[color]||0)) % 52;
+    return path[actualPos] || {x:300,y:300};
 }
 
-function highlightPieces(){
-    state.selectablePieces.forEach(i=>{
-        const piece=document.querySelector(`.piece.${state.myColor}[data-index="${i}"]`);
-        if(piece)piece.classList.add('selectable');
-    });
+function animateDice(value) {
+    const dice = document.getElementById('dice');
+    dice.classList.add('rolling');
+    setTimeout(() => { dice.classList.remove('rolling'); renderDiceDots(value); }, 600);
 }
 
-function selectPiece(color,index){
-    if(!state.isMyTurn||color!==state.myColor||!state.selectablePieces.includes(index))return;
-    socket.emit('ludo-move',{roomCode,pieceIndex:index});
+function renderDiceDots(value) {
+    const patterns = {
+        1:[0,0,0,0,1,0,0,0,0], 2:[1,0,0,0,0,0,0,0,1], 3:[1,0,0,0,1,0,0,0,1],
+        4:[1,0,1,0,0,0,1,0,1], 5:[1,0,1,0,1,0,1,0,1], 6:[1,0,1,1,0,1,1,0,1]
+    };
+    document.getElementById('diceDots').innerHTML = (patterns[value]||patterns[1]).map(a => `<div class="dice-dot ${a?'active':''}"></div>`).join('');
 }
 
-function rollDice(){
-    if(!state.isMyTurn)return;
-    socket.emit('ludo-roll',{roomCode});
-    document.getElementById('rollBtn').disabled=true;
-}
+document.getElementById('rollBtn').addEventListener('click', () => {
+    if (!state.isMyTurn || state.diceValue > 0) return;
+    socket.emit('ludo-roll', { roomCode: state.roomCode });
+    document.getElementById('rollBtn').disabled = true;
+});
 
-function renderPlayers(){
-    const row=document.getElementById('playersRow');
-    const maxPlayers = state.boardSize === 6 ? 6 : 4;
-    row.innerHTML=state.players.slice(0, maxPlayers).map((p,i)=>`
-        <div class="player-box ${COLORS[i]} ${p.name===state.currentTurn?'current':''}">
-            <div class="player-color ${COLORS[i]}"></div>
-            <div class="player-name">${esc(p.name)}${p.name===playerName?' (You)':''}</div>
-            <div class="player-home">Home: 0</div>
-        </div>
-    `).join('');
-}
+document.getElementById('startBtn').addEventListener('click', () => {
+    if (!state.isHost) return;
+    socket.emit('start-game', { roomCode: state.roomCode });
+});
 
-function handleAction(){
-    if(state.phase==='waiting'&&state.isHost)socket.emit('ludo-start',{roomCode});
+function selectPiece(color, index) {
+    if (!state.isMyTurn || color !== state.myColor || !state.selectablePieces.includes(index)) return;
+    socket.emit('ludo-move', { roomCode: state.roomCode, pieceIndex: index });
+    state.selectablePieces = [];
+    renderBoard();
 }
+window.selectPiece = selectPiece;
 
-function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
-initBoard();
-window.addEventListener('beforeunload',()=>socket.disconnect());
+function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+
+renderDiceDots(1);
+renderBoard();
+window.addEventListener('beforeunload', () => socket.disconnect());
 </script>
 <script src="/header.js"></script>
 </body>
