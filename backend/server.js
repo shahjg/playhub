@@ -217,7 +217,7 @@ app.post('/create-checkout-session', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
-        price: 'price_1ScbQvExT6JNJPgqCxT0qdHc',
+        price: 'price_1SvPPKIE8ZfrDMWLebyE9a2Z',
         quantity: 1,
       }],
       mode: 'subscription',

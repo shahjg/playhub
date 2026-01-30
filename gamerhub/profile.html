@@ -665,6 +665,37 @@
     .premium-active-text h3 { font-size: 1.2rem; letter-spacing: 1px; color: var(--gold); margin-bottom: 2px; }
     .premium-active-text p { color: var(--text-muted); font-size: 0.85rem; }
 
+    /* Support/Donate section - separate from Premium */
+    .support-section {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(16, 185, 129, 0.1));
+      border: 2px solid rgba(52, 211, 153, 0.2);
+      border-radius: 14px;
+      padding: 24px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    
+    .support-section h3 { font-size: 1.3rem; letter-spacing: 2px; margin-bottom: 8px; color: var(--green); }
+    .support-section p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px; line-height: 1.5; }
+    
+    .support-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    
+    .support-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(52, 211, 153, 0.3); }
+
     /* ========== COSMETICS ========== */
     .preview-card {
       background: linear-gradient(135deg, rgba(20, 20, 35, 0.9), rgba(25, 25, 45, 0.9));
@@ -1421,10 +1452,43 @@
       .avatar-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
       .avatar-option { font-size: 1.5rem; }
       .ranks-grid { grid-template-columns: 1fr; }
-      .premium-price { font-size: 2.5rem; }
+      .premium-price { font-size: 2.2rem; }
+      .premium-price span { font-size: 1rem; }
       .xp-level-number { font-size: 1.8rem; }
       .card { padding: 18px; }
       .level-rewards-grid { grid-template-columns: repeat(3, 1fr); }
+      
+      /* Premium section mobile fixes */
+      .premium-banner { padding: 20px 16px; }
+      .premium-banner h2 { font-size: 1.5rem; }
+      .premium-banner p { font-size: 0.8rem; margin-bottom: 12px; }
+      .premium-feature { font-size: 0.75rem; padding: 3px 0; }
+      .premium-active-card { 
+        flex-direction: column; 
+        text-align: center; 
+        padding: 16px; 
+        gap: 12px;
+      }
+      .premium-active-info { 
+        flex-direction: column; 
+        gap: 8px; 
+        width: 100%;
+      }
+      .premium-active-text { text-align: center; }
+      .premium-active-text h3 { font-size: 1rem; }
+      .premium-active-text p { font-size: 0.75rem; }
+      #manage-sub-btn { width: 100%; }
+      #upgrade-btn { width: 100%; padding: 12px 20px !important; }
+      
+      /* Donate section mobile */
+      .support-section { padding: 18px 14px; margin-top: 20px; }
+      .support-section h3 { font-size: 1.1rem; }
+      .support-section p { font-size: 0.8rem; }
+      .support-btn { width: 100%; justify-content: center; }
+      
+      /* Previews mobile */
+      .previews-row { grid-template-columns: 1fr; gap: 16px; }
+      .preview-card { padding: 16px; }
     }
 
     @media (max-width: 380px) {
@@ -1688,7 +1752,7 @@
           <div class="premium-banner-content">
             <h2>UPGRADE TO PREMIUM</h2>
             <p>Stand out in every lobby with exclusive customization</p>
-            <div class="premium-price">$2.00<span>/month</span></div>
+            <div class="premium-price">$2.50<span>/month</span></div>
             <div class="premium-features">
               <div class="premium-feature">• Ad-free experience</div>
               <div class="premium-feature">• 25+ Badge icons</div>
@@ -1703,7 +1767,17 @@
               <span id="upgrade-btn-text">Upgrade Now</span>
               <span id="upgrade-btn-loading" style="display: none;"><span class="loading-spinner"></span> Processing...</span>
             </button>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 12px;">Secure payment via Stripe • Cancel anytime</p>
           </div>
+        </div>
+
+        <!-- Separate Donation Section -->
+        <div class="support-section" id="donate-section">
+          <h3>💚 SUPPORT US</h3>
+          <p>Love TheGaming.co? Help us keep the servers running and build new games! One-time donations are separate from Premium subscriptions.</p>
+          <a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener" class="support-btn">
+            ☕ Buy Us a Coffee on Ko-fi
+          </a>
         </div>
 
         <div id="cosmetics-wrapper">
@@ -1833,7 +1907,7 @@
   <div class="modal-overlay" id="sub-modal">
     <div class="modal-box">
       <h2 class="modal-title">MANAGE SUBSCRIPTION</h2>
-      <p class="modal-text">You're currently on <strong>Premium</strong>. Your subscription renews monthly at $2.00 CAD.</p>
+      <p class="modal-text">You're currently on <strong>Premium</strong>. Your subscription renews monthly at $2.50 CAD.</p>
       <div class="modal-buttons">
         <button class="btn btn-primary" onclick="closeModal()">Keep Premium</button>
         <button class="btn btn-secondary" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #f87171;" onclick="confirmCancel()">Cancel Subscription</button>
@@ -3163,13 +3237,9 @@
         });
         
         if (!r.ok) {
-          const errorText = await r.text();
-          console.error('Server response:', r.status, errorText);
-          
-          // If server fails, show Ko-fi fallback
-          if (confirm('Payment server is temporarily unavailable. Would you like to subscribe via Ko-fi instead?\n\nYou can also try again later.')) {
-            window.open('https://ko-fi.com/thegamingco', '_blank');
-          }
+          const errorData = await r.json().catch(() => ({}));
+          console.error('Server response:', r.status, errorData);
+          showStatus('Payment system is currently unavailable. Please try again later.', 'error');
           throw new Error(`Server error: ${r.status}`);
         }
         
@@ -3177,6 +3247,7 @@
         if (d.url) {
           window.location.href = d.url;
         } else {
+          showStatus('Unable to create checkout session. Please try again.', 'error');
           throw new Error('No checkout URL returned');
         }
       } catch (e) { 
