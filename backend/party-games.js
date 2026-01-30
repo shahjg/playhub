@@ -1258,7 +1258,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.votes[socket.id] = { choice, playerName: player.playerName };
         socket.emit('thisorthat-party-vote-received', { choice });
         
-        io.to(roomCode).emit('thisorthat-party-vote-count', { 
+        io.to(roomCode).emit('thisorthat-party-vote-counted', { 
             votedCount: Object.keys(room.gameData.votes).length, 
             totalPlayers: room.players.length 
         });
@@ -1319,7 +1319,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.ratings[socket.id] = { rating, playerName: player.playerName };
         socket.emit('hottakes-party-rate-received', { rating });
         
-        io.to(roomCode).emit('hottakes-party-rate-count', { 
+        io.to(roomCode).emit('hottakes-party-rate-counted', { 
             ratedCount: Object.keys(room.gameData.ratings).length, 
             totalPlayers: room.players.length 
         });
@@ -1380,7 +1380,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.responses[socket.id] = { response, playerName: player.playerName };
         socket.emit('neverever-party-response-received', { response });
         
-        io.to(roomCode).emit('neverever-party-response-count', { 
+        io.to(roomCode).emit('neverever-party-response-counted', { 
             respondedCount: Object.keys(room.gameData.responses).length, 
             totalPlayers: room.players.length 
         });
@@ -1448,7 +1448,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         };
         socket.emit('betorbluff-guess-received', { guess });
         
-        io.to(roomCode).emit('betorbluff-guess-count', { 
+        io.to(roomCode).emit('betorbluff-guess-counted', { 
             guessedCount: Object.keys(room.gameData.guesses).length, 
             totalPlayers: room.players.length 
         });
@@ -1486,7 +1486,7 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         };
         socket.emit('betorbluff-bet-received', { targetPlayerId, betAmount });
         
-        io.to(roomCode).emit('betorbluff-bet-count', { 
+        io.to(roomCode).emit('betorbluff-bet-counted', { 
             betCount: Object.keys(room.gameData.bets).length, 
             totalPlayers: room.players.length 
         });

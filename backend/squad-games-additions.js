@@ -374,7 +374,7 @@ function startWordBombTurn(room, io) {
     const roundPenalty = Math.floor(gd.roundNumber / 3) * gd.decreaseRate;
     const turnTime = Math.max(gd.minTime, baseTime - roundPenalty);
     
-    io.to(room.code).emit('wordbomb-turn', {
+    io.to(room.code).emit('wordbomb-round', {
         currentPlayer: currentPlayer.name,
         prompt: gd.currentPrompt,
         timeLimit: turnTime,
@@ -396,7 +396,7 @@ function handleWordBombExplosion(room, io) {
     // Lose a life
     gd.lives[currentPlayer.name]--;
     
-    io.to(room.code).emit('wordbomb-explosion', {
+    io.to(room.code).emit('wordbomb-timeout', {
         playerName: currentPlayer.name,
         livesRemaining: gd.lives[currentPlayer.name],
         lives: gd.lives
@@ -945,6 +945,15 @@ function startCharadesTurn(room, io) {
         scores: gd.scores
     });
     
+    // Also emit charades-round for frontend compatibility
+    io.to(room.code).emit('charades-round', {
+        actor: actor.name,
+        word: gd.currentWord,
+        timeLimit: gd.timePerTurn,
+        round: currentRound,
+        totalRounds: gd.totalRounds
+    });
+    
     // Turn timeout
     gd.turnTimeout = setTimeout(() => {
         endCharadesTurn(room, io, false);
@@ -1018,7 +1027,7 @@ function handleCharadesSkip(room, io) {
     
     gd.skipsRemaining--;
     
-    io.to(room.code).emit('charades-skipped', {
+    io.to(room.code).emit('charades-pass', {
         word: gd.currentWord,
         skipsRemaining: gd.skipsRemaining
     });
@@ -1040,7 +1049,7 @@ function endCharadesTurn(room, io, guessed) {
     
     gd.phase = 'turnEnd';
     
-    io.to(room.code).emit('charades-turn-end', {
+    io.to(room.code).emit('charades-time-up', {
         actor: gd.currentActor.name,
         word: gd.currentWord,
         guessed: guessed,

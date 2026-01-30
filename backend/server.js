@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const squadGames = require('./squad-games-additions');
+const additionalSquadGames = require('./additional-squad-games');
 const socketIo = require('socket.io');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 const partyGames = require('./party-games');
+const missingSquadGames = require('./missing-squad-games');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -16,16 +18,36 @@ const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
 
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://thegaming.co',
+  'https://www.thegaming.co',
+  'http://localhost:3000',
+  'http://localhost:5500',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 // CORS configuration for Socket.io
 const io = socketIo(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-app.use(cors());
+// CORS for Express with restricted origins
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS not allowed'), false);
+  },
+  credentials: true
+}));
 
 // STRIPE WEBHOOK - MUST BE BEFORE express.json()
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -212,6 +234,54 @@ app.post('/create-checkout-session', async (req, res) => {
 });
 
 console.log('Frontend URL:', process.env.FRONTEND_URL);
+
+// ============ SECURITY UTILITIES ============
+
+// Rate limiting map: socketId -> { count, resetTime }
+const rateLimits = new Map();
+const RATE_LIMIT_WINDOW = 1000; // 1 second
+const RATE_LIMIT_MAX = 20; // max events per second
+
+function checkRateLimit(socketId) {
+  const now = Date.now();
+  const limit = rateLimits.get(socketId);
+  
+  if (!limit || now > limit.resetTime) {
+    rateLimits.set(socketId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (limit.count >= RATE_LIMIT_MAX) {
+    return false; // Rate limited
+  }
+  
+  limit.count++;
+  return true;
+}
+
+// Input sanitization
+function sanitizeString(str, maxLength = 50) {
+  if (typeof str !== 'string') return '';
+  return str
+    .trim()
+    .slice(0, maxLength)
+    .replace(/[<>\"\'&]/g, ''); // Remove potentially dangerous characters
+}
+
+function validatePlayerName(name) {
+  const sanitized = sanitizeString(name, 20);
+  if (sanitized.length < 1) return { valid: false, error: 'Name too short' };
+  if (sanitized.length > 20) return { valid: false, error: 'Name too long (max 20 characters)' };
+  if (!/^[a-zA-Z0-9_\- ]+$/.test(sanitized)) return { valid: false, error: 'Invalid characters in name' };
+  return { valid: true, name: sanitized };
+}
+
+function validateRoomCode(code) {
+  if (typeof code !== 'string') return false;
+  return /^[A-Z0-9]{6}$/.test(code.toUpperCase());
+}
+
+// ============ END SECURITY UTILITIES ============
 
 // In-memory storage (replace with database later)
 const rooms = new Map(); // roomCode -> room data
@@ -1541,11 +1611,33 @@ function calculateSpyfallResults(room) {
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
-  partyGames.setupPartyGameHandlers(io, socket, rooms, players);  // <-- ADD THIS
+  
+  // Rate limiting middleware for this socket
+  const rateLimitedHandler = (handler) => {
+    return (data) => {
+      if (!checkRateLimit(socket.id)) {
+        socket.emit('error', { message: 'Too many requests. Please slow down.' });
+        return;
+      }
+      handler(data);
+    };
+  };
+  
+  partyGames.setupPartyGameHandlers(io, socket, rooms, players);
+  missingSquadGames.setupMissingSquadGameHandlers(io, socket, rooms, players);
+  additionalSquadGames.registerAdditionalSquadGameHandlers(io, socket, rooms, players);
   
   // CREATE ROOM (initial creation only)
-  socket.on('create-room', (data) => {
-    const { playerName, gameType, isPremium, cosmetics, userId } = data;
+  socket.on('create-room', rateLimitedHandler((data) => {
+    const { playerName: rawName, gameType, isPremium, cosmetics, userId } = data;
+    
+    // Validate player name
+    const nameValidation = validatePlayerName(rawName);
+    if (!nameValidation.valid) {
+      socket.emit('error', { message: nameValidation.error });
+      return;
+    }
+    const playerName = nameValidation.name;
     
     // Always generate a new room code for initial creation
     const roomCode = generateRoomCode();
@@ -1589,7 +1681,7 @@ io.on('connection', (socket) => {
     });
     
     console.log(`Room created: ${roomCode} by ${playerName} for game ${gameType}`);
-  });
+  }));
 
   // REJOIN ROOM (for page refreshes or reconnections)
   socket.on('rejoin-room', (data) => {
@@ -1715,8 +1807,23 @@ io.on('connection', (socket) => {
   });
 
   // JOIN ROOM
-  socket.on('join-room', (data) => {
-    const { roomCode, playerName, isPremium, cosmetics, userId } = data;
+  socket.on('join-room', rateLimitedHandler((data) => {
+    const { roomCode: rawCode, playerName: rawName, isPremium, cosmetics, userId } = data;
+    
+    // Validate room code
+    if (!validateRoomCode(rawCode)) {
+      socket.emit('join-error', { message: 'Invalid room code' });
+      return;
+    }
+    const roomCode = rawCode.toUpperCase();
+    
+    // Validate player name
+    const nameValidation = validatePlayerName(rawName);
+    if (!nameValidation.valid) {
+      socket.emit('join-error', { message: nameValidation.error });
+      return;
+    }
+    const playerName = nameValidation.name;
     
     console.log(`Player ${playerName} attempting to join room: ${roomCode}`);
     
@@ -1781,7 +1888,7 @@ io.on('connection', (socket) => {
     });
     
     console.log(`Player ${playerName} joined room ${roomCode}. Total players: ${room.players.length}`);
-  });
+  }));
 
   // KICK PLAYER
   socket.on('kick-player', (data) => {
@@ -1909,11 +2016,21 @@ io.on('connection', (socket) => {
     }
     // NEW GAMES 🎉
     else if (room.gameType === 'power-struggle') {
-        squadGames.initCoupGame(room);
+        additionalSquadGames.initPowerStruggleGame(room);
+        additionalSquadGames.sendPowerStruggleState(room, io);
     } else if (room.gameType === 'word-bomb') {
         squadGames.initWordBombGame(room, difficulty || 'medium');
     } else if (room.gameType === 'ludo') {
         squadGames.initLudoGame(room);
+        // Send initial state to all players
+        setTimeout(() => {
+            io.to(roomCode).emit('ludo-state', {
+                pieces: room.gameData.pieces,
+                playerColors: room.gameData.playerColors,
+                currentPlayer: room.players[room.gameData.currentTurnIndex].name,
+                phase: 'roll'
+            });
+        }, 100);
     } else if (room.gameType === 'charades') {
         squadGames.initCharadesGame(room, category || 'random', 'classic');
     } else if (room.gameType === 'heads-up') {
@@ -1921,9 +2038,14 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'secret-roles') {
         squadGames.initAvalonGame(room, variant || 'standard');
     } else if (room.gameType === 'fake-artist') {
-        squadGames.initFakeArtistGame(room, category || 'mixed');
+        additionalSquadGames.initFakeArtistGame(room);
+        additionalSquadGames.startFakeArtistRound(room, io);
     } else if (room.gameType === 'most-likely-to') {
-        squadGames.initMostLikelyToGame(room, category || 'fun');
+        additionalSquadGames.initMostLikelyToGame(room);
+        additionalSquadGames.startMostLikelyToRound(room, io);
+    } else if (room.gameType === 'head2head') {
+        additionalSquadGames.initHead2HeadGame(room);
+        // Game starts when host clicks start round
     }
     // PARTY GAMES (already work)
     else if (room.gameType === 'trivia-royale') {
@@ -1940,6 +2062,29 @@ io.on('connection', (socket) => {
         partyGames.initSketchGuessGame(room, category || 'random');
     } else if (room.gameType === 'fools-gold') {
         partyGames.initFoolsGoldGame(room, category || 'mixed');
+    }
+    // MISSING SQUAD GAMES
+    else if (room.gameType === 'avalon') {
+        missingSquadGames.initAvalonGame(room, io);
+    } else if (room.gameType === 'insider') {
+        missingSquadGames.initInsiderGame(room, io);
+    } else if (room.gameType === 'wavelength') {
+        missingSquadGames.initWavelengthGame(room, io);
+    } else if (room.gameType === 'npat') {
+        missingSquadGames.initNPATGame(room, io);
+    } else if (room.gameType === 'punchline') {
+        missingSquadGames.initPunchlineGame(room, io);
+    } else if (room.gameType === 'broken-pictionary') {
+        additionalSquadGames.initBrokenPictionaryGame(room);
+        additionalSquadGames.startBrokenPictionaryWritePhase(room, io);
+    } else if (room.gameType === 'doodle-duel') {
+        missingSquadGames.initDoodleDuelGame(room, io);
+    } else if (room.gameType === 'two-truths') {
+        missingSquadGames.initTwoTruthsGame(room, io);
+    } else if (room.gameType === 'celebrity') {
+        missingSquadGames.initCelebrityGame(room, io);
+    } else if (room.gameType === 'fishbowl') {
+        missingSquadGames.initFishbowlGame(room, io);
     } else {
         socket.emit('error', { message: `Game "${room.gameType}" not ready yet!` });
         return;
@@ -3072,6 +3217,9 @@ socket.on('mostlikelyto-vote', (data) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     
+    // Clean up rate limit entry
+    rateLimits.delete(socket.id);
+    
     const player = players.get(socket.id);
     if (player) {
       const room = rooms.get(player.roomCode);
@@ -3827,4 +3975,47 @@ module.exports = {
   nextWordAssociationPlayer,
   getWordAssociationTurnTime,
   isWordUsed
+};
+
+
+// ==================== ADDITIONAL SQUAD GAME LOGIC ====================
+// Note: These functions are called from within the start-game handler
+
+// CHARADES WORDS for squad mode
+const CHARADES_SQUAD_WORDS = {
+  actions: ['Swimming', 'Dancing', 'Cooking', 'Sleeping', 'Running', 'Jumping', 'Crying', 'Laughing', 'Sneezing', 'Yawning'],
+  animals: ['Elephant', 'Monkey', 'Snake', 'Penguin', 'Kangaroo', 'Giraffe', 'Lion', 'Bear', 'Rabbit', 'Cat'],
+  movies: ['Titanic', 'Jaws', 'Superman', 'Batman', 'Frozen', 'Star Wars', 'Toy Story', 'Finding Nemo', 'The Lion King', 'Shrek']
+};
+
+// MOST LIKELY TO QUESTIONS
+const MLT_QUESTIONS_BANK = [
+  "Who is most likely to become famous?",
+  "Who is most likely to win the lottery and lose the ticket?",
+  "Who is most likely to survive a zombie apocalypse?",
+  "Who is most likely to become a millionaire?",
+  "Who is most likely to cry during a movie?",
+  "Who is most likely to be late to their own wedding?",
+  "Who is most likely to go viral on social media?",
+  "Who is most likely to become president?",
+  "Who is most likely to forget their own birthday?",
+  "Who is most likely to win an eating contest?"
+];
+
+// HEAD2HEAD WORDS
+const HEAD2HEAD_WORDS_BANK = ['Apple', 'Beach', 'Castle', 'Dragon', 'Eagle', 'Forest', 'Guitar', 'Helmet', 'Island', 'Jacket'];
+
+module.exports = {
+  categoriesWordBank,
+  categoryDisplayNames,
+  initCategoriesGame,
+  startCategoriesRound,
+  initWordAssociationGame,
+  startWordAssociationTurn,
+  nextWordAssociationPlayer,
+  getWordAssociationTurnTime,
+  isWordUsed,
+  CHARADES_SQUAD_WORDS,
+  MLT_QUESTIONS_BANK,
+  HEAD2HEAD_WORDS_BANK
 };

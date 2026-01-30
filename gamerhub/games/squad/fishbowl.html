@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fishbowl - TheGaming.co</title>
+    <meta name="description" content="Fishbowl Party Game - Describe, act, and one-word clue through 3 rounds!">
+    <meta name="theme-color" content="#f59e0b">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#1a1005;--card:#2a2010;--accent:#f59e0b;--glow:rgba(245,158,11,0.4);--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(245,158,11,0.1) 0%,transparent 50%)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(26,16,5,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back svg{width:14px;height:14px}
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
+        main{position:relative;z-index:1;padding:60px 12px 24px;min-height:100vh;max-width:700px;margin:0 auto}
+        
+        .round-card{background:linear-gradient(135deg,var(--card),rgba(245,158,11,0.1));border:2px solid var(--accent);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;box-shadow:0 0 25px var(--glow)}
+        .round-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+        .round-name{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;color:var(--accent)}
+        .round-desc{font-size:.85rem;color:var(--dim);margin-top:8px}
+        
+        .teams-row{display:flex;gap:12px;margin-bottom:16px}
+        .team-box{flex:1;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+        .team-box.team-a{border-color:var(--blue)}
+        .team-box.team-b{border-color:var(--red)}
+        .team-box.active{box-shadow:0 0 20px rgba(255,255,255,0.2)}
+        .team-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:4px}
+        .team-box.team-a .team-name{color:var(--blue)}
+        .team-box.team-b .team-name{color:var(--red)}
+        .team-score{font-family:'Bebas Neue',sans-serif;font-size:2.5rem}
+        .team-members{font-size:.7rem;color:var(--dim);margin-top:6px}
+        
+        .clue-giver{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px}
+        .clue-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+        .clue-name{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--accent)}
+        
+        .timer-display{text-align:center;margin-bottom:16px}
+        .timer-txt{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--accent)}
+        .timer-txt.danger{color:var(--red);animation:pulse .5s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .timer-bar{height:8px;background:var(--card);border-radius:4px;overflow:hidden}
+        .timer-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--accent),var(--red));transition:width .1s linear}
+        
+        .word-card{background:linear-gradient(135deg,var(--card),rgba(245,158,11,0.15));border:2px solid var(--accent);border-radius:16px;padding:30px;text-align:center;margin-bottom:20px;min-height:120px;display:flex;align-items:center;justify-content:center}
+        .word-txt{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:3px}
+        .word-hidden{color:var(--dim);font-size:1.5rem}
+        
+        .action-btns{display:flex;gap:12px;margin-bottom:16px}
+        .action-btn{flex:1;padding:18px;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;cursor:pointer;border:0;transition:.2s}
+        .action-btn.correct{background:var(--green);color:#fff}
+        .action-btn.skip{background:var(--card);border:2px solid var(--border);color:var(--text)}
+        .action-btn:hover{filter:brightness(1.1)}
+        .action-btn:disabled{opacity:.5;cursor:not-allowed}
+        
+        /* Submit Words Phase */
+        .submit-section{margin-bottom:20px}
+        .submit-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:10px}
+        .word-input{width:100%;padding:14px;background:var(--card);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:1rem;text-align:center;margin-bottom:10px;transition:.2s}
+        .word-input:focus{outline:0;border-color:var(--accent)}
+        .words-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+        .word-tag{padding:8px 14px;background:rgba(245,158,11,0.2);border:1px solid var(--accent);border-radius:20px;font-size:.85rem;display:flex;align-items:center;gap:6px}
+        .word-tag button{background:0;border:0;color:var(--red);cursor:pointer;font-size:1rem}
+        
+        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#d97706);color:#000}
+        .btn-p:hover{filter:brightness(1.1)}
+        .btn-p:disabled{opacity:.5;cursor:not-allowed}
+        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
+        
+        .waiting-msg{text-align:center;padding:40px;color:var(--dim)}
+        
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .overlay.active{display:flex}
+        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px;margin-top:24px}
+        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:12px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="badge" id="room">------</span>
+    </div>
+    <span class="logo">🐟 FISHBOWL</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <div class="round-card">
+        <div class="round-lbl">Round <span id="roundNum">1</span> of 3</div>
+        <div class="round-name" id="roundName">DESCRIBE</div>
+        <div class="round-desc" id="roundDesc">Use any words except the name!</div>
+    </div>
+    
+    <div class="teams-row">
+        <div class="team-box team-a" id="teamA">
+            <div class="team-name">TEAM A</div>
+            <div class="team-score" id="scoreA">0</div>
+            <div class="team-members" id="membersA">-</div>
+        </div>
+        <div class="team-box team-b" id="teamB">
+            <div class="team-name">TEAM B</div>
+            <div class="team-score" id="scoreB">0</div>
+            <div class="team-members" id="membersB">-</div>
+        </div>
+    </div>
+    
+    <div class="clue-giver" id="clueGiver" style="display:none">
+        <div class="clue-lbl">Clue Giver</div>
+        <div class="clue-name" id="clueGiverName">Player</div>
+    </div>
+    
+    <div class="timer-display" id="timerDisplay" style="display:none">
+        <div class="timer-txt" id="timerTxt">60</div>
+        <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    </div>
+    
+    <div class="word-card" id="wordCard" style="display:none">
+        <div class="word-txt" id="wordTxt">???</div>
+    </div>
+    
+    <div class="action-btns" id="actionBtns" style="display:none">
+        <button class="action-btn skip" onclick="skipWord()">SKIP</button>
+        <button class="action-btn correct" onclick="correctWord()">GOT IT!</button>
+    </div>
+    
+    <!-- Submit Words Phase -->
+    <div class="submit-section" id="submitSection" style="display:none">
+        <div class="submit-title">Submit Your Words (3 each)</div>
+        <input type="text" class="word-input" id="wordInput" placeholder="Type a celebrity, character, or person..." maxlength="40">
+        <div class="words-list" id="wordsList"></div>
+    </div>
+    
+    <div class="waiting-msg" id="waitingMsg">Waiting for game to start...</div>
+    
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Start Game</button>
+</main>
+
+<div class="overlay" id="gameoverOverlay">
+    <div class="modal">
+        <h2 id="winnerTitle">TEAM A WINS!</h2>
+        <div class="teams-row" style="margin-bottom:0">
+            <div class="team-box team-a"><div class="team-name">TEAM A</div><div class="team-score" id="finalA">0</div></div>
+            <div class="team-box team-b"><div class="team-name">TEAM B</div><div class="team-score" id="finalB">0</div></div>
+        </div>
+        <div class="modal-btns">
+            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room')||localStorage.getItem('tempRoomCode');
+const playerName=localStorage.getItem('tempPlayerName');
+document.getElementById('room').textContent=roomCode||'------';
+if(!roomCode||!playerName)location.href='/lobby.html?game=fishbowl';
+
+const ROUNDS=[{name:'DESCRIBE',desc:'Use any words except the name!'},{name:'ACT IT OUT',desc:'No talking, only actions!'},{name:'ONE WORD',desc:'Say only ONE word as a clue!'}];
+let state={players:[],phase:'waiting',round:1,scoreA:0,scoreB:0,teamA:[],teamB:[],currentTeam:'A',clueGiver:'',isClueGiver:false,myWords:[],timeRemaining:60,timeLimit:60,isHost:localStorage.getItem('tempIsHost')==='true'};
+let timerInt=null;
+
+socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
+socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;document.getElementById('actionBtn').disabled=!state.isHost;document.getElementById('actionBtn').textContent=state.isHost?'Start Game':'Waiting for host...';});
+socket.on('player-joined',d=>{state.players=d.room.players||[];});
+socket.on('player-disconnected',d=>{state.players=d.room.players||[];});
+
+socket.on('celeb-teams',d=>{
+    state.teamA=d.teamA;state.teamB=d.teamB;
+    document.getElementById('membersA').textContent=d.teamA.join(', ');
+    document.getElementById('membersB').textContent=d.teamB.join(', ');
+});
+
+socket.on('celeb-submit-words',d=>{
+    state.phase='submit';state.myWords=[];
+    document.getElementById('submitSection').style.display='block';
+    document.getElementById('waitingMsg').style.display='none';
+    document.getElementById('wordCard').style.display='none';
+    document.getElementById('actionBtns').style.display='none';
+    document.getElementById('clueGiver').style.display='none';
+    document.getElementById('timerDisplay').style.display='none';
+    renderMyWords();
+    document.getElementById('actionBtn').textContent='Submit Words';
+    document.getElementById('actionBtn').disabled=true;
+});
+
+socket.on('celeb-round',d=>{
+    state.phase='playing';state.round=d.round;state.scoreA=d.scoreA;state.scoreB=d.scoreB;
+    document.getElementById('roundNum').textContent=d.round;
+    document.getElementById('roundName').textContent=ROUNDS[d.round-1].name;
+    document.getElementById('roundDesc').textContent=ROUNDS[d.round-1].desc;
+    document.getElementById('scoreA').textContent=d.scoreA;
+    document.getElementById('scoreB').textContent=d.scoreB;
+    document.getElementById('submitSection').style.display='none';
+});
+
+socket.on('celeb-turn',d=>{
+    state.currentTeam=d.team;state.clueGiver=d.clueGiver;state.isClueGiver=d.clueGiver===playerName;state.timeRemaining=d.timeLimit||60;state.timeLimit=d.timeLimit||60;
+    document.getElementById('teamA').classList.toggle('active',d.team==='A');
+    document.getElementById('teamB').classList.toggle('active',d.team==='B');
+    document.getElementById('clueGiver').style.display='block';
+    document.getElementById('clueGiverName').textContent=d.clueGiver+(state.isClueGiver?' (You!)':'');
+    document.getElementById('timerDisplay').style.display='block';
+    document.getElementById('wordCard').style.display='block';
+    document.getElementById('waitingMsg').style.display='none';
+    
+    if(state.isClueGiver){
+        document.getElementById('actionBtns').style.display='flex';
+        document.getElementById('actionBtn').style.display='none';
+    }else{
+        document.getElementById('actionBtns').style.display='none';
+        document.getElementById('wordTxt').textContent='???';
+        document.getElementById('wordTxt').classList.add('word-hidden');
+        document.getElementById('actionBtn').style.display='none';
+    }
+    startTimer();
+});
+
+socket.on('celeb-word',d=>{
+    if(state.isClueGiver){
+        document.getElementById('wordTxt').textContent=d.word;
+        document.getElementById('wordTxt').classList.remove('word-hidden');
+    }
+});
+
+socket.on('celeb-score',d=>{
+    state.scoreA=d.scoreA;state.scoreB=d.scoreB;
+    document.getElementById('scoreA').textContent=d.scoreA;
+    document.getElementById('scoreB').textContent=d.scoreB;
+});
+
+socket.on('celeb-turn-end',d=>{
+    stopTimer();
+    document.getElementById('actionBtns').style.display='none';
+    document.getElementById('waitingMsg').style.display='block';
+    document.getElementById('waitingMsg').textContent='Turn ended! '+d.wordsGot+' words guessed.';
+    document.getElementById('actionBtn').style.display='block';
+    document.getElementById('actionBtn').textContent=state.isHost?'Next Turn':'Waiting...';
+    document.getElementById('actionBtn').disabled=!state.isHost;
+});
+
+socket.on('celeb-round-end',d=>{
+    stopTimer();
+    document.getElementById('waitingMsg').style.display='block';
+    document.getElementById('waitingMsg').textContent='Round '+d.round+' complete!';
+    document.getElementById('actionBtn').style.display='block';
+    document.getElementById('actionBtn').textContent=state.isHost?'Next Round':'Waiting...';
+    document.getElementById('actionBtn').disabled=!state.isHost;
+});
+
+socket.on('celeb-game-over',d=>{
+    stopTimer();
+    document.getElementById('finalA').textContent=d.scoreA;
+    document.getElementById('finalB').textContent=d.scoreB;
+    document.getElementById('winnerTitle').textContent=d.scoreA>d.scoreB?'TEAM A WINS!':d.scoreB>d.scoreA?'TEAM B WINS!':'TIE GAME!';
+    document.getElementById('gameoverOverlay').classList.add('active');
+});
+
+socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+
+document.getElementById('wordInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+        const word=document.getElementById('wordInput').value.trim();
+        if(word&&state.myWords.length<3){
+            state.myWords.push(word);
+            document.getElementById('wordInput').value='';
+            renderMyWords();
+            document.getElementById('actionBtn').disabled=state.myWords.length<3;
+        }
+    }
+});
+
+function renderMyWords(){
+    document.getElementById('wordsList').innerHTML=state.myWords.map((w,i)=>`<div class="word-tag">${esc(w)}<button onclick="removeWord(${i})">×</button></div>`).join('');
+}
+
+function removeWord(i){
+    state.myWords.splice(i,1);
+    renderMyWords();
+    document.getElementById('actionBtn').disabled=state.myWords.length<3;
+}
+
+function correctWord(){socket.emit('celeb-correct',{roomCode});}
+function skipWord(){socket.emit('celeb-skip',{roomCode});}
+
+function handleAction(){
+    if(state.phase==='waiting'&&state.isHost)socket.emit('celeb-start',{roomCode});
+    else if(state.phase==='submit'){socket.emit('celeb-submit-words',{roomCode,words:state.myWords});document.getElementById('actionBtn').disabled=true;document.getElementById('actionBtn').textContent='Submitted!';}
+    else if(state.isHost)socket.emit('celeb-next',{roomCode});
+}
+
+function startTimer(){stopTimer();updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0){stopTimer();socket.emit('celeb-time-up',{roomCode});}},1000);}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function updTimer(){const el=document.getElementById('timerTxt');el.textContent=state.timeRemaining;el.classList.toggle('danger',state.timeRemaining<=10);document.getElementById('timerFill').style.width=(state.timeRemaining/state.timeLimit*100)+'%';}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+window.addEventListener('beforeunload',()=>{stopTimer();socket.disconnect();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>
