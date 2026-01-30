@@ -61,28 +61,84 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // User completed checkout - upgrade to premium
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.metadata.user_id;
 
-    await supabase
-      .from('profiles')
-      .update({ account_type: 'premium' })
-      .eq('id', userId);
+    if (userId) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          account_type: 'premium',
+          is_premium: true,
+          stripe_customer_id: session.customer,
+          premium_since: new Date().toISOString()
+        })
+        .eq('id', userId);
 
-    console.log(`User ${userId} upgraded to premium`);
+      if (error) {
+        console.error(`Failed to upgrade user ${userId}:`, error);
+      } else {
+        console.log(`✅ User ${userId} upgraded to premium`);
+      }
+    }
   }
 
+  // Subscription canceled or expired - downgrade to free
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object;
-    const userId = subscription.metadata.user_id;
+    const customerId = subscription.customer;
 
-    await supabase
+    // Find user by stripe_customer_id
+    const { data: users } = await supabase
       .from('profiles')
-      .update({ account_type: 'free' })
-      .eq('id', userId);
+      .select('id')
+      .eq('stripe_customer_id', customerId);
 
-    console.log(`User ${userId} downgraded to free`);
+    if (users && users.length > 0) {
+      const userId = users[0].id;
+      await supabase
+        .from('profiles')
+        .update({ 
+          account_type: 'free',
+          is_premium: false
+        })
+        .eq('id', userId);
+
+      console.log(`⬇️ User ${userId} downgraded to free`);
+    }
+  }
+
+  // Handle payment failed
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object;
+    console.log(`⚠️ Payment failed for customer: ${invoice.customer}`);
+  }
+
+  // Handle refund
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object;
+    const customerId = charge.customer;
+    
+    // Find user and downgrade
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('stripe_customer_id', customerId);
+
+    if (users && users.length > 0) {
+      const userId = users[0].id;
+      await supabase
+        .from('profiles')
+        .update({ 
+          account_type: 'free',
+          is_premium: false
+        })
+        .eq('id', userId);
+
+      console.log(`💸 Refund processed - User ${userId} downgraded to free`);
+    }
   }
 
   res.json({ received: true });
@@ -212,7 +268,7 @@ app.post('/api/test-supporter', async (req, res) => {
 // STRIPE CHECKOUT - MUST BE AFTER express.json()
 app.post('/create-checkout-session', async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, email } = req.body;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -221,8 +277,10 @@ app.post('/create-checkout-session', async (req, res) => {
         quantity: 1,
       }],
       mode: 'subscription',
+      allow_promotion_codes: true,
       success_url: 'https://thegaming.co/profile.html?success=true',
       cancel_url: 'https://thegaming.co/profile.html?canceled=true',
+      customer_email: email,
       metadata: { user_id: userId }
     });
 
