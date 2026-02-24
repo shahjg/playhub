@@ -594,8 +594,14 @@ async function main() {
     const gameType = GAME_TYPE || 'imposter';
     roomCode = await bots[0].createRoom(gameType);
 
+    // Print URL IMMEDIATELY so user can join while bots are still connecting
+    console.log('\n  ╔══════════════════════════════════════════════════════╗');
+    console.log(`  ║  ROOM CODE: ${roomCode}                                    ║`);
+    console.log('  ╚══════════════════════════════════════════════════════╝\n');
+    console.log(`  👉 Join now: https://thegaming.co/lobby?game=${gameType}&join=${roomCode}\n`);
+    console.log('  Bots are joining in the background. You start the game whenever you\'re ready.\n');
+
     // Rest join in batches
-    console.log(`\n📥 Joining ${bots.length - 1} bots to room ${roomCode}...\n`);
     let joined = 1;
     for (let batch = 0; batch < Math.ceil((bots.length - 1) / BATCH_SIZE); batch++) {
       const start = 1 + batch * BATCH_SIZE;
@@ -611,11 +617,11 @@ async function main() {
         else console.error(`  ❌ ${batchBots[i].name}: ${r.reason?.message}`);
       });
 
-      process.stdout.write(`  ✅ ${joined}/${BOT_COUNT} joined\r`);
+      process.stdout.write(`  📥 ${joined}/${BOT_COUNT} bots joined\r`);
 
       if (end < bots.length) await wait(BATCH_DELAY);
     }
-    console.log(`\n`);
+    console.log(`\n\n  ✅ All ${joined} bots in the room. Start the game from your browser!\n`);
   } else if (roomCode) {
     // All bots join existing room in batches
     console.log(`\n📥 Joining ${bots.length} bots to room ${roomCode}...\n`);
@@ -646,20 +652,7 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`\n🎮 Room: ${roomCode} — ${bots.filter(b => b.roomCode).length} bots ready\n`);
-
-  // Auto-start if host mode
-  if ((HOST_MODE || AUTO_START) && bots[0].isHost) {
-    console.log('⏳ Starting game in 3 seconds...\n');
-    await wait(3000);
-    bots[0].startGame();
-  } else if (!ROOM_CODE) {
-    console.log('  💡 Join room ' + roomCode + ' in your browser, then start the game as host.\n');
-    console.log('  Quick URL:');
-    console.log(`  https://thegaming.co/lobby?game=${GAME_TYPE || 'imposter'}&join=${roomCode}\n`);
-  }
-
-  // Keep alive
+  // Keep alive — user starts the game from browser
   console.log('  Press Ctrl+C to disconnect all bots.\n');
 
   process.on('SIGINT', () => {
