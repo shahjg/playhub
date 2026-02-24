@@ -1901,9 +1901,11 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if room is full (max 20 players)
-    if (room.players.length >= 20) {
-      console.log(`Room ${roomCode} is full`);
+    // Check if room is full (party games allow 100, squad 20)
+    const isPartyGame = ['trivia-royale','this-or-that-party','hot-takes-party','never-ever-party','bet-or-bluff','sketch-guess','fools-gold'].includes(room.gameType);
+    const maxPlayers = isPartyGame ? 100 : 20;
+    if (room.players.length >= maxPlayers) {
+      console.log(`Room ${roomCode} is full (${maxPlayers} max)`);
       socket.emit('join-error', { message: 'Room is full' });
       return;
     }
