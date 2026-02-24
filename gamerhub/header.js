@@ -270,7 +270,7 @@
         
         // Create or reuse client
         if (!window.supabaseClient) {
-            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { lock: false, autoRefreshToken: true, persistSession: true } });
         }
         
         const client = window.supabaseClient;
