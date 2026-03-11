@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Signal Lost — Story Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#060810;--bg2:#0a0e18;--bgc:#101828;
+            --g:#00d4ff;--gd:rgba(0,212,255,0.5);--gf:rgba(0,212,255,0.08);
+            --r:#ff4444;--rd:rgba(255,68,68,0.5);
+            --y:#ffc107;--yd:rgba(255,193,7,0.5);
+            --p:#c0d8f0;--pd:rgba(192,216,240,0.15);
+            --t:rgba(192,216,240,0.85);--td:rgba(192,216,240,0.4);--tf:rgba(192,216,240,0.2)
+        }
+        body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow:hidden}
+        h1,h2,h3{font-family:'Orbitron',sans-serif}
+
+        .noise{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:0.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+        .scr{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;opacity:0;pointer-events:none;transition:opacity 0.6s;z-index:10;overflow-y:auto;background:rgba(6,8,16,0.95)}
+        .scr.on{opacity:1;pointer-events:all}
+        .btn{display:inline-flex;align-items:center;gap:10px;padding:13px 36px;border:1px solid var(--pd);background:0;color:var(--p);font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.3s}
+        .btn:hover{border-color:var(--g);color:var(--g);box-shadow:0 0 20px rgba(0,212,255,0.1)}
+
+        /* ═══ PREMIUM BAR ═══ */
+        .premium-bar{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(6,8,16,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,212,255,0.08)}
+        .pb-left{display:flex;align-items:center;gap:12px}
+        .pb-exit{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid rgba(192,216,240,0.3);border-radius:4px;background:none;color:#c0d8f0;font-size:0.75rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;text-decoration:none;font-family:inherit}
+        .pb-exit:hover{border-color:#00d4ff;color:#00d4ff}
+        .pb-exit svg{width:14px;height:14px;fill:currentColor}
+        .pb-title{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:rgba(192,216,240,0.3)}
+        .pb-right{display:flex;align-items:center;gap:8px}
+        .pb-btn{padding:6px 14px;border:1px solid rgba(192,216,240,0.3);border-radius:4px;background:none;color:#c0d8f0;font-size:0.72rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        .pb-btn:hover{border-color:#00d4ff;color:#00d4ff}
+
+        .htp-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .htp-overlay.on{opacity:1;pointer-events:all}
+        .htp-modal{background:rgba(10,14,24,0.96);border:1px solid rgba(0,212,255,0.12);border-radius:8px;padding:32px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;position:relative}
+        .htp-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--td);font-size:1.5rem;cursor:pointer}
+        .htp-h{font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--g);letter-spacing:3px;margin-bottom:16px}
+        .htp-sh{font-size:0.65rem;letter-spacing:2px;color:var(--g);margin-bottom:6px}
+        .htp-p{font-size:0.85rem;color:var(--td);line-height:1.7}
+        .htp-steps{padding-left:20px;color:var(--td);font-size:0.82rem;line-height:2}
+
+        .mp-overlay{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .mp-overlay.on{opacity:1;pointer-events:all}
+        .mp-modal{background:rgba(10,14,24,0.96);border:1px solid rgba(0,212,255,0.12);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .mp-h{font-size:1.1rem;color:#00d4ff;margin-bottom:8px;letter-spacing:2px}
+        .mp-sub{font-size:0.8rem;color:var(--td);margin-bottom:20px}
+        .mp-code{font-size:2.5rem;letter-spacing:12px;color:var(--p);font-family:'IBM Plex Mono',monospace;margin:16px 0;padding:12px;background:rgba(0,212,255,0.04);border-radius:6px;border:1px solid rgba(0,212,255,0.1)}
+        .mp-actions{display:flex;gap:8px;justify-content:center;margin-top:16px}
+        .mp-btn{padding:10px 24px;border:1px solid #00d4ff;border-radius:4px;background:none;color:#00d4ff;font-size:0.8rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        .mp-btn.primary{background:#00d4ff;color:#060810}
+
+        /* ═══ TITLE ═══ */
+        .title-screen{background:rgba(6,8,16,0.98)}
+        .tglow{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:500px;height:400px;background:radial-gradient(ellipse,rgba(0,212,255,0.04),transparent 60%);pointer-events:none}
+        .tcont{position:relative;z-index:2;text-align:center;max-width:600px}
+        .tey{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:8px;text-transform:uppercase;color:var(--gd);margin-bottom:18px}
+        .ttl{font-size:clamp(2.2rem,6vw,3.8rem);font-weight:700;color:var(--p);line-height:1.1;margin-bottom:10px;letter-spacing:2px}
+        .tsub{font-size:0.92rem;color:var(--td);font-weight:300;margin-bottom:30px;line-height:1.7}
+        .tdet{display:flex;gap:24px;justify-content:center;margin-bottom:30px;font-size:0.65rem;color:var(--tf);letter-spacing:2px;font-family:'IBM Plex Mono',monospace}
+        .tdet span{padding:5px 12px;border:1px solid var(--pd);border-radius:3px}
+        .scan-line{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15),transparent);animation:scan 4s linear infinite;pointer-events:none;z-index:9996}
+        @keyframes scan{0%{top:0}100%{top:100vh}}
+
+        /* ═══ GAME SCREEN ═══ */
+        .game-screen{padding:0;justify-content:flex-start;background:var(--bg)}
+        .game-wrap{max-width:700px;width:100%;margin:0 auto;padding:20px}
+
+        /* Status bars */
+        .status-bar{display:flex;gap:16px;padding:12px 16px;background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.06);border-radius:6px;margin-bottom:16px;flex-wrap:wrap}
+        .stat{flex:1;min-width:100px}
+        .stat-label{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:2px;color:var(--tf);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+        .stat-bar{height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+        .stat-fill{height:100%;border-radius:3px;transition:width 0.5s}
+        .fill-o2{background:var(--g)}
+        .fill-power{background:var(--y)}
+        .fill-morale{background:#a855f7}
+        .fill-hull{background:var(--r)}
+        .stat-val{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--td);margin-top:2px}
+
+        /* Cycle counter */
+        .cycle-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(0,212,255,0.02);border:1px solid rgba(0,212,255,0.04);border-radius:4px;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--td)}
+        .cycle-num{color:var(--g);font-weight:600;font-size:0.85rem}
+
+        /* Narrative */
+        .narrative{padding:24px;background:rgba(0,212,255,0.02);border:1px solid rgba(0,212,255,0.06);border-radius:8px;margin-bottom:16px}
+        .narr-loc{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:3px;color:var(--g);margin-bottom:10px}
+        .narr-text{font-size:0.92rem;color:var(--t);line-height:1.9;font-weight:300}
+        .narr-text strong{color:var(--p);font-weight:500}
+
+        /* Choices */
+        .choices{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+        .choice{padding:16px 20px;border:1px solid rgba(0,212,255,0.1);border-radius:6px;background:rgba(0,212,255,0.02);cursor:pointer;transition:all 0.3s;text-align:left}
+        .choice:hover{border-color:var(--gd);background:rgba(0,212,255,0.05);transform:translateX(4px)}
+        .choice-text{font-size:0.88rem;color:var(--p);margin-bottom:4px}
+        .choice-cost{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--tf);letter-spacing:1px}
+        .choice-cost .neg{color:var(--r)}
+        .choice-cost .pos{color:#4ade80}
+
+        /* Crew */
+        .crew-bar{display:flex;gap:8px;padding:10px 16px;background:rgba(0,212,255,0.02);border:1px solid rgba(0,212,255,0.04);border-radius:4px;margin-bottom:16px;overflow-x:auto}
+        .crew-member{display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid rgba(0,212,255,0.08);border-radius:4px;font-size:0.72rem;color:var(--td);white-space:nowrap}
+        .crew-member.dead{opacity:0.3;text-decoration:line-through}
+        .crew-icon{font-size:1rem}
+
+        /* Log entries */
+        .log{padding:12px 16px;background:rgba(0,212,255,0.02);border-left:2px solid var(--gd);border-radius:0 4px 4px 0;margin-bottom:10px;font-size:0.8rem;color:var(--td);line-height:1.6;font-family:'IBM Plex Mono',monospace}
+        .log-warn{border-left-color:var(--y);background:rgba(255,193,7,0.03)}
+        .log-danger{border-left-color:var(--r);background:rgba(255,68,68,0.03)}
+
+        /* ═══ ENDING ═══ */
+        .end-screen{z-index:90}
+        .end-icon{font-size:4rem;margin-bottom:12px}
+        .end-title{font-family:'Orbitron',sans-serif;font-size:1.8rem;color:var(--p);margin-bottom:8px;letter-spacing:2px}
+        .end-sub{font-size:0.92rem;color:var(--td);margin-bottom:20px;line-height:1.8;max-width:520px;text-align:center}
+        .end-stats{display:flex;gap:20px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+        .end-stat{text-align:center}
+        .end-stat-val{font-family:'IBM Plex Mono',monospace;font-size:1.5rem;color:var(--g);font-weight:600}
+        .end-stat-label{font-size:0.55rem;color:var(--tf);letter-spacing:2px;margin-top:4px}
+        .end-log{max-width:500px;width:100%;margin:0 auto 20px;text-align:left}
+
+        .fb{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 28px;border-radius:6px;font-size:0.82rem;opacity:0;transition:all 0.3s;z-index:300;pointer-events:none}
+        .fb.show{opacity:1;transform:translateX(-50%) translateY(0)}
+        .fb-ok{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);color:#4ade80}
+        .fb-no{background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.3);color:#ff4444}
+        .fb-info{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.25);color:#00d4ff}
+
+        @media(max-width:600px){
+            .status-bar{gap:10px}.stat{min-width:70px}
+            .game-wrap{padding:12px}
+            .end-stats{gap:12px}
+        }
+    </style>
+</head>
+<body>
+    <div class="premium-bar">
+        <div class="pb-left">
+            <a href="/premium" class="pb-exit"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>EXIT</a>
+            <span class="pb-title">Signal Lost</span>
+        </div>
+        <div class="pb-right">
+            <button class="pb-btn" onclick="document.getElementById('htpOverlay').classList.add('on')">HOW TO PLAY</button>
+            <button class="pb-btn" onclick="shareGame()">👥 INVITE</button>
+        </div>
+    </div>
+
+    <div class="htp-overlay" id="htpOverlay" onclick="if(event.target===this)this.classList.remove('on')">
+        <div class="htp-modal">
+            <button class="htp-close" onclick="this.parentElement.parentElement.classList.remove('on')">&times;</button>
+            <div class="htp-h">HOW TO PLAY</div>
+            <div class="htp-section"><div class="htp-sh">OBJECTIVE</div><div class="htp-p">Your space station has lost contact with Earth. Survive 12 cycles until rescue arrives. Manage oxygen, power, morale, and hull integrity.</div></div>
+            <div class="htp-section"><div class="htp-sh">GAMEPLAY</div>
+                <ol class="htp-steps">
+                    <li>Each cycle presents a crisis with 2-3 choices</li>
+                    <li>Choices affect your four resources — watch the costs</li>
+                    <li>If any resource hits zero, you face a bad ending</li>
+                    <li>Keep your crew alive — losing crew members reduces efficiency</li>
+                    <li>Survive all 12 cycles to be rescued</li>
+                </ol>
+            </div>
+            <div class="htp-section"><div class="htp-sh">ENDINGS</div><div class="htp-p">There are 5 possible endings depending on your choices, resources, and crew survival. Can you find the best outcome?</div></div>
+        </div>
+    </div>
+
+    <div class="mp-overlay" id="mpOverlay">
+        <div class="mp-modal">
+            <div><div class="mp-h">PLAY WITH FRIENDS</div><div class="mp-sub">Share the room code</div><div class="mp-code" id="mpCode">----</div><div class="mp-actions"><button class="mp-btn" onclick="copyRoomCode()">COPY CODE</button><button class="mp-btn" onclick="document.getElementById('mpOverlay').classList.remove('on')">CLOSE</button></div></div>
+        </div>
+    </div>
+
+    <div class="noise"></div><div class="scan-line"></div><div class="fb" id="fb"></div>
+
+    <!-- TITLE -->
+    <div class="scr title-screen on" id="s-title">
+        <div class="tglow"></div>
+        <div class="tcont">
+            <div class="tey">Story Adventure</div>
+            <h1 class="ttl">SIGNAL LOST</h1>
+            <p class="tsub">Orbital Station Meridian-7 has lost all contact with Earth. A rescue shuttle is 12 cycles away. You are the commander. Every decision determines who lives and who dies.</p>
+            <div class="tdet"><span>1 PLAYER</span><span>25–40 MIN</span><span>5 ENDINGS</span></div>
+            <button class="btn" onclick="startGame()">Begin Mission →</button>
+        </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="scr game-screen" id="s-game" style="top:44px;justify-content:flex-start">
+        <div class="game-wrap">
+            <div class="status-bar" id="statusBar">
+                <div class="stat"><div class="stat-label">🫁 OXYGEN</div><div class="stat-bar"><div class="stat-fill fill-o2" id="fillO2" style="width:100%"></div></div><div class="stat-val" id="valO2">100%</div></div>
+                <div class="stat"><div class="stat-label">⚡ POWER</div><div class="stat-bar"><div class="stat-fill fill-power" id="fillPow" style="width:100%"></div></div><div class="stat-val" id="valPow">100%</div></div>
+                <div class="stat"><div class="stat-label">💜 MORALE</div><div class="stat-bar"><div class="stat-fill fill-morale" id="fillMor" style="width:100%"></div></div><div class="stat-val" id="valMor">100%</div></div>
+                <div class="stat"><div class="stat-label">🛡️ HULL</div><div class="stat-bar"><div class="stat-fill fill-hull" id="fillHull" style="width:100%"></div></div><div class="stat-val" id="valHull">100%</div></div>
+            </div>
+            <div class="cycle-bar"><span>CYCLE <span class="cycle-num" id="cycleNum">1</span> / 12</span><span id="cycleLabel">AWAITING RESCUE</span></div>
+            <div class="crew-bar" id="crewBar"></div>
+            <div id="narrative"></div>
+            <div class="choices" id="choices"></div>
+            <div id="logArea"></div>
+        </div>
+    </div>
+
+    <!-- ENDING -->
+    <div class="scr end-screen" id="s-end">
+        <div class="end-icon" id="endIcon"></div>
+        <h2 class="end-title" id="endTitle"></h2>
+        <p class="end-sub" id="endSub"></p>
+        <div class="end-stats">
+            <div class="end-stat"><div class="end-stat-val" id="eCycles">0</div><div class="end-stat-label">CYCLES SURVIVED</div></div>
+            <div class="end-stat"><div class="end-stat-val" id="eCrew">0</div><div class="end-stat-label">CREW ALIVE</div></div>
+            <div class="end-stat"><div class="end-stat-val" id="eChoices">0</div><div class="end-stat-label">DECISIONS MADE</div></div>
+        </div>
+        <button class="btn" onclick="location.reload()">Play Again</button>
+        <button class="btn" onclick="location.href='/premium'" style="margin-left:12px">Back to Premium</button>
+    </div>
+
+<script>
+// ═══ GAME STATE ═══
+var state={o2:100,power:100,morale:100,hull:100,cycle:0,choices:0,logs:[]};
+var crew=[
+    {id:'chen',name:'Dr. Chen',role:'Medical',icon:'👩‍⚕️',alive:true},
+    {id:'okafor',name:'Okafor',role:'Engineer',icon:'👨‍🔧',alive:true},
+    {id:'reeves',name:'Reeves',role:'Pilot',icon:'👨‍✈️',alive:true},
+    {id:'park',name:'Park',role:'Scientist',icon:'👩‍🔬',alive:true}
+];
+var ended=false;
+
+// ═══ STORY EVENTS ═══
+var EVENTS=[
+    {loc:'BRIDGE — COMMUNICATIONS',text:'The main console goes dark. Emergency lights bathe everything in red. <strong>All communication with Earth has been severed.</strong> Okafor reports a fried relay array. Dr. Chen is already checking crew vitals — everyone\'s shaken.',
+        choices:[
+            {text:'Send Okafor on a spacewalk to repair the relay',cost:'Risky but may restore partial comms',fx:{power:-10,hull:-5},log:'Okafor braved a spacewalk. Relay partially restored.'},
+            {text:'Conserve resources — wait for automatic backup systems',cost:'Safe, but slower',fx:{morale:-10,o2:-5},log:'Chose to wait. Backup systems are slow to respond.'},
+            {text:'Reroute all power to emergency beacon',cost:'Power drain but signals Earth',fx:{power:-20},log:'Emergency beacon activated. Power reserves dropping.'}
+        ]},
+    {loc:'ENGINE ROOM — SECTOR 3',text:'A <strong>micro-meteorite</strong> has punctured the hull near the engine room. Pressure is dropping in Sector 3. Okafor says he can patch it, but it\'ll take time.',
+        choices:[
+            {text:'Seal Sector 3 immediately — save air, lose engine access',cost:'Hull safe, but power generation limited',fx:{hull:5,power:-15,o2:5},log:'Sector 3 sealed. Engine access restricted.'},
+            {text:'Let Okafor patch it while keeping the sector open',cost:'Risky — oxygen will drop during repair',fx:{o2:-15,hull:10},log:'Okafor patched the hull. Lost some oxygen during repair.'},
+            {text:'Evacuate and use emergency foam sealant',cost:'Quick fix but uses medical supplies',fx:{hull:5,morale:-5,o2:-5},log:'Emergency foam applied. Temporary seal holding.'}
+        ]},
+    {loc:'MEDICAL BAY',text:'Dr. Chen reports that <strong>Park is showing symptoms of radiation exposure</strong> — likely from the damaged shielding in Sector 3. Treatment will consume significant medical power.',
+        choices:[
+            {text:'Full treatment — divert power to medical systems',cost:'Saves Park, heavy power cost',fx:{power:-20,morale:10},log:'Park received full treatment. Medical systems strained.'},
+            {text:'Basic treatment — manage symptoms only',cost:'Park weakened but functional',fx:{power:-5,morale:-10},log:'Park received basic care. She\'s struggling but stable.'},
+            {text:'Focus resources elsewhere — Park is a scientist, not critical',cost:'Save power but crew morale tanks',fx:{morale:-25},log:'Park was denied full treatment. Crew is angry.',crewRisk:'park',riskChance:0.3}
+        ]},
+    {loc:'OBSERVATION DECK',text:'Reeves spots something on the radar — <strong>an abandoned cargo shuttle</strong> drifting 2km away. It could have supplies, fuel, or nothing. Docking would cost fuel and risk hull damage.',
+        choices:[
+            {text:'Attempt docking — we need those supplies',cost:'Risk hull damage, possible reward',fx:{hull:-10,power:-5},reward:{o2:20,power:15},rewardChance:0.7,log:'Attempted shuttle docking.',logSuccess:'Docked successfully! Found oxygen and fuel.',logFail:'Shuttle was empty. Hull scraped during approach.'},
+            {text:'Too risky — focus on what we have',cost:'Safe, but supplies are getting thin',fx:{morale:-5},log:'Passed on the shuttle. Playing it safe.'}
+        ]},
+    {loc:'CREW QUARTERS',text:'Tensions are high. <strong>Reeves and Okafor are in a heated argument</strong> about whether to conserve power or maintain full life support. The crew is looking to you.',
+        choices:[
+            {text:'Side with Reeves — maintain full life support',cost:'Morale boost but power drain',fx:{morale:15,power:-15,o2:5},log:'Maintained full life support. Crew feels safer.'},
+            {text:'Side with Okafor — reduce to minimum life support',cost:'Saves power, crew morale drops',fx:{morale:-15,power:10,o2:-10},log:'Reduced life support to minimum. Crew is cold and uneasy.'},
+            {text:'Find a compromise — half measures for now',cost:'Nobody\'s happy but it works',fx:{morale:-5,power:-5},log:'Implemented compromise. An uneasy truce.'}
+        ]},
+    {loc:'BRIDGE — ALERT',text:'<strong>Solar flare incoming.</strong> Estimated impact in minutes. The station\'s weakened shielding won\'t protect the whole station. You can redirect shield power to protect one area.',
+        choices:[
+            {text:'Protect the crew quarters — people first',cost:'Crew safe, systems take damage',fx:{power:-20,hull:-15,morale:10},log:'Shielded crew quarters. Solar flare damaged external systems.'},
+            {text:'Protect the engine room — we need power',cost:'Power saved, crew exposed to radiation',fx:{morale:-20,o2:-10},log:'Protected engines. Crew exposed to mild radiation.',crewRisk:'chen',riskChance:0.25},
+            {text:'Emergency shutdown — go dark until it passes',cost:'Everything drops but survives',fx:{power:-10,o2:-10,morale:-10,hull:-5},log:'Went dark during solar flare. Station took moderate damage.'}
+        ]},
+    {loc:'COMMUNICATIONS',text:'A <strong>garbled transmission from Earth</strong> breaks through static. You can barely make it out: "...rescue...delayed...cycle 14...hold..." — two extra cycles. This changes everything.',
+        choices:[
+            {text:'Tell the crew the truth — rescue is delayed',cost:'Morale crash but trust maintained',fx:{morale:-25},log:'Told crew about rescue delay. Morale devastated.'},
+            {text:'Keep it secret — maintain hope',cost:'Morale stable for now, risky if discovered',fx:{morale:5},secret:true,log:'Kept rescue delay secret. Hope is fragile.'},
+            {text:'Spin it positive — "rescue confirmed, just a bit longer"',cost:'Temporary morale boost',fx:{morale:10},spin:true,log:'Spun the delay as confirmation. Crew cautiously optimistic.'}
+        ]},
+    {loc:'AIRLOCK CORRIDOR',text:'The <strong>oxygen recycler is failing</strong>. Park (if able) can attempt a manual recalibration, but it means entering the damaged Sector 3 without full protection.',
+        choices:[
+            {text:'Send someone to fix it — oxygen is critical',cost:'Dangerous but necessary',fx:{o2:20,hull:-5},log:'Recycler manually recalibrated. O2 recovering.',crewRisk:'okafor',riskChance:0.2},
+            {text:'Switch to emergency O2 reserves',cost:'Safe but limited supply',fx:{o2:-5,power:-5},log:'Switched to emergency oxygen reserves.'},
+            {text:'Reduce crew activity to minimum — lower O2 consumption',cost:'Boring but effective',fx:{o2:10,morale:-15},log:'Crew on minimal activity. Conservation mode.'}
+        ]},
+    {loc:'ENGINE ROOM',text:'Okafor has <strong>a plan to boost the distress signal</strong> by overloading the secondary power core. It could reach Earth clearly — but risks an explosion.',
+        choices:[
+            {text:'Do it — we need Earth to hear us',cost:'High risk, high reward',fx:{power:-15,hull:-10},reward:{morale:25},rewardChance:0.6,log:'Attempted signal boost.',logSuccess:'Signal sent! Earth confirmed receipt. Rescue on track.',logFail:'Power core overloaded. Minor explosion in engine room.'},
+            {text:'Too dangerous — stick to the beacon',cost:'No risk, no reward',fx:{morale:-5},log:'Played it safe with the existing beacon.'}
+        ]},
+    {loc:'CREW QUARTERS — NIGHT CYCLE',text:'It\'s been 9 cycles. Everyone is exhausted. Dr. Chen suggests <strong>using the last of the sedatives</strong> to help the crew sleep properly. Rest would restore morale, but you\'d lose the medical supplies.',
+        choices:[
+            {text:'Use the sedatives — crew needs rest',cost:'Morale boost, no more medical supplies',fx:{morale:20,o2:-5},log:'Used sedatives for crew rest. No more medical supplies.'},
+            {text:'Save medical supplies — tough it out',cost:'Smart but painful',fx:{morale:-10},log:'Saving medical supplies. Crew running on fumes.'}
+        ]},
+    {loc:'BRIDGE — FINAL APPROACH',text:'Cycle 11. <strong>A debris field</strong> from a destroyed satellite blocks the rescue shuttle\'s approach vector. You can attempt to clear a path using the station\'s last thruster fuel.',
+        choices:[
+            {text:'Use thrusters to clear debris',cost:'Opens path for rescue, drains everything',fx:{power:-15,hull:-10},log:'Used thrusters to clear debris field. Path opening.'},
+            {text:'Guide the shuttle through — relay coordinates',cost:'Requires precision and power',fx:{power:-10,morale:5},log:'Relaying coordinates to rescue shuttle.'},
+            {text:'Let the shuttle find its own path',cost:'Risky for the shuttle',fx:{morale:-10},rescueRisk:true,log:'Left rescue shuttle to navigate alone.'}
+        ]},
+    {loc:'OBSERVATION DECK — DAWN',text:'<strong>Cycle 12.</strong> Through the observation window, you see it — a bright point of light growing larger. The rescue shuttle. You\'ve made it. The question is: in what condition?',
+        choices:[
+            {text:'Open all channels — broadcast your status',cost:'Full transparency for rescue ops',fx:{},log:'Broadcasting full status to rescue shuttle.'},
+            {text:'Prepare the crew — this is almost over',cost:'Focus on people',fx:{morale:10},log:'Preparing crew for rescue. Almost home.'}
+        ]}
+];
+
+function fb(m,t,d){t=t||'info';d=d||3000;var e=document.getElementById('fb');e.textContent=m;e.className='fb show fb-'+t;setTimeout(function(){e.classList.remove('show')},d)}
+
+function startGame(){
+    document.getElementById('s-title').classList.remove('on');
+    document.getElementById('s-game').classList.add('on');
+    renderCrew();
+    nextCycle();
+}
+
+function updateBars(){
+    ['o2','power','morale','hull'].forEach(function(k){
+        var val=Math.max(0,Math.min(100,state[k]));
+        state[k]=val;
+        var map={o2:'O2',power:'Pow',morale:'Mor',hull:'Hull'};
+        document.getElementById('fill'+map[k]).style.width=val+'%';
+        document.getElementById('val'+map[k]).textContent=val+'%';
+    });
+}
+
+function renderCrew(){
+    document.getElementById('crewBar').innerHTML=crew.map(function(c){
+        return'<div class="crew-member'+(c.alive?'':' dead')+'"><span class="crew-icon">'+c.icon+'</span>'+c.name+'</div>';
+    }).join('');
+}
+
+function addLog(msg,type){
+    state.logs.push({msg:msg,type:type||''});
+    var area=document.getElementById('logArea');
+    var cls='log'+(type==='warn'?' log-warn':type==='danger'?' log-danger':'');
+    area.innerHTML='<div class="'+cls+'">'+msg+'</div>'+area.innerHTML;
+}
+
+function checkDeath(){
+    if(state.o2<=0){endGame('suffocate');return true}
+    if(state.power<=0){endGame('dark');return true}
+    if(state.hull<=0){endGame('breach');return true}
+    if(state.morale<=0){endGame('mutiny');return true}
+    return false;
+}
+
+function nextCycle(){
+    if(ended)return;
+    state.cycle++;
+    if(state.cycle>12){endGame('rescued');return}
+
+    // Natural decay per cycle
+    state.o2=Math.max(0,state.o2-3);
+    state.power=Math.max(0,state.power-2);
+    state.morale=Math.max(0,state.morale-2);
+
+    document.getElementById('cycleNum').textContent=state.cycle;
+    updateBars();
+    if(checkDeath())return;
+
+    var ev=EVENTS[state.cycle-1];
+    if(!ev){endGame('rescued');return}
+
+    document.getElementById('narrative').innerHTML='<div class="narrative"><div class="narr-loc">'+ev.loc+'</div><div class="narr-text">'+ev.text+'</div></div>';
+
+    var ch=document.getElementById('choices');
+    ch.innerHTML=ev.choices.map(function(c,i){
+        var costParts=[];
+        if(c.fx){Object.keys(c.fx).forEach(function(k){var v=c.fx[k];if(v!==0){var label={o2:'O2',power:'PWR',morale:'MRL',hull:'HULL'}[k]||k;costParts.push('<span class="'+(v<0?'neg':'pos')+'">'+label+' '+(v>0?'+':'')+v+'</span>')}})}
+        return'<div class="choice" onclick="makeChoice('+i+')"><div class="choice-text">'+c.text+'</div><div class="choice-cost">'+c.cost+(costParts.length?' · '+costParts.join(' '):'')+'</div></div>';
+    }).join('');
+}
+
+function makeChoice(i){
+    if(ended)return;
+    var ev=EVENTS[state.cycle-1];
+    var c=ev.choices[i];
+    state.choices++;
+
+    // Apply effects
+    if(c.fx){Object.keys(c.fx).forEach(function(k){state[k]=(state[k]||0)+c.fx[k]})}
+
+    // Reward chance
+    if(c.reward&&c.rewardChance){
+        if(Math.random()<c.rewardChance){
+            Object.keys(c.reward).forEach(function(k){state[k]=(state[k]||0)+c.reward[k]});
+            addLog(c.logSuccess||c.log,'');
+            fb('Success!','ok');
+        }else{
+            addLog(c.logFail||c.log,'warn');
+            fb('That didn\'t go well...','no');
+        }
+    }else{
+        addLog(c.log);
+    }
+
+    // Crew risk
+    if(c.crewRisk&&c.riskChance){
+        var member=crew.find(function(m){return m.id===c.crewRisk&&m.alive});
+        if(member&&Math.random()<c.riskChance){
+            member.alive=false;
+            addLog(member.name+' was critically injured and didn\'t make it.','danger');
+            fb(member.name+' has died.','no',4000);
+            state.morale=Math.max(0,state.morale-15);
+            renderCrew();
+        }
+    }
+
+    updateBars();
+    if(!checkDeath()){
+        // Brief delay then next cycle
+        document.getElementById('choices').innerHTML='<div style="text-align:center;padding:20px;color:var(--tf);font-size:0.8rem">Processing...</div>';
+        setTimeout(nextCycle,1200);
+    }
+}
+
+function endGame(type){
+    ended=true;
+    document.getElementById('s-game').classList.remove('on');
+    var alive=crew.filter(function(c){return c.alive}).length;
+    var icons={rescued:'🛸',suffocate:'💨',dark:'🔌',breach:'💥',mutiny:'⚔️'};
+    var titles={rescued:'RESCUED',suffocate:'OXYGEN DEPLETED',dark:'POWER FAILURE',breach:'HULL BREACH',mutiny:'MUTINY'};
+    var subs={
+        rescued:alive===4?'All four crew members survived. The rescue shuttle docked perfectly. You\'ll be remembered as the commander who brought everyone home.':'The rescue shuttle arrived. '+alive+' of 4 crew survived. You held it together against impossible odds.',
+        suffocate:'The oxygen ran out. One by one, the crew fell silent. The rescue shuttle found only ghosts.',
+        dark:'Without power, the station went cold and dark. Life support failed within hours.',
+        breach:'The hull gave way. Explosive decompression claimed the station in seconds.',
+        mutiny:'The crew lost faith in your command. In the chaos that followed, no one survived to see rescue.'
+    };
+
+    document.getElementById('endIcon').textContent=icons[type]||'🛸';
+    document.getElementById('endTitle').textContent=titles[type]||'THE END';
+    document.getElementById('endSub').textContent=subs[type]||'';
+    document.getElementById('eCycles').textContent=Math.min(state.cycle,12);
+    document.getElementById('eCrew').textContent=alive+'/4';
+    document.getElementById('eChoices').textContent=state.choices;
+    document.getElementById('s-end').classList.add('on');
+}
+
+// ═══ MULTIPLAYER ═══
+function generateRoomCode(){return Array.from({length:4},function(){return'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]}).join('')}
+var roomCode=new URLSearchParams(window.location.search).get('room');
+var isHost=!roomCode;if(!roomCode)roomCode=generateRoomCode();
+function shareGame(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;if(navigator.share){navigator.share({title:document.title,text:'Join my mission!',url:url})}else{document.getElementById('mpCode').textContent=roomCode;document.getElementById('mpOverlay').classList.add('on')}}
+function copyRoomCode(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;navigator.clipboard.writeText(url).then(function(){var b=event.target;b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY CODE'},2000)})}
+if(!isHost){document.addEventListener('DOMContentLoaded',function(){var t=document.querySelector('.pb-title');if(t)t.textContent+=' · Room: '+roomCode})}
+</script>
+</body>
+</html>

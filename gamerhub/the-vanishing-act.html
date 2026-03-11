@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Vanishing Act — Murder Mystery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#08060a;--bg2:#0e0b12;--bgc:#141018;--bgc2:#1a1620;
+            --p:#c8b8d8;--pd:rgba(200,184,216,0.15);--pf:rgba(200,184,216,0.06);
+            --g:#9b6dff;--gd:rgba(155,109,255,0.5);--gf:rgba(155,109,255,0.12);
+            --r:#8b2d2d;--rb:#c44a4a;
+            --t:rgba(200,184,216,0.85);--td:rgba(200,184,216,0.4);--tf:rgba(200,184,216,0.2)
+        }
+        body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--t);min-height:100vh;overflow:hidden}
+        h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif}
+        .noise{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:0.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+        .vig{position:fixed;inset:0;pointer-events:none;z-index:9997;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,0.6) 100%)}
+
+        /* SCREENS */
+        .scr{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;opacity:0;pointer-events:none;transition:opacity 0.6s;z-index:10;overflow-y:auto;background:rgba(8,6,10,0.92)}
+        .scr.on{opacity:1;pointer-events:all}
+        .btn{display:inline-flex;align-items:center;gap:10px;padding:13px 36px;border:1px solid var(--pd);background:0;color:var(--p);font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all 0.3s}
+        .btn:hover{border-color:var(--g);color:var(--g);box-shadow:0 0 20px rgba(155,109,255,0.08)}
+
+        /* ═══ EXIT BAR + HOW TO PLAY ═══ */
+        .premium-bar{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(8,6,10,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(155,109,255,0.08)}
+        .pb-left{display:flex;align-items:center;gap:12px}
+        .pb-exit{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid rgba(200,184,216,0.4);border-radius:4px;background:none;color:#c8b8d8;font-size:0.75rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;text-decoration:none;font-family:inherit}
+        .pb-exit:hover{border-color:#9b6dff;color:#9b6dff}
+        .pb-exit svg{width:14px;height:14px;fill:currentColor}
+        .pb-title{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:rgba(200,184,216,0.4)}
+        .pb-right{display:flex;align-items:center;gap:8px}
+        .pb-btn{padding:6px 14px;border:1px solid rgba(200,184,216,0.4);border-radius:4px;background:none;color:#c8b8d8;font-size:0.72rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        .pb-btn:hover{border-color:#9b6dff;color:#9b6dff}
+
+        .htp-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .htp-overlay.on{opacity:1;pointer-events:all}
+        .htp-modal{background:rgba(14,11,18,0.95);border:1px solid rgba(155,109,255,0.15);border-radius:8px;padding:32px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;position:relative}
+        .htp-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--td);font-size:1.5rem;cursor:pointer}
+        .htp-h{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--g);letter-spacing:3px;margin-bottom:16px}
+        .htp-section{margin-bottom:16px}
+        .htp-sh{font-size:0.65rem;letter-spacing:2px;color:var(--g);margin-bottom:6px}
+        .htp-p{font-size:0.85rem;color:var(--td);line-height:1.7}
+        .htp-steps{padding-left:20px;color:var(--td);font-size:0.82rem;line-height:2}
+        .htp-steps li{margin-bottom:4px}
+
+        .mp-overlay{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .mp-overlay.on{opacity:1;pointer-events:all}
+        .mp-modal{background:rgba(14,11,18,0.95);border:1px solid rgba(155,109,255,0.15);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .mp-h{font-size:1.2rem;color:#9b6dff;margin-bottom:8px;letter-spacing:2px}
+        .mp-sub{font-size:0.8rem;color:var(--td);margin-bottom:20px}
+        .mp-code{font-size:2.5rem;letter-spacing:12px;color:var(--p);font-family:monospace;margin:16px 0;padding:12px;background:rgba(155,109,255,0.04);border-radius:6px;border:1px solid rgba(155,109,255,0.1)}
+        .mp-actions{display:flex;gap:8px;justify-content:center;margin-top:16px}
+        .mp-btn{padding:10px 24px;border:1px solid #9b6dff;border-radius:4px;background:none;color:#9b6dff;font-size:0.8rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        .mp-btn:hover{background:rgba(155,109,255,0.06)}
+        .mp-btn.primary{background:#9b6dff;color:#08060a}
+        .mp-join-input{padding:10px 16px;border:1px solid rgba(155,109,255,0.2);border-radius:4px;background:rgba(155,109,255,0.04);color:var(--p);font-size:1rem;letter-spacing:4px;text-align:center;width:160px;font-family:monospace}
+
+        /* ═══ TITLE SCREEN ═══ */
+        .title-screen{background:rgba(8,6,10,0.95)}
+        .tglow{position:absolute;top:20%;left:50%;transform:translate(-50%,-50%);width:500px;height:400px;background:radial-gradient(ellipse,rgba(155,109,255,0.06),transparent 60%);pointer-events:none}
+        .tcont{position:relative;z-index:2;text-align:center;max-width:600px}
+        .tey{font-family:'Special Elite',monospace;font-size:0.65rem;letter-spacing:10px;text-transform:uppercase;color:var(--gd);margin-bottom:18px}
+        .ttl{font-size:clamp(2.4rem,6vw,4rem);font-weight:700;color:var(--p);line-height:1.1;margin-bottom:8px;letter-spacing:-1px}
+        .tsub{font-size:1rem;color:var(--td);font-weight:300;font-style:italic;margin-bottom:30px;line-height:1.6}
+        .tdet{display:flex;gap:24px;justify-content:center;margin-bottom:30px;font-size:0.7rem;color:var(--tf);letter-spacing:2px}
+        .tdet span{padding:5px 12px;border:1px solid var(--pd);border-radius:3px}
+
+        /* ═══ BRIEFING ═══ */
+        .brief-screen{padding-top:60px;justify-content:flex-start}
+        .brief-box{max-width:640px;width:100%}
+        .brief-label{font-family:'Special Elite',monospace;font-size:0.6rem;letter-spacing:6px;color:var(--g);margin-bottom:12px}
+        .brief-title{font-size:1.8rem;font-weight:600;color:var(--p);margin-bottom:20px}
+        .brief-text{font-size:0.92rem;color:var(--td);line-height:2;margin-bottom:20px;font-weight:300}
+        .brief-text strong{color:var(--p);font-weight:500}
+        .brief-divider{width:60px;height:1px;background:var(--gd);margin:20px auto}
+
+        /* ═══ INVESTIGATION ═══ */
+        .inv-screen{padding:0;justify-content:flex-start;background:rgba(8,6,10,0.95)}
+        .theater-wrap{position:relative;width:100%;max-width:1000px;margin:0 auto}
+        .theater{width:100%;aspect-ratio:16/9;max-height:calc(100vh - 180px);border:1px solid rgba(155,109,255,0.08);border-radius:6px;overflow:hidden;position:relative;cursor:crosshair;background:var(--bg2)}
+        .theater-bg{position:absolute;inset:0}
+        .room-tabs{display:flex;gap:6px;justify-content:center;padding:10px 0}
+        .room-tab{padding:7px 18px;font-family:'Source Serif 4',serif;font-size:0.78rem;color:var(--tf);cursor:pointer;border:1px solid transparent;transition:all 0.25s;border-radius:3px;background:0}
+        .room-tab:hover{color:var(--p);border-color:var(--pd)}
+        .room-tab.on{color:var(--g);border-color:var(--gd);background:var(--gf)}
+
+        /* Evidence markers */
+        .evm{position:absolute;cursor:pointer;z-index:5;transition:all 0.3s}
+        .evm .evr{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(155,109,255,0.3);background:rgba(155,109,255,0.05);display:flex;align-items:center;justify-content:center;transition:all 0.3s;animation:evp 3s ease-in-out infinite}
+        .evm:hover .evr{border-color:var(--g);background:rgba(155,109,255,0.15);transform:scale(1.2);box-shadow:0 0 20px rgba(155,109,255,0.2)}
+        .evm.found .evr{border-color:var(--g);background:rgba(155,109,255,0.1);animation:none;opacity:0.5}
+        .evm .evd{width:4px;height:4px;background:var(--g);border-radius:50%;opacity:0.6}
+        @keyframes evp{0%,100%{box-shadow:0 0 0 0 rgba(155,109,255,0.08)}50%{box-shadow:0 0 0 10px rgba(155,109,255,0)}}
+
+        .sbar{display:flex;align-items:center;justify-content:space-between;max-width:1000px;width:100%;padding:0 10px}
+        .sfound{font-size:0.76rem;color:var(--tf)}.sfound span{color:var(--g);font-weight:600}
+        .shint{font-size:0.68rem;color:var(--tf);font-style:italic}
+
+        /* ═══ EXAMINE PANEL ═══ */
+        .panel-bg{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.6);opacity:0;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(3px)}
+        .panel-bg.on{opacity:1;pointer-events:all}
+        .panel{position:fixed;right:-480px;top:44px;bottom:0;width:min(440px,90vw);z-index:51;background:rgba(14,11,18,0.96);border-left:1px solid rgba(155,109,255,0.1);padding:30px;overflow-y:auto;transition:right 0.4s cubic-bezier(0.4,0,0.2,1);backdrop-filter:blur(12px)}
+        .panel.on{right:0}
+        .panel-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid var(--pd);background:0;color:var(--p);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem}
+        .el{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+        .el-icon{font-size:2rem}
+        .el h3{font-size:1.2rem;color:var(--p)}
+        .et{font-size:0.88rem;color:var(--td);line-height:1.85;font-weight:300;margin-bottom:12px}
+        .en{padding:16px;background:rgba(155,109,255,0.04);border-left:2px solid var(--gd);border-radius:0 4px 4px 0;margin-bottom:14px;font-style:italic;color:var(--p);font-size:0.88rem;line-height:1.7}
+
+        /* ═══ SUSPECT CARDS ═══ */
+        .suspect-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;max-width:900px;width:100%;margin:20px auto}
+        .suspect-card{background:rgba(155,109,255,0.03);border:1px solid rgba(155,109,255,0.1);border-radius:8px;padding:18px;cursor:pointer;transition:all 0.3s;text-align:center}
+        .suspect-card:hover{border-color:var(--gd);transform:translateY(-2px);box-shadow:0 4px 20px rgba(155,109,255,0.08)}
+        .suspect-card.accused{border-color:#c44a4a;background:rgba(196,74,74,0.06)}
+        .sc-icon{font-size:2.5rem;margin-bottom:8px}
+        .sc-name{font-family:'Playfair Display',serif;font-size:1rem;color:var(--p);margin-bottom:4px}
+        .sc-role{font-size:0.72rem;color:var(--tf);letter-spacing:1px;margin-bottom:8px}
+        .sc-motive{font-size:0.78rem;color:var(--td);line-height:1.5;font-style:italic}
+
+        /* ═══ INTERROGATION ═══ */
+        .int-box{max-width:680px;width:100%;background:rgba(155,109,255,0.02);border:1px solid rgba(155,109,255,0.08);border-radius:8px;padding:24px;margin:10px auto}
+        .int-who{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+        .int-icon{font-size:2.5rem}
+        .int-name{font-size:1.1rem;color:var(--p)}
+        .int-role{font-size:0.7rem;color:var(--tf);letter-spacing:1px}
+        .int-dialogue{font-size:0.9rem;color:var(--td);line-height:1.8;margin-bottom:16px;padding:14px;background:rgba(155,109,255,0.03);border-radius:6px;font-style:italic}
+        .int-questions{display:flex;flex-direction:column;gap:8px}
+        .int-q{padding:12px 18px;border:1px solid var(--pd);border-radius:6px;background:0;color:var(--p);font-size:0.84rem;cursor:pointer;transition:all 0.3s;text-align:left;font-family:inherit;line-height:1.5}
+        .int-q:hover{border-color:var(--g);background:rgba(155,109,255,0.04)}
+        .int-q.asked{opacity:0.4;pointer-events:none}
+
+        /* ═══ ACCUSATION ═══ */
+        .acc-screen{padding-top:60px;justify-content:flex-start}
+        .acc-title{font-size:1.5rem;color:var(--p);margin-bottom:8px;text-align:center}
+        .acc-sub{font-size:0.85rem;color:var(--td);margin-bottom:24px;text-align:center}
+        .acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;max-width:800px;width:100%;margin:0 auto 20px}
+        .acc-card{background:rgba(155,109,255,0.03);border:2px solid rgba(155,109,255,0.1);border-radius:8px;padding:18px;cursor:pointer;transition:all 0.3s;text-align:center}
+        .acc-card:hover{border-color:var(--g)}
+        .acc-card.selected{border-color:#c44a4a;background:rgba(196,74,74,0.08);box-shadow:0 0 20px rgba(196,74,74,0.1)}
+
+        /* ═══ RESULT ═══ */
+        .result-screen{padding-top:60px;justify-content:flex-start}
+        .result-box{max-width:600px;width:100%;text-align:center}
+        .result-icon{font-size:4rem;margin-bottom:16px}
+        .result-title{font-size:2rem;color:var(--p);margin-bottom:8px}
+        .result-sub{font-size:1rem;color:var(--td);margin-bottom:20px;line-height:1.7}
+        .result-reveal{padding:20px;background:rgba(155,109,255,0.04);border:1px solid rgba(155,109,255,0.1);border-radius:8px;margin-bottom:20px;text-align:left}
+        .result-reveal h4{color:var(--g);margin-bottom:8px;font-size:0.9rem;letter-spacing:2px}
+        .result-reveal p{font-size:0.88rem;color:var(--td);line-height:1.8}
+        .result-stats{display:flex;gap:20px;justify-content:center;margin-bottom:24px}
+        .result-stat{text-align:center}
+        .result-stat-val{font-size:1.8rem;color:var(--g);font-weight:600}
+        .result-stat-label{font-size:0.65rem;color:var(--tf);letter-spacing:2px;margin-top:4px}
+
+        /* ═══ NAV ═══ */
+        .gnav{position:fixed;top:44px;left:0;right:0;z-index:100;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(8,6,10,0.96);border-bottom:1px solid rgba(155,109,255,0.06);pointer-events:none;opacity:0;transition:opacity 0.4s;height:42px;gap:0;backdrop-filter:blur(8px)}
+        .gnav.show{opacity:1;pointer-events:all}
+        .nt{padding:0 20px;font-family:'Source Serif 4',serif;font-size:0.8rem;color:var(--tf);cursor:pointer;transition:all 0.25s;border:none;border-bottom:2px solid transparent;letter-spacing:1px;background:0;height:42px;display:flex;align-items:center}
+        .nt:hover{color:var(--p)}
+        .nt.on{color:var(--g);border-bottom-color:var(--g)}
+
+        /* ═══ SPOTLIGHT EFFECT ═══ */
+        .spotlight{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(155,109,255,0.08) 0%,transparent 70%);pointer-events:none;transition:all 0.1s;z-index:2}
+
+        /* ═══ FEEDBACK ═══ */
+        .fb{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 28px;border-radius:6px;font-size:0.82rem;opacity:0;transition:all 0.3s;z-index:200;pointer-events:none;font-family:inherit}
+        .fb.show{opacity:1;transform:translateX(-50%) translateY(0)}
+        .fb-ok{background:rgba(74,180,74,0.15);border:1px solid rgba(74,180,74,0.3);color:#6aaa6a}
+        .fb-no{background:rgba(196,74,74,0.15);border:1px solid rgba(196,74,74,0.3);color:#c44a4a}
+        .fb-info{background:rgba(155,109,255,0.12);border:1px solid rgba(155,109,255,0.25);color:#b89aff}
+
+        /* Rooms - SVG illustrations */
+        .room-svg{position:absolute;inset:0;width:100%;height:100%}
+        .room-svg svg{width:100%;height:100%}
+        .room-hidden{display:none}
+
+        /* Typewriter */
+        .typewriter{animation:tw 0.6s steps(40) both}
+        @keyframes tw{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+        .solved-badge{display:inline-block;padding:6px 16px;background:rgba(74,180,74,0.1);border:1px solid rgba(74,180,74,0.2);border-radius:4px;color:#6aaa6a;font-size:0.72rem;letter-spacing:2px;margin-bottom:12px}
+
+        @media(max-width:768px){
+            .scr{padding:20px 12px}
+            .theater{aspect-ratio:4/3}
+            .suspect-grid{grid-template-columns:1fr 1fr}
+            .gnav{height:38px}.nt{padding:0 12px;font-size:0.72rem;height:38px}
+            .panel{width:100%}
+        }
+        @media(max-width:480px){
+            .suspect-grid{grid-template-columns:1fr}
+            .acc-grid{grid-template-columns:1fr 1fr}
+            .result-stats{flex-wrap:wrap}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Premium Bar -->
+    <div class="premium-bar" id="premiumBar">
+        <div class="pb-left">
+            <a href="/premium" class="pb-exit"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>EXIT</a>
+            <span class="pb-title">The Vanishing Act</span>
+        </div>
+        <div class="pb-right">
+            <button class="pb-btn" onclick="document.getElementById('htpOverlay').classList.add('on')">HOW TO PLAY</button>
+            <button class="pb-btn pb-share" onclick="shareGame()" title="Invite friends">👥 INVITE</button>
+        </div>
+    </div>
+
+    <!-- How to Play -->
+    <div class="htp-overlay" id="htpOverlay" onclick="if(event.target===this)this.classList.remove('on')">
+        <div class="htp-modal">
+            <button class="htp-close" onclick="this.parentElement.parentElement.classList.remove('on')">&times;</button>
+            <div class="htp-h">HOW TO PLAY</div>
+            <div class="htp-section">
+                <div class="htp-sh">OBJECTIVE</div>
+                <div class="htp-p">A world-famous illusionist has been found dead backstage. Investigate the theater, interrogate suspects, and unmask the killer.</div>
+            </div>
+            <div class="htp-section">
+                <div class="htp-sh">GAMEPLAY</div>
+                <ol class="htp-steps">
+                    <li>Read the case briefing to understand the crime</li>
+                    <li>Explore theater rooms — click glowing markers to find evidence</li>
+                    <li>Use the SUSPECTS tab to interrogate each person</li>
+                    <li>Ask questions and spot contradictions in their stories</li>
+                    <li>When ready, make your accusation</li>
+                </ol>
+            </div>
+            <div class="htp-section">
+                <div class="htp-sh">WITH FRIENDS</div>
+                <div class="htp-p">Click INVITE to share a room code. Each player investigates the same case independently, then compare conclusions!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multiplayer Overlay -->
+    <div class="mp-overlay" id="mpOverlay">
+        <div class="mp-modal">
+            <div id="mpContent">
+                <div class="mp-h">PLAY WITH FRIENDS</div>
+                <div class="mp-sub">Share the room code so others can join your session</div>
+                <div class="mp-code" id="mpCode">----</div>
+                <div class="mp-actions">
+                    <button class="mp-btn" onclick="copyRoomCode()">COPY CODE</button>
+                    <button class="mp-btn" onclick="document.getElementById('mpOverlay').classList.remove('on')">CLOSE</button>
+                </div>
+            </div>
+            <div id="mpJoin" style="display:none">
+                <div class="mp-h">JOIN GAME</div>
+                <div class="mp-sub">Enter the room code to join</div>
+                <input type="text" class="mp-join-input" id="mpJoinCode" maxlength="4" placeholder="CODE">
+                <div class="mp-actions" style="margin-top:16px">
+                    <button class="mp-btn primary" onclick="joinRoom()">JOIN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="noise"></div>
+    <div class="vig"></div>
+    <div class="fb" id="fb"></div>
+
+    <!-- Game Nav -->
+    <nav class="gnav" id="gnav">
+        <button class="nt on" onclick="goTab('investigate')">🔍 Investigate</button>
+        <button class="nt" onclick="goTab('suspects')">👤 Suspects</button>
+        <button class="nt" onclick="goTab('evidence')">📋 Evidence</button>
+        <button class="nt" onclick="goTab('accuse')">⚖️ Accuse</button>
+    </nav>
+
+    <!-- TITLE SCREEN -->
+    <div class="scr title-screen on" id="s-title">
+        <div class="tglow"></div>
+        <div class="tcont">
+            <div class="tey">Murder Mystery</div>
+            <h1 class="ttl">The Vanishing Act</h1>
+            <p class="tsub">"The greatest trick he ever pulled was making himself disappear — permanently."</p>
+            <div class="tdet">
+                <span>1–4 PLAYERS</span>
+                <span>30–45 MIN</span>
+                <span>5 SUSPECTS</span>
+            </div>
+            <button class="btn" onclick="startBrief()">Begin Investigation →</button>
+        </div>
+    </div>
+
+    <!-- BRIEFING -->
+    <div class="scr brief-screen" id="s-brief">
+        <div class="brief-box">
+            <div class="brief-label">CASE FILE #VA-2024</div>
+            <h2 class="brief-title">The Death of Victor Malone</h2>
+            <div class="brief-text">
+                <strong>Victor Malone</strong>, the world's most celebrated stage illusionist, was found dead in his dressing room at the <strong>Meridian Grand Theater</strong> thirty minutes before his final performance.
+            </div>
+            <div class="brief-text">
+                The cause of death: <strong>poisoning</strong> — a lethal dose of <strong>belladonna</strong> was found in his pre-show whiskey. The bottle was in his private dressing room, accessible only to those with backstage passes.
+            </div>
+            <div class="brief-divider"></div>
+            <div class="brief-text">
+                Five people had access backstage that evening. One of them wanted Victor's final act to be truly his last. Explore the theater, examine the evidence, and interrogate the suspects.
+            </div>
+            <div class="brief-text" style="color:var(--g);font-style:italic">
+                Pay attention to contradictions. Everyone has a motive. Only one pulled the trigger.
+            </div>
+            <button class="btn" onclick="startGame()" style="margin-top:20px">Enter the Theater →</button>
+        </div>
+    </div>
+
+    <!-- INVESTIGATE -->
+    <div class="scr inv-screen" id="s-investigate" style="top:86px">
+        <div class="room-tabs" id="roomTabs">
+            <button class="room-tab on" onclick="switchRoom('stage')">Stage</button>
+            <button class="room-tab" onclick="switchRoom('dressing')">Dressing Room</button>
+            <button class="room-tab" onclick="switchRoom('wings')">Wings</button>
+            <button class="room-tab" onclick="switchRoom('bar')">Green Room</button>
+        </div>
+        <div class="theater-wrap">
+            <div class="theater" id="theater" onmousemove="moveSpotlight(event)">
+                <div class="spotlight" id="spotlight"></div>
+                <!-- Rooms rendered by JS -->
+                <div id="roomStage" class="room-svg"></div>
+                <div id="roomDressing" class="room-svg room-hidden"></div>
+                <div id="roomWings" class="room-svg room-hidden"></div>
+                <div id="roomBar" class="room-svg room-hidden"></div>
+                <div id="evidenceMarkers"></div>
+            </div>
+        </div>
+        <div class="sbar">
+            <div class="sfound">Evidence: <span id="evCount">0</span> / <span id="evTotal">8</span></div>
+            <div class="shint" id="shint">Click glowing markers to examine clues</div>
+        </div>
+    </div>
+
+    <!-- SUSPECTS -->
+    <div class="scr" id="s-suspects" style="top:86px;padding-top:20px;justify-content:flex-start">
+        <div style="text-align:center;margin-bottom:16px">
+            <div style="font-family:'Special Elite',monospace;font-size:0.6rem;letter-spacing:4px;color:var(--g)">PERSONS OF INTEREST</div>
+            <h2 style="font-size:1.3rem;color:var(--p);margin-top:6px">Five Suspects</h2>
+        </div>
+        <div class="suspect-grid" id="suspectGrid"></div>
+        <div class="int-box" id="intBox" style="display:none"></div>
+    </div>
+
+    <!-- EVIDENCE BOARD -->
+    <div class="scr" id="s-evidence" style="top:86px;padding-top:20px;justify-content:flex-start">
+        <div style="text-align:center;margin-bottom:16px">
+            <div style="font-family:'Special Elite',monospace;font-size:0.6rem;letter-spacing:4px;color:var(--g)">CASE BOARD</div>
+            <h2 style="font-size:1.3rem;color:var(--p);margin-top:6px">Collected Evidence</h2>
+        </div>
+        <div id="evidenceBoard" style="max-width:700px;width:100%"></div>
+    </div>
+
+    <!-- ACCUSE -->
+    <div class="scr acc-screen" id="s-accuse" style="top:86px">
+        <div class="acc-title">Make Your Accusation</div>
+        <div class="acc-sub">Who poisoned Victor Malone's whiskey?</div>
+        <div class="acc-grid" id="accGrid"></div>
+        <button class="btn" onclick="submitAccusation()" id="accBtn" style="margin-top:16px;opacity:0.3;pointer-events:none">Confirm Accusation →</button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="scr result-screen" id="s-result">
+        <div class="result-box">
+            <div class="result-icon" id="resIcon"></div>
+            <h2 class="result-title" id="resTitle"></h2>
+            <p class="result-sub" id="resSub"></p>
+            <div class="result-stats">
+                <div class="result-stat"><div class="result-stat-val" id="resEv">0</div><div class="result-stat-label">EVIDENCE FOUND</div></div>
+                <div class="result-stat"><div class="result-stat-val" id="resQ">0</div><div class="result-stat-label">QUESTIONS ASKED</div></div>
+            </div>
+            <div class="result-reveal" id="resReveal"></div>
+            <button class="btn" onclick="location.reload()">Play Again →</button>
+            <button class="btn" onclick="location.href='/premium'" style="margin-left:12px">Back to Premium →</button>
+        </div>
+    </div>
+
+    <!-- Examine Panel -->
+    <div class="panel-bg" id="panelBg" onclick="closePanel()"></div>
+    <div class="panel" id="panel">
+        <button class="panel-close" onclick="closePanel()">×</button>
+        <div id="panelContent"></div>
+    </div>
+
+<script>
+// ═══ GAME DATA ═══
+const SUSPECTS = [
+    {id:'diana',name:'Diana Voss',role:'Stage Manager',icon:'👩‍💼',motive:'Victor was going to fire her after 12 years for a younger replacement.',alibi:'Says she was checking lights in the wings.',key:'threatened'},
+    {id:'marco',name:'Marco Delacroix',role:'Assistant Illusionist',icon:'🎩',motive:'Victor stole Marco\'s signature trick and made millions. Marco got nothing.',alibi:'Claims he was rehearsing alone on stage.',key:'stolen'},
+    {id:'elena',name:'Elena Malone',role:'Ex-Wife',icon:'💃',motive:'Bitter divorce. Victor hid assets. Elena was fighting for half his fortune.',alibi:'Says she arrived just 20 minutes before the show.',key:'fortune'},
+    {id:'james',name:'James Chen',role:'Theater Owner',icon:'🏛️',motive:'Victor was leaving the Meridian for a rival venue. James would lose his star act.',alibi:'Claims he was in his office doing paperwork all evening.',key:'contract'},
+    {id:'sofia',name:'Sofia Reyes',role:'Prop Designer',icon:'🎭',motive:'Victor publicly humiliated her work at the last press conference.',alibi:'Says she was in the prop workshop all night.',key:'access'}
+];
+
+const KILLER = 'marco'; // Marco did it
+
+const ROOMS = {
+    stage: {
+        name: 'Stage',
+        evidence: [
+            {id:'e1',x:25,y:45,icon:'🎪',name:'Rigged Trapdoor',desc:'The trapdoor mechanism has been tampered with. Fresh tool marks around the hinge. Someone was here recently who knew the mechanics.',note:'Marco would know this trapdoor intimately — he designed the mechanism for Victor\'s vanishing act.'},
+            {id:'e2',x:72,y:30,icon:'📝',name:'Set List Note',desc:'Victor\'s handwritten set list. The final trick "The Grand Vanishing" has been crossed out and replaced with "REVEAL THE TRUTH" in angry red ink.',note:'Victor planned to reveal something on stage tonight. What was he going to expose?'}
+        ]
+    },
+    dressing: {
+        name: 'Dressing Room',
+        evidence: [
+            {id:'e3',x:40,y:35,icon:'🥃',name:'Poisoned Whiskey',desc:'A crystal decanter of single-malt whiskey. Lab results confirm lethal doses of belladonna. The bottle was a gift — the card reads "Break a leg tonight. —M"',note:'The "M" initial narrows it to Marco or Elena (Malone). But Elena goes by her first name backstage.'},
+            {id:'e4',x:65,y:60,icon:'💊',name:'Empty Vial',desc:'A small glass vial hidden behind the makeup mirror. Trace residue matches belladonna extract. No fingerprints — wiped clean.',note:'The killer was careful. Someone with access to stage chemicals would know how to handle evidence.'},
+            {id:'e5',x:20,y:70,icon:'📱',name:'Victor\'s Phone',desc:'Last text sent at 7:12 PM to an unknown number: "I know what you did in Prague. Tonight I tell everyone."',note:'Victor was blackmailing someone. The Prague connection is key — who was in Prague?'}
+        ]
+    },
+    wings: {
+        name: 'Wings',
+        evidence: [
+            {id:'e6',x:55,y:40,icon:'🧤',name:'Black Gloves',desc:'A pair of thin leather gloves stuffed behind a curtain rod. Size medium. Still damp with what smells like alcohol — used to handle the whiskey bottle without prints.',note:'Diana and Sofia both wear medium gloves for their work. But these are stage-quality leather — performer\'s gloves.'},
+            {id:'e7',x:30,y:65,icon:'📂',name:'Prague Program',desc:'A folded theater program from Prague\'s Royal Opera, dated 2019. A performer named "Marcel Fontaine" is circled. The headshot looks exactly like a younger Marco.',note:'Marco performed under a fake name in Prague. Whatever happened there, he changed his identity to hide it.'}
+        ]
+    },
+    bar: {
+        name: 'Green Room',
+        evidence: [
+            {id:'e8',x:50,y:50,icon:'🍸',name:'Belladonna Plant Book',desc:'A botanical reference book left on the green room table, open to the belladonna page. Someone was researching the poison. A coffee ring on the page — Marco\'s signature cup.',note:'Marco\'s coffee cup left a ring on the poison research page. He studied the exact poison used to kill Victor.'}
+        ]
+    }
+};
+
+const INTERROGATIONS = {
+    diana: {
+        greeting: '"I\'ve been Victor\'s right hand for twelve years. Twelve years! And he was going to replace me with some twenty-something influencer."',
+        questions: [
+            {q:'Where were you between 6 and 7 PM?',a:'"Checking the lighting rigs in the wings. I always do a final check before shows. Ask anyone."',clue:null},
+            {q:'Did you go into Victor\'s dressing room?',a:'"Not today. I knocked at 6:30 to go over cues but he said he was busy. I heard another voice in there — a man\'s voice."',clue:'Diana heard a man in Victor\'s room around 6:30. The poisoned whiskey was delivered before 7 PM.'},
+            {q:'Who else had backstage access tonight?',a:'"Marco, Elena, James, Sofia, and me. That\'s it. Security was tight because of the final show."',clue:null},
+            {q:'Did you know about Victor\'s plans for tonight\'s show?',a:'"He was being secretive. Wouldn\'t share the set list. Said tonight would be \'unforgettable.\' I thought he meant the magic."',clue:'Victor had a secret planned for the final show — the "REVEAL THE TRUTH" note on his set list.'}
+        ]
+    },
+    marco: {
+        greeting: '"Victor was... a complicated man. Brilliant, yes, but he took credit for everything. My illusions, my designs, my life\'s work — all under his name."',
+        questions: [
+            {q:'Where were you between 6 and 7 PM?',a:'"On stage, rehearsing my solo piece for the opener. I was alone — everyone else was backstage."',clue:'Marco claims he was alone on stage. But Diana was supposedly checking lights in the wings — she would have seen him.'},
+            {q:'Did you give Victor a gift today?',a:'"A gift? No, why would I? We weren\'t exactly... exchanging pleasantries lately." *He shifts uncomfortably*',clue:'Marco denies giving a gift, but the poisoned whiskey card was signed "—M". He\'s lying.'},
+            {q:'Have you ever been to Prague?',a:'"Prague? I... no. Never been. Why do you ask?" *His hand trembles slightly*',clue:'Marco denies visiting Prague, but a theater program from Prague\'s Royal Opera shows him performing as "Marcel Fontaine" in 2019. Major lie.'},
+            {q:'What was Victor going to reveal tonight?',a:'"I have no idea what you\'re talking about." *He won\'t make eye contact*',clue:'Marco is visibly nervous about Victor\'s planned revelation. Whatever happened in Prague, Victor knew about it.'}
+        ]
+    },
+    elena: {
+        greeting: '"Victor owed me millions. The divorce was ugly, yes, but I wouldn\'t... I still cared about him, despite everything."',
+        questions: [
+            {q:'When did you arrive at the theater?',a:'"About 6:40 PM. I came through the stage door. The security guard logged me in — you can check."',clue:'Elena arrived at 6:40. Diana heard a man in Victor\'s room at 6:30 — Elena wasn\'t there yet.'},
+            {q:'Did you see anyone near the dressing room?',a:'"Actually yes — I saw Marco coming out of Victor\'s room looking flustered. He nearly ran into me in the hallway."',clue:'Elena saw Marco leaving Victor\'s dressing room looking agitated. This contradicts Marco\'s claim of being on stage.'},
+            {q:'Your initial is also M — did you send the whiskey?',a:'"I haven\'t given Victor a gift since our anniversary three years ago. Check my credit cards, my messages — I didn\'t buy any whiskey."',clue:null},
+            {q:'What do you know about Prague?',a:'"Victor went to Prague in 2019 to scout talent. He came back raving about some performer. Ended up hiring Marco shortly after. Why?"',clue:'Victor discovered Marco in Prague performing as "Marcel Fontaine" — and later brought him to the Meridian.'}
+        ]
+    },
+    james: {
+        greeting: '"This theater has been my family\'s legacy for three generations. Victor leaving would have been devastating, yes, but murder? Please."',
+        questions: [
+            {q:'Where were you between 6 and 7 PM?',a:'"In my office, third floor. My assistant can confirm — we were reviewing next season\'s budget."',clue:null},
+            {q:'Was Victor really leaving the Meridian?',a:'"He had a contract offer from the Apex in Las Vegas. Triple the money. But we had a non-compete clause — he couldn\'t leave for two years."',clue:'Victor was contractually bound. He couldn\'t leave — so James had no urgent motive.'},
+            {q:'Do you know what Victor planned to reveal?',a:'"He mentioned wanting to expose a fraud in the magic community. Someone who stole an act and built their whole career on it."',clue:'Victor planned to expose someone who stole an act. Marco\'s entire career is built on tricks he claims as his own.'},
+            {q:'Have you noticed tension between cast members?',a:'"Marco and Victor have been at each other\'s throats for months. Last week I heard Marco say \'I\'ll make sure you never perform again.\'"',clue:'James overheard Marco threatening Victor directly. Marco said he\'d ensure Victor never performed again.'}
+        ]
+    },
+    sofia: {
+        greeting: '"Victor was cruel to me publicly, yes. He called my props \'amateur hour\' at a press conference. But I wouldn\'t kill over an insult."',
+        questions: [
+            {q:'Where were you between 6 and 7 PM?',a:'"In the prop workshop downstairs. I was repairing the vanishing cabinet for tonight. My apprentice was with me until about 6:45."',clue:null},
+            {q:'Do you work with chemicals in prop design?',a:'"Of course — solvents, paints, adhesives. But nothing like belladonna. That\'s not something you find in a prop shop."',clue:null},
+            {q:'Did you see anything unusual tonight?',a:'"Actually... I saw a botanical reference book on the green room table. It was open to a page about poisonous plants. I thought it was for a prop, but now..."',clue:'Sofia noticed the belladonna reference book in the green room. Someone was researching the poison.'},
+            {q:'Who do you think did this?',a:'"I hate to say it, but Marco has been acting strange for weeks. Paranoid. Secretive. And he was the last person I saw near Victor\'s hallway."',clue:'Multiple people noticed Marco acting paranoid recently — consistent with someone who feared exposure.'}
+        ]
+    }
+};
+
+// ═══ GAME STATE ═══
+let foundEvidence = new Set();
+let askedQuestions = new Set();
+let totalQuestions = 0;
+let currentRoom = 'stage';
+let accusation = null;
+let gameStarted = false;
+
+// ═══ FUNCTIONS ═══
+function fb(msg, type, dur) {
+    type = type || 'info'; dur = dur || 3000;
+    var el = document.getElementById('fb');
+    el.textContent = msg;
+    el.className = 'fb show fb-' + type;
+    setTimeout(function() { el.classList.remove('show') }, dur);
+}
+
+function goTab(tab) {
+    document.querySelectorAll('.gnav .nt').forEach(function(b) { b.classList.remove('on') });
+    event.target.classList.add('on');
+    ['investigate', 'suspects', 'evidence', 'accuse'].forEach(function(s) {
+        var el = document.getElementById('s-' + s);
+        if (el) el.classList.remove('on');
+    });
+    document.getElementById('s-' + tab).classList.add('on');
+}
+
+function startBrief() {
+    document.getElementById('s-title').classList.remove('on');
+    document.getElementById('s-brief').classList.add('on');
+}
+
+function startGame() {
+    gameStarted = true;
+    document.getElementById('s-brief').classList.remove('on');
+    document.getElementById('gnav').classList.add('show');
+    document.getElementById('s-investigate').classList.add('on');
+    renderRoom('stage');
+    renderSuspects();
+    renderAccusation();
+}
+
+function switchRoom(room) {
+    currentRoom = room;
+    document.querySelectorAll('.room-tab').forEach(function(t) { t.classList.remove('on') });
+    event.target.classList.add('on');
+    ['Stage', 'Dressing', 'Wings', 'Bar'].forEach(function(r) {
+        document.getElementById('room' + r).classList.add('room-hidden');
+    });
+    var map = { stage: 'Stage', dressing: 'Dressing', wings: 'Wings', bar: 'Bar' };
+    document.getElementById('room' + map[room]).classList.remove('room-hidden');
+    renderEvidence();
+}
+
+function renderRoom(room) {
+    // Stage SVG
+    document.getElementById('roomStage').innerHTML = '<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#0a0812"/><rect x="50" y="320" width="700" height="130" fill="#12101a" rx="4"/><rect x="100" y="280" width="600" height="45" fill="#16132a" rx="2"/><polygon points="30,0 100,80 100,280 30,450" fill="#0e0c16"/><polygon points="770,0 700,80 700,280 770,450" fill="#0e0c16"/><rect x="100" y="80" width="600" height="200" fill="#0c0a14"/><line x1="100" y1="80" x2="100" y2="280" stroke="#1a1630" stroke-width="1"/><line x1="700" y1="80" x2="700" y2="280" stroke="#1a1630" stroke-width="1"/><ellipse cx="400" cy="180" rx="120" ry="80" fill="none" stroke="#9b6dff" stroke-width="0.5" opacity="0.1"/><circle cx="400" cy="160" r="60" fill="#9b6dff" opacity="0.02"/><rect x="380" y="230" width="40" height="50" fill="#1a1630" rx="2"/><rect x="150" y="100" width="8" height="180" fill="#1a1630"/><rect x="642" y="100" width="8" height="180" fill="#1a1630"/><rect x="60" y="0" width="30" height="60" fill="#16132a" rx="2"/><rect x="710" y="0" width="30" height="60" fill="#16132a" rx="2"/><circle cx="400" cy="40" r="20" fill="#9b6dff" opacity="0.04"/><circle cx="250" cy="30" r="15" fill="#9b6dff" opacity="0.02"/><circle cx="550" cy="30" r="15" fill="#9b6dff" opacity="0.02"/><text x="400" y="440" text-anchor="middle" fill="#9b6dff" font-size="10" opacity="0.15">STAGE</text></svg>';
+
+    document.getElementById('roomDressing').innerHTML = '<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#0c0a10"/><rect x="60" y="60" width="680" height="330" fill="#100e18" stroke="#1a1630" stroke-width="0.5"/><rect x="100" y="100" width="200" height="150" rx="4" fill="#0a0812" stroke="#9b6dff" stroke-width="0.5" stroke-opacity="0.15"/><circle cx="200" cy="140" r="8" fill="#9b6dff" opacity="0.06"/><circle cx="160" cy="140" r="8" fill="#9b6dff" opacity="0.04"/><circle cx="240" cy="140" r="8" fill="#9b6dff" opacity="0.04"/><rect x="130" y="200" width="140" height="8" rx="2" fill="#1a1630"/><rect x="500" y="120" width="100" height="140" rx="4" fill="#0e0c16" stroke="#1a1630" stroke-width="0.5"/><rect x="515" y="130" width="70" height="6" rx="2" fill="#1a1630"/><rect x="515" y="145" width="50" height="6" rx="2" fill="#1a1630"/><circle cx="550" cy="200" r="20" fill="none" stroke="#9b6dff" stroke-width="0.5" stroke-opacity="0.2"/><rect x="350" y="280" width="60" height="80" rx="3" fill="#12101a" stroke="#1a1630" stroke-width="0.5"/><circle cx="380" cy="310" r="8" fill="#9b6dff" opacity="0.04"/><rect x="150" y="320" width="120" height="50" rx="2" fill="#12101a"/><text x="400" y="430" text-anchor="middle" fill="#9b6dff" font-size="10" opacity="0.15">DRESSING ROOM</text></svg>';
+
+    document.getElementById('roomWings').innerHTML = '<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#080610"/><rect x="0" y="0" width="120" height="450" fill="#0a0814"/><rect x="680" y="0" width="120" height="450" fill="#0a0814"/><rect x="120" y="50" width="560" height="350" fill="#0c0a14"/><rect x="140" y="60" width="4" height="330" fill="#1a1630"/><rect x="280" y="60" width="4" height="330" fill="#1a1630"/><rect x="516" y="60" width="4" height="330" fill="#1a1630"/><rect x="656" y="60" width="4" height="330" fill="#1a1630"/><rect x="160" y="200" width="100" height="80" rx="3" fill="#12101a" stroke="#1a1630" stroke-width="0.5"/><rect x="540" y="150" width="100" height="120" rx="3" fill="#12101a" stroke="#1a1630" stroke-width="0.5"/><circle cx="400" cy="225" r="40" fill="#9b6dff" opacity="0.02"/><text x="400" y="430" text-anchor="middle" fill="#9b6dff" font-size="10" opacity="0.15">WINGS</text></svg>';
+
+    document.getElementById('roomBar').innerHTML = '<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#0a0810"/><rect x="60" y="60" width="680" height="330" fill="#0e0c16" stroke="#1a1630" stroke-width="0.5" rx="4"/><rect x="100" y="280" width="250" height="80" rx="4" fill="#12101a" stroke="#1a1630" stroke-width="0.5"/><rect x="120" y="300" width="40" height="40" rx="2" fill="#0a0812"/><rect x="180" y="305" width="30" height="35" rx="2" fill="#0a0812"/><rect x="230" y="295" width="35" height="45" rx="2" fill="#0a0812"/><rect x="450" y="100" width="250" height="160" rx="6" fill="#12101a" stroke="#9b6dff" stroke-width="0.3" stroke-opacity="0.1"/><rect x="480" y="120" width="40" height="50" rx="3" fill="#0e0c16"/><rect x="540" y="130" width="40" height="40" rx="3" fill="#0e0c16"/><rect x="600" y="115" width="40" height="55" rx="3" fill="#0e0c16"/><ellipse cx="300" cy="200" rx="80" ry="40" fill="#12101a" stroke="#1a1630" stroke-width="0.5"/><circle cx="280" cy="195" r="6" fill="#9b6dff" opacity="0.04"/><circle cx="320" cy="195" r="6" fill="#9b6dff" opacity="0.04"/><text x="400" y="430" text-anchor="middle" fill="#9b6dff" font-size="10" opacity="0.15">GREEN ROOM</text></svg>';
+
+    renderEvidence();
+}
+
+function renderEvidence() {
+    var markers = document.getElementById('evidenceMarkers');
+    markers.innerHTML = '';
+    var roomData = ROOMS[currentRoom];
+    if (!roomData) return;
+    roomData.evidence.forEach(function(ev) {
+        var cls = foundEvidence.has(ev.id) ? 'evm found' : 'evm';
+        markers.innerHTML += '<div class="' + cls + '" style="left:' + ev.x + '%;top:' + ev.y + '%" onclick="examineEvidence(\'' + ev.id + '\')"><div class="evr"><div class="evd"></div></div></div>';
+    });
+    document.getElementById('evCount').textContent = foundEvidence.size;
+}
+
+function examineEvidence(id) {
+    var ev = null;
+    Object.keys(ROOMS).forEach(function(r) {
+        ROOMS[r].evidence.forEach(function(e) {
+            if (e.id === id) ev = e;
+        });
+    });
+    if (!ev) return;
+    foundEvidence.add(id);
+    renderEvidence();
+    renderEvidenceBoard();
+    var html = '<div class="el"><span class="el-icon">' + ev.icon + '</span><h3>' + ev.name + '</h3></div>';
+    html += '<div class="et">' + ev.desc + '</div>';
+    if (ev.note) html += '<div class="en">' + ev.note + '</div>';
+    document.getElementById('panelContent').innerHTML = html;
+    document.getElementById('panel').classList.add('on');
+    document.getElementById('panelBg').classList.add('on');
+    fb('Evidence collected: ' + ev.name, 'ok');
+}
+
+function closePanel() {
+    document.getElementById('panel').classList.remove('on');
+    document.getElementById('panelBg').classList.remove('on');
+}
+
+function moveSpotlight(e) {
+    var rect = e.currentTarget.getBoundingClientRect();
+    var x = e.clientX - rect.left - 100;
+    var y = e.clientY - rect.top - 100;
+    document.getElementById('spotlight').style.left = x + 'px';
+    document.getElementById('spotlight').style.top = y + 'px';
+}
+
+function renderSuspects() {
+    var grid = document.getElementById('suspectGrid');
+    grid.innerHTML = SUSPECTS.map(function(s) {
+        return '<div class="suspect-card" onclick="interrogate(\'' + s.id + '\')"><div class="sc-icon">' + s.icon + '</div><div class="sc-name">' + s.name + '</div><div class="sc-role">' + s.role + '</div><div class="sc-motive">' + s.motive + '</div></div>';
+    }).join('');
+}
+
+function interrogate(id) {
+    var s = SUSPECTS.find(function(x) { return x.id === id });
+    var int = INTERROGATIONS[id];
+    if (!s || !int) return;
+    var box = document.getElementById('intBox');
+    box.style.display = 'block';
+    var html = '<div class="int-who"><div class="int-icon">' + s.icon + '</div><div><div class="int-name">' + s.name + '</div><div class="int-role">' + s.role + '</div></div></div>';
+    html += '<div class="int-dialogue">' + int.greeting + '</div>';
+    html += '<div class="int-questions">';
+    int.questions.forEach(function(q, i) {
+        var key = id + '-' + i;
+        var asked = askedQuestions.has(key);
+        html += '<button class="int-q' + (asked ? ' asked' : '') + '" onclick="askQuestion(\'' + id + '\',' + i + ')">' + q.q + '</button>';
+    });
+    html += '</div>';
+    box.innerHTML = html;
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function askQuestion(sid, qi) {
+    var key = sid + '-' + qi;
+    if (askedQuestions.has(key)) return;
+    askedQuestions.add(key);
+    totalQuestions++;
+    var int = INTERROGATIONS[sid];
+    var q = int.questions[qi];
+    // Replace button with answer
+    var btns = document.querySelectorAll('#intBox .int-q');
+    btns[qi].classList.add('asked');
+    btns[qi].outerHTML = '<div class="int-q asked" style="pointer-events:none;opacity:0.5">' + q.q + '</div><div class="int-dialogue" style="margin:8px 0 12px;border-left:2px solid var(--gd);padding-left:14px">' + q.a + '</div>' + (q.clue ? '<div style="padding:8px 14px;background:rgba(155,109,255,0.06);border-radius:4px;font-size:0.78rem;color:var(--g);margin-bottom:12px">🔍 ' + q.clue + '</div>' : '');
+    if (q.clue) fb('New insight discovered!', 'ok');
+}
+
+function renderEvidenceBoard() {
+    var board = document.getElementById('evidenceBoard');
+    if (foundEvidence.size === 0) {
+        board.innerHTML = '<div style="text-align:center;padding:40px;color:var(--tf)">No evidence collected yet. Investigate the theater to find clues.</div>';
+        return;
+    }
+    var html = '';
+    Object.keys(ROOMS).forEach(function(r) {
+        ROOMS[r].evidence.forEach(function(ev) {
+            if (foundEvidence.has(ev.id)) {
+                html += '<div style="padding:14px;background:rgba(155,109,255,0.03);border:1px solid rgba(155,109,255,0.08);border-radius:6px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:1.3rem">' + ev.icon + '</span><strong style="color:var(--p)">' + ev.name + '</strong><span style="font-size:0.65rem;color:var(--tf);letter-spacing:1px">' + ROOMS[r].name.toUpperCase() + '</span></div><div style="font-size:0.82rem;color:var(--td);line-height:1.6">' + ev.desc + '</div>' + (ev.note ? '<div style="font-size:0.78rem;color:var(--g);margin-top:6px;font-style:italic">💡 ' + ev.note + '</div>' : '') + '</div>';
+            }
+        });
+    });
+    board.innerHTML = html;
+}
+
+function renderAccusation() {
+    var grid = document.getElementById('accGrid');
+    grid.innerHTML = SUSPECTS.map(function(s) {
+        return '<div class="acc-card" id="acc-' + s.id + '" onclick="selectAccusation(\'' + s.id + '\')"><div class="sc-icon">' + s.icon + '</div><div class="sc-name">' + s.name + '</div><div class="sc-role">' + s.role + '</div></div>';
+    }).join('');
+}
+
+function selectAccusation(id) {
+    accusation = id;
+    document.querySelectorAll('.acc-card').forEach(function(c) { c.classList.remove('selected') });
+    document.getElementById('acc-' + id).classList.add('selected');
+    var btn = document.getElementById('accBtn');
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'all';
+}
+
+function submitAccusation() {
+    if (!accusation) return;
+    var correct = accusation === KILLER;
+    document.querySelectorAll('.scr').forEach(function(s) { s.classList.remove('on') });
+    document.getElementById('gnav').classList.remove('show');
+    document.getElementById('s-result').classList.add('on');
+
+    document.getElementById('resIcon').textContent = correct ? '🎯' : '❌';
+    document.getElementById('resTitle').textContent = correct ? 'Case Solved!' : 'Wrong Suspect';
+    document.getElementById('resSub').textContent = correct
+        ? 'You correctly identified Marco Delacroix as the killer. Brilliant detective work.'
+        : 'You accused the wrong person. The real killer was Marco Delacroix.';
+    document.getElementById('resEv').textContent = foundEvidence.size + '/8';
+    document.getElementById('resQ').textContent = totalQuestions;
+
+    document.getElementById('resReveal').innerHTML = '<h4>THE TRUTH</h4><p>Marco Delacroix — real name Marcel Fontaine — built his entire career on an act he stole from a rival performer in Prague. Victor discovered the truth and planned to expose Marco during the final show. Desperate to protect his secret, Marco poisoned Victor\'s pre-show whiskey with belladonna, signed the gift card with his initial "M," and wore stage gloves to avoid fingerprints. The botanical reference book in the green room, the Prague theater program, and Elena\'s witness testimony of seeing Marco leave Victor\'s dressing room all pointed to his guilt.</p>';
+}
+
+// ═══ MULTIPLAYER ═══
+function generateRoomCode() { return Array.from({ length: 4 }, function() { return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)] }).join('') }
+var roomCode = new URLSearchParams(window.location.search).get('room');
+var isHost = !roomCode;
+if (!roomCode) roomCode = generateRoomCode();
+
+function shareGame() {
+    var url = window.location.origin + window.location.pathname + '?room=' + roomCode;
+    if (navigator.share) {
+        navigator.share({ title: document.title, text: 'Join my game!', url: url });
+    } else {
+        document.getElementById('mpCode').textContent = roomCode;
+        document.getElementById('mpOverlay').classList.add('on');
+    }
+}
+function copyRoomCode() {
+    var url = window.location.origin + window.location.pathname + '?room=' + roomCode;
+    navigator.clipboard.writeText(url).then(function() {
+        var btn = event.target;
+        btn.textContent = 'COPIED!';
+        setTimeout(function() { btn.textContent = 'COPY CODE' }, 2000);
+    });
+}
+function joinRoom() {
+    var code = document.getElementById('mpJoinCode').value.trim().toUpperCase();
+    if (code.length === 4) window.location.href = window.location.pathname + '?room=' + code;
+}
+if (!isHost) {
+    document.addEventListener('DOMContentLoaded', function() {
+        var title = document.querySelector('.pb-title');
+        if (title) title.textContent += ' · Room: ' + roomCode;
+    });
+}
+
+// Keyboard
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePanel();
+});
+</script>
+
+</body>
+</html>

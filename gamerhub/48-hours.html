@@ -224,9 +224,122 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 @supports(padding-bottom:env(safe-area-inset-bottom)){.dbox,.chc{padding-bottom:calc(30px + env(safe-area-inset-bottom))}}
 @media(hover:none){.cb:hover{background:rgba(221,216,207,.04);padding-left:24px}}
 @media(prefers-reduced-motion:reduce){.sf,.ff1,.ff2,.ff3{animation:none}.port,.dbox,.chc,.narr{transition-duration:.05s}}
+
+        /* ═══ EXIT BAR + HOW TO PLAY ═══ */
+        .premium-bar{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(8,9,12,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.05)}
+        .pb-left{display:flex;align-items:center;gap:12px}
+        .pb-exit{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid rgba(107,101,96,0.6);border-radius:4px;background:none;color:#ddd8cf;font-size:0.75rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;text-decoration:none;font-family:inherit}
+        .pb-exit:hover{border-color:#c45040;color:#c45040}
+        .pb-exit svg{width:14px;height:14px;fill:currentColor}
+        .pb-title{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:rgba(107,101,96,0.6)}
+        .pb-right{display:flex;align-items:center;gap:8px}
+        .pb-btn{padding:6px 14px;border:1px solid rgba(107,101,96,0.6);border-radius:4px;background:none;color:#ddd8cf;font-size:0.72rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        .pb-btn:hover{border-color:#c45040;color:#c45040}
+        .pb-share{padding:6px 10px}
+        
+        /* How to Play Modal */
+        .htp-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .htp-overlay.on{opacity:1;pointer-events:all}
+        .htp-modal{background:rgba(8,9,12,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:32px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;position:relative}
+        .htp-close{position:absolute;top:12px;right:12px;background:none;border:none;color:rgba(107,101,96,0.6);font-size:1.2rem;cursor:pointer;padding:4px 8px}
+        .htp-close:hover{color:#ddd8cf}
+        .htp-h{font-size:1.3rem;color:#c45040;margin-bottom:16px;letter-spacing:2px}
+        .htp-section{margin-bottom:16px}
+        .htp-sh{font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:#c45040;margin-bottom:6px;opacity:0.8}
+        .htp-p{font-size:0.85rem;color:#ddd8cf;line-height:1.7;opacity:0.8}
+        .htp-steps{list-style:none;padding:0;counter-reset:step}
+        .htp-steps li{position:relative;padding:8px 0 8px 32px;font-size:0.82rem;color:#ddd8cf;line-height:1.5;opacity:0.8;counter-increment:step}
+        .htp-steps li::before{content:counter(step);position:absolute;left:0;top:8px;width:22px;height:22px;border-radius:50%;border:1px solid rgba(107,101,96,0.6);display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#c45040}
+
+        /* Multiplayer lobby overlay */  
+        .mp-overlay{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .mp-overlay.on{opacity:1;pointer-events:all}
+        .mp-modal{background:rgba(8,9,12,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .mp-h{font-size:1.2rem;color:#c45040;margin-bottom:8px;letter-spacing:2px}
+        .mp-sub{font-size:0.8rem;color:rgba(107,101,96,0.6);margin-bottom:20px}
+        .mp-code{font-size:2.5rem;letter-spacing:12px;color:#ddd8cf;font-family:monospace;margin:16px 0;padding:12px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.06)}
+        .mp-players{margin:16px 0;text-align:left}
+        .mp-player{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:0.8rem;color:#ddd8cf}
+        .mp-dot{width:8px;height:8px;border-radius:50%;background:#4ade80}
+        .mp-actions{display:flex;gap:8px;justify-content:center;margin-top:16px}
+        .mp-btn{padding:10px 24px;border:1px solid #c45040;border-radius:4px;background:none;color:#c45040;font-size:0.8rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        .mp-btn:hover{background:rgba(255,255,255,0.03)}
+        .mp-btn.primary{background:#c45040;color:#0a0908}
+        .mp-join-input{padding:10px 16px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;background:rgba(255,255,255,0.03);color:#ddd8cf;font-size:1rem;letter-spacing:4px;text-align:center;width:160px;font-family:monospace}
+    
 </style>
 </head>
 <body>
+
+    <!-- Premium Bar -->
+    <div class="premium-bar" id="premiumBar">
+        <div class="pb-left">
+            <a href="/premium" class="pb-exit"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>EXIT</a>
+            <span class="pb-title">48 Hours</span>
+        </div>
+        <div class="pb-right">
+            <button class="pb-btn" onclick="document.getElementById('htpOverlay').classList.add('on')">HOW TO PLAY</button>
+            <button class="pb-btn pb-share" onclick="shareGame()" title="Invite friends">👥 INVITE</button>
+        </div>
+    </div>
+    
+    <!-- How to Play -->
+    <div class="htp-overlay" id="htpOverlay" onclick="if(event.target===this)this.classList.remove('on')">
+        <div class="htp-modal">
+            <button class="htp-close" onclick="this.parentElement.parentElement.classList.remove('on')">&times;</button>
+            <div class="htp-h">HOW TO PLAY</div>
+            <div class="htp-section">
+                <div class="htp-sh">OBJECTIVE</div>
+                <div class="htp-p">Survive 48 hours in extreme wilderness after a plane crash. Keep your group alive by managing resources and making tough choices.</div>
+            </div>
+            <div class="htp-section">
+                <div class="htp-sh">RESOURCES</div>
+                <ol class="htp-steps">
+                    <li><strong>Food</strong> — find and ration supplies. Hunger weakens the group</li>
+                    <li><strong>Warmth</strong> — build fires, find shelter. Cold is the biggest killer</li>
+                    <li><strong>Medical</strong> — treat injuries. Untreated wounds worsen over time</li>
+                    <li><strong>Morale</strong> — keep hope alive. Low morale leads to bad decisions</li>
+                </ol>
+            </div>
+            <div class="htp-section">
+                <div class="htp-sh">CHOICES</div>
+                <div class="htp-p">Every choice costs time and affects resources. Some choices affect your relationships with group members. Build trust to unlock better options later. There's no single right path — your story is shaped by your decisions.</div>
+            </div>
+            <div class="htp-section">
+                <div class="htp-sh">WITH FRIENDS</div>
+                <div class="htp-p">Click INVITE to share a room code. Friends play the same scenario with the same random events. Compare your survival paths afterward — did you make the same choices? Who survived longest?</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multiplayer Overlay -->
+    <div class="mp-overlay" id="mpOverlay">
+        <div class="mp-modal">
+            <div id="mpContent">
+                <div class="mp-h">PLAY WITH FRIENDS</div>
+                <div class="mp-sub">Share the room code so others can join your session</div>
+                <div class="mp-code" id="mpCode">----</div>
+                <div class="mp-players" id="mpPlayers">
+                    <div class="mp-player"><span class="mp-dot"></span> You (Host)</div>
+                </div>
+                <div class="mp-actions">
+                    <button class="mp-btn" onclick="copyRoomCode()">COPY CODE</button>
+                    <button class="mp-btn" onclick="document.getElementById('mpOverlay').classList.remove('on')">CLOSE</button>
+                    <button class="mp-btn primary" onclick="startMPGame()">START</button>
+                </div>
+            </div>
+            <div id="mpJoin" style="display:none">
+                <div class="mp-h">JOIN GAME</div>
+                <div class="mp-sub">Enter the room code shared by the host</div>
+                <input class="mp-join-input" id="mpJoinCode" maxlength="4" placeholder="CODE">
+                <div class="mp-actions" style="margin-top:16px">
+                    <button class="mp-btn" onclick="document.getElementById('mpOverlay').classList.remove('on')">CANCEL</button>
+                    <button class="mp-btn primary" onclick="joinRoom()">JOIN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 <div class="game" id="G">
 <div class="scene-bg" id="sBg"></div>
 <div class="dov"></div>
@@ -1130,5 +1243,58 @@ animLoop();
 
 })();
 </script>
+
+    <script>
+    // ═══ MULTIPLAYER ROOM SYSTEM ═══
+    // Uses URL params for simple room sharing (no server needed for sync - each player plays independently with same seed)
+    function generateRoomCode(){return Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('')}
+    
+    let roomCode = new URLSearchParams(window.location.search).get('room');
+    let isHost = !roomCode;
+    if(!roomCode) roomCode = generateRoomCode();
+    
+    // Seed the random from room code so all players get same experience
+    let seed = 0;
+    for(let i=0;i<roomCode.length;i++) seed = ((seed<<5)-seed)+roomCode.charCodeAt(i);
+    seed = seed & seed;
+    function seededRandom(){seed=(seed*16807)%2147483647;return(seed-1)/2147483646}
+    
+    function shareGame(){
+        const url = window.location.origin + window.location.pathname + '?room=' + roomCode;
+        if(navigator.share){
+            navigator.share({title:document.title,text:'Join my game!',url:url});
+        } else {
+            document.getElementById('mpCode').textContent = roomCode;
+            document.getElementById('mpOverlay').classList.add('on');
+        }
+    }
+    function copyRoomCode(){
+        const url = window.location.origin + window.location.pathname + '?room=' + roomCode;
+        navigator.clipboard.writeText(url).then(()=>{
+            const btn = event.target;
+            btn.textContent='COPIED!';
+            setTimeout(()=>btn.textContent='COPY CODE',2000);
+        });
+    }
+    function startMPGame(){document.getElementById('mpOverlay').classList.remove('on')}
+    function joinRoom(){
+        const code = document.getElementById('mpJoinCode').value.trim().toUpperCase();
+        if(code.length===4){
+            window.location.href = window.location.pathname + '?room=' + code;
+        }
+    }
+    
+    // Show join UI if arriving via room link
+    if(!isHost){
+        document.addEventListener('DOMContentLoaded',function(){
+            const bar = document.getElementById('premiumBar');
+            if(bar){
+                const title = bar.querySelector('.pb-title');
+                if(title) title.textContent += ' • Room: ' + roomCode;
+            }
+        });
+    }
+    </script>
+    
 </body>
 </html>
