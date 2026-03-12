@@ -1822,7 +1822,7 @@ io.on('connection', (socket) => {
       const playerRole = room.gameData.roleAssignments[playerName];
       if (playerRole) {
         console.log(`Sending role assignment to ${playerName}: ${playerRole.role}`);
-        
+
         // Include allLocations for Spyfall game type
         if (room.gameType === 'spyfall') {
           socket.emit('role-assigned', {
@@ -1832,13 +1832,43 @@ io.on('connection', (socket) => {
         } else {
           socket.emit('role-assigned', playerRole);
         }
-        
+
         // Handle game phase transitions based on game type
         if (room.gameType === 'imposter') {
           handleImposterPhaseTransition(room, socket, roomCode, playerName);
         } else if (room.gameType === 'spyfall') {
           handleSpyfallPhaseTransition(room, socket, roomCode, playerName);
         }
+      }
+    }
+
+    // Mid-game reconnection for trivia-royale
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'trivia-royale') {
+      const gd = room.gameData;
+      if (gd.phase === 'question') {
+        const q = gd.questions[gd.currentQuestionIndex];
+        if (q) {
+          const elapsed = Math.floor((Date.now() - gd.roundStartTime) / 1000);
+          const timeLeft = Math.max(0, gd.timePerQuestion - elapsed);
+          socket.emit('trivia-rejoin-state', {
+            phase: 'question',
+            question: q.question,
+            options: q.options,
+            questionIndex: gd.currentQuestionIndex,
+            roundNumber: gd.roundNumber,
+            totalRounds: gd.maxRounds,
+            timeLeft,
+            scores: gd.scores,
+            hasAnswered: !!gd.answers[socket.id]
+          });
+        }
+      } else if (gd.phase === 'results') {
+        socket.emit('trivia-rejoin-state', {
+          phase: 'results',
+          scores: gd.scores,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds
+        });
       }
     }
     

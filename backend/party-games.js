@@ -1614,11 +1614,11 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
   
     // TRIVIA ROYALE
     socket.on('trivia-start-round', ({roomCode, category}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData) return;
-        
+
         console.log('trivia-start-round received - category:', category, 'stored:', room.gameData.category);
-        
+
         const cat = category || room.gameData.category || 'general';
         if (room.gameData.questions.length === 0 || (category && category !== room.gameData.category)) {
             const questions = triviaQuestions[cat];
@@ -1631,26 +1631,42 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
             room.gameData.roundNumber = 1;
             console.log('Trivia loaded category:', cat, '- First question:', room.gameData.questions[0]?.question);
         }
-        
+
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
         if (!q) return;
-        
-        room.gameData.phase = 'question'; 
-        room.gameData.answers = {}; 
+
+        // Clear any previous round timer
+        if (room.gameData._roundTimer) {
+            clearTimeout(room.gameData._roundTimer);
+            room.gameData._roundTimer = null;
+        }
+
+        room.gameData.phase = 'question';
+        room.gameData.answers = {};
         room.gameData.roundStartTime = Date.now();
-        
-        io.to(roomCode).emit('trivia-question', { 
-            question: q.question, 
-            options: q.options, 
+
+        io.to(roomCode).emit('trivia-question', {
+            question: q.question,
+            options: q.options,
             questionIndex: room.gameData.currentQuestionIndex,
-            roundNumber: room.gameData.roundNumber, 
+            roundNumber: room.gameData.roundNumber,
             totalQuestions: room.gameData.maxRounds,
-            totalRounds: room.gameData.maxRounds, 
+            totalRounds: room.gameData.maxRounds,
             timeLimit: room.gameData.timePerQuestion,
             category: cat
         });
+
+        // Server-side failsafe timer: auto-advance if host never sends trivia-time-up
+        // Add 3s buffer beyond the question time limit for network lag
+        room.gameData._roundTimer = setTimeout(() => {
+            room.gameData._roundTimer = null;
+            if (room.gameData?.phase === 'question') {
+                console.log(`[TRIVIA] Server failsafe: auto-advancing round for room ${roomCode}`);
+                calculateTriviaResults(room, io);
+            }
+        }, (room.gameData.timePerQuestion + 3) * 1000);
     });
-    
+
     socket.on('trivia-answer', ({roomCode, answerIndex}) => {
         const room = rooms.get(roomCode), player = players.get(socket.id);
         if (!room?.gameData || !player || room.gameData.phase !== 'question' || room.gameData.answers[socket.id]) return;
@@ -1659,12 +1675,16 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         socket.emit('trivia-answer-received', { answerIndex });
 
         const answeredCount = Object.keys(room.gameData.answers).length;
+        // Count only connected players (those still in the players map)
+        const connectedPlayerCount = room.players.filter(p => players.has(p.id)).length;
         const totalPlayerCount = room.players.length;
 
         // Throttle answer-count broadcasts to avoid flooding clients
-        // Send immediately for the last answer, otherwise throttle to once per 500ms
-        if (answeredCount === totalPlayerCount) {
+        // Advance when all CONNECTED players have answered (don't wait for disconnected ones)
+        if (answeredCount >= connectedPlayerCount) {
             clearTimeout(room.gameData._answerCountTimer);
+            clearTimeout(room.gameData._roundTimer);
+            room.gameData._roundTimer = null;
             io.to(roomCode).emit('trivia-answer-count', { answeredCount, totalPlayers: totalPlayerCount });
             calculateTriviaResults(room, io);
         } else {
@@ -1677,11 +1697,16 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
             }
         }
     });
-    
-    socket.on('trivia-time-up', ({roomCode}) => { 
-        const room = rooms.get(roomCode); 
+
+    socket.on('trivia-time-up', ({roomCode}) => {
+        const room = rooms.get(roomCode);
         if (room?.gameData?.phase === 'question') {
-            calculateTriviaResults(room, io); 
+            // Clear server-side failsafe since client triggered time-up
+            if (room.gameData._roundTimer) {
+                clearTimeout(room.gameData._roundTimer);
+                room.gameData._roundTimer = null;
+            }
+            calculateTriviaResults(room, io);
         }
     });
 
