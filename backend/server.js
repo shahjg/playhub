@@ -1876,6 +1876,79 @@ io.on('connection', (socket) => {
       }
     }
 
+    // Mid-game reconnection for this-or-that-party
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'this-or-that-party') {
+      const gd = room.gameData;
+      if (gd.phase === 'voting') {
+        const q = gd.questions[gd.currentQuestionIndex];
+        if (q) {
+          socket.emit('thisorthat-rejoin-state', {
+            phase: 'voting',
+            optionA: q.optionA,
+            optionB: q.optionB,
+            roundNumber: gd.roundNumber,
+            totalRounds: gd.maxRounds,
+            hasVoted: !!gd.votes[socket.id]
+          });
+        }
+      } else if (gd.phase === 'results') {
+        socket.emit('thisorthat-rejoin-state', {
+          phase: 'results',
+          scores: gd.scores,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds
+        });
+      }
+    }
+
+    // Mid-game reconnection for hot-takes-party
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'hot-takes-party') {
+      const gd = room.gameData;
+      if (gd.phase === 'rating') {
+        const q = gd.questions[gd.currentQuestionIndex];
+        if (q) {
+          socket.emit('hottakes-rejoin-state', {
+            phase: 'rating',
+            statement: q.statement,
+            roundNumber: gd.roundNumber,
+            totalRounds: gd.maxRounds,
+            hasRated: !!gd.ratings[socket.id]
+          });
+        }
+      } else if (gd.phase === 'results') {
+        socket.emit('hottakes-rejoin-state', {
+          phase: 'results',
+          scores: gd.scores,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds
+        });
+      }
+    }
+
+    // Mid-game reconnection for never-ever-party
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'never-ever-party') {
+      const gd = room.gameData;
+      if (gd.phase === 'responding') {
+        const q = gd.questions[gd.currentQuestionIndex];
+        if (q) {
+          socket.emit('neverever-rejoin-state', {
+            phase: 'responding',
+            statement: q.statement,
+            roundNumber: gd.roundNumber,
+            totalRounds: gd.maxRounds,
+            hasResponded: gd.responses[socket.id] !== undefined
+          });
+        }
+      } else if (gd.phase === 'results') {
+        socket.emit('neverever-rejoin-state', {
+          phase: 'results',
+          scores: gd.scores,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds
+        });
+      }
+    }
+
     // Mid-game reconnection for trivia-royale
     if (room.gameState === 'playing' && room.gameData && room.gameType === 'trivia-royale') {
       const gd = room.gameData;

@@ -1729,20 +1729,33 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
 
     // THIS OR THAT
     socket.on('thisorthat-party-start-round', ({roomCode}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData) return;
-        
+
+        if (room.gameData._roundTimer) {
+            clearTimeout(room.gameData._roundTimer);
+            room.gameData._roundTimer = null;
+        }
+
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
-        room.gameData.phase = 'voting'; 
+        room.gameData.phase = 'voting';
         room.gameData.votes = {};
-        
-        io.to(roomCode).emit('thisorthat-party-question', { 
-            optionA: q.optionA, 
-            optionB: q.optionB, 
-            roundNumber: room.gameData.roundNumber, 
-            totalRounds: room.gameData.maxRounds, 
-            timeLimit: room.gameData.timePerRound 
+
+        io.to(roomCode).emit('thisorthat-party-question', {
+            optionA: q.optionA,
+            optionB: q.optionB,
+            roundNumber: room.gameData.roundNumber,
+            totalRounds: room.gameData.maxRounds,
+            timeLimit: room.gameData.timePerRound
         });
+
+        room.gameData._roundTimer = setTimeout(() => {
+            room.gameData._roundTimer = null;
+            if (room.gameData?.phase === 'voting') {
+                console.log(`[THIS-OR-THAT] Server failsafe: auto-advancing for room ${roomCode}`);
+                calculateThisOrThatPartyResults(room, io);
+            }
+        }, (room.gameData.timePerRound + 5) * 1000);
     });
     
     socket.on('thisorthat-party-vote', ({roomCode, choice}) => {
@@ -1752,20 +1765,24 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.votes[socket.id] = { choice, playerName: player.playerName };
         socket.emit('thisorthat-party-vote-received', { choice });
         
-        io.to(roomCode).emit('thisorthat-party-vote-counted', { 
-            votedCount: Object.keys(room.gameData.votes).length, 
-            totalPlayers: room.players.length 
+        const votedCount = Object.keys(room.gameData.votes).length;
+        io.to(roomCode).emit('thisorthat-party-vote-counted', {
+            votedCount,
+            totalPlayers: room.players.length
         });
-        
-        if (Object.keys(room.gameData.votes).length === room.players.length) {
+
+        const connectedCount = room.players.filter(p => players.has(p.id)).length;
+        if (votedCount >= connectedCount) {
+            if (room.gameData._roundTimer) { clearTimeout(room.gameData._roundTimer); room.gameData._roundTimer = null; }
             calculateThisOrThatPartyResults(room, io);
         }
     });
     
-    socket.on('thisorthat-party-time-up', ({roomCode}) => { 
-        const room = rooms.get(roomCode); 
+    socket.on('thisorthat-party-time-up', ({roomCode}) => {
+        const room = rooms.get(roomCode);
         if (room?.gameData?.phase === 'voting') {
-            calculateThisOrThatPartyResults(room, io); 
+            if (room.gameData._roundTimer) { clearTimeout(room.gameData._roundTimer); room.gameData._roundTimer = null; }
+            calculateThisOrThatPartyResults(room, io);
         }
     });
     
@@ -1791,19 +1808,32 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
 
     // HOT TAKES
     socket.on('hottakes-party-start-round', ({roomCode}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData) return;
-        
+
+        if (room.gameData._roundTimer) {
+            clearTimeout(room.gameData._roundTimer);
+            room.gameData._roundTimer = null;
+        }
+
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
-        room.gameData.phase = 'rating'; 
+        room.gameData.phase = 'rating';
         room.gameData.ratings = {};
-        
-        io.to(roomCode).emit('hottakes-party-statement', { 
-            statement: q.statement, 
-            roundNumber: room.gameData.roundNumber, 
-            totalRounds: room.gameData.maxRounds, 
-            timeLimit: room.gameData.timePerRound 
+
+        io.to(roomCode).emit('hottakes-party-statement', {
+            statement: q.statement,
+            roundNumber: room.gameData.roundNumber,
+            totalRounds: room.gameData.maxRounds,
+            timeLimit: room.gameData.timePerRound
         });
+
+        room.gameData._roundTimer = setTimeout(() => {
+            room.gameData._roundTimer = null;
+            if (room.gameData?.phase === 'rating') {
+                console.log(`[HOT-TAKES] Server failsafe: auto-advancing for room ${roomCode}`);
+                calculateHotTakesPartyResults(room, io);
+            }
+        }, (room.gameData.timePerRound + 5) * 1000);
     });
     
     socket.on('hottakes-party-rate', ({roomCode, rating}) => {
@@ -1813,20 +1843,24 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.ratings[socket.id] = { rating, playerName: player.playerName };
         socket.emit('hottakes-party-rate-received', { rating });
         
-        io.to(roomCode).emit('hottakes-party-rate-counted', { 
-            ratedCount: Object.keys(room.gameData.ratings).length, 
-            totalPlayers: room.players.length 
+        const ratedCount = Object.keys(room.gameData.ratings).length;
+        io.to(roomCode).emit('hottakes-party-rate-counted', {
+            ratedCount,
+            totalPlayers: room.players.length
         });
-        
-        if (Object.keys(room.gameData.ratings).length === room.players.length) {
+
+        const connectedCount = room.players.filter(p => players.has(p.id)).length;
+        if (ratedCount >= connectedCount) {
+            if (room.gameData._roundTimer) { clearTimeout(room.gameData._roundTimer); room.gameData._roundTimer = null; }
             calculateHotTakesPartyResults(room, io);
         }
     });
     
-    socket.on('hottakes-party-time-up', ({roomCode}) => { 
-        const room = rooms.get(roomCode); 
+    socket.on('hottakes-party-time-up', ({roomCode}) => {
+        const room = rooms.get(roomCode);
         if (room?.gameData?.phase === 'rating') {
-            calculateHotTakesPartyResults(room, io); 
+            if (room.gameData._roundTimer) { clearTimeout(room.gameData._roundTimer); room.gameData._roundTimer = null; }
+            calculateHotTakesPartyResults(room, io);
         }
     });
     
@@ -1852,19 +1886,32 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
 
     // NEVER EVER
     socket.on('neverever-party-start-round', ({roomCode}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData) return;
-        
+
+        if (room.gameData._roundTimer) {
+            clearTimeout(room.gameData._roundTimer);
+            room.gameData._roundTimer = null;
+        }
+
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
-        room.gameData.phase = 'responding'; 
+        room.gameData.phase = 'responding';
         room.gameData.responses = {};
-        
-        io.to(roomCode).emit('neverever-party-statement', { 
-            statement: q.statement, 
-            roundNumber: room.gameData.roundNumber, 
-            totalRounds: room.gameData.maxRounds, 
-            timeLimit: room.gameData.timePerRound 
+
+        io.to(roomCode).emit('neverever-party-statement', {
+            statement: q.statement,
+            roundNumber: room.gameData.roundNumber,
+            totalRounds: room.gameData.maxRounds,
+            timeLimit: room.gameData.timePerRound
         });
+
+        room.gameData._roundTimer = setTimeout(() => {
+            room.gameData._roundTimer = null;
+            if (room.gameData?.phase === 'responding') {
+                console.log(`[NEVER-EVER] Server failsafe: auto-advancing for room ${roomCode}`);
+                calculateNeverEverPartyResults(room, io);
+            }
+        }, (room.gameData.timePerRound + 5) * 1000);
     });
     
     socket.on('neverever-party-respond', ({roomCode, response}) => {
@@ -1874,20 +1921,24 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.responses[socket.id] = { response, playerName: player.playerName };
         socket.emit('neverever-party-response-received', { response });
         
-        io.to(roomCode).emit('neverever-party-response-counted', { 
-            respondedCount: Object.keys(room.gameData.responses).length, 
-            totalPlayers: room.players.length 
+        const respondedCount = Object.keys(room.gameData.responses).length;
+        io.to(roomCode).emit('neverever-party-response-counted', {
+            respondedCount,
+            totalPlayers: room.players.length
         });
-        
-        if (Object.keys(room.gameData.responses).length === room.players.length) {
+
+        const connectedCount = room.players.filter(p => players.has(p.id)).length;
+        if (respondedCount >= connectedCount) {
+            if (room.gameData._roundTimer) { clearTimeout(room.gameData._roundTimer); room.gameData._roundTimer = null; }
             calculateNeverEverPartyResults(room, io);
         }
     });
     
-    socket.on('neverever-party-time-up', ({roomCode}) => { 
-        const room = rooms.get(roomCode); 
+    socket.on('neverever-party-time-up', ({roomCode}) => {
+        const room = rooms.get(roomCode);
         if (room?.gameData?.phase === 'responding') {
-            calculateNeverEverPartyResults(room, io); 
+            if (room.gameData._roundTimer) { clearTimeout(room.gameData._roundTimer); room.gameData._roundTimer = null; }
+            calculateNeverEverPartyResults(room, io);
         }
     });
     

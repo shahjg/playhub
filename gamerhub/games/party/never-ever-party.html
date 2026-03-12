@@ -477,13 +477,41 @@
         socket.emit('rejoin-room', { roomCode, playerName });
     });
     
+    let hasRejoined = false;
+
     socket.on('room-joined', (data) => {
         totalPlayers = data.room.players.length;
         document.getElementById('total-players').textContent = totalPlayers;
         document.getElementById('waiting-total').textContent = totalPlayers;
-        startCountdown();
+        if (!hasRejoined) startCountdown();
     });
-    
+
+    socket.on('neverever-rejoin-state', (data) => {
+        hasRejoined = true;
+        const overlay = document.getElementById('countdown-overlay');
+        if (overlay) overlay.classList.add('hidden');
+
+        document.getElementById('current-round').textContent = data.roundNumber || 1;
+        document.getElementById('total-rounds').textContent = data.totalRounds || 12;
+
+        if (data.phase === 'responding' && !data.hasResponded) {
+            hasResponded = false;
+            let statement = data.statement;
+            statement = statement.replace(/^never have i ever\s*/i, '');
+            document.getElementById('statement-text').textContent = statement.charAt(0).toUpperCase() + statement.slice(1);
+            document.querySelectorAll('.response-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('selected');
+            });
+            showPhase('response');
+        } else if (data.phase === 'responding' && data.hasResponded) {
+            hasResponded = true;
+            showPhase('waiting');
+        } else if (data.phase === 'results') {
+            showPhase('waiting');
+        }
+    });
+
     socket.on('neverever-party-statement', (data) => {
         hasResponded = false;
         document.getElementById('current-round').textContent = data.statementIndex + 1;
