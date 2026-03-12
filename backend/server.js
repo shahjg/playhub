@@ -1842,6 +1842,40 @@ io.on('connection', (socket) => {
       }
     }
 
+    // Mid-game reconnection for bet-or-bluff
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'bet-or-bluff') {
+      const gd = room.gameData;
+      if (gd.phase === 'guessing') {
+        const q = gd.questions[gd.currentQuestionIndex];
+        socket.emit('betorbluff-rejoin-state', {
+          phase: 'guessing',
+          question: q.question,
+          unit: q.unit,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds,
+          chips: gd.chips,
+          hasGuessed: !!gd.guesses[socket.id]
+        });
+      } else if (gd.phase === 'betting') {
+        const guesses = Object.values(gd.guesses).sort((a,b) => a.guess - b.guess);
+        socket.emit('betorbluff-rejoin-state', {
+          phase: 'betting',
+          guesses,
+          chips: gd.chips,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds,
+          hasBet: !!gd.bets[socket.id]
+        });
+      } else if (gd.phase === 'results') {
+        socket.emit('betorbluff-rejoin-state', {
+          phase: 'results',
+          chips: gd.chips,
+          roundNumber: gd.roundNumber,
+          totalRounds: gd.maxRounds
+        });
+      }
+    }
+
     // Mid-game reconnection for trivia-royale
     if (room.gameState === 'playing' && room.gameData && room.gameType === 'trivia-royale') {
       const gd = room.gameData;

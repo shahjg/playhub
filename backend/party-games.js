@@ -1372,11 +1372,28 @@ function calculateNeverEverPartyResults(room, io) {
 function startBettingPhase(room, io, roomCode) {
     room.gameData.phase = 'betting';
     const guesses = Object.values(room.gameData.guesses).sort((a,b) => a.guess - b.guess);
-    io.to(roomCode).emit('betorbluff-betting-phase', { 
-        guesses, 
-        timeLimit: room.gameData.timePerBet, 
-        chips: room.gameData.chips 
+    io.to(roomCode).emit('betorbluff-betting-phase', {
+        guesses,
+        timeLimit: room.gameData.timePerBet,
+        chips: room.gameData.chips
     });
+
+    // Server-side failsafe: auto-advance if host never sends bet-time-up
+    if (room.gameData._betTimer) {
+        clearTimeout(room.gameData._betTimer);
+    }
+    room.gameData._betTimer = setTimeout(() => {
+        room.gameData._betTimer = null;
+        if (room.gameData?.phase === 'betting') {
+            console.log(`[BET-OR-BLUFF] Server failsafe: auto-advancing bet phase for room ${roomCode}`);
+            room.players.forEach(p => {
+                if (!room.gameData.bets[p.id]) {
+                    room.gameData.bets[p.id] = { targetPlayerId: null, betAmount: 0, playerName: p.name };
+                }
+            });
+            calculateBetOrBluffResults(room, io);
+        }
+    }, (room.gameData.timePerBet + 5) * 1000);
 }
 
 function calculateBetOrBluffResults(room, io) {
@@ -1896,22 +1913,42 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
 
     // BET OR BLUFF
     socket.on('betorbluff-start-round', ({roomCode}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData) return;
-        
+
+        // Clear any previous failsafe timer
+        if (room.gameData._guessTimer) {
+            clearTimeout(room.gameData._guessTimer);
+            room.gameData._guessTimer = null;
+        }
+
         const q = room.gameData.questions[room.gameData.currentQuestionIndex];
-        room.gameData.phase = 'guessing'; 
-        room.gameData.guesses = {}; 
+        room.gameData.phase = 'guessing';
+        room.gameData.guesses = {};
         room.gameData.bets = {};
-        
-        io.to(roomCode).emit('betorbluff-question', { 
-            question: q.question, 
-            unit: q.unit, 
-            roundNumber: room.gameData.roundNumber, 
-            totalRounds: room.gameData.maxRounds, 
-            timeLimit: room.gameData.timePerGuess, 
-            chips: room.gameData.chips 
+
+        io.to(roomCode).emit('betorbluff-question', {
+            question: q.question,
+            unit: q.unit,
+            roundNumber: room.gameData.roundNumber,
+            totalRounds: room.gameData.maxRounds,
+            timeLimit: room.gameData.timePerGuess,
+            chips: room.gameData.chips
         });
+
+        // Server-side failsafe: auto-advance if host never sends guess-time-up
+        room.gameData._guessTimer = setTimeout(() => {
+            room.gameData._guessTimer = null;
+            if (room.gameData?.phase === 'guessing') {
+                console.log(`[BET-OR-BLUFF] Server failsafe: auto-advancing guess phase for room ${roomCode}`);
+                room.players.forEach(p => {
+                    if (!room.gameData.guesses[p.id]) {
+                        room.gameData.guesses[p.id] = { guess: 0, playerName: p.name, playerId: p.id };
+                    }
+                });
+                startBettingPhase(room, io, roomCode);
+            }
+        }, (room.gameData.timePerGuess + 5) * 1000);
     });
     
     socket.on('betorbluff-guess', ({roomCode, guess}) => {
@@ -1925,27 +1962,35 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         };
         socket.emit('betorbluff-guess-received', { guess });
         
-        io.to(roomCode).emit('betorbluff-guess-counted', { 
-            guessedCount: Object.keys(room.gameData.guesses).length, 
-            totalPlayers: room.players.length 
+        const totalPlayerCount = room.players.length;
+        const guessedCount = Object.keys(room.gameData.guesses).length;
+        io.to(roomCode).emit('betorbluff-guess-counted', {
+            guessedCount,
+            totalPlayers: totalPlayerCount
         });
-        
-        if (Object.keys(room.gameData.guesses).length === room.players.length) {
+
+        const connectedGuessCount = room.players.filter(p => players.has(p.id)).length;
+        if (guessedCount >= connectedGuessCount) {
+            if (room.gameData._guessTimer) {
+                clearTimeout(room.gameData._guessTimer);
+                room.gameData._guessTimer = null;
+            }
             startBettingPhase(room, io, roomCode);
         }
     });
     
     socket.on('betorbluff-guess-time-up', ({roomCode}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData || room.gameData.phase !== 'guessing') return;
-        
-        room.players.forEach(p => { 
+
+        if (room.gameData._guessTimer) {
+            clearTimeout(room.gameData._guessTimer);
+            room.gameData._guessTimer = null;
+        }
+
+        room.players.forEach(p => {
             if (!room.gameData.guesses[p.id]) {
-                room.gameData.guesses[p.id] = { 
-                    guess: 0, 
-                    playerName: p.name, 
-                    playerId: p.id 
-                }; 
+                room.gameData.guesses[p.id] = { guess: 0, playerName: p.name, playerId: p.id };
             }
         });
         startBettingPhase(room, io, roomCode);
@@ -1963,27 +2008,35 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         };
         socket.emit('betorbluff-bet-received', { targetPlayerId, betAmount });
         
-        io.to(roomCode).emit('betorbluff-bet-counted', { 
-            betCount: Object.keys(room.gameData.bets).length, 
-            totalPlayers: room.players.length 
+        const totalPlayerCount = room.players.length;
+        const betCount = Object.keys(room.gameData.bets).length;
+        io.to(roomCode).emit('betorbluff-bet-counted', {
+            betCount,
+            totalPlayers: totalPlayerCount
         });
-        
-        if (Object.keys(room.gameData.bets).length === room.players.length) {
+
+        const connectedBetCount = room.players.filter(p => players.has(p.id)).length;
+        if (betCount >= connectedBetCount) {
+            if (room.gameData._betTimer) {
+                clearTimeout(room.gameData._betTimer);
+                room.gameData._betTimer = null;
+            }
             calculateBetOrBluffResults(room, io);
         }
     });
     
     socket.on('betorbluff-bet-time-up', ({roomCode}) => {
-        const room = rooms.get(roomCode); 
+        const room = rooms.get(roomCode);
         if (!room?.gameData || room.gameData.phase !== 'betting') return;
-        
-        room.players.forEach(p => { 
+
+        if (room.gameData._betTimer) {
+            clearTimeout(room.gameData._betTimer);
+            room.gameData._betTimer = null;
+        }
+
+        room.players.forEach(p => {
             if (!room.gameData.bets[p.id]) {
-                room.gameData.bets[p.id] = { 
-                    targetPlayerId: null, 
-                    betAmount: 0, 
-                    playerName: p.name 
-                }; 
+                room.gameData.bets[p.id] = { targetPlayerId: null, betAmount: 0, playerName: p.name };
             }
         });
         calculateBetOrBluffResults(room, io);
