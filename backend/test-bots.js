@@ -133,8 +133,10 @@ class Bot {
     return new Promise((resolve, reject) => {
       this.socket = io(SERVER, {
         transports: ['websocket', 'polling'],
-        reconnection: false,
-        timeout: 10000
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+        timeout: 30000
       });
 
       this.socket.on('connect', () => {
@@ -647,7 +649,7 @@ async function main() {
     console.log(`\n`);
   } else {
     console.log('  ⚠️  No room code or game type specified.');
-    console.log('  Use --room ABCD to join a room, or --game werewolf to create one.\n');
+    console.log('  Use --join ABCD to join a room, or --game werewolf to create one.\n');
     bots.forEach(b => b.disconnect());
     process.exit(0);
   }
