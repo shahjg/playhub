@@ -2194,7 +2194,10 @@ io.on('connection', (socket) => {
     }
     
     console.log(`[GAME] Starting ${room.gameType} in ${roomCode}`);
-    
+
+    room.gameState = 'playing';
+
+    try {
     // OLD GAMES (already work)
     if (room.gameType === 'imposter') {
         initImposterGame(room, category || 'random');
@@ -2305,6 +2308,11 @@ io.on('connection', (socket) => {
     }
     
     console.log(`Game started in room ${roomCode} with category: ${category || 'random'}, twoSpies: ${twoSpies || false}`);
+    } catch (err) {
+      console.error(`[GAME] Error starting ${room.gameType} in ${roomCode}:`, err);
+      room.gameState = 'waiting';
+      socket.emit('error', { message: 'Failed to start game: ' + err.message });
+    }
   });
 
   // CALL VOTE (for Spyfall)

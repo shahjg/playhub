@@ -148,8 +148,8 @@
         .player-badges{display:flex;gap:4px;margin-top:2px}
         .player-badge{font-size:0.65rem;padding:0.15rem 0.4rem;border-radius:4px;background:rgba(255,255,255,0.1);font-weight:600}
         .player-badge.host{background:rgba(251,191,36,0.2);color:var(--gold)}
-        .kick-btn{padding:0.3rem 0.6rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#ef4444;font-size:0.7rem;font-weight:600;cursor:pointer;opacity:0;transition:all 0.2s}
-        .player-item:hover .kick-btn{opacity:1}
+        .kick-btn{padding:0.3rem 0.6rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#ef4444;font-size:0.7rem;font-weight:600;cursor:pointer;opacity:0;transition:all 0.2s;flex-shrink:0}
+        .player-item:hover .kick-btn,.player-card:hover .kick-btn,.players-list > div:hover .kick-btn{opacity:1}
         .kick-btn:hover{background:rgba(239,68,68,0.2)}
         .settings-card{}
         .setting-group{margin-bottom:1rem}
@@ -209,11 +209,10 @@
         .confirm-btns button{flex:1;padding:0.75rem;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:none;transition:all 0.2s}
         .btn-confirm{background:var(--red);color:white}
         .btn-cancel{background:rgba(255,255,255,0.1);color:var(--text);border:1px solid var(--border)}
-        .party-mode .players-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:450px}
-        .party-mode .player-item{flex-direction:column;text-align:center;padding:1rem}
-        .party-mode .player-avatar{margin:0 auto 0.5rem}
-        .party-mode .player-info{text-align:center}
-        .party-mode .kick-btn{margin-top:0.5rem;opacity:1}
+        .party-mode .players-list{display:flex;flex-direction:column;gap:8px;max-height:450px}
+        .party-mode .player-item,.party-mode .player-card{display:flex;align-items:center;gap:12px;padding:0.65rem 0.9rem;position:relative}
+        .party-mode .kick-btn{opacity:0;transition:opacity 0.2s}
+        .party-mode .player-item:hover .kick-btn,.party-mode > div:hover .kick-btn{opacity:1}
         .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:0.75rem 1.5rem;background:var(--accent);color:white;border-radius:10px;font-weight:600;z-index:1001;animation:toastIn 0.3s ease;box-shadow:0 10px 30px var(--accent-glow)}
         @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
         .waiting-indicator{display:flex;align-items:center;justify-content:center;gap:8px;padding:1rem;background:rgba(255,255,255,0.03);border-radius:10px;margin-top:1rem}
@@ -514,6 +513,7 @@ socket.on('game-started', function(data) {
 
 socket.on('kicked', function() { alert('You have been kicked.'); window.location.href = gameConfig.backUrl; });
 socket.on('room-not-found', function() { alert('Room not found.'); window.location.href = gameConfig.backUrl; });
+socket.on('error', function(data) { console.error('Server error:', data); alert(data.message || 'Something went wrong'); });
 
 function handleRoomUpdate(room) {
     if (!room) return;
@@ -593,6 +593,7 @@ function updateSetting(id, value) { socket.emit('update-settings', { roomCode: r
 function toggleSetting(id) { var t = document.getElementById('setting-' + id); t.classList.toggle('active'); socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: t.classList.contains('active') } }); }
 function updateStartButton(count) { var btn = document.getElementById('start-btn'); var min = gameConfig.minPlayers, max = gameConfig.maxPlayers; if (count < min) { btn.disabled = true; btn.textContent = 'Need ' + (min - count) + ' More Player' + (min - count > 1 ? 's' : ''); } else if (count > max) { btn.disabled = true; btn.textContent = 'Too Many (Max ' + max + ')'; } else { btn.disabled = false; btn.textContent = '🚀 START GAME'; } }
 document.getElementById('start-btn').onclick = function() {
+    console.log('Start button clicked, socket connected:', socket.connected);
     var startData = { roomCode: roomCode };
     if (gameConfig.settings) {
         gameConfig.settings.forEach(function(s) {
@@ -603,6 +604,7 @@ document.getElementById('start-btn').onclick = function() {
             }
         });
     }
+    console.log('Emitting start-game:', startData);
     localStorage.setItem('tempCategory', startData.category || '');
     socket.emit('start-game', startData);
 };
