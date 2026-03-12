@@ -2152,9 +2152,10 @@ io.on('connection', (socket) => {
     // Notify all players to start
     io.to(roomCode).emit('game-started', {
       roomCode: roomCode,
-      gameType: room.gameType
+      gameType: room.gameType,
+      category: category || ''
     });
-    
+
     // Start first round/turn for new games
     if (room.gameType === 'categories') {
       setTimeout(() => {

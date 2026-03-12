@@ -446,7 +446,7 @@ const GAMES = {
         displayName: 'TRIVIA ROYALE', tagline: 'Battle of the brains', theme: 'theme-trivia-royale', minPlayers: 2, maxPlayers: 100, isPartyGame: true, backUrl: '/party-games.html', gameFile: '/games/party/trivia-royale.html',
         howToPlay: '<h3>👑 Knowledge is Power</h3><p>Answer trivia fast - speed matters!</p><h3>🎮 How to Play</h3><ol><li>Everyone sees same question</li><li>Pick from 4 choices</li><li>Faster correct = more points</li></ol><h3>🏆 Scoring</h3><ul><li>Correct: 1000 + speed bonus</li><li>Wrong: 0</li></ul>',
         settings: [
-            { id: 'category', type: 'select', label: 'Category', options: [{value:'general',text:'🧠 General'},{value:'history',text:'📜 History'},{value:'science',text:'🔬 Science'},{value:'gaming',text:'🎮 Gaming'},{value:'anime',text:'🎌 Anime'},{value:'brainrot',text:'🤪 Brain Rot'}]},
+            { id: 'category', type: 'select', label: 'Category', options: [{value:'general',text:'🧠 General'},{value:'history',text:'📜 History'},{value:'science',text:'🔬 Science'},{value:'geography',text:'🌍 Geography'},{value:'gaming',text:'🎮 Gaming'},{value:'anime',text:'🎌 Anime'},{value:'brainrot',text:'🤪 Brain Rot'},{value:'popculture',text:'⭐ Pop Culture'},{value:'music',text:'🎵 Music'},{value:'sports',text:'⚽ Sports'},{value:'bollywood',text:'🎬 Bollywood'},{value:'hollywood',text:'🎥 Hollywood'},{value:'food',text:'🍕 Food'},{value:'wars',text:'⚔️ Wars'}]},
             { id: 'questions', type: 'select', label: 'Questions', options: [{value:'10',text:'10'},{value:'15',text:'15'},{value:'20',text:'20'}]},
             { id: 'timePerQ', type: 'select', label: 'Time/Q', options: [{value:'10',text:'10s'},{value:'15',text:'15s'},{value:'20',text:'20s'}]}
         ]
@@ -506,6 +506,8 @@ socket.on('game-started', function(data) {
     var gt = data.gameType || gameType;
     var config = GAMES[gt] || GAMES[gameType];
     var targetUrl = config.gameFile + '?room=' + roomCode;
+    var cat = data.category || localStorage.getItem('tempCategory') || '';
+    if (cat) targetUrl += '&category=' + encodeURIComponent(cat);
     console.log('Redirecting to:', targetUrl);
     window.location.href = targetUrl;
 });
@@ -590,7 +592,20 @@ function selectColor(color, taken) { if (taken) return; selectedColor = color; s
 function updateSetting(id, value) { socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: value } }); }
 function toggleSetting(id) { var t = document.getElementById('setting-' + id); t.classList.toggle('active'); socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: t.classList.contains('active') } }); }
 function updateStartButton(count) { var btn = document.getElementById('start-btn'); var min = gameConfig.minPlayers, max = gameConfig.maxPlayers; if (count < min) { btn.disabled = true; btn.textContent = 'Need ' + (min - count) + ' More Player' + (min - count > 1 ? 's' : ''); } else if (count > max) { btn.disabled = true; btn.textContent = 'Too Many (Max ' + max + ')'; } else { btn.disabled = false; btn.textContent = '🚀 START GAME'; } }
-document.getElementById('start-btn').onclick = function() { socket.emit('start-game', { roomCode: roomCode }); };
+document.getElementById('start-btn').onclick = function() {
+    var startData = { roomCode: roomCode };
+    if (gameConfig.settings) {
+        gameConfig.settings.forEach(function(s) {
+            var el = document.getElementById('setting-' + s.id);
+            if (el) {
+                if (el.classList && el.classList.contains('toggle')) { startData[s.id] = el.classList.contains('active'); }
+                else { startData[s.id] = el.value; }
+            }
+        });
+    }
+    localStorage.setItem('tempCategory', startData.category || '');
+    socket.emit('start-game', startData);
+};
 function copyCode() { navigator.clipboard.writeText(roomCode); showToast('Code copied!'); }
 function copyLink() { navigator.clipboard.writeText(window.location.origin + '/lobby.html?game=' + gameType + '&join=' + roomCode); showToast('Link copied!'); }
 function showToast(msg) { var t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(function() { t.remove(); }, 2500); }
