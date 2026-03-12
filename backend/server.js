@@ -1809,12 +1809,12 @@ io.on('connection', (socket) => {
     // Join socket room
     socket.join(roomCode);
     
-    // Send room state to rejoining player
+    // Send room state to rejoining player (exclude gameData to keep payload small)
     socket.emit('room-joined', {
       success: true,
       roomCode: roomCode,
       gameType: room.gameType,
-      room: room
+      room: { players: room.players, gameType: room.gameType, code: room.code, hostId: room.hostId }
     });
     
  // If game is active, send the player their role
@@ -1933,12 +1933,12 @@ io.on('connection', (socket) => {
     // Join socket room
     socket.join(roomCode);
     
-    // Notify player they joined successfully
+    // Notify player they joined successfully (exclude gameData to keep payload small)
     socket.emit('room-joined', {
       success: true,
       roomCode: roomCode,
       gameType: room.gameType,
-      room: room
+      room: { players: room.players, gameType: room.gameType, code: room.code, hostId: room.hostId }
     });
     
     // Notify all other players in the room (send lightweight payload, not entire room)
