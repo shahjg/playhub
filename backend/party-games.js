@@ -743,47 +743,55 @@ function getWordChoices(room, count = 3) {
 function calculateTriviaResults(room, io) {
     if (room.gameData.phase === 'results') return;
     room.gameData.phase = 'results';
-    
+
     const q = room.gameData.questions[room.gameData.currentQuestionIndex];
     const results = [];
-    
+
+    // Build lookup map to avoid O(n²) find() calls
+    const playerById = new Map();
+    const playerByName = new Map();
+    for (const p of room.players) {
+        playerById.set(p.id, p);
+        playerByName.set(p.name, p);
+    }
+
     Object.entries(room.gameData.answers).forEach(([pid, ans]) => {
-        const p = room.players.find(x => x.id === pid);
+        const p = playerById.get(pid);
         if (!p) return;
         const correct = ans.answerIndex === q.correct;
         let points = 0;
-        
+
         if (correct) {
             const timeTaken = ans.timestamp - room.gameData.roundStartTime;
             const speedBonus = Math.max(0, Math.floor((15000 - timeTaken) / 150));
             points = 100 + speedBonus;
-            
+
             room.gameData.streaks[p.name]++;
             if (room.gameData.streaks[p.name] >= 3) {
                 points += 50;
             }
-            
+
             room.gameData.scores[p.name] += points;
-        } else { 
-            room.gameData.streaks[p.name] = 0; 
+        } else {
+            room.gameData.streaks[p.name] = 0;
         }
-        
-        results.push({ 
-            playerName: p.name, 
-            isCorrect: correct, 
+
+        results.push({
+            playerName: p.name,
+            isCorrect: correct,
             correct: correct,
             points: points,
             streak: room.gameData.streaks[p.name],
             isPremium: p.isPremium || false
         });
     });
-    
+
     const leaderboard = Object.entries(room.gameData.scores)
         .map(([name, score]) => {
-            const player = room.players.find(p => p.name === name);
-            return { 
-                name, 
-                score, 
+            const player = playerByName.get(name);
+            return {
+                name,
+                score,
                 isPremium: player?.isPremium || false,
                 cosmetics: player?.cosmetics || {}
             };
@@ -805,43 +813,34 @@ function calculateTriviaResults(room, io) {
     
     setTimeout(() => {
         if (!room.gameData) return;
-        
+
         room.gameData.currentQuestionIndex++;
         room.gameData.roundNumber++;
-        
+
+        function buildFinalLeaderboard() {
+            const byName = new Map();
+            for (const p of room.players) byName.set(p.name, p);
+            return Object.entries(room.gameData.scores)
+                .map(([name, score]) => {
+                    const p = byName.get(name);
+                    return { name, score, isPremium: p?.isPremium || false, cosmetics: p?.cosmetics || {} };
+                })
+                .sort((a, b) => b.score - a.score);
+        }
+
         if (room.gameData.roundNumber > room.gameData.maxRounds) {
-            io.to(room.code).emit('trivia-game-over', { 
+            io.to(room.code).emit('trivia-game-over', {
                 finalScores: room.gameData.scores,
-                finalLeaderboard: Object.entries(room.gameData.scores)
-                    .map(([name, score]) => {
-                        const p = room.players.find(x => x.name === name);
-                        return { 
-                            name, 
-                            score, 
-                            isPremium: p?.isPremium || false,
-                            cosmetics: p?.cosmetics || {}
-                        };
-                    })
-                    .sort((a, b) => b.score - a.score),
-                winner: getTopPlayer(room.gameData.scores) 
+                finalLeaderboard: buildFinalLeaderboard(),
+                winner: getTopPlayer(room.gameData.scores)
             });
         } else {
             const nextQ = room.gameData.questions[room.gameData.currentQuestionIndex];
             if (!nextQ) {
-                io.to(room.code).emit('trivia-game-over', { 
+                io.to(room.code).emit('trivia-game-over', {
                     finalScores: room.gameData.scores,
-                    finalLeaderboard: Object.entries(room.gameData.scores)
-                        .map(([name, score]) => {
-                            const p = room.players.find(x => x.name === name);
-                            return { 
-                                name, 
-                                score, 
-                                isPremium: p?.isPremium || false,
-                                cosmetics: p?.cosmetics || {}
-                            };
-                        })
-                        .sort((a, b) => b.score - a.score),
-                    winner: getTopPlayer(room.gameData.scores) 
+                    finalLeaderboard: buildFinalLeaderboard(),
+                    winner: getTopPlayer(room.gameData.scores)
                 });
                 return;
             }
@@ -1212,17 +1211,27 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
     socket.on('trivia-answer', ({roomCode, answerIndex}) => {
         const room = rooms.get(roomCode), player = players.get(socket.id);
         if (!room?.gameData || !player || room.gameData.phase !== 'question' || room.gameData.answers[socket.id]) return;
-        
+
         room.gameData.answers[socket.id] = { answerIndex, timestamp: Date.now() };
         socket.emit('trivia-answer-received', { answerIndex });
-        
-        io.to(roomCode).emit('trivia-answer-count', { 
-            answeredCount: Object.keys(room.gameData.answers).length, 
-            totalPlayers: room.players.length 
-        });
-        
-        if (Object.keys(room.gameData.answers).length === room.players.length) {
+
+        const answeredCount = Object.keys(room.gameData.answers).length;
+        const totalPlayerCount = room.players.length;
+
+        // Throttle answer-count broadcasts to avoid flooding clients
+        // Send immediately for the last answer, otherwise throttle to once per 500ms
+        if (answeredCount === totalPlayerCount) {
+            clearTimeout(room.gameData._answerCountTimer);
+            io.to(roomCode).emit('trivia-answer-count', { answeredCount, totalPlayers: totalPlayerCount });
             calculateTriviaResults(room, io);
+        } else {
+            if (!room.gameData._answerCountTimer) {
+                room.gameData._answerCountTimer = setTimeout(() => {
+                    room.gameData._answerCountTimer = null;
+                    const currentCount = Object.keys(room.gameData.answers).length;
+                    io.to(roomCode).emit('trivia-answer-count', { answeredCount: currentCount, totalPlayers: totalPlayerCount });
+                }, 500);
+            }
         }
     });
     

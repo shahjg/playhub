@@ -675,9 +675,14 @@
     
     socket.on('trivia-answer-received', (data) => { showPhase('waiting'); });
     
+    let _answerCountRaf = null;
     socket.on('trivia-answer-count', (data) => {
-        document.getElementById('answered-count').textContent = data.answeredCount || 0;
-        document.getElementById('total-players').textContent = data.totalPlayers || totalPlayers;
+        if (_answerCountRaf) return;
+        _answerCountRaf = requestAnimationFrame(() => {
+            document.getElementById('answered-count').textContent = data.answeredCount || 0;
+            document.getElementById('total-players').textContent = data.totalPlayers || totalPlayers;
+            _answerCountRaf = null;
+        });
     });
     
     socket.on('trivia-results', (data) => {
