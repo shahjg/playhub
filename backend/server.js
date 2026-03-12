@@ -1842,10 +1842,10 @@ io.on('connection', (socket) => {
       }
     }
     
-    // Notify others
+    // Notify others (send lightweight payload, not entire room)
     socket.to(roomCode).emit('player-joined', {
       player: room.players.find(p => p.id === socket.id),
-      room: room
+      room: { players: room.players, gameType: room.gameType, code: room.code }
     });
     
     console.log(`Player ${playerName} rejoined room ${roomCode}`);
@@ -1941,10 +1941,10 @@ io.on('connection', (socket) => {
       room: room
     });
     
-    // Notify all other players in the room
+    // Notify all other players in the room (send lightweight payload, not entire room)
     socket.to(roomCode).emit('player-joined', {
       player: newPlayer,
-      room: room
+      room: { players: room.players, gameType: room.gameType, code: room.code }
     });
     
     console.log(`Player ${playerName} joined room ${roomCode}. Total players: ${room.players.length}`);

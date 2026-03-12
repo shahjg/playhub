@@ -5,7 +5,7 @@
  * Usage:
  *   node test-bots.js                          # 4 bots, join existing room, auto-detect game
  *   node test-bots.js --bots 8                 # 8 bots
- *   node test-bots.js --room ABCD              # join specific room
+ *   node test-bots.js --join ABCD              # join specific room (--room also works)
  *   node test-bots.js --game werewolf --bots 8 # create room for werewolf with 8 bots
  *   node test-bots.js --game imposter          # create imposter room with 4 bots
  *   node test-bots.js --host                   # first bot becomes host (creates room)
@@ -34,7 +34,7 @@ function getArg(name, defaultVal) {
 
 const SERVER = getArg('url', 'https://web-production-519c7.up.railway.app');
 const BOT_COUNT = parseInt(getArg('bots', '4'));
-const ROOM_CODE = getArg('room', null);
+const ROOM_CODE = getArg('join', null) || getArg('room', null);
 const GAME_TYPE = getArg('game', null);
 const HOST_MODE = getArg('host', false);
 const ACTION_DELAY = parseInt(getArg('delay', '1500'));
