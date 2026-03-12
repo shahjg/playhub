@@ -201,6 +201,25 @@ class SocialSystem {
     }
   }
 
+  // Safe RPC wrapper - suppresses 404s for missing Supabase functions
+  async safeRpc(fnName, params = {}) {
+    try {
+      const { data, error } = Object.keys(params).length
+        ? await this.supabase.rpc(fnName, params)
+        : await this.supabase.rpc(fnName);
+      if (error) {
+        // Silently ignore missing function errors (404 / PGRST202)
+        if (error.code === 'PGRST202' || error.message?.includes('not found') || error.message?.includes('404')) {
+          return { data: null, error: null };
+        }
+        return { data: null, error };
+      }
+      return { data, error: null };
+    } catch (e) {
+      return { data: null, error: null };
+    }
+  }
+
   async init() {
     const { data: { session } } = await this.supabase.auth.getSession();
     if (!session) return;
@@ -220,9 +239,7 @@ class SocialSystem {
     this.updateNotificationBadge();
     
     // Cleanup inactive parties (runs server-side, fire and forget)
-    try {
-      await this.supabase.rpc('cleanup_inactive_parties');
-    } catch (e) { /* ignore errors */ }
+    this.safeRpc('cleanup_inactive_parties');
     
     // Check for party join code in URL
     this.checkPartyJoinCode();
@@ -3130,7 +3147,7 @@ class SocialSystem {
 
 async loadFriends() {
     try {
-      const { data } = await this.supabase.rpc('get_friends_with_presence');
+      const { data } = await this.safeRpc('get_friends_with_presence');
       
       this.friends = (data || []).map(f => {
         const cosmetics = f.cosmetics || {};
@@ -3217,7 +3234,7 @@ async loadFriends() {
 
   async loadParty() {
     try {
-      const { data, error } = await this.supabase.rpc('get_my_party');
+      const { data, error } = await this.safeRpc('get_my_party');
       
       if (error) {
         console.error('Load party error:', error);
@@ -4568,7 +4585,7 @@ renderFriendCard(f) {
   
   async loadBlockedUsers() {
     try {
-      const { data } = await this.supabase.rpc('get_blocked_users');
+      const { data } = await this.safeRpc('get_blocked_users');
       this.blockedUsers = data || [];
       this.renderBlockedUsers();
     } catch (e) { console.error('Load blocked error:', e); }
@@ -4812,7 +4829,7 @@ renderFriendCard(f) {
 
   async loadDmConversations() {
     try {
-      const { data } = await this.supabase.rpc('get_dm_conversations');
+      const { data } = await this.safeRpc('get_dm_conversations');
       this.dmConversations = data || [];
       this.updateChatBubble();
     } catch (e) { console.error('Load DMs error:', e); }
@@ -5079,7 +5096,7 @@ renderFriendCard(f) {
 
   async loadClub() {
     try {
-      const { data } = await this.supabase.rpc('get_my_club');
+      const { data } = await this.safeRpc('get_my_club');
       
       if (data?.length > 0) {
         this.currentClub = {
@@ -5160,7 +5177,7 @@ renderFriendCard(f) {
   async loadClubInvites() {
     try {
       // Try RPC first, fallback to direct query
-      let { data, error } = await this.supabase.rpc('get_my_club_invites');
+      let { data, error } = await this.safeRpc('get_my_club_invites');
       
       if (error) {
         // Fallback to direct query
