@@ -1384,34 +1384,54 @@ function calculateBetOrBluffResults(room, io) {
     const all = Object.values(room.gameData.guesses).map(g => g.guess).sort((a,b) => a-b);
     const mid = Math.floor(all.length/2);
     const target = all.length % 2 ? all[mid] : (all[mid-1]+all[mid])/2;
-    
-    let closestId = null, closestDiff = Infinity, closestName = null;
+    const correctAnswer = Math.round(target * 10) / 10;
+
+    let closestId = null, closestDiff = Infinity, closestName = null, closestGuess = null;
     Object.entries(room.gameData.guesses).forEach(([id, g]) => {
         const diff = Math.abs(g.guess - target);
-        if (diff < closestDiff) { 
-            closestDiff = diff; 
-            closestId = id; 
-            closestName = g.playerName; 
+        if (diff < closestDiff) {
+            closestDiff = diff;
+            closestId = id;
+            closestName = g.playerName;
+            closestGuess = g.guess;
         }
     });
-    
+
+    const betResults = [];
     Object.entries(room.gameData.bets).forEach(([pid, b]) => {
         const p = room.players.find(x => x.id === pid);
         if (!p) return;
+        let winnings = 0;
         if (b.targetPlayerId === closestId) {
+            winnings = b.betAmount;
             room.gameData.chips[p.name] += b.betAmount;
         } else if (b.targetPlayerId) {
+            winnings = -b.betAmount;
             room.gameData.chips[p.name] = Math.max(0, room.gameData.chips[p.name] - b.betAmount);
         }
+        betResults.push({ playerName: p.name, winnings, newTotal: room.gameData.chips[p.name] });
     });
-    
+
     if (closestName) room.gameData.chips[closestName] += 50;
-    
-    io.to(room.code).emit('betorbluff-results', { 
-        targetValue: Math.round(target*10)/10, 
-        closestPlayer: closestName, 
-        allGuesses: Object.values(room.gameData.guesses), 
-        chips: room.gameData.chips 
+    // Update newTotal for closest player in betResults
+    const closestResult = betResults.find(r => r.playerName === closestName);
+    if (closestResult) closestResult.newTotal = room.gameData.chips[closestName];
+
+    const leaderboard = Object.entries(room.gameData.chips)
+        .map(([name, chips]) => ({ name, chips }))
+        .sort((a, b) => b.chips - a.chips);
+
+    const isLastQuestion = room.gameData.currentQuestionIndex >= room.gameData.maxRounds - 1;
+
+    io.to(room.code).emit('betorbluff-results', {
+        correctAnswer,
+        closestPlayer: closestName,
+        closestGuess,
+        betResults,
+        leaderboard,
+        isLastQuestion,
+        allGuesses: Object.values(room.gameData.guesses),
+        chips: room.gameData.chips
     });
 }
 
@@ -1952,14 +1972,17 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         room.gameData.roundNumber++;
         
         if (room.gameData.roundNumber > room.gameData.maxRounds) {
-            io.to(roomCode).emit('betorbluff-game-over', { 
-                finalChips: room.gameData.chips, 
-                winner: getTopPlayer(room.gameData.chips) 
+            const finalLeaderboard = Object.entries(room.gameData.chips)
+                .map(([name, chips]) => ({ name, chips }))
+                .sort((a, b) => b.chips - a.chips);
+            io.to(roomCode).emit('betorbluff-game-over', {
+                finalLeaderboard,
+                winner: getTopPlayer(room.gameData.chips)
             });
         } else {
-            io.to(roomCode).emit('betorbluff-round-transition', { 
-                nextRound: room.gameData.roundNumber, 
-                chips: room.gameData.chips 
+            io.to(roomCode).emit('betorbluff-round-transition', {
+                nextRound: room.gameData.roundNumber,
+                chips: room.gameData.chips
             });
         }
     });

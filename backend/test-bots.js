@@ -460,11 +460,24 @@ class Bot {
 
     // ── BET OR BLUFF ──
     s.on('betorbluff-question', async (data) => {
-      this.log(`💰 Bet or Bluff: "${(data.question || '').substring(0, 50)}..."`);
+      this.log(`💰 Bet or Bluff Q: "${(data.question || '').substring(0, 50)}..."`);
       await wait(ACTION_DELAY + Math.random() * 2000);
-      const bet = Math.floor(Math.random() * 100) + 10;
-      this.log(`📝 Betting: ${bet} points`);
-      s.emit('betorbluff-bet', { roomCode: this.roomCode, amount: bet });
+      const guess = Math.floor(Math.random() * 50) + 1;
+      this.log(`📝 Guessing: ${guess}`);
+      s.emit('betorbluff-guess', { roomCode: this.roomCode, guess });
+    });
+
+    s.on('betorbluff-betting-phase', async (data) => {
+      this.log(`💰 Betting phase - ${data.guesses?.length || 0} guesses`);
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const guesses = data.guesses || [];
+      if (guesses.length > 0) {
+        const target = pick(guesses);
+        const chips = (data.chips && data.chips[this.name]) || 100;
+        const betAmount = Math.min(Math.floor(Math.random() * 50) + 10, chips);
+        this.log(`📝 Betting ${betAmount} on ${target.playerName}`);
+        s.emit('betorbluff-bet', { roomCode: this.roomCode, targetPlayerId: target.playerId, betAmount });
+      }
     });
 
     // ── MOST LIKELY TO ──
