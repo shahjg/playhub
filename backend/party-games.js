@@ -1301,17 +1301,19 @@ function calculateThisOrThatPartyResults(room, io) {
     }
     
     const total = votesA + votesB;
-    io.to(room.code).emit('thisorthat-party-results', { 
-        optionA: q.optionA, 
-        optionB: q.optionB, 
-        votesA, 
-        votesB, 
-        votersA, 
-        votersB, 
-        majorityChoice: majority, 
-        percentA: total ? Math.round(votesA/total*100) : 50, 
-        percentB: total ? Math.round(votesB/total*100) : 50, 
-        scores: room.gameData.scores 
+    const isLastQuestion = room.gameData.currentQuestionIndex >= room.gameData.maxRounds - 1;
+    io.to(room.code).emit('thisorthat-party-results', {
+        optionA: q.optionA,
+        optionB: q.optionB,
+        votesA,
+        votesB,
+        votersA,
+        votersB,
+        majorityChoice: majority,
+        percentA: total ? Math.round(votesA/total*100) : 50,
+        percentB: total ? Math.round(votesB/total*100) : 50,
+        scores: room.gameData.scores,
+        isLastQuestion
     });
 }
 
