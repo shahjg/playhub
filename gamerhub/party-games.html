@@ -183,19 +183,27 @@
         .game-card {
             position: relative;
             background: #ffffff;
-            border: 1px solid #e8e8e8;
-            border-radius: 18px;
+            border: 2px solid #e8e8e8;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         .game-card.hidden { display: none; }
-        .game-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--purple), var(--pink)); opacity: 0; transition: opacity 0.3s ease; }
-        .game-card:hover { transform: translateY(-5px); border-color: var(--purple); box-shadow: 0 12px 35px rgba(168, 85, 247, 0.18); }
+        .game-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--card-accent, var(--purple)), var(--card-accent-end, var(--pink))); opacity: 0; transition: opacity 0.3s ease; z-index: 2; }
+        .game-card:hover { transform: translateY(-6px) scale(1.01); border-color: var(--card-accent, var(--purple)); box-shadow: 0 16px 40px var(--card-shadow, rgba(168, 85, 247, 0.18)); }
         .game-card:hover::before { opacity: 1; }
+        /* Per-game theming */
+        .game-card[data-game-id="trivia-royale"] { --card-accent: #f59e0b; --card-accent-end: #d97706; --card-shadow: rgba(245, 158, 11, 0.2); }
+        .game-card[data-game-id="bet-or-bluff"] { --card-accent: #6366f1; --card-accent-end: #4f46e5; --card-shadow: rgba(99, 102, 241, 0.2); }
+        .game-card[data-game-id="this-or-that-party"] { --card-accent: #ec4899; --card-accent-end: #a855f7; --card-shadow: rgba(236, 72, 153, 0.2); }
+        .game-card[data-game-id="hot-takes-party"] { --card-accent: #ef4444; --card-accent-end: #f97316; --card-shadow: rgba(239, 68, 68, 0.2); }
+        .game-card[data-game-id="never-ever-party"] { --card-accent: #22c55e; --card-accent-end: #10b981; --card-shadow: rgba(34, 197, 94, 0.2); }
+        /* Premium badge on cards */
+        .game-card .premium-tag { position: absolute; top: 12px; left: 12px; z-index: 10; display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, #c9a84c, #b8943f); color: #000; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 2px 8px rgba(201, 168, 76, 0.4); }
 
         /* Info Button */
         .info-btn {
@@ -229,7 +237,7 @@
         /* Game Preview */
         .game-preview {
             width: 100%;
-            height: 140px;
+            height: 180px;
             position: relative;
             overflow: hidden;
             background: #f8f9fa;
@@ -241,7 +249,8 @@
         .preview-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(2px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -250,16 +259,18 @@
         }
         .game-card:hover .preview-overlay { opacity: 1; }
         .play-circle {
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            background: linear-gradient(135deg, var(--card-accent, var(--purple)), var(--card-accent-end, var(--purple-dark)));
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
         }
-        .play-circle svg { width: 20px; height: 20px; fill: white; margin-left: 2px; }
+        .game-card:hover .play-circle { transform: scale(1.1); }
+        .play-circle svg { width: 22px; height: 22px; fill: white; margin-left: 2px; }
 
         .game-content { padding: 20px 22px 22px; display: flex; flex-direction: column; flex-grow: 1; }
         .game-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 12px; }
@@ -517,6 +528,7 @@
             .hero-title { font-size: 3.5rem; }
             .hero-players { font-size: 1.2rem; letter-spacing: 3px; }
             .hero-desc { font-size: 1rem; }
+            .game-preview { height: 160px; }
             .games-section { padding: 40px 16px 60px; }
             .controls-wrapper { flex-direction: column; align-items: stretch; }
             .game-filters { justify-content: center; }
@@ -585,6 +597,11 @@
             <h1 class="hero-title">PARTY</h1>
             <p class="hero-players">20 – 100 PLAYERS</p>
             <p class="hero-desc">Massive multiplayer games for events, parties, and big gatherings. Like "Jackbox" and "Kahoot" — but free and browser-based.</p>
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:10px 22px;border-radius:50px;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3)">
+                <span style="font-size:16px">&#128081;</span>
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:1.5px;color:#c9a84c">PREMIUM HOSTING AVAILABLE</span>
+                <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-left:4px">Custom questions, 100 players, full control</span>
+            </div>
         </div>
     </section>
 
@@ -628,33 +645,51 @@
 
                 <div class="games-grid">
                     <div class="game-card" data-category="trivia" data-duration="20" data-name="Trivia Royale" data-game-id="trivia-royale" data-players="100">
+                        <span class="premium-tag">&#9733; Premium</span>
                         <button class="info-btn" aria-label="Game info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
                         <a href="lobby.html?game=trivia-royale">
                             <div class="game-preview">
-                                <svg viewBox="0 0 320 140">
+                                <svg viewBox="0 0 320 180">
                                     <defs>
                                         <linearGradient id="triviaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stop-color="#fef3c7"/>
+                                            <stop offset="0%" stop-color="#fffbeb"/>
+                                            <stop offset="50%" stop-color="#fef3c7"/>
                                             <stop offset="100%" stop-color="#fde68a"/>
                                         </linearGradient>
                                     </defs>
-                                    <rect width="320" height="140" fill="url(#triviaGrad)"/>
+                                    <rect width="320" height="180" fill="url(#triviaGrad)"/>
+                                    <!-- Leaderboard sidebar -->
+                                    <rect x="230" y="10" width="80" height="160" rx="8" fill="rgba(245,158,11,0.12)"/>
+                                    <text x="270" y="28" font-family="Bebas Neue" font-size="9" fill="#92400e" text-anchor="middle" letter-spacing="1">LEADERBOARD</text>
+                                    <text x="248" y="44" font-family="Inter" font-size="8" fill="#b45309">&#127942;</text>
+                                    <text x="282" y="44" font-family="Inter" font-size="8" fill="#92400e" font-weight="600">Alex - 2400</text>
+                                    <text x="248" y="58" font-family="Inter" font-size="8" fill="#b45309">2.</text>
+                                    <text x="282" y="58" font-family="Inter" font-size="8" fill="#92400e" font-weight="500">Sam - 2100</text>
+                                    <text x="248" y="72" font-family="Inter" font-size="8" fill="#b45309">3.</text>
+                                    <text x="282" y="72" font-family="Inter" font-size="8" fill="#92400e" font-weight="500">Jo - 1850</text>
                                     <!-- Question card -->
-                                    <rect x="60" y="15" width="200" height="50" rx="8" fill="#fff" stroke="#f59e0b" stroke-width="2"/>
-                                    <text x="160" y="35" font-family="Inter" font-size="8" fill="#92400e" text-anchor="middle" font-weight="600">QUESTION 7 OF 15</text>
-                                    <text x="160" y="52" font-family="Inter" font-size="11" fill="#1a1a2e" text-anchor="middle" font-weight="700">What is the capital of Japan?</text>
-                                    <!-- Answer options -->
-                                    <rect x="30" y="75" width="120" height="26" rx="6" fill="#ef4444"/>
-                                    <text x="90" y="92" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">A: Beijing</text>
-                                    <rect x="170" y="75" width="120" height="26" rx="6" fill="#3b82f6"/>
-                                    <text x="230" y="92" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">B: Tokyo</text>
-                                    <rect x="30" y="108" width="120" height="26" rx="6" fill="#22c55e"/>
-                                    <text x="90" y="125" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">C: Seoul</text>
-                                    <rect x="170" y="108" width="120" height="26" rx="6" fill="#f59e0b"/>
-                                    <text x="230" y="125" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">D: Bangkok</text>
+                                    <rect x="20" y="15" width="200" height="55" rx="10" fill="#fff" stroke="#f59e0b" stroke-width="2"/>
+                                    <text x="120" y="33" font-family="Inter" font-size="8" fill="#92400e" text-anchor="middle" font-weight="600">QUESTION 7 OF 15</text>
+                                    <text x="120" y="52" font-family="Inter" font-size="11" fill="#1a1a2e" text-anchor="middle" font-weight="700">What is the capital of Japan?</text>
                                     <!-- Timer -->
-                                    <circle cx="280" y="35" r="18" fill="#fff" stroke="#f59e0b" stroke-width="2"/>
-                                    <text x="280" y="40" font-family="Bebas Neue" font-size="16" fill="#f59e0b" text-anchor="middle">12</text>
+                                    <circle cx="195" cy="38" r="16" fill="#fff" stroke="#f59e0b" stroke-width="2.5"/>
+                                    <text x="195" y="43" font-family="Bebas Neue" font-size="16" fill="#f59e0b" text-anchor="middle">12</text>
+                                    <!-- Answer grid - Kahoot style -->
+                                    <rect x="20" y="80" width="100" height="40" rx="8" fill="#ef4444"/>
+                                    <text x="32" y="104" font-family="Inter" font-size="12" fill="rgba(255,255,255,0.5)" font-weight="800">&#9650;</text>
+                                    <text x="80" y="105" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">Beijing</text>
+                                    <rect x="125" y="80" width="100" height="40" rx="8" fill="#3b82f6"/>
+                                    <text x="137" y="104" font-family="Inter" font-size="12" fill="rgba(255,255,255,0.5)" font-weight="800">&#9670;</text>
+                                    <text x="185" y="105" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">Tokyo</text>
+                                    <rect x="20" y="125" width="100" height="40" rx="8" fill="#22c55e"/>
+                                    <text x="32" y="149" font-family="Inter" font-size="12" fill="rgba(255,255,255,0.5)" font-weight="800">&#9679;</text>
+                                    <text x="80" y="150" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">Seoul</text>
+                                    <rect x="125" y="125" width="100" height="40" rx="8" fill="#f59e0b"/>
+                                    <text x="137" y="149" font-family="Inter" font-size="12" fill="rgba(255,255,255,0.5)" font-weight="800">&#9724;</text>
+                                    <text x="185" y="150" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">Bangkok</text>
+                                    <!-- Player count -->
+                                    <rect x="240" y="140" width="60" height="22" rx="11" fill="#f59e0b"/>
+                                    <text x="270" y="155" font-family="Inter" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">47 playing</text>
                                 </svg>
                                 <div class="preview-overlay"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
                             </div>
@@ -663,7 +698,7 @@
                                     <h3 class="game-name">Trivia Royale</h3>
                                     <span class="game-players">10-100</span>
                                 </div>
-                                <p class="game-desc">Live trivia competition with leaderboards. A "Kahoot" style game show where everyone plays on their phone.</p>
+                                <p class="game-desc">Live trivia competition with leaderboards. Kahoot-style game show where everyone plays on their phone.</p>
                                 <div class="game-footer">
                                     <span class="game-tag amber">Trivia</span>
                                     <span class="game-tag amber">Events</span>
@@ -674,38 +709,52 @@
                     </div>
 
                     <div class="game-card" data-category="trivia" data-duration="25" data-name="Bet or Bluff" data-game-id="bet-or-bluff" data-players="100">
+                        <span class="premium-tag">&#9733; Premium</span>
                         <button class="info-btn" aria-label="Game info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
                         <a href="lobby.html?game=bet-or-bluff">
                             <div class="game-preview">
-                                <svg viewBox="0 0 320 140">
+                                <svg viewBox="0 0 320 180">
                                     <defs>
                                         <linearGradient id="betGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                             <stop offset="0%" stop-color="#1e1b4b"/>
+                                            <stop offset="50%" stop-color="#252262"/>
                                             <stop offset="100%" stop-color="#312e81"/>
                                         </linearGradient>
                                     </defs>
-                                    <rect width="320" height="140" fill="url(#betGrad)"/>
+                                    <rect width="320" height="180" fill="url(#betGrad)"/>
+                                    <!-- Stars/sparkles -->
+                                    <circle cx="30" cy="20" r="1.5" fill="rgba(255,215,0,0.4)"/>
+                                    <circle cx="290" cy="15" r="1" fill="rgba(255,215,0,0.3)"/>
+                                    <circle cx="150" cy="12" r="1.2" fill="rgba(255,215,0,0.3)"/>
                                     <!-- Question -->
-                                    <rect x="40" y="15" width="240" height="40" rx="8" fill="rgba(255,255,255,0.1)"/>
-                                    <text x="160" y="40" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="600">How many bones in the human body?</text>
-                                    <!-- Betting chips -->
-                                    <circle cx="70" cy="85" r="22" fill="#ffd700" stroke="#b8860b" stroke-width="3"/>
-                                    <text x="70" y="90" font-family="Bebas Neue" font-size="14" fill="#1a1a2e" text-anchor="middle">100</text>
-                                    <circle cx="130" cy="85" r="22" fill="#ef4444" stroke="#b91c1c" stroke-width="3"/>
-                                    <text x="130" y="90" font-family="Bebas Neue" font-size="14" fill="#fff" text-anchor="middle">250</text>
-                                    <circle cx="190" cy="85" r="22" fill="#3b82f6" stroke="#1d4ed8" stroke-width="3"/>
-                                    <text x="190" y="90" font-family="Bebas Neue" font-size="14" fill="#fff" text-anchor="middle">500</text>
-                                    <circle cx="250" cy="85" r="22" fill="#a855f7" stroke="#7c3aed" stroke-width="3"/>
-                                    <text x="250" y="90" font-family="Bebas Neue" font-size="14" fill="#fff" text-anchor="middle">1K</text>
-                                    <!-- Player answers -->
-                                    <rect x="50" y="115" width="50" height="18" rx="4" fill="rgba(255,255,255,0.2)"/>
-                                    <text x="75" y="127" font-family="Inter" font-size="8" fill="#fff" text-anchor="middle">206</text>
-                                    <rect x="110" y="115" width="50" height="18" rx="4" fill="rgba(255,255,255,0.2)"/>
-                                    <text x="135" y="127" font-family="Inter" font-size="8" fill="#fff" text-anchor="middle">215</text>
-                                    <rect x="170" y="115" width="50" height="18" rx="4" fill="rgba(34,197,94,0.5)"/>
-                                    <text x="195" y="127" font-family="Inter" font-size="8" fill="#fff" text-anchor="middle">208</text>
-                                    <rect x="230" y="115" width="50" height="18" rx="4" fill="rgba(255,255,255,0.2)"/>
-                                    <text x="255" y="127" font-family="Inter" font-size="8" fill="#fff" text-anchor="middle">199</text>
+                                    <rect x="30" y="12" width="260" height="45" rx="10" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                                    <text x="160" y="30" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.5)" text-anchor="middle" font-weight="600" letter-spacing="1">ESTIMATION ROUND</text>
+                                    <text x="160" y="47" font-family="Inter" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">How many bones in the human body?</text>
+                                    <!-- Your chips display -->
+                                    <rect x="20" y="65" width="90" height="24" rx="12" fill="rgba(255,215,0,0.15)" stroke="rgba(255,215,0,0.3)" stroke-width="1"/>
+                                    <text x="65" y="81" font-family="Inter" font-size="8" fill="#ffd700" text-anchor="middle" font-weight="700">&#128176; 1,250 chips</text>
+                                    <!-- Betting chips - bigger, more casino feel -->
+                                    <circle cx="55" cy="115" r="26" fill="#ffd700" stroke="#b8860b" stroke-width="3"/>
+                                    <circle cx="55" cy="115" r="18" fill="none" stroke="#b8860b" stroke-width="1" stroke-dasharray="3,3"/>
+                                    <text x="55" y="120" font-family="Bebas Neue" font-size="16" fill="#1a1a2e" text-anchor="middle">100</text>
+                                    <circle cx="120" cy="115" r="26" fill="#ef4444" stroke="#b91c1c" stroke-width="3"/>
+                                    <circle cx="120" cy="115" r="18" fill="none" stroke="#b91c1c" stroke-width="1" stroke-dasharray="3,3"/>
+                                    <text x="120" y="120" font-family="Bebas Neue" font-size="16" fill="#fff" text-anchor="middle">250</text>
+                                    <circle cx="185" cy="115" r="26" fill="#3b82f6" stroke="#1d4ed8" stroke-width="3"/>
+                                    <circle cx="185" cy="115" r="18" fill="none" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="3,3"/>
+                                    <text x="185" y="120" font-family="Bebas Neue" font-size="16" fill="#fff" text-anchor="middle">500</text>
+                                    <circle cx="250" cy="115" r="26" fill="#a855f7" stroke="#7c3aed" stroke-width="3"/>
+                                    <circle cx="250" cy="115" r="18" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,3"/>
+                                    <text x="250" y="120" font-family="Bebas Neue" font-size="16" fill="#fff" text-anchor="middle">1K</text>
+                                    <!-- Answer guesses at bottom -->
+                                    <rect x="25" y="150" width="55" height="22" rx="6" fill="rgba(255,255,255,0.12)"/>
+                                    <text x="52" y="165" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.7)" text-anchor="middle" font-weight="600">206</text>
+                                    <rect x="90" y="150" width="55" height="22" rx="6" fill="rgba(255,255,255,0.12)"/>
+                                    <text x="117" y="165" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.7)" text-anchor="middle" font-weight="600">215</text>
+                                    <rect x="155" y="150" width="55" height="22" rx="6" fill="rgba(34,197,94,0.4)" stroke="rgba(34,197,94,0.6)" stroke-width="1"/>
+                                    <text x="182" y="165" font-family="Inter" font-size="9" fill="#4ade80" text-anchor="middle" font-weight="700">208 &#10003;</text>
+                                    <rect x="220" y="150" width="55" height="22" rx="6" fill="rgba(255,255,255,0.12)"/>
+                                    <text x="247" y="165" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.7)" text-anchor="middle" font-weight="600">199</text>
                                 </svg>
                                 <div class="preview-overlay"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
                             </div>
@@ -745,30 +794,39 @@
 
                 <div class="games-grid">
                     <div class="game-card" data-category="social" data-duration="15" data-name="This or That" data-game-id="this-or-that-party" data-players="100">
+                        <span class="premium-tag">&#9733; Premium</span>
                         <button class="info-btn" aria-label="Game info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
                         <a href="lobby.html?game=this-or-that-party">
                             <div class="game-preview">
-                                <svg viewBox="0 0 320 140">
-                                    <rect width="320" height="140" fill="#fdf2f8"/>
-                                    <!-- VS divider -->
-                                    <circle cx="160" cy="70" r="20" fill="#ec4899"/>
-                                    <text x="160" y="76" font-family="Bebas Neue" font-size="16" fill="#fff" text-anchor="middle">VS</text>
-                                    <!-- Option A -->
-                                    <rect x="20" y="25" width="115" height="90" rx="12" fill="#3b82f6"/>
-                                    <text x="77" y="60" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">🌅</text>
-                                    <text x="77" y="80" font-family="Inter" font-size="11" fill="#fff" text-anchor="middle" font-weight="600">Morning</text>
-                                    <text x="77" y="95" font-family="Inter" font-size="11" fill="#fff" text-anchor="middle" font-weight="600">Person</text>
-                                    <rect x="35" y="100" width="85" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
-                                    <rect x="35" y="100" width="35" height="10" rx="5" fill="#fff"/>
-                                    <text x="77" y="108" font-family="Inter" font-size="6" fill="#3b82f6" text-anchor="middle" font-weight="700">42%</text>
+                                <svg viewBox="0 0 320 180">
+                                    <rect width="320" height="180" fill="#fdf2f8"/>
+                                    <!-- Round indicator -->
+                                    <text x="160" y="18" font-family="Inter" font-size="8" fill="#9ca3af" text-anchor="middle" font-weight="600" letter-spacing="1">ROUND 4 OF 10</text>
+                                    <!-- VS divider - lightning bolt style -->
+                                    <rect x="156" y="28" width="8" height="130" rx="4" fill="rgba(236,72,153,0.1)"/>
+                                    <circle cx="160" cy="90" r="22" fill="#ec4899" stroke="#fff" stroke-width="3"/>
+                                    <text x="160" y="97" font-family="Bebas Neue" font-size="18" fill="#fff" text-anchor="middle">VS</text>
+                                    <!-- Option A - bigger, more immersive -->
+                                    <rect x="12" y="28" width="135" height="130" rx="14" fill="linear-gradient(135deg,#3b82f6,#2563eb)"/>
+                                    <rect x="12" y="28" width="135" height="130" rx="14" fill="#3b82f6"/>
+                                    <text x="79" y="68" font-family="Inter" font-size="28" fill="#fff" text-anchor="middle">&#127749;</text>
+                                    <text x="79" y="95" font-family="Inter" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">Morning</text>
+                                    <text x="79" y="112" font-family="Inter" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">Person</text>
+                                    <!-- Progress bar A -->
+                                    <rect x="28" y="128" width="103" height="12" rx="6" fill="rgba(255,255,255,0.2)"/>
+                                    <rect x="28" y="128" width="43" height="12" rx="6" fill="rgba(255,255,255,0.9)"/>
+                                    <text x="79" y="148" font-family="Bebas Neue" font-size="14" fill="#3b82f6" text-anchor="middle" letter-spacing="1">42%</text>
                                     <!-- Option B -->
-                                    <rect x="185" y="25" width="115" height="90" rx="12" fill="#a855f7"/>
-                                    <text x="242" y="60" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">🌙</text>
-                                    <text x="242" y="80" font-family="Inter" font-size="11" fill="#fff" text-anchor="middle" font-weight="600">Night</text>
-                                    <text x="242" y="95" font-family="Inter" font-size="11" fill="#fff" text-anchor="middle" font-weight="600">Owl</text>
-                                    <rect x="200" y="100" width="85" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
-                                    <rect x="200" y="100" width="50" height="10" rx="5" fill="#fff"/>
-                                    <text x="242" y="108" font-family="Inter" font-size="6" fill="#a855f7" text-anchor="middle" font-weight="700">58%</text>
+                                    <rect x="173" y="28" width="135" height="130" rx="14" fill="#a855f7"/>
+                                    <text x="240" y="68" font-family="Inter" font-size="28" fill="#fff" text-anchor="middle">&#127769;</text>
+                                    <text x="240" y="95" font-family="Inter" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">Night</text>
+                                    <text x="240" y="112" font-family="Inter" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">Owl</text>
+                                    <!-- Progress bar B -->
+                                    <rect x="189" y="128" width="103" height="12" rx="6" fill="rgba(255,255,255,0.2)"/>
+                                    <rect x="189" y="128" width="60" height="12" rx="6" fill="rgba(255,255,255,0.9)"/>
+                                    <text x="240" y="148" font-family="Bebas Neue" font-size="14" fill="#a855f7" text-anchor="middle" letter-spacing="1">58%</text>
+                                    <!-- Player count -->
+                                    <text x="160" y="172" font-family="Inter" font-size="8" fill="#9ca3af" text-anchor="middle" font-weight="600">63 players voted</text>
                                 </svg>
                                 <div class="preview-overlay"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
                             </div>
@@ -788,35 +846,59 @@
                     </div>
 
                     <div class="game-card" data-category="social" data-duration="15" data-name="Hot Takes" data-game-id="hot-takes-party" data-players="100">
+                        <span class="premium-tag">&#9733; Premium</span>
                         <button class="info-btn" aria-label="Game info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
                         <a href="lobby.html?game=hot-takes-party">
                             <div class="game-preview">
-                                <svg viewBox="0 0 320 140">
+                                <svg viewBox="0 0 320 180">
                                     <defs>
                                         <linearGradient id="hotGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                             <stop offset="0%" stop-color="#fef2f2"/>
+                                            <stop offset="50%" stop-color="#fff1f2"/>
                                             <stop offset="100%" stop-color="#fee2e2"/>
                                         </linearGradient>
                                     </defs>
-                                    <rect width="320" height="140" fill="url(#hotGrad)"/>
+                                    <rect width="320" height="180" fill="url(#hotGrad)"/>
                                     <!-- Hot take card -->
-                                    <rect x="40" y="15" width="240" height="55" rx="10" fill="#fff" stroke="#ef4444" stroke-width="2"/>
-                                    <text x="55" y="35" font-family="Inter" font-size="10" fill="#ef4444" font-weight="700">🔥 HOT TAKE</text>
-                                    <text x="160" y="55" font-family="Inter" font-size="11" fill="#1a1a2e" text-anchor="middle" font-weight="600">"Pineapple belongs on pizza"</text>
-                                    <!-- Rating scale -->
-                                    <text x="160" y="90" font-family="Inter" font-size="9" fill="#666" text-anchor="middle">Rate this take:</text>
-                                    <g transform="translate(60, 100)">
-                                        <circle cx="0" cy="10" r="12" fill="#ef4444"/>
-                                        <text x="0" y="14" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">1</text>
-                                        <circle cx="50" cy="10" r="12" fill="#f97316"/>
-                                        <text x="50" y="14" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">3</text>
-                                        <circle cx="100" cy="10" r="12" fill="#eab308"/>
-                                        <text x="100" y="14" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">5</text>
-                                        <circle cx="150" cy="10" r="12" fill="#84cc16"/>
-                                        <text x="150" y="14" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">7</text>
-                                        <circle cx="200" cy="10" r="14" fill="#22c55e" stroke="#fff" stroke-width="2"/>
-                                        <text x="200" y="14" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">10</text>
+                                    <rect x="25" y="12" width="270" height="60" rx="12" fill="#fff" stroke="#ef4444" stroke-width="2"/>
+                                    <text x="42" y="32" font-family="Inter" font-size="10" fill="#ef4444" font-weight="700">&#128293; HOT TAKE</text>
+                                    <text x="260" y="32" font-family="Inter" font-size="8" fill="#9ca3af" text-anchor="end" font-weight="600">Round 5/10</text>
+                                    <text x="160" y="56" font-family="Inter" font-size="12" fill="#1a1a2e" text-anchor="middle" font-weight="700">"Pineapple belongs on pizza"</text>
+                                    <!-- Rating scale - bigger, gradient feel -->
+                                    <text x="160" y="92" font-family="Inter" font-size="9" fill="#888" text-anchor="middle" font-weight="500">How much do you agree?</text>
+                                    <g transform="translate(28, 100)">
+                                        <rect x="0" y="0" width="264" height="32" rx="16" fill="rgba(239,68,68,0.06)"/>
+                                        <circle cx="16" cy="16" r="14" fill="#ef4444"/>
+                                        <text x="16" y="20" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">1</text>
+                                        <circle cx="46" cy="16" r="11" fill="#f87171"/>
+                                        <text x="46" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">2</text>
+                                        <circle cx="73" cy="16" r="11" fill="#f97316"/>
+                                        <text x="73" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">3</text>
+                                        <circle cx="100" cy="16" r="11" fill="#fb923c"/>
+                                        <text x="100" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">4</text>
+                                        <circle cx="132" cy="16" r="13" fill="#eab308" stroke="#fff" stroke-width="1.5"/>
+                                        <text x="132" y="20" font-family="Inter" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">5</text>
+                                        <circle cx="164" cy="16" r="11" fill="#a3e635"/>
+                                        <text x="164" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">6</text>
+                                        <circle cx="191" cy="16" r="11" fill="#84cc16"/>
+                                        <text x="191" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">7</text>
+                                        <circle cx="218" cy="16" r="11" fill="#4ade80"/>
+                                        <text x="218" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">8</text>
+                                        <circle cx="245" cy="16" r="11" fill="#22c55e"/>
+                                        <text x="245" y="20" font-family="Inter" font-size="9" fill="#fff" text-anchor="middle" font-weight="600">9</text>
+                                        <circle cx="248" cy="16" r="0" fill="none"/>
                                     </g>
+                                    <!-- Selected indicator -->
+                                    <circle cx="248" cy="116" r="14" fill="#22c55e" stroke="#fff" stroke-width="2.5"/>
+                                    <text x="248" y="121" font-family="Inter" font-size="11" fill="#fff" text-anchor="middle" font-weight="800">10</text>
+                                    <!-- Results preview bar -->
+                                    <rect x="25" y="145" width="270" height="28" rx="8" fill="rgba(0,0,0,0.04)"/>
+                                    <text x="35" y="163" font-family="Inter" font-size="8" fill="#9ca3af" font-weight="600">GROUP AVG:</text>
+                                    <rect x="95" y="152" width="140" height="8" rx="4" fill="rgba(239,68,68,0.15)"/>
+                                    <rect x="95" y="152" width="98" height="8" rx="4" fill="linear-gradient(90deg,#ef4444,#f59e0b,#22c55e)"/>
+                                    <rect x="95" y="152" width="98" height="8" rx="4" fill="#f59e0b"/>
+                                    <circle cx="193" cy="156" r="5" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>
+                                    <text x="255" y="163" font-family="Bebas Neue" font-size="14" fill="#f59e0b" text-anchor="middle">7.2</text>
                                 </svg>
                                 <div class="preview-overlay"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
                             </div>
@@ -836,32 +918,49 @@
                     </div>
 
                     <div class="game-card" data-category="social" data-duration="15" data-name="Never Ever" data-game-id="never-ever-party" data-players="100">
+                        <span class="premium-tag">&#9733; Premium</span>
                         <button class="info-btn" aria-label="Game info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
                         <a href="lobby.html?game=never-ever-party">
                             <div class="game-preview">
-                                <svg viewBox="0 0 320 140">
+                                <svg viewBox="0 0 320 180">
                                     <defs>
                                         <linearGradient id="neverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                             <stop offset="0%" stop-color="#f0fdf4"/>
+                                            <stop offset="50%" stop-color="#ecfdf5"/>
                                             <stop offset="100%" stop-color="#dcfce7"/>
                                         </linearGradient>
                                     </defs>
-                                    <rect width="320" height="140" fill="url(#neverGrad)"/>
+                                    <rect width="320" height="180" fill="url(#neverGrad)"/>
                                     <!-- Statement card -->
-                                    <rect x="40" y="15" width="240" height="60" rx="12" fill="#fff" stroke="#22c55e" stroke-width="2"/>
-                                    <text x="160" y="35" font-family="Inter" font-size="9" fill="#22c55e" text-anchor="middle" font-weight="700">NEVER HAVE I EVER...</text>
-                                    <text x="160" y="58" font-family="Inter" font-size="12" fill="#1a1a2e" text-anchor="middle" font-weight="600">Gone skydiving 🪂</text>
-                                    <!-- Tap indicator -->
-                                    <rect x="100" y="85" width="120" height="40" rx="20" fill="#22c55e"/>
-                                    <text x="160" y="110" font-family="Inter" font-size="12" fill="#fff" text-anchor="middle" font-weight="700">TAP IF YOU HAVE!</text>
-                                    <!-- Player dots -->
-                                    <circle cx="50" cy="120" r="8" fill="#22c55e"/>
-                                    <circle cx="75" cy="115" r="8" fill="#22c55e"/>
-                                    <circle cx="245" cy="118" r="8" fill="#d1d5db"/>
-                                    <circle cx="270" cy="122" r="8" fill="#d1d5db"/>
-                                    <!-- Stats -->
-                                    <text x="62" y="95" font-family="Inter" font-size="8" fill="#22c55e" text-anchor="middle" font-weight="600">23 have</text>
-                                    <text x="258" y="95" font-family="Inter" font-size="8" fill="#9ca3af" text-anchor="middle" font-weight="600">42 haven't</text>
+                                    <rect x="25" y="12" width="270" height="65" rx="14" fill="#fff" stroke="#22c55e" stroke-width="2"/>
+                                    <text x="160" y="32" font-family="Inter" font-size="9" fill="#22c55e" text-anchor="middle" font-weight="700" letter-spacing="1">NEVER HAVE I EVER...</text>
+                                    <text x="260" y="32" font-family="Inter" font-size="8" fill="#9ca3af" text-anchor="end" font-weight="600">6/10</text>
+                                    <text x="160" y="58" font-family="Inter" font-size="13" fill="#1a1a2e" text-anchor="middle" font-weight="700">Gone skydiving &#129666;</text>
+                                    <!-- Big tap button -->
+                                    <rect x="80" y="88" width="160" height="44" rx="22" fill="#22c55e" stroke="#16a34a" stroke-width="1"/>
+                                    <text x="160" y="115" font-family="Inter" font-size="13" fill="#fff" text-anchor="middle" font-weight="800" letter-spacing="0.5">TAP IF YOU HAVE!</text>
+                                    <!-- Results bar -->
+                                    <rect x="25" y="145" width="270" height="28" rx="8" fill="rgba(0,0,0,0.04)"/>
+                                    <!-- Green side (have) -->
+                                    <rect x="30" y="150" width="100" height="18" rx="9" fill="rgba(34,197,94,0.15)"/>
+                                    <rect x="30" y="150" width="100" height="18" rx="9" fill="#22c55e" opacity="0.2"/>
+                                    <!-- Player avatars - have -->
+                                    <circle cx="42" cy="159" r="7" fill="#22c55e"/>
+                                    <text x="42" y="162" font-family="Inter" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">A</text>
+                                    <circle cx="58" cy="159" r="7" fill="#4ade80"/>
+                                    <text x="58" y="162" font-family="Inter" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">M</text>
+                                    <circle cx="74" cy="159" r="7" fill="#86efac"/>
+                                    <text x="74" y="162" font-family="Inter" font-size="7" fill="#166534" text-anchor="middle" font-weight="700">S</text>
+                                    <text x="100" y="163" font-family="Inter" font-size="8" fill="#22c55e" text-anchor="middle" font-weight="700">+20</text>
+                                    <!-- Gray side (haven't) -->
+                                    <text x="160" y="163" font-family="Inter" font-size="9" fill="#666" text-anchor="middle" font-weight="600">23 have  |  42 haven't</text>
+                                    <!-- Haven't avatars -->
+                                    <circle cx="240" cy="159" r="7" fill="#d1d5db"/>
+                                    <text x="240" y="162" font-family="Inter" font-size="7" fill="#6b7280" text-anchor="middle" font-weight="700">J</text>
+                                    <circle cx="256" cy="159" r="7" fill="#e5e7eb"/>
+                                    <text x="256" y="162" font-family="Inter" font-size="7" fill="#6b7280" text-anchor="middle" font-weight="700">K</text>
+                                    <circle cx="272" cy="159" r="7" fill="#f3f4f6"/>
+                                    <text x="272" y="162" font-family="Inter" font-size="7" fill="#9ca3af" text-anchor="middle" font-weight="700">R</text>
                                 </svg>
                                 <div class="preview-overlay"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
                             </div>
