@@ -938,12 +938,12 @@ function initTriviaRoyaleGame(room, category = 'general', premiumOptions = {}) {
     const maxRounds = premiumOptions.roundCount || 10;
     let questions = [];
 
-    // Parse custom trivia questions: "Question | Correct | Wrong1 | Wrong2 | Wrong3"
+    // Parse custom trivia questions: "Question, Correct, Wrong1, Wrong2, Wrong3"
     if (premiumOptions.customQuestions) {
         questions = premiumOptions.customQuestions.split('\n')
-            .map(line => line.trim()).filter(l => l.includes('|'))
+            .map(line => line.trim()).filter(l => l.includes(','))
             .map(line => {
-                const parts = line.split('|').map(s => s.trim());
+                const parts = line.split(',').map(s => s.trim());
                 if (parts.length >= 2) {
                     const correct = parts[1];
                     const wrong = parts.slice(2).filter(s => s.length > 0);
@@ -978,11 +978,11 @@ function initThisOrThatPartyGame(room, category = 'mixed', premiumOptions = {}) 
     const maxRounds = premiumOptions.roundCount || 10;
     let questions;
 
-    // Parse custom questions: "Option A | Option B"
+    // Parse custom questions: "Option A, Option B"
     if (premiumOptions.customQuestions) {
         const custom = premiumOptions.customQuestions.split('\n')
-            .map(line => line.trim()).filter(l => l.includes('|'))
-            .map(line => { const [a, b] = line.split('|').map(s => s.trim()); return { optionA: a, optionB: b }; })
+            .map(line => line.trim()).filter(l => l.includes(','))
+            .map(line => { const [a, b] = line.split(',').map(s => s.trim()); return { optionA: a, optionB: b }; })
             .filter(q => q.optionA && q.optionB);
         if (custom.length > 0) questions = custom;
     }
@@ -1063,12 +1063,12 @@ function initBetOrBluffGame(room, startingPoints = 500, premiumOptions = {}) {
     const maxRounds = premiumOptions.roundCount || 8;
     let questions;
 
-    // Parse custom questions: "Question text | unit"
+    // Parse custom questions: "Question text, unit"
     if (premiumOptions.customQuestions) {
         const custom = premiumOptions.customQuestions.split('\n')
             .map(line => line.trim()).filter(l => l.length > 0)
             .map(line => {
-                const parts = line.split('|').map(s => s.trim());
+                const parts = line.split(',').map(s => s.trim());
                 return { question: parts[0], unit: parts[1] || '' };
             }).filter(q => q.question);
         if (custom.length > 0) questions = custom;
@@ -1720,12 +1720,13 @@ function setupPartyGameHandlers(io, socket, rooms, players) {
         console.log('trivia-start-round received - category:', category, 'stored:', room.gameData.category);
 
         const cat = category || room.gameData.category || 'general';
-        if (room.gameData.questions.length === 0 || (category && category !== room.gameData.category)) {
+        // Only load default questions if no custom questions were provided AND pool is empty or category changed
+        if (!room.gameData.useCustomQuestions && (room.gameData.questions.length === 0 || (category && category !== room.gameData.category))) {
             const questions = triviaQuestions[cat];
             if (!questions) {
                 console.log('WARNING: Category not found:', cat, '- using general');
             }
-            room.gameData.questions = [...(questions || triviaQuestions.general)].sort(() => Math.random() - 0.5).slice(0, 10);
+            room.gameData.questions = [...(questions || triviaQuestions.general)].sort(() => Math.random() - 0.5).slice(0, room.gameData.maxRounds || 10);
             room.gameData.category = cat;
             room.gameData.currentQuestionIndex = 0;
             room.gameData.roundNumber = 1;

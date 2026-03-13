@@ -2212,6 +2212,8 @@ io.on('connection', (socket) => {
     }
 
     console.log(`[GAME] Starting ${room.gameType} in ${roomCode}${hostIsPremium ? ' (premium host)' : ''}`);
+    if (premiumOptions.customQuestions) console.log(`[GAME] Custom questions: ${premiumOptions.customQuestions.split('\n').length} lines`);
+    if (room.customization) console.log(`[GAME] Customization: ${Object.keys(room.customization).join(', ')}`);
 
     room.gameState = 'playing';
 
