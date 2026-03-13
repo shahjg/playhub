@@ -1058,12 +1058,13 @@ function startSpyfallQuestionPhase(room) {
   room.gameData.phase = 'question';
   room.gameData.timeRemaining = 480;
   
+  console.log(`[SPYFALL-DEBUG] Emitting question-phase-start to room ${room.code}, timeLimit=480`);
   io.to(room.code).emit('question-phase-start', {
     timeLimit: 480
   });
-  
+
   startSpyfallTimer(room);
-  console.log(`Question phase started in room ${room.code}`);
+  console.log(`[SPYFALL-DEBUG] Question phase started in room ${room.code}`);
 }
 
 // Start/resume Spyfall timer
@@ -1568,12 +1569,15 @@ function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
   });
 
   // Emit role assignments to all players (like imposter/werewolf do)
+  console.log(`[SPYFALL-DEBUG] Emitting role-assigned to ${room.players.length} players in room ${room.code}`);
   room.players.forEach(player => {
     const roleData = room.gameData.roleAssignments[player.name];
-    io.to(player.id).emit('role-assigned', {
+    const payload = {
       ...roleData,
       allLocations: room.gameData.allLocations || []
-    });
+    };
+    console.log(`[SPYFALL-DEBUG] -> ${player.name} (socket: ${player.id}): role=${roleData.role}, isSpy=${roleData.isSpy}, location=${roleData.location}, allLocations=${payload.allLocations.length}`);
+    io.to(player.id).emit('role-assigned', payload);
   });
 
   // Schedule question phase transition (don't rely on rejoin triggering it)
@@ -1836,7 +1840,7 @@ io.on('connection', (socket) => {
     if (room.gameState === 'playing' && room.gameData && room.gameData.roleAssignments) {
       const playerRole = room.gameData.roleAssignments[playerName];
       if (playerRole) {
-        console.log(`Sending role assignment to ${playerName}: ${playerRole.role}`);
+        console.log(`[REJOIN-DEBUG] Sending role assignment to ${playerName}: role=${playerRole.role}, isSpy=${playerRole.isSpy}, location=${playerRole.location}`);
 
         // Include allLocations for Spyfall game type
         if (room.gameType === 'spyfall') {
@@ -1850,10 +1854,12 @@ io.on('connection', (socket) => {
               room.gameData.spies.push(socket.id);
             }
           }
-          socket.emit('role-assigned', {
+          const rejoinPayload = {
             ...playerRole,
             allLocations: room.gameData.allLocations || []
-          });
+          };
+          console.log(`[REJOIN-DEBUG] Spyfall role-assigned payload: allLocations=${rejoinPayload.allLocations.length}, phase=${room.gameData.phase}`);
+          socket.emit('role-assigned', rejoinPayload);
         } else {
           socket.emit('role-assigned', playerRole);
         }
