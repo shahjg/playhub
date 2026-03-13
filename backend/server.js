@@ -698,116 +698,127 @@ function initializeCodenamesGame(room) {
   };
 }
 // ============================================
-// WEREWOLF HELPER FUNCTIONS
+// MAFIA (WEREWOLF) HELPER FUNCTIONS
+// All state keyed by player NAME, not socket ID
 // ============================================
+
+function getSocketId(room, playerName) {
+  const p = room.players.find(pl => pl.name === playerName);
+  return p ? p.id : null;
+}
 
 function initWerewolfGame(room) {
   const playerCount = room.players.length;
-  
-  let werewolfCount = Math.floor(playerCount / 3);
-  if (werewolfCount < 1) werewolfCount = 1;
-  if (werewolfCount > 3) werewolfCount = 3;
-  
-  const hasSeer = playerCount >= 4;
-  const hasDoctor = playerCount >= 6;
-  
-  console.log(`Werewolf game setup: ${playerCount} players, ${werewolfCount} werewolves`);
-  
-  const shuffledPlayers = [...room.players].sort(() => Math.random() - 0.5);
-  
-  const werewolves = [];
-  let seer = null;
-  let doctor = null;
-  let roleIndex = 0;
-  
-  for (let i = 0; i < werewolfCount; i++) {
-    werewolves.push(shuffledPlayers[roleIndex]);
-    roleIndex++;
+
+  let mafiaCount = Math.floor(playerCount / 3);
+  if (mafiaCount < 1) mafiaCount = 1;
+  if (mafiaCount > 3) mafiaCount = 3;
+
+  const hasDetective = playerCount >= 4;
+  const hasMedic = playerCount >= 6;
+
+  console.log(`Mafia game setup: ${playerCount} players, ${mafiaCount} mafia`);
+
+  const shuffled = [...room.players].sort(() => Math.random() - 0.5);
+
+  const mafiaNames = [];
+  let detectiveName = null;
+  let medicName = null;
+  let idx = 0;
+
+  for (let i = 0; i < mafiaCount; i++) {
+    mafiaNames.push(shuffled[idx].name);
+    idx++;
   }
-  
-  if (hasSeer && roleIndex < shuffledPlayers.length) {
-    seer = shuffledPlayers[roleIndex];
-    roleIndex++;
+
+  if (hasDetective && idx < shuffled.length) {
+    detectiveName = shuffled[idx].name;
+    idx++;
   }
-  
-  if (hasDoctor && roleIndex < shuffledPlayers.length) {
-    doctor = shuffledPlayers[roleIndex];
-    roleIndex++;
+
+  if (hasMedic && idx < shuffled.length) {
+    medicName = shuffled[idx].name;
+    idx++;
   }
-  
+
+  // Build role assignments (keyed by name)
+  const roleAssignments = {};
+  room.players.forEach(p => {
+    let role = 'villager';
+    if (mafiaNames.includes(p.name)) role = 'werewolf';
+    else if (p.name === detectiveName) role = 'seer';
+    else if (p.name === medicName) role = 'doctor';
+
+    roleAssignments[p.name] = {
+      role: role,
+      isWerewolf: role === 'werewolf'
+    };
+  });
+
+  // alivePlayers keyed by name, isMafia flag
   room.gameData = {
-    werewolves: werewolves.map(w => w.id),
-    werewolfNames: werewolves.map(w => w.name),
-    seer: seer ? seer.id : null,
-    seerName: seer ? seer.name : null,
-    doctor: doctor ? doctor.id : null,
-    doctorName: doctor ? doctor.name : null,
+    mafiaNames: mafiaNames,
+    detectiveName: detectiveName,
+    medicName: medicName,
     alivePlayers: room.players.map(p => ({
-      id: p.id,
       name: p.name,
-      isWerewolf: werewolves.some(w => w.id === p.id)
+      isWerewolf: mafiaNames.includes(p.name),
+      isMafia: mafiaNames.includes(p.name)
     })),
     deadPlayers: [],
     currentRound: 1,
     phase: 'role-reveal',
     nightActions: {},
+    nightActiveRole: null,
     votes: {},
-    roleAssignments: {}
+    werewolfVotes: {},
+    roleAssignments: roleAssignments
   };
-  
-  room.players.forEach(player => {
-    let role = 'villager';
-    if (werewolves.some(w => w.id === player.id)) {
-      role = 'werewolf';
-    } else if (seer && player.id === seer.id) {
-      role = 'seer';
-    } else if (doctor && player.id === doctor.id) {
-      role = 'doctor';
-    }
-    
-    room.gameData.roleAssignments[player.name] = {
-      role: role,
-      isWerewolf: role === 'werewolf'
-    };
+
+  // Emit role to each player
+  room.players.forEach(p => {
+    io.to(p.id).emit('role-assigned', roleAssignments[p.name]);
   });
-  
-  room.players.forEach(player => {
-    const roleData = room.gameData.roleAssignments[player.name];
-    io.to(player.id).emit('role-assigned', roleData);
+
+  // Emit mafia family to mafia members
+  const mafiaTeam = mafiaNames.map(n => ({ name: n }));
+  mafiaNames.forEach(name => {
+    const sid = getSocketId(room, name);
+    if (sid) io.to(sid).emit('werewolf-team', { werewolves: mafiaTeam });
   });
-  
-  const werewolfTeam = werewolves.map(w => ({ id: w.id, name: w.name }));
-  werewolves.forEach(wolf => {
-    io.to(wolf.id).emit('werewolf-team', { werewolves: werewolfTeam });
-  });
-  
-  console.log(`Werewolf game initialized in room ${room.code}`);
-  
+
+  console.log(`Mafia game initialized in room ${room.code}`);
+
+  // Start night after role reveal
   setTimeout(() => {
     startNightPhase(room);
   }, 5000);
 }
 
 function startNightPhase(room) {
+  if (!room.gameData || room.gameData.phase === 'results') return;
   room.gameData.phase = 'night';
   room.gameData.nightActions = {};
+  room.gameData.werewolfVotes = {};
   console.log(`Night ${room.gameData.currentRound} started in room ${room.code}`);
-  startWerewolfPhase(room);
+  startMafiaPhase(room);
 }
 
-function startWerewolfPhase(room) {
+function startMafiaPhase(room) {
+  room.gameData.nightActiveRole = 'werewolf';
   io.to(room.code).emit('night-phase-start', {
     activeRole: 'werewolf',
     alivePlayers: room.gameData.alivePlayers,
     timeLimit: 45
   });
-  
+
+  // Auto-advance timeout
   setTimeout(() => {
-    if (room.gameData.phase === 'night' && !room.gameData.nightActions.werewolfTarget) {
-      const nonWolves = room.gameData.alivePlayers.filter(p => !p.isWerewolf);
-      if (nonWolves.length > 0) {
-        const randomTarget = nonWolves[Math.floor(Math.random() * nonWolves.length)];
-        room.gameData.nightActions.werewolfTarget = randomTarget.id;
+    if (room.gameData.phase === 'night' && room.gameData.nightActiveRole === 'werewolf' && !room.gameData.nightActions.werewolfTarget) {
+      const nonMafia = room.gameData.alivePlayers.filter(p => !p.isMafia);
+      if (nonMafia.length > 0) {
+        const rand = nonMafia[Math.floor(Math.random() * nonMafia.length)];
+        room.gameData.nightActions.werewolfTarget = rand.name;
       }
       proceedToSeerPhase(room);
     }
@@ -815,15 +826,20 @@ function startWerewolfPhase(room) {
 }
 
 function proceedToSeerPhase(room) {
-  if (room.gameData.seer && room.gameData.alivePlayers.some(p => p.id === room.gameData.seer)) {
+  if (!room.gameData || room.gameData.phase === 'results') return;
+  const det = room.gameData.detectiveName;
+  if (det && room.gameData.alivePlayers.some(p => p.name === det)) {
+    room.gameData.nightActiveRole = 'seer';
     io.to(room.code).emit('night-phase-start', {
       activeRole: 'seer',
       alivePlayers: room.gameData.alivePlayers,
       timeLimit: 30
     });
-    
+
     setTimeout(() => {
-      proceedToDoctorPhase(room);
+      if (room.gameData.nightActiveRole === 'seer') {
+        proceedToDoctorPhase(room);
+      }
     }, 35000);
   } else {
     proceedToDoctorPhase(room);
@@ -831,15 +847,20 @@ function proceedToSeerPhase(room) {
 }
 
 function proceedToDoctorPhase(room) {
-  if (room.gameData.doctor && room.gameData.alivePlayers.some(p => p.id === room.gameData.doctor)) {
+  if (!room.gameData || room.gameData.phase === 'results') return;
+  const med = room.gameData.medicName;
+  if (med && room.gameData.alivePlayers.some(p => p.name === med)) {
+    room.gameData.nightActiveRole = 'doctor';
     io.to(room.code).emit('night-phase-start', {
       activeRole: 'doctor',
       alivePlayers: room.gameData.alivePlayers,
       timeLimit: 30
     });
-    
+
     setTimeout(() => {
-      processNightActions(room);
+      if (room.gameData.nightActiveRole === 'doctor') {
+        processNightActions(room);
+      }
     }, 35000);
   } else {
     processNightActions(room);
@@ -847,54 +868,59 @@ function proceedToDoctorPhase(room) {
 }
 
 function processNightActions(room) {
-  const targetId = room.gameData.nightActions.werewolfTarget;
-  const savedId = room.gameData.nightActions.doctorSave;
-  
+  if (!room.gameData || room.gameData.phase === 'results') return;
+  room.gameData.nightActiveRole = null;
+
+  const targetName = room.gameData.nightActions.werewolfTarget;
+  const savedName = room.gameData.nightActions.doctorSave;
+
   let killedPlayer = null;
   let savedByDoctor = false;
-  
-  if (targetId) {
-    if (savedId === targetId) {
+
+  if (targetName) {
+    if (savedName === targetName) {
       savedByDoctor = true;
-      console.log(`Doctor saved the target in room ${room.code}`);
+      console.log(`Medic saved ${targetName} in room ${room.code}`);
     } else {
-      killedPlayer = room.gameData.alivePlayers.find(p => p.id === targetId);
+      killedPlayer = room.gameData.alivePlayers.find(p => p.name === targetName);
       if (killedPlayer) {
-        room.gameData.alivePlayers = room.gameData.alivePlayers.filter(p => p.id !== targetId);
+        room.gameData.alivePlayers = room.gameData.alivePlayers.filter(p => p.name !== targetName);
         room.gameData.deadPlayers.push(killedPlayer);
-        console.log(`${killedPlayer.name} was killed in room ${room.code}`);
+        console.log(`${killedPlayer.name} was eliminated in room ${room.code}`);
       }
     }
   }
-  
-  if (checkWinConditions(room)) {
-    return;
-  }
-  
+
+  if (checkWinConditions(room)) return;
+
   startDayPhase(room, killedPlayer, savedByDoctor);
 }
 
 function startDayPhase(room, killedPlayer, savedByDoctor) {
+  if (!room.gameData || room.gameData.phase === 'results') return;
   room.gameData.phase = 'day';
   console.log(`Day ${room.gameData.currentRound} started in room ${room.code}`);
-  
+
   io.to(room.code).emit('day-phase-start', {
     alivePlayers: room.gameData.alivePlayers,
     killedPlayer: killedPlayer,
     savedByDoctor: savedByDoctor,
     timeLimit: 90
   });
-  
+
   setTimeout(() => {
-    startVotingPhase(room);
+    if (room.gameData && room.gameData.phase === 'day') {
+      startVotingPhase(room);
+    }
   }, 95000);
 }
 
 function startVotingPhase(room) {
+  if (!room.gameData || room.gameData.phase === 'results') return;
   room.gameData.phase = 'voting';
   room.gameData.votes = {};
   console.log(`Voting started in room ${room.code}`);
-  
+
   io.to(room.code).emit('voting-phase-start', {
     alivePlayers: room.gameData.alivePlayers,
     timeLimit: 45
@@ -903,41 +929,38 @@ function startVotingPhase(room) {
 
 function processWerewolfVotingResults(room) {
   const voteCounts = {};
-  
-  Object.values(room.gameData.votes).forEach(votedId => {
-    voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+
+  // votes are now keyed by voter name → voted name
+  Object.values(room.gameData.votes).forEach(votedName => {
+    voteCounts[votedName] = (voteCounts[votedName] || 0) + 1;
   });
-  
+
   let maxVotes = 0;
-  let eliminatedId = null;
-  
-  Object.entries(voteCounts).forEach(([playerId, votes]) => {
+  let eliminatedName = null;
+
+  Object.entries(voteCounts).forEach(([name, votes]) => {
     if (votes > maxVotes) {
       maxVotes = votes;
-      eliminatedId = playerId;
+      eliminatedName = name;
     }
   });
-  
+
   let eliminatedPlayer = null;
-  if (eliminatedId) {
-    eliminatedPlayer = room.gameData.alivePlayers.find(p => p.id === eliminatedId);
+  if (eliminatedName) {
+    eliminatedPlayer = room.gameData.alivePlayers.find(p => p.name === eliminatedName);
     if (eliminatedPlayer) {
-      room.gameData.alivePlayers = room.gameData.alivePlayers.filter(p => p.id !== eliminatedId);
+      room.gameData.alivePlayers = room.gameData.alivePlayers.filter(p => p.name !== eliminatedName);
       room.gameData.deadPlayers.push(eliminatedPlayer);
-      
-      const playerObj = room.players.find(p => p.id === eliminatedId);
-      if (playerObj) {
-        eliminatedPlayer.role = room.gameData.roleAssignments[playerObj.name].role;
-      }
-      
+
+      const roleData = room.gameData.roleAssignments[eliminatedName];
+      if (roleData) eliminatedPlayer.role = roleData.role;
+
       console.log(`${eliminatedPlayer.name} was eliminated by vote in room ${room.code}`);
     }
   }
-  
-  if (checkWinConditions(room, eliminatedPlayer)) {
-    return;
-  }
-  
+
+  if (checkWinConditions(room, eliminatedPlayer)) return;
+
   room.gameData.currentRound++;
   setTimeout(() => {
     startNightPhase(room);
@@ -945,15 +968,15 @@ function processWerewolfVotingResults(room) {
 }
 
 function checkWinConditions(room, eliminatedPlayer = null) {
-  const aliveWerewolves = room.gameData.alivePlayers.filter(p => p.isWerewolf).length;
-  const aliveVillagers = room.gameData.alivePlayers.filter(p => !p.isWerewolf).length;
-  
-  console.log(`Win check: ${aliveWerewolves} wolves, ${aliveVillagers} villagers`);
-  
+  const aliveWerewolves = room.gameData.alivePlayers.filter(p => p.isMafia).length;
+  const aliveVillagers = room.gameData.alivePlayers.filter(p => !p.isMafia).length;
+
+  console.log(`Win check: ${aliveWerewolves} mafia, ${aliveVillagers} citizens`);
+
   let gameOver = false;
   let villagersWin = false;
   let werewolvesWin = false;
-  
+
   if (aliveWerewolves === 0) {
     gameOver = true;
     villagersWin = true;
@@ -961,29 +984,26 @@ function checkWinConditions(room, eliminatedPlayer = null) {
     gameOver = true;
     werewolvesWin = true;
   }
-  
+
   if (gameOver) {
     room.gameData.phase = 'results';
-    
+
     const allRoles = room.players.map(p => {
       const roleData = room.gameData.roleAssignments[p.name];
-      return {
-        name: p.name,
-        role: roleData.role
-      };
+      return { name: p.name, role: roleData ? roleData.role : 'villager' };
     });
-    
+
     io.to(room.code).emit('game-results', {
-      villagersWin: villagersWin,
-      werewolvesWin: werewolvesWin,
-      eliminatedPlayer: eliminatedPlayer,
-      allRoles: allRoles
+      villagersWin,
+      werewolvesWin,
+      eliminatedPlayer,
+      allRoles
     });
-    
+
     console.log(`Game over in room ${room.code}`);
     return true;
   }
-  
+
   return false;
 }
 
@@ -1873,6 +1893,27 @@ io.on('connection', (socket) => {
       }
     }
 
+    // Mid-game reconnection for werewolf/mafia
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'werewolf') {
+      console.log(`[MAFIA-REJOIN] Sending mafia state to ${playerName}`);
+      const roleData = room.gameData.roleAssignments[playerName];
+      if (roleData) {
+        // Re-send mafia family list to mafia members
+        if (roleData.role === 'werewolf') {
+          const mafiaTeam = (room.gameData.mafiaNames || []).map(n => ({ name: n }));
+          socket.emit('werewolf-team', { werewolves: mafiaTeam });
+        }
+        // Send current game phase
+        if (room.gameData.phase && room.gameData.phase !== 'role-reveal') {
+          socket.emit('werewolf-state', {
+            phase: room.gameData.phase,
+            alivePlayers: room.gameData.alivePlayers,
+            activeRole: room.gameData.nightActiveRole
+          });
+        }
+      }
+    }
+
     // Mid-game reconnection for power-struggle
     if (room.gameState === 'playing' && room.gameData && room.gameType === 'power-struggle') {
       console.log(`[PS-REJOIN] Sending power-struggle state to ${playerName}`);
@@ -2594,8 +2635,12 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Record vote
-    room.gameData.votes[socket.id] = votedPlayerId;
+    // Record vote — werewolf/mafia uses player names as keys
+    if (room.gameType === 'werewolf') {
+      room.gameData.votes[player.playerName] = votedPlayerId;
+    } else {
+      room.gameData.votes[socket.id] = votedPlayerId;
+    }
     
     const totalVotes = Object.keys(room.gameData.votes).length;
     let totalPlayers;
@@ -2846,72 +2891,67 @@ io.on('connection', (socket) => {
 
     io.to(roomCode).emit('codenames-turn-ended', { gameState: state });
   });
-  // WEREWOLF - NIGHT ACTION
+  // MAFIA (WEREWOLF) - NIGHT ACTION — all targets are player NAMES
   socket.on('night-action', (data) => {
-    const { roomCode, actionType, targetId } = data;
+    const { roomCode, actionType, targetId } = data; // targetId is actually a player NAME now
     const room = rooms.get(roomCode);
     const player = players.get(socket.id);
-    
+
     if (!room || !player) {
       socket.emit('error', { message: 'Invalid room or player' });
       return;
     }
-    
-    console.log(`Night action: ${actionType} by ${player.playerName}`);
-    
+
+    const voterName = player.playerName;
+    console.log(`Night action: ${actionType} by ${voterName}, target: ${targetId}`);
+
     if (actionType === 'werewolf-target') {
-      if (!room.gameData.werewolfVotes) {
-        room.gameData.werewolfVotes = {};
-      }
-      room.gameData.werewolfVotes[socket.id] = targetId;
-      
-      const aliveWerewolves = room.gameData.alivePlayers.filter(p => p.isWerewolf);
-      const werewolfVotes = Object.keys(room.gameData.werewolfVotes).length;
-      
-      if (werewolfVotes >= aliveWerewolves.length) {
+      if (!room.gameData.werewolfVotes) room.gameData.werewolfVotes = {};
+      room.gameData.werewolfVotes[voterName] = targetId;
+
+      const aliveMafia = room.gameData.alivePlayers.filter(p => p.isMafia);
+      const voteCount = Object.keys(room.gameData.werewolfVotes).length;
+
+      if (voteCount >= aliveMafia.length) {
         const voteCounts = {};
         Object.values(room.gameData.werewolfVotes).forEach(voted => {
           voteCounts[voted] = (voteCounts[voted] || 0) + 1;
         });
-        
+
         let maxVotes = 0;
         let target = null;
-        Object.entries(voteCounts).forEach(([id, count]) => {
-          if (count > maxVotes) {
-            maxVotes = count;
-            target = id;
-          }
+        Object.entries(voteCounts).forEach(([name, count]) => {
+          if (count > maxVotes) { maxVotes = count; target = name; }
         });
-        
+
         room.gameData.nightActions.werewolfTarget = target;
         room.gameData.werewolfVotes = {};
-        
         proceedToSeerPhase(room);
       }
-      
+
       socket.emit('night-action-confirmed', {});
-      
+
     } else if (actionType === 'seer-check') {
-      const targetPlayer = room.gameData.alivePlayers.find(p => p.id === targetId);
+      const targetPlayer = room.gameData.alivePlayers.find(p => p.name === targetId);
       if (targetPlayer) {
         socket.emit('seer-vision', {
           playerName: targetPlayer.name,
-          isWerewolf: targetPlayer.isWerewolf
+          isWerewolf: targetPlayer.isMafia
         });
-        
         room.gameData.nightActions.seerCheck = targetId;
-        
+        room.gameData.nightActiveRole = 'seer-done';
+
         setTimeout(() => {
           proceedToDoctorPhase(room);
         }, 3000);
       }
-      
       socket.emit('night-action-confirmed', {});
-      
+
     } else if (actionType === 'doctor-save') {
       room.gameData.nightActions.doctorSave = targetId;
+      room.gameData.nightActiveRole = 'doctor-done';
       socket.emit('night-action-confirmed', {});
-      
+
       setTimeout(() => {
         processNightActions(room);
       }, 2000);
