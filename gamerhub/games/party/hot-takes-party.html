@@ -548,7 +548,7 @@
     <div class="game-over-container hidden" id="gameover-phase">
         <div class="game-over-title">THAT'S A WRAP!</div>
         <div class="game-over-subtitle">Thanks for sharing your hot takes!</div>
-        <button class="play-again-btn" onclick="window.location.href='/waiting-room.html?room=' + roomCode">PLAY AGAIN</button>
+        <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
     </div>
 </main>
 
@@ -651,6 +651,15 @@
     });
 
     socket.on('hottakes-party-game-over', () => showPhase('gameover'));
+
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        if (isHost) socket.emit('host-return-lobby', { roomCode });
+        else window.location.href = '/waiting-room.html?room=' + roomCode;
+    });
+
+    socket.on('force-return-lobby', () => {
+        window.location.href = '/waiting-room.html?room=' + roomCode;
+    });
 
     socket.on('hottakes-party-round-transition', (data) => {
         if (isHost) socket.emit('hottakes-party-start-round', { roomCode });

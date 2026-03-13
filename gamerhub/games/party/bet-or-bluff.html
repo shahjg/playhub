@@ -800,7 +800,7 @@
             <div class="leaderboard-list" id="final-leaderboard"></div>
         </div>
 
-        <button class="btn-outline" onclick="window.location.href='/waiting-room.html?room=' + roomCode">PLAY AGAIN</button>
+        <button class="btn-outline" id="play-again-btn">PLAY AGAIN</button>
     </div>
 </main>
 
@@ -1032,6 +1032,15 @@
             renderLeaderboard(data.finalLeaderboard, 'final-leaderboard');
         }
         showPhase('gameover');
+    });
+
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        if (isHost) socket.emit('host-return-lobby', { roomCode });
+        else window.location.href = '/waiting-room.html?room=' + roomCode;
+    });
+
+    socket.on('force-return-lobby', () => {
+        window.location.href = '/waiting-room.html?room=' + roomCode;
     });
 
     function startCountdown() {

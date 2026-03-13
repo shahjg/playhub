@@ -399,7 +399,7 @@
     <div class="gameover-phase hidden" id="gameover-phase">
         <div class="title">GAME OVER</div>
         <div class="sub">Thanks for playing This or That!</div>
-        <button class="play-again-btn" onclick="window.location.href='/waiting-room.html?room=' + roomCode">PLAY AGAIN</button>
+        <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
     </div>
 </main>
 
@@ -577,6 +577,16 @@
     socket.on('thisorthat-party-game-over', (data) => {
         clearInterval(timerInterval);
         showPhase('gameover');
+    });
+
+    // Play Again: host resets room, non-host goes to waiting room
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        if (isHost) socket.emit('host-return-lobby', { roomCode });
+        else window.location.href = '/waiting-room.html?room=' + roomCode;
+    });
+
+    socket.on('force-return-lobby', () => {
+        window.location.href = '/waiting-room.html?room=' + roomCode;
     });
 
     // ===== FUNCTIONS =====
