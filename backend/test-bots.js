@@ -44,7 +44,19 @@ const GAME_TYPE = getArg('game', null);
 const HOST_MODE = getArg('host', false);
 const ACTION_DELAY = parseInt(getArg('delay', '1500'));
 const AUTO_START = getArg('start', false);
+const CUSTOM_Q = getArg('custom', false); // use test custom questions
 const QUIET = getArg('quiet', false); // reduce log spam for large bot counts
+
+// Test custom questions for each game type
+const TEST_CUSTOM_QUESTIONS = {
+  'trivia-royale': 'What color is the sky?, Blue, Red, Green, Yellow\nHow many legs does a dog have?, 4, 2, 6, 8\nWhat is 2+2?, 4, 3, 5, 22\nWhich is a fruit?, Apple, Chair, Car, Rock\nWhat do bees make?, Honey, Milk, Bread, Juice',
+  'this-or-that-party': 'Cats, Dogs\nPizza, Tacos\nBeach, Mountains\nNetflix, YouTube\nSummer, Winter',
+  'hot-takes-party': 'Pineapple belongs on pizza\nMonday is the worst day\nCereal is soup\nHot dogs are sandwiches\nWater is wet',
+  'never-ever-party': 'eaten a whole pizza alone\npulled an all-nighter\ntalked to a pet like a person\nforgotten my own birthday\ncried during a movie',
+  'bet-or-bluff': 'How many countries in the world?, countries\nHow many bones in the human body?, bones\nHow many keys on a piano?, keys\nHow many teeth does an adult have?, teeth\nHow many states in the US?, states',
+  'most-likely-to': 'Who is most likely to become famous?\nWho would survive a zombie apocalypse?\nWho would win a cooking competition?\nWho would forget their own birthday?\nWho talks to their pets?',
+  'punchline': 'Why did the chicken cross the road?\nWhat do you call a lazy kangaroo?\nWhat happens when you eat too much?\nWhy do programmers prefer dark mode?\nWhat did the ocean say to the beach?'
+};
 
 // ═══════════════════════════════════════════════
 // BOT NAMES — 99 unique gamer tags
@@ -271,12 +283,14 @@ class Bot {
     });
   }
 
-  startGame(category) {
+  startGame(category, opts = {}) {
     this.log(`🎮 Starting game: ${this.gameType}`);
-    this.socket.emit('start-game', {
+    const data = {
       roomCode: this.roomCode,
-      category: category || 'random'
-    });
+      category: category || 'random',
+      ...opts
+    };
+    this.socket.emit('start-game', data);
   }
 
   // ═══════════════════════════════════════════════
@@ -1098,7 +1112,24 @@ async function main() {
 
       if (end < bots.length) await wait(BATCH_DELAY);
     }
-    console.log(`\n\n  ✅ All ${joined} bots in the room. Start the game from your browser!\n`);
+    console.log(`\n\n  ✅ All ${joined} bots in the room.`);
+
+    // Auto-start with optional custom questions
+    if (AUTO_START) {
+      await wait(2000);
+      const startOpts = {};
+      if (CUSTOM_Q && TEST_CUSTOM_QUESTIONS[gameType]) {
+        startOpts.customQuestions = TEST_CUSTOM_QUESTIONS[gameType];
+        startOpts.roundCount = 5;
+        console.log(`  📝 Using custom questions for ${gameType}:\n`);
+        TEST_CUSTOM_QUESTIONS[gameType].split('\n').forEach(q => console.log(`     ${q}`));
+        console.log('');
+      }
+      bots[0].startGame('general', startOpts);
+      console.log('  🎮 Game auto-started!\n');
+    } else {
+      console.log('  Start the game from your browser! (or use --start to auto-start)\n');
+    }
   } else if (roomCode) {
     // All bots join existing room in batches
     console.log(`\n📥 Joining ${bots.length} bots to room ${roomCode}...\n`);

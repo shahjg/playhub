@@ -2232,7 +2232,7 @@ io.on('connection', (socket) => {
 
   // START GAME
  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage } = data;
+    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, reformation, useInquisitor } = data;
     const room = rooms.get(roomCode);
 
     if (!room) {
@@ -2289,7 +2289,7 @@ io.on('connection', (socket) => {
     }
     // NEW GAMES 🎉
     else if (room.gameType === 'power-struggle') {
-        additionalSquadGames.initPowerStruggleGame(room);
+        additionalSquadGames.initPowerStruggleGame(room, { reformation: reformation || false, useInquisitor: useInquisitor || false });
         additionalSquadGames.sendPowerStruggleState(room, io);
     } else if (room.gameType === 'word-bomb') {
         squadGames.initWordBombGame(room, difficulty || 'medium');

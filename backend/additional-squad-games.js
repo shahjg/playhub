@@ -624,37 +624,64 @@ function handleBPNextChain(room, io) {
   showBrokenPictionaryChain(room, io);
 }
 
-// ==================== POWER STRUGGLE (COUP CLONE) ====================
+// ==================== POWER STRUGGLE (COUP CLONE + REFORMATION) ====================
 // All state keyed by player NAME (not socket ID) to survive reconnects
 
-function initPowerStruggleGame(room) {
-  const playerCount = room.players.length;
-  const cardsNeeded = playerCount * 2 + 3;
-  const copiesPerInfluence = Math.ceil(cardsNeeded / COUP_INFLUENCES.length);
-
-  const deck = [];
-  COUP_INFLUENCES.forEach(inf => {
-    for (let i = 0; i < copiesPerInfluence; i++) {
-      deck.push(inf);
-    }
-  });
-
-  // Shuffle
+function shuffleDeck(deck) {
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
+  return deck;
+}
+
+function psAllSameFaction(gd) {
+  if (!gd.reformation) return true; // standard mode = no faction restrictions
+  const alive = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
+  if (alive.length <= 1) return true;
+  const factions = new Set(alive.map(n => gd.allegiances[n]));
+  return factions.size <= 1;
+}
+
+function initPowerStruggleGame(room, options = {}) {
+  const reformation = !!options.reformation;
+  const useInquisitor = !!(options.useInquisitor && reformation);
+  const playerCount = room.players.length;
+
+  // Determine role set
+  const roles = ['Duke', 'Assassin', 'Captain', 'Contessa'];
+  roles.push(useInquisitor ? 'Inquisitor' : 'Ambassador');
+
+  // Scale: reformation supports up to 10 (5 copies each), standard scales dynamically
+  const copiesPerRole = reformation ? 5 : Math.ceil((playerCount * 2 + 3) / roles.length);
+
+  const deck = [];
+  roles.forEach(r => { for (let i = 0; i < copiesPerRole; i++) deck.push(r); });
+  shuffleDeck(deck);
+
+  // Allegiances (alternating Loyalist/Reformist)
+  const allegiances = {};
+  if (reformation) {
+    room.players.forEach((p, i) => {
+      allegiances[p.name] = i % 2 === 0 ? 'Loyalist' : 'Reformist';
+    });
+  }
 
   room.gameData = {
     deck,
-    playerCards: {},   // keyed by player NAME
-    coins: {},         // keyed by player NAME
+    playerCards: {},
+    coins: {},
     currentTurnIndex: 0,
     phase: 'action',
     pendingAction: null,
     logs: [],
-    eliminated: [],    // array of player NAMES
-    turnOrder: room.players.map(p => p.name) // stable turn order by name
+    eliminated: [],
+    turnOrder: room.players.map(p => p.name),
+    reformation,
+    useInquisitor,
+    allegiances,
+    treasury: 0,
+    roles  // store which roles are in play
   };
 
   room.players.forEach(p => {
@@ -665,14 +692,22 @@ function initPowerStruggleGame(room) {
     room.gameData.coins[p.name] = 2;
   });
 
-  addPSLog(room, 'The power struggle begins. Trust no one.', null);
-  console.log(`[PS] Game init: ${playerCount} players, ${deck.length} cards in deck`);
+  if (reformation) {
+    const factionSummary = room.players.map(p => `${p.name}=${allegiances[p.name]}`).join(', ');
+    addPSLog(room, 'Reformation mode — factions divide the boardroom.', null);
+    addPSLog(room, `Factions: ${factionSummary}`, null);
+    if (useInquisitor) addPSLog(room, 'Inquisitor replaces Ambassador.', null);
+  } else {
+    addPSLog(room, 'The power struggle begins. Trust no one.', null);
+  }
+  console.log(`[PS] Game init: ${playerCount} players, reformation=${reformation}, inquisitor=${useInquisitor}, ${deck.length} cards in deck`);
 }
 
 function sendPowerStruggleState(room, io) {
   const gd = room.gameData;
   const aliveTurnOrder = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
   const currentName = aliveTurnOrder[gd.currentTurnIndex % aliveTurnOrder.length];
+  const allSame = psAllSameFaction(gd);
 
   room.players.forEach(p => {
     const myCards = gd.playerCards[p.name] || [];
@@ -683,18 +718,24 @@ function sendPowerStruggleState(room, io) {
       coins: gd.coins[name] || 0,
       cardCount: (gd.playerCards[name] || []).filter(c => !c.dead).length,
       eliminated: gd.eliminated.includes(name),
-      deadCards: (gd.playerCards[name] || []).filter(c => c.dead).map(c => c.card)
+      deadCards: (gd.playerCards[name] || []).filter(c => c.dead).map(c => c.card),
+      faction: gd.allegiances[name] || null
     }));
 
     io.to(p.id).emit('ps-state', {
       myCards,
       myCoins: gd.coins[p.name] || 0,
+      myFaction: gd.allegiances[p.name] || null,
       currentTurn: currentName,
       isMyTurn,
       players: playersState,
       phase: gd.phase,
       pendingAction: gd.pendingAction,
-      logs: gd.logs.slice(-15)
+      logs: gd.logs.slice(-15),
+      reformation: gd.reformation,
+      useInquisitor: gd.useInquisitor,
+      treasury: gd.treasury,
+      allSameFaction: allSame
     });
   });
 }
@@ -706,6 +747,18 @@ function handlePowerStruggleAction(room, socketId, action, target, io) {
 
   const name = player.name;
   const coins = gd.coins[name] || 0;
+  const allSame = psAllSameFaction(gd);
+
+  // Faction restriction check for targeted actions
+  if (gd.reformation && !allSame && target) {
+    const myFaction = gd.allegiances[name];
+    const targetFaction = gd.allegiances[target];
+    if (['coup', 'assassinate', 'steal'].includes(action) && myFaction === targetFaction) {
+      io.to(socketId).emit('ps-error', { message: 'Cannot target your own faction' });
+      return;
+    }
+  }
+
   let logMsg = '';
 
   switch (action) {
@@ -794,7 +847,7 @@ function handlePowerStruggleAction(room, socketId, action, target, io) {
       broadcastActionPending(room, socketId, io, {
         actor: name, action: 'Steal', target,
         canChallenge: true, canBlock: false, claimedRole: 'Captain',
-        targetCanBlock: true, blockReason: 'Claim Captain or Ambassador to block'
+        targetCanBlock: true, blockReason: gd.useInquisitor ? 'Claim Captain or Inquisitor to block' : 'Claim Captain or Ambassador to block'
       });
       gd.actionTimeout = setTimeout(() => {
         if (gd.pendingAction?.type === 'steal') {
@@ -811,35 +864,95 @@ function handlePowerStruggleAction(room, socketId, action, target, io) {
       break;
 
     case 'exchange':
-      logMsg = `${name} claims Ambassador — exchanges cards`;
-      gd.pendingAction = { type: 'exchange', claimedRole: 'Ambassador', player: name };
+      logMsg = `${name} claims ${gd.useInquisitor ? 'Inquisitor' : 'Ambassador'} — exchanges cards`;
+      gd.pendingAction = { type: 'exchange', claimedRole: gd.useInquisitor ? 'Inquisitor' : 'Ambassador', player: name };
       gd.phase = 'response';
       addPSLog(room, logMsg, io);
       broadcastActionPending(room, socketId, io, {
         actor: name, action: 'Exchange', target: null,
-        canChallenge: true, canBlock: false, claimedRole: 'Ambassador'
+        canChallenge: true, canBlock: false, claimedRole: gd.useInquisitor ? 'Inquisitor' : 'Ambassador'
       });
       gd.actionTimeout = setTimeout(() => {
         if (gd.pendingAction?.type === 'exchange') {
-          // Draw 2 from deck, let player pick (simplified: just shuffle their alive cards with 2 from deck and deal back)
-          const myCards = gd.playerCards[name];
-          const aliveIdxs = myCards.map((c, i) => c.dead ? -1 : i).filter(i => i >= 0);
-          if (gd.deck.length >= 2) {
-            const drawn = [gd.deck.pop(), gd.deck.pop()];
-            // Put alive cards + drawn into pool, shuffle, deal back
-            const pool = aliveIdxs.map(i => myCards[i].card).concat(drawn);
-            for (let i = pool.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [pool[i], pool[j]] = [pool[j], pool[i]];
-            }
-            aliveIdxs.forEach((idx, k) => { myCards[idx].card = pool[k]; });
-            // Return extras to deck
-            for (let k = aliveIdxs.length; k < pool.length; k++) gd.deck.push(pool[k]);
-          }
+          resolveExchange(room, name);
           gd.pendingAction = null;
           gd.phase = 'action';
           addPSLog(room, `${name} exchanges cards`, io);
           nextPowerStruggleTurn(room, io);
+        }
+      }, 10000);
+      sendPowerStruggleState(room, io);
+      break;
+
+    // ===== REFORMATION ACTIONS =====
+
+    case 'change-allegiance':
+      if (!gd.reformation) { io.to(socketId).emit('ps-error', { message: 'Not in Reformation mode' }); return; }
+      if (coins < 1) { io.to(socketId).emit('ps-error', { message: 'Need 1 coin' }); return; }
+      gd.coins[name] = coins - 1;
+      gd.treasury += 1;
+      gd.allegiances[name] = gd.allegiances[name] === 'Loyalist' ? 'Reformist' : 'Loyalist';
+      logMsg = `${name} changes allegiance to ${gd.allegiances[name]} (1 coin → Treasury)`;
+      addPSLog(room, logMsg, io);
+      nextPowerStruggleTurn(room, io);
+      break;
+
+    case 'convert':
+      if (!gd.reformation) { io.to(socketId).emit('ps-error', { message: 'Not in Reformation mode' }); return; }
+      if (coins < 2) { io.to(socketId).emit('ps-error', { message: 'Need 2 coins' }); return; }
+      if (!target) { io.to(socketId).emit('ps-error', { message: 'Must select a target' }); return; }
+      gd.coins[name] = coins - 2;
+      gd.treasury += 2;
+      gd.allegiances[target] = gd.allegiances[target] === 'Loyalist' ? 'Reformist' : 'Loyalist';
+      logMsg = `${name} converts ${target} to ${gd.allegiances[target]} (2 coins → Treasury)`;
+      addPSLog(room, logMsg, io);
+      nextPowerStruggleTurn(room, io);
+      break;
+
+    case 'embezzle':
+      if (!gd.reformation) { io.to(socketId).emit('ps-error', { message: 'Not in Reformation mode' }); return; }
+      if (gd.treasury <= 0) { io.to(socketId).emit('ps-error', { message: 'Treasury is empty' }); return; }
+      logMsg = `${name} claims Duke — embezzles the Treasury (${gd.treasury} coins)`;
+      gd.pendingAction = { type: 'embezzle', claimedRole: 'Duke', player: name, treasuryAmount: gd.treasury };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Embezzle', target: null,
+        canChallenge: true, canBlock: false, claimedRole: 'Duke'
+      });
+      gd.actionTimeout = setTimeout(() => {
+        if (gd.pendingAction?.type === 'embezzle') {
+          const amount = gd.treasury;
+          gd.coins[name] = (gd.coins[name] || 0) + amount;
+          gd.treasury = 0;
+          gd.pendingAction = null;
+          gd.phase = 'action';
+          addPSLog(room, `${name} embezzles ${amount} coins from the Treasury`, io);
+          nextPowerStruggleTurn(room, io);
+        }
+      }, 10000);
+      sendPowerStruggleState(room, io);
+      break;
+
+    case 'inquisitor-examine':
+      if (!gd.useInquisitor) { io.to(socketId).emit('ps-error', { message: 'Inquisitor not in play' }); return; }
+      if (!target) { io.to(socketId).emit('ps-error', { message: 'Must select a target' }); return; }
+      // Faction check: can only examine different faction (unless all same)
+      if (gd.reformation && !allSame && gd.allegiances[name] === gd.allegiances[target]) {
+        io.to(socketId).emit('ps-error', { message: 'Can only examine players from a different faction' });
+        return;
+      }
+      logMsg = `${name} claims Inquisitor — examines ${target}`;
+      gd.pendingAction = { type: 'inquisitor-examine', claimedRole: 'Inquisitor', player: name, target };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Examine', target,
+        canChallenge: true, canBlock: false, claimedRole: 'Inquisitor'
+      });
+      gd.actionTimeout = setTimeout(() => {
+        if (gd.pendingAction?.type === 'inquisitor-examine') {
+          resolveInquisitorExamine(room, name, target, io);
         }
       }, 10000);
       sendPowerStruggleState(room, io);
@@ -850,15 +963,97 @@ function handlePowerStruggleAction(room, socketId, action, target, io) {
   }
 }
 
+function resolveExchange(room, playerName) {
+  const gd = room.gameData;
+  const myCards = gd.playerCards[playerName];
+  const aliveIdxs = myCards.map((c, i) => c.dead ? -1 : i).filter(i => i >= 0);
+  if (gd.deck.length >= 2) {
+    const drawn = [gd.deck.pop(), gd.deck.pop()];
+    const pool = aliveIdxs.map(i => myCards[i].card).concat(drawn);
+    shuffleDeck(pool);
+    aliveIdxs.forEach((idx, k) => { myCards[idx].card = pool[k]; });
+    for (let k = aliveIdxs.length; k < pool.length; k++) gd.deck.push(pool[k]);
+    shuffleDeck(gd.deck);
+  }
+}
+
+function resolveInquisitorExamine(room, examinerName, targetName, io) {
+  const gd = room.gameData;
+  const targetCards = gd.playerCards[targetName] || [];
+  const aliveCards = targetCards.map((c, i) => ({ card: c.card, index: i })).filter((c, i) => !targetCards[i]?.dead);
+
+  if (aliveCards.length === 0) {
+    gd.pendingAction = null;
+    gd.phase = 'action';
+    nextPowerStruggleTurn(room, io);
+    return;
+  }
+
+  // Pick a random alive card to reveal to examiner
+  const chosen = aliveCards[Math.floor(Math.random() * aliveCards.length)];
+  gd.pendingAction = null;
+  gd.phase = 'inquisitor-decide';
+  gd.inquisitorExamine = { examiner: examinerName, target: targetName, cardIndex: chosen.index, card: chosen.card };
+
+  // Send the card info only to the examiner
+  const examinerPlayer = room.players.find(p => p.name === examinerName);
+  if (examinerPlayer) {
+    io.to(examinerPlayer.id).emit('ps-inquisitor-reveal', {
+      target: targetName,
+      card: chosen.card,
+      cardIndex: chosen.index
+    });
+  }
+  sendPowerStruggleState(room, io);
+}
+
+function handleInquisitorDecide(room, socketId, decision, io) {
+  const gd = room.gameData;
+  const player = room.players.find(p => p.id === socketId);
+  if (!player || !gd.inquisitorExamine || gd.inquisitorExamine.examiner !== player.name) return;
+
+  const { target, cardIndex } = gd.inquisitorExamine;
+
+  if (decision === 'swap') {
+    // Force target to swap that card for a random one from the deck
+    const targetCards = gd.playerCards[target];
+    if (targetCards && targetCards[cardIndex] && !targetCards[cardIndex].dead && gd.deck.length > 0) {
+      gd.deck.push(targetCards[cardIndex].card);
+      shuffleDeck(gd.deck);
+      targetCards[cardIndex].card = gd.deck.pop();
+      addPSLog(room, `${player.name} forces ${target} to swap a card`, io);
+    }
+  } else {
+    addPSLog(room, `${player.name} lets ${target} keep their card`, io);
+  }
+
+  gd.inquisitorExamine = null;
+  gd.phase = 'action';
+  nextPowerStruggleTurn(room, io);
+}
+
 function broadcastActionPending(room, actorSocketId, io, data) {
   const gd = room.gameData;
+  const allSame = psAllSameFaction(gd);
+  const actorFaction = gd.allegiances[data.actor];
+
   room.players.forEach(p => {
     if (p.id !== actorSocketId && !gd.eliminated.includes(p.name)) {
       const playerData = { ...data };
+
+      // Faction-based block restriction for Foreign Aid
+      if (data.action === 'Foreign Aid' && gd.reformation && !allSame) {
+        const pFaction = gd.allegiances[p.name];
+        if (pFaction === actorFaction) {
+          playerData.canBlock = false; // Can't block same faction's foreign aid
+        }
+      }
+
       // Only target can block assassination/steal
       if (data.targetCanBlock) {
         playerData.canBlock = (p.name === data.target);
       }
+
       io.to(p.id).emit('ps-action-pending', playerData);
     }
   });
@@ -879,7 +1074,6 @@ function handlePowerStruggleRespond(room, socketId, response, io) {
     resolvePowerStruggleChallenge(room, player.name, io);
   } else if (response === 'block') {
     addPSLog(room, `${player.name} blocks the action!`, io);
-    // Blocking can be challenged — for simplicity, just block succeeds
     gd.pendingAction = null;
     gd.phase = 'action';
     nextPowerStruggleTurn(room, io);
@@ -899,17 +1093,12 @@ function resolvePowerStruggleChallenge(room, challengerName, io) {
 
   if (hasCard) {
     addPSLog(room, `Challenge failed! ${action.player} revealed ${claimedCard}`, io);
-    // Challenger loses influence
     forceInfluenceLoss(room, challengerName, io);
-    // Claimant swaps revealed card back into deck and draws new one
+    // Swap revealed card back into deck
     const cardIdx = claimantCards.findIndex(c => !c.dead && c.card === claimedCard);
     if (cardIdx >= 0 && gd.deck.length > 0) {
       gd.deck.push(claimantCards[cardIdx].card);
-      // Shuffle deck
-      for (let i = gd.deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [gd.deck[i], gd.deck[j]] = [gd.deck[j], gd.deck[i]];
-      }
+      shuffleDeck(gd.deck);
       claimantCards[cardIdx].card = gd.deck.pop();
     }
   } else {
@@ -927,6 +1116,8 @@ function getClaimedCard(actionType) {
     'assassinate': 'Assassin', 'assassin': 'Assassin',
     'steal': 'Captain', 'captain': 'Captain',
     'exchange': 'Ambassador', 'ambassador': 'Ambassador',
+    'embezzle': 'Duke',
+    'inquisitor-examine': 'Inquisitor', 'inquisitor-exchange': 'Inquisitor',
     'contessa': 'Contessa'
   };
   return mapping[actionType] || 'Duke';
@@ -940,7 +1131,6 @@ function forceInfluenceLoss(room, targetName, io) {
   const cards = gd.playerCards[targetName] || [];
   const aliveCards = cards.filter(c => !c.dead);
 
-  // Auto-lose if only 1 alive card
   if (aliveCards.length <= 1) {
     const idx = cards.findIndex(c => !c.dead);
     if (idx >= 0) handlePowerStruggleLoseInfluenceByName(room, targetName, idx, io);
@@ -978,6 +1168,11 @@ function handlePowerStruggleLoseInfluenceByName(room, playerName, cardIndex, io)
   if (alivePlayers.length <= 1) {
     endPowerStruggleGame(room, io);
     return;
+  }
+
+  // Check if elimination caused all-same-faction
+  if (gd.reformation && psAllSameFaction(gd)) {
+    addPSLog(room, 'All survivors share one faction — allegiances no longer matter!', io);
   }
 
   gd.phase = 'action';
@@ -1155,6 +1350,12 @@ function registerAdditionalSquadGameHandlers(io, socket, rooms, players) {
     const room = rooms.get(data.roomCode);
     if (!room?.gameData) return;
     handlePowerStruggleLoseInfluence(room, socket.id, data.cardIndex, io);
+  });
+
+  socket.on('ps-inquisitor-decide', (data) => {
+    const room = rooms.get(data.roomCode);
+    if (!room?.gameData) return;
+    handleInquisitorDecide(room, socket.id, data.decision, io);
   });
 }
 
