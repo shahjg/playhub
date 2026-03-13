@@ -2106,11 +2106,27 @@ io.on('connection', (socket) => {
     // Notify all other players in the room (send lightweight payload, not entire room)
     socket.to(roomCode).emit('player-joined', {
       player: newPlayer,
-      room: { players: room.players, gameType: room.gameType, code: room.code }
+      room: { players: room.players, gameType: room.gameType, code: room.code, customization: room.customization || null }
     });
     
     console.log(`Player ${playerName} joined room ${roomCode}. Total players: ${room.players.length}`);
   }));
+
+  // UPDATE CUSTOMIZATION (host pushes logo/title/theme before game starts)
+  socket.on('update-customization', (data) => {
+    const { roomCode, customization } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player || !player.isHost) return;
+    if (!customization || typeof customization !== 'object') return;
+    // Merge with existing customization
+    if (!room.customization) room.customization = {};
+    if (customization.logoImage && typeof customization.logoImage === 'string' && customization.logoImage.length < 150000) room.customization.logoImage = customization.logoImage;
+    if (customization.customTitle && typeof customization.customTitle === 'string') room.customization.customTitle = customization.customTitle.substring(0, 50);
+    if (customization.themeColor && typeof customization.themeColor === 'string') room.customization.themeColor = customization.themeColor;
+    // Broadcast to all players in room
+    io.to(roomCode).emit('room-customization', { customization: room.customization });
+  });
 
   // KICK PLAYER
   socket.on('kick-player', (data) => {

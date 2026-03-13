@@ -491,6 +491,7 @@ var isHost = localStorage.getItem('tempIsHost') === 'true';
 var currentRoom = null;
 var myPlayerId = null;
 var selectedColor = null;
+var settingsRendered = false;
 
 if (!roomCode || !playerName) { window.location.href = '/lobby.html?game=' + gameType; }
 document.getElementById('room-code').textContent = roomCode || '------';
@@ -520,6 +521,28 @@ socket.on('game-started', function(data) {
     window.location.href = targetUrl;
 });
 
+socket.on('room-customization', function(data) {
+    if (data.customization) {
+        if (!currentRoom) currentRoom = {};
+        currentRoom.customization = data.customization;
+        // Show logo for all players
+        if (data.customization.logoImage) {
+            var logo = document.getElementById('waiting-room-logo');
+            if (!logo) {
+                logo = document.createElement('img');
+                logo.id = 'waiting-room-logo';
+                logo.style.cssText = 'position:fixed;top:68px;right:14px;max-width:64px;max-height:64px;z-index:101;border-radius:10px;opacity:0.85;box-shadow:0 4px 15px rgba(0,0,0,0.4);';
+                document.body.appendChild(logo);
+            }
+            logo.src = data.customization.logoImage;
+        }
+        // Show custom title
+        if (data.customization.customTitle) {
+            document.getElementById('game-tagline').textContent = data.customization.customTitle;
+            document.getElementById('game-tagline').style.color = '#fbbf24';
+        }
+    }
+});
 socket.on('kicked', function() { alert('You have been kicked.'); window.location.href = gameConfig.backUrl; });
 socket.on('room-not-found', function() { alert('Room not found.'); window.location.href = gameConfig.backUrl; });
 socket.on('error', function(data) { console.error('Server error:', data); alert(data.message || 'Something went wrong'); });
@@ -544,8 +567,24 @@ function handleRoomUpdate(room) {
     document.getElementById('player-count').textContent = room.players.length;
     document.getElementById('waiting-indicator').style.display = room.players.length > 1 ? 'none' : 'flex';
     var settingsSection = document.getElementById('settings-section');
-    if (isHost) { settingsSection.style.display = 'block'; renderSettings(); renderRolesPreview(); renderColorPicker(room.players); updateStartButton(room.players.length); }
+    if (isHost) {
+        settingsSection.style.display = 'block';
+        if (!settingsRendered) { renderSettings(); settingsRendered = true; }
+        else { syncSettingsValues(); }
+        renderRolesPreview(); renderColorPicker(room.players); updateStartButton(room.players.length);
+    }
     else { settingsSection.style.display = 'none'; }
+    // Show logo in waiting room for all players
+    if (room.customization && room.customization.logoImage) {
+        var existingLogo = document.getElementById('waiting-room-logo');
+        if (!existingLogo) {
+            existingLogo = document.createElement('img');
+            existingLogo.id = 'waiting-room-logo';
+            existingLogo.style.cssText = 'position:fixed;top:68px;right:14px;max-width:64px;max-height:64px;z-index:101;border-radius:10px;opacity:0.85;box-shadow:0 4px 15px rgba(0,0,0,0.4);';
+            document.body.appendChild(existingLogo);
+        }
+        existingLogo.src = room.customization.logoImage;
+    }
 }
 
 function updatePlayersList(players) {
@@ -604,6 +643,19 @@ function renderSettings() {
     // Init customization controls
     if (hasPremiumSettings) {
         initCustomizationControls();
+        initCustomQuestionsWatcher();
+    }
+}
+
+function syncSettingsValues() {
+    if (currentRoom && currentRoom.settings) {
+        Object.keys(currentRoom.settings).forEach(function(k) {
+            var el = document.getElementById('setting-' + k);
+            if (el && !el.disabled) {
+                if (el.classList.contains('toggle')) { if (currentRoom.settings[k]) el.classList.add('active'); else el.classList.remove('active'); }
+                else { el.value = currentRoom.settings[k]; }
+            }
+        });
     }
 }
 
@@ -632,7 +684,71 @@ var customBgData = null;
 var customLogoData = null;
 var selectedThemeColor = null;
 
+function initCustomQuestionsWatcher() {
+    var textarea = document.getElementById('setting-customQuestions');
+    if (!textarea) return;
+    // Find the category/pack select for this game type
+    var catSelectId = null;
+    if (gameConfig.settings) {
+        gameConfig.settings.forEach(function(s) {
+            if (s.type === 'select' && (s.id === 'category' || s.id === 'pack' || s.id === 'spice' || s.id === 'mode')) {
+                catSelectId = 'setting-' + s.id;
+            }
+        });
+    }
+    function updateCustomState() {
+        var hasCustom = textarea.value.trim().length > 0;
+        var catSelect = catSelectId ? document.getElementById(catSelectId) : null;
+        // Add/remove custom indicator
+        var indicator = document.getElementById('custom-q-indicator');
+        if (hasCustom) {
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'custom-q-indicator';
+                indicator.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);border-radius:8px;margin-top:6px;font-size:0.8rem;color:#fbbf24;font-weight:600';
+                indicator.innerHTML = '📝 Custom questions will be used';
+                textarea.parentNode.appendChild(indicator);
+            }
+            // Add Custom option and lock category select
+            if (catSelect) {
+                if (!catSelect.querySelector('option[value="custom"]')) {
+                    var opt = document.createElement('option');
+                    opt.value = 'custom'; opt.textContent = '📝 Custom';
+                    catSelect.insertBefore(opt, catSelect.firstChild);
+                }
+                catSelect.value = 'custom';
+                catSelect.disabled = true;
+                catSelect.style.opacity = '0.6';
+            }
+        } else {
+            if (indicator) indicator.remove();
+            if (catSelect) {
+                var customOpt = catSelect.querySelector('option[value="custom"]');
+                if (customOpt) customOpt.remove();
+                catSelect.disabled = false;
+                catSelect.style.opacity = '1';
+            }
+        }
+    }
+    textarea.addEventListener('input', updateCustomState);
+    // Run once in case textarea already has content (e.g. restored)
+    updateCustomState();
+}
+
 function initCustomizationControls() {
+    // Send custom title to server on change (debounced)
+    var titleInput = document.getElementById('setting-customTitle');
+    if (titleInput) {
+        var titleTimeout = null;
+        titleInput.addEventListener('input', function() {
+            clearTimeout(titleTimeout);
+            titleTimeout = setTimeout(function() {
+                if (titleInput.value.trim()) {
+                    socket.emit('update-customization', { roomCode: roomCode, customization: { customTitle: titleInput.value.trim() } });
+                }
+            }, 500);
+        });
+    }
     // Background dropdown toggle upload
     var bgSelect = document.getElementById('setting-customBackground');
     if (bgSelect) {
@@ -698,6 +814,8 @@ function handleLogoUpload(input) {
             customLogoData = canvas.toDataURL('image/png', 0.8);
             var preview = document.getElementById('logo-preview');
             if (preview) preview.innerHTML = '<img src="' + customLogoData + '" style="width:48px;height:48px;border-radius:8px;object-fit:cover">';
+            // Send logo to server so all players can see it
+            socket.emit('update-customization', { roomCode: roomCode, customization: { logoImage: customLogoData } });
         };
         img.src = e.target.result;
     };
