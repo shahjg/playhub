@@ -509,12 +509,16 @@ socket.on('host-changed', function(data) { handleRoomUpdate(data.room); });
 // GAME START - REDIRECT TO GAME PAGE
 socket.on('game-started', function(data) {
     console.log('Game started!', data);
+    if (data.customization) localStorage.setItem('tempCustomization', JSON.stringify(data.customization));
+    else localStorage.removeItem('tempCustomization');
     var gt = data.gameType || gameType;
     var config = GAMES[gt] || GAMES[gameType];
     var targetUrl = config.gameFile + '?room=' + roomCode;
     var cat = data.category || localStorage.getItem('tempCategory') || '';
     if (cat) targetUrl += '&category=' + encodeURIComponent(cat);
     console.log('Redirecting to:', targetUrl);
+    // Stop lobby music
+    if (lobbyAudio) { lobbyAudio.pause(); lobbyAudio = null; }
     window.location.href = targetUrl;
 });
 
@@ -530,6 +534,11 @@ function handleRoomUpdate(room) {
     if (gameConfig.isPartyGame) document.body.classList.add('party-mode');
     document.getElementById('game-title').textContent = gameConfig.displayName;
     document.getElementById('game-tagline').textContent = gameConfig.tagline || '';
+    // Show custom title from room customization if available
+    if (room.customization && room.customization.customTitle) {
+        document.getElementById('game-tagline').textContent = room.customization.customTitle;
+        document.getElementById('game-tagline').style.color = '#fbbf24';
+    }
     document.getElementById('player-max').textContent = '/ ' + gameConfig.maxPlayers;
     var me = room.players.find(function(p) { return p.name === playerName; });
     if (me) { myPlayerId = me.id; isHost = me.isHost; }
@@ -583,10 +592,22 @@ function renderSettings() {
         html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Max Players</label><select id="setting-playerCap"><option value="50">50 Players</option><option value="100" selected>100 Players</option><option value="150">150 Players</option><option value="200">200 Players</option></select></div>';
         html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Custom Questions <span style="font-weight:400;opacity:0.6">(optional, one per line)</span></label>';
         html += '<textarea id="setting-customQuestions" placeholder="' + (gameConfig.customQPlaceholder || 'One question per line...') + '" rows="4" style="width:100%;padding:0.75rem;background:rgba(10,10,15,0.9);border:1px solid rgba(251,191,36,0.2);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.85rem;resize:vertical;outline:none"></textarea></div>';
+        // Customization section
+        html += '<div style="border-top:1px solid rgba(251,191,36,0.15);margin:14px 0 10px;padding-top:12px"><div style="font-size:0.75rem;font-weight:700;color:rgba(251,191,36,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">CUSTOMIZE GAME</div></div>';
+        html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Game Title</label><input type="text" id="setting-customTitle" maxlength="50" placeholder="e.g. Jake\'s Birthday Trivia" style="width:100%;padding:0.6rem 0.75rem;background:rgba(10,10,15,0.9);border:1px solid rgba(251,191,36,0.2);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.85rem;outline:none"></div>';
+        html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Background</label><select id="setting-customBackground"><option value="none">Default</option><option value="sunset">Sunset</option><option value="galaxy">Galaxy</option><option value="ocean">Ocean</option><option value="party">Party</option><option value="neon">Neon</option><option value="forest">Forest</option><option value="lava">Lava</option><option value="arctic">Arctic</option><option value="custom">Upload Image...</option></select></div>';
+        html += '<div class="setting-group" id="bg-upload-group" style="display:none"><input type="file" id="setting-bgUpload" accept="image/*" onchange="handleBgUpload(this)" style="font-size:0.8rem;color:var(--muted)"><div id="bg-preview" style="margin-top:6px"></div></div>';
+        html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Theme Color</label><div id="theme-color-picker" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div></div>';
+        html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Logo <span style="font-weight:400;opacity:0.6">(optional)</span></label><input type="file" id="setting-logoUpload" accept="image/*" onchange="handleLogoUpload(this)" style="font-size:0.8rem;color:var(--muted)"><div id="logo-preview" style="margin-top:6px"></div></div>';
+        html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Lobby Music</label><select id="setting-lobbyMusic" onchange="previewMusic(this.value)"><option value="none">None</option><option value="chill">Chill Beats</option><option value="hype">Hype Energy</option><option value="retro">Retro Arcade</option><option value="jazz">Jazz Lounge</option></select></div>';
         html += '</div>';
     }
     container.innerHTML = html;
     if (currentRoom && currentRoom.settings) { Object.keys(currentRoom.settings).forEach(function(k) { var el = document.getElementById('setting-' + k); if (el) { if (el.classList.contains('toggle')) { if (currentRoom.settings[k]) el.classList.add('active'); else el.classList.remove('active'); } else { el.value = currentRoom.settings[k]; } } }); }
+    // Init customization controls
+    if (hasPremiumSettings) {
+        initCustomizationControls();
+    }
 }
 
 function renderRolesPreview() {
@@ -607,6 +628,95 @@ function renderColorPicker(players) {
     var colors = ['red', 'green', 'yellow', 'blue'];
     var takenColors = players.filter(function(p) { return p.color; }).map(function(p) { return p.color; });
     picker.innerHTML = colors.map(function(c) { var taken = takenColors.indexOf(c) !== -1; var selected = selectedColor === c; return '<div class="color-option ' + c + (taken ? ' taken' : '') + (selected ? ' selected' : '') + '" onclick="selectColor(\'' + c + '\',' + taken + ')"></div>'; }).join('');
+}
+
+// Customization state
+var customBgData = null;
+var customLogoData = null;
+var selectedThemeColor = null;
+var lobbyAudio = null;
+
+function initCustomizationControls() {
+    // Background dropdown toggle upload
+    var bgSelect = document.getElementById('setting-customBackground');
+    if (bgSelect) {
+        bgSelect.addEventListener('change', function() {
+            var uploadGroup = document.getElementById('bg-upload-group');
+            if (uploadGroup) uploadGroup.style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+    }
+    // Theme color swatches
+    var picker = document.getElementById('theme-color-picker');
+    if (picker) {
+        var colors = {purple:'#a855f7',pink:'#ec4899',blue:'#3b82f6',cyan:'#06b6d4',red:'#ef4444',orange:'#f97316',green:'#22c55e',teal:'#14b8a6',gold:'#fbbf24',indigo:'#6366f1'};
+        Object.keys(colors).forEach(function(name) {
+            var swatch = document.createElement('div');
+            swatch.style.cssText = 'width:32px;height:32px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;background:' + colors[name];
+            swatch.title = name;
+            swatch.onclick = function() {
+                picker.querySelectorAll('div').forEach(function(d) { d.style.borderColor = 'transparent'; d.style.transform = 'scale(1)'; });
+                if (selectedThemeColor === name) { selectedThemeColor = null; }
+                else { selectedThemeColor = name; swatch.style.borderColor = '#fff'; swatch.style.transform = 'scale(1.15)'; }
+            };
+            picker.appendChild(swatch);
+        });
+    }
+}
+
+function handleBgUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB'); input.value = ''; return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxW = 1200, maxH = 800;
+            var w = img.width, h = img.height;
+            if (w > maxW) { h = h * maxW / w; w = maxW; }
+            if (h > maxH) { w = w * maxH / h; h = maxH; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            customBgData = canvas.toDataURL('image/jpeg', 0.6);
+            var preview = document.getElementById('bg-preview');
+            if (preview) preview.innerHTML = '<img src="' + customBgData + '" style="width:100%;max-height:80px;object-fit:cover;border-radius:8px;margin-top:4px">';
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleLogoUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    if (file.size > 500 * 1024) { alert('Logo must be under 500KB'); input.value = ''; return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var size = Math.min(img.width, img.height, 200);
+            canvas.width = size; canvas.height = size;
+            canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+            customLogoData = canvas.toDataURL('image/png', 0.8);
+            var preview = document.getElementById('logo-preview');
+            if (preview) preview.innerHTML = '<img src="' + customLogoData + '" style="width:48px;height:48px;border-radius:8px;object-fit:cover">';
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function previewMusic(track) {
+    if (lobbyAudio) { lobbyAudio.pause(); lobbyAudio = null; }
+    if (track && track !== 'none') {
+        // Music files would be at /audio/lobby/<track>.mp3
+        lobbyAudio = new Audio('/audio/lobby/' + track + '.mp3');
+        lobbyAudio.loop = true;
+        lobbyAudio.volume = 0.3;
+        lobbyAudio.play().catch(function() {});
+    }
 }
 
 function selectColor(color, taken) { if (taken) return; selectedColor = color; socket.emit('update-player-color', { roomCode: roomCode, color: color }); renderColorPicker(currentRoom ? currentRoom.players : []); }
@@ -641,6 +751,18 @@ document.getElementById('start-btn').onclick = function() {
         if (rcEl) startData.roundCount = rcEl.value;
         if (pcEl) startData.playerCap = pcEl.value;
         if (cqEl && cqEl.value.trim()) startData.customQuestions = cqEl.value.trim();
+        // Customization
+        var titleEl = document.getElementById('setting-customTitle');
+        if (titleEl && titleEl.value.trim()) startData.customTitle = titleEl.value.trim();
+        var bgEl = document.getElementById('setting-customBackground');
+        if (bgEl && bgEl.value !== 'none' && bgEl.value !== 'custom') startData.customBackground = bgEl.value;
+        if (customBgData) startData.customBackgroundImage = customBgData;
+        if (selectedThemeColor) startData.themeColor = selectedThemeColor;
+        if (customLogoData) startData.logoImage = customLogoData;
+        var musicEl = document.getElementById('setting-lobbyMusic');
+        if (musicEl && musicEl.value !== 'none') startData.lobbyMusic = musicEl.value;
+        // Stop lobby music when game starts
+        if (lobbyAudio) { lobbyAudio.pause(); lobbyAudio = null; }
     }
     console.log('Emitting start-game:', startData);
     localStorage.setItem('tempCategory', startData.category || '');

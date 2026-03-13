@@ -1814,9 +1814,9 @@ io.on('connection', (socket) => {
       success: true,
       roomCode: roomCode,
       gameType: room.gameType,
-      room: { players: room.players, gameType: room.gameType, code: room.code, hostId: room.hostId }
+      room: { players: room.players, gameType: room.gameType, code: room.code, hostId: room.hostId, customization: room.customization || null }
     });
-    
+
  // If game is active, send the player their role
     if (room.gameState === 'playing' && room.gameData && room.gameData.roleAssignments) {
       const playerRole = room.gameData.roleAssignments[playerName];
@@ -2075,9 +2075,9 @@ io.on('connection', (socket) => {
       success: true,
       roomCode: roomCode,
       gameType: room.gameType,
-      room: { players: room.players, gameType: room.gameType, code: room.code, hostId: room.hostId }
+      room: { players: room.players, gameType: room.gameType, code: room.code, hostId: room.hostId, customization: room.customization || null }
     });
-    
+
     // Notify all other players in the room (send lightweight payload, not entire room)
     socket.to(roomCode).emit('player-joined', {
       player: newPlayer,
@@ -2179,7 +2179,7 @@ io.on('connection', (socket) => {
 
   // START GAME
  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap } = data;
+    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, lobbyMusic } = data;
     const room = rooms.get(roomCode);
 
     if (!room) {
@@ -2200,6 +2200,16 @@ io.on('connection', (socket) => {
       if (roundCount) premiumOptions.roundCount = Math.min(Math.max(parseInt(roundCount) || 10, 5), 20);
       if (playerCap) { premiumOptions.playerCap = Math.min(Math.max(parseInt(playerCap) || 100, 10), 200); room.premiumPlayerCap = premiumOptions.playerCap; }
       if (customQuestions && typeof customQuestions === 'string') premiumOptions.customQuestions = customQuestions;
+
+      // Customization options
+      const customization = {};
+      if (customTitle && typeof customTitle === 'string') customization.customTitle = customTitle.substring(0, 50);
+      if (customBackground && typeof customBackground === 'string') customization.customBackground = customBackground;
+      if (customBackgroundImage && typeof customBackgroundImage === 'string' && customBackgroundImage.length < 700000) customization.customBackgroundImage = customBackgroundImage;
+      if (themeColor && typeof themeColor === 'string') customization.themeColor = themeColor;
+      if (logoImage && typeof logoImage === 'string' && logoImage.length < 150000) customization.logoImage = logoImage;
+      if (lobbyMusic && typeof lobbyMusic === 'string') customization.lobbyMusic = lobbyMusic;
+      if (Object.keys(customization).length > 0) room.customization = customization;
     }
 
     console.log(`[GAME] Starting ${room.gameType} in ${roomCode}${hostIsPremium ? ' (premium host)' : ''}`);
@@ -2302,7 +2312,8 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('game-started', {
       roomCode: roomCode,
       gameType: room.gameType,
-      category: category || ''
+      category: category || '',
+      customization: room.customization || null
     });
 
     // Start first round/turn for new games
