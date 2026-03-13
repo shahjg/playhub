@@ -991,6 +991,18 @@
                     <h3>CITIZENS REMAINING</h3>
                     <div class="alive-players-list" id="aliveDayPlayers"></div>
                 </div>
+
+                <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;">
+                    <button class="action-btn" id="voteNowBtn" onclick="requestVoteNow()">
+                        VOTE NOW
+                    </button>
+                    <button class="action-btn secondary" id="skipDiscussionBtn" style="display:none;" onclick="skipDiscussion()">
+                        SKIP DISCUSSION
+                    </button>
+                </div>
+                <div class="vote-count-display" id="voteNowCount" style="display:none;">
+                    Vote Now: 0/0 needed
+                </div>
             </div>
 
             <!-- VOTING PHASE -->
@@ -1144,10 +1156,12 @@
         });
 
         // Day phase
+        let voteNowPressed = false;
         socket.on('day-phase-start', (data) => {
             console.log('Day phase started:', data);
             currentPhase = 'day';
             alivePlayers = data.alivePlayers;
+            voteNowPressed = false;
 
             setCityMode('day');
             showPhase('dayPhase');
@@ -1163,6 +1177,20 @@
 
             updateAlivePlayersList(data.alivePlayers);
             startTimer('dayTimer', data.timeLimit || 90);
+
+            // Show skip button for host only
+            const isHost = localStorage.getItem('tempIsHost') === 'true';
+            document.getElementById('skipDiscussionBtn').style.display = isHost ? 'inline-block' : 'none';
+            document.getElementById('voteNowBtn').disabled = false;
+            document.getElementById('voteNowBtn').textContent = 'VOTE NOW';
+            document.getElementById('voteNowCount').style.display = 'none';
+        });
+
+        // Vote-now count update from server
+        socket.on('vote-now-update', (data) => {
+            const countEl = document.getElementById('voteNowCount');
+            countEl.style.display = 'block';
+            countEl.textContent = `Vote Now: ${data.count}/${data.needed} needed`;
         });
 
         // Voting phase
@@ -1427,6 +1455,20 @@
                 tag.textContent = p.name;
                 list.appendChild(tag);
             });
+        }
+
+        // ─── Discussion Controls ─────────────────────
+        function skipDiscussion() {
+            socket.emit('skip-discussion', { roomCode });
+            document.getElementById('skipDiscussionBtn').disabled = true;
+        }
+
+        function requestVoteNow() {
+            if (voteNowPressed) return;
+            voteNowPressed = true;
+            socket.emit('vote-now', { roomCode });
+            document.getElementById('voteNowBtn').disabled = true;
+            document.getElementById('voteNowBtn').textContent = 'VOTE REQUESTED';
         }
 
         // ─── Voting ──────────────────────────────────

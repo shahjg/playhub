@@ -899,6 +899,7 @@ function processNightActions(room) {
 function startDayPhase(room, killedPlayer, savedByDoctor) {
   if (!room.gameData || room.gameData.phase === 'results') return;
   room.gameData.phase = 'day';
+  room.gameData.voteNowRequests = {};
   console.log(`Day ${room.gameData.currentRound} started in room ${room.code}`);
 
   io.to(room.code).emit('day-phase-start', {
@@ -908,17 +909,22 @@ function startDayPhase(room, killedPlayer, savedByDoctor) {
     timeLimit: 90
   });
 
-  setTimeout(() => {
+  // Store timer so it can be cancelled by skip/vote-now
+  if (room.gameData.dayTimer) clearTimeout(room.gameData.dayTimer);
+  room.gameData.dayTimer = setTimeout(() => {
     if (room.gameData && room.gameData.phase === 'day') {
+      console.log(`Day discussion timer expired in room ${room.code}, advancing to voting`);
       startVotingPhase(room);
     }
-  }, 95000);
+  }, 91000);
 }
 
 function startVotingPhase(room) {
   if (!room.gameData || room.gameData.phase === 'results') return;
+  if (room.gameData.phase === 'voting') return; // prevent double-fire
   room.gameData.phase = 'voting';
   room.gameData.votes = {};
+  if (room.gameData.dayTimer) { clearTimeout(room.gameData.dayTimer); room.gameData.dayTimer = null; }
   console.log(`Voting started in room ${room.code}`);
 
   io.to(room.code).emit('voting-phase-start', {
@@ -2955,6 +2961,45 @@ io.on('connection', (socket) => {
       setTimeout(() => {
         processNightActions(room);
       }, 2000);
+    }
+  });
+
+  // MAFIA - SKIP DISCUSSION (host only)
+  socket.on('skip-discussion', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player || room.gameType !== 'werewolf') return;
+    if (room.hostId !== socket.id) return;
+    if (!room.gameData || room.gameData.phase !== 'day') return;
+
+    console.log(`Host skipped discussion in room ${roomCode}`);
+    if (room.gameData.dayTimer) clearTimeout(room.gameData.dayTimer);
+    startVotingPhase(room);
+  });
+
+  // MAFIA - VOTE NOW (majority request)
+  socket.on('vote-now', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    const player = players.get(socket.id);
+    if (!room || !player || room.gameType !== 'werewolf') return;
+    if (!room.gameData || room.gameData.phase !== 'day') return;
+
+    if (!room.gameData.voteNowRequests) room.gameData.voteNowRequests = {};
+    room.gameData.voteNowRequests[player.playerName] = true;
+
+    const count = Object.keys(room.gameData.voteNowRequests).length;
+    const needed = Math.ceil(room.gameData.alivePlayers.length / 2);
+
+    io.to(roomCode).emit('vote-now-update', { count, needed });
+
+    console.log(`Vote-now in room ${roomCode}: ${count}/${needed}`);
+
+    if (count >= needed) {
+      console.log(`Majority vote-now reached in room ${roomCode}`);
+      if (room.gameData.dayTimer) clearTimeout(room.gameData.dayTimer);
+      startVotingPhase(room);
     }
   });
 
