@@ -1320,54 +1320,66 @@ function calculateThisOrThatPartyResults(room, io) {
 function calculateHotTakesPartyResults(room, io) {
     room.gameData.phase = 'results';
     const ratings = Object.values(room.gameData.ratings);
-    const avg = ratings.length ? ratings.reduce((s,r) => s + r.rating, 0) / ratings.length : 3;
-    const breakdown = {1:[],2:[],3:[],4:[],5:[]};
-    
-    ratings.forEach(r => breakdown[r.rating].push(r.playerName));
-    
-    let mode = 3, modeCount = 0;
-    for (let i = 1; i <= 5; i++) {
-        if (breakdown[i].length > modeCount) { 
-            modeCount = breakdown[i].length; 
-            mode = i; 
-        }
-    }
-    
-    breakdown[mode].forEach(n => room.gameData.scores[n] += 10);
-    
-    io.to(room.code).emit('hottakes-party-results', { 
-        statement: room.gameData.questions[room.gameData.currentQuestionIndex].statement, 
-        averageRating: Math.round(avg*10)/10, 
-        modeRating: mode, 
-        ratingBreakdown: breakdown, 
-        scores: room.gameData.scores 
+    const avg = ratings.length ? ratings.reduce((s,r) => s + r.rating, 0) / ratings.length : 5;
+
+    // Distribution array for 1-10
+    const distribution = Array(10).fill(0);
+    let mostAgree = null, mostDisagree = null;
+    let highestRating = 0, lowestRating = 11;
+
+    ratings.forEach(r => {
+        if (r.rating >= 1 && r.rating <= 10) distribution[r.rating - 1]++;
+        if (r.rating > highestRating) { highestRating = r.rating; mostAgree = r.playerName; }
+        if (r.rating < lowestRating) { lowestRating = r.rating; mostDisagree = r.playerName; }
+    });
+
+    // Score: players who picked the mode rating get points
+    let mode = 0, modeCount = 0;
+    distribution.forEach((count, i) => {
+        if (count > modeCount) { modeCount = count; mode = i + 1; }
+    });
+    ratings.forEach(r => { if (r.rating === mode) room.gameData.scores[r.playerName] = (room.gameData.scores[r.playerName] || 0) + 10; });
+
+    const isLastStatement = room.gameData.currentQuestionIndex >= room.gameData.maxRounds - 1;
+
+    io.to(room.code).emit('hottakes-party-results', {
+        statement: room.gameData.questions[room.gameData.currentQuestionIndex].statement,
+        average: Math.round(avg*10)/10,
+        distribution,
+        mostAgree,
+        mostDisagree,
+        scores: room.gameData.scores,
+        isLastStatement
     });
 }
 
 function calculateNeverEverPartyResults(room, io) {
     room.gameData.phase = 'results';
     const haveList = [], haventList = [];
-    
+
     Object.values(room.gameData.responses).forEach(r => {
         (r.response ? haveList : haventList).push(r.playerName);
     });
-    
-    const minority = haveList.length < haventList.length ? haveList : 
+
+    const minority = haveList.length < haventList.length ? haveList :
                     (haventList.length < haveList.length ? haventList : null);
-    
+
     if (minority?.length) {
         minority.forEach(n => room.gameData.scores[n] += Math.min(20, Math.floor(20/minority.length)));
     }
-    
+
     const total = haveList.length + haventList.length;
-    io.to(room.code).emit('neverever-party-results', { 
-        statement: room.gameData.questions[room.gameData.currentQuestionIndex].statement, 
-        haveList, 
-        haventList, 
-        haveCount: haveList.length, 
-        haventCount: haventList.length, 
-        percentHave: total ? Math.round(haveList.length/total*100) : 50, 
-        scores: room.gameData.scores 
+    const isLastStatement = room.gameData.currentQuestionIndex >= room.gameData.maxRounds - 1;
+
+    io.to(room.code).emit('neverever-party-results', {
+        statement: room.gameData.questions[room.gameData.currentQuestionIndex].statement,
+        whoHas: haveList,
+        whoHasnt: haventList,
+        totalHas: haveList.length,
+        totalHasnt: haventList.length,
+        percentHas: total ? Math.round(haveList.length/total*100) : 50,
+        scores: room.gameData.scores,
+        isLastStatement
     });
 }
 
