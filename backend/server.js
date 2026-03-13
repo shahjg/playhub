@@ -1873,6 +1873,12 @@ io.on('connection', (socket) => {
       }
     }
 
+    // Mid-game reconnection for power-struggle
+    if (room.gameState === 'playing' && room.gameData && room.gameType === 'power-struggle') {
+      console.log(`[PS-REJOIN] Sending power-struggle state to ${playerName}`);
+      additionalSquadGames.sendPowerStruggleState(room, io);
+    }
+
     // Mid-game reconnection for bet-or-bluff
     if (room.gameState === 'playing' && room.gameData && room.gameType === 'bet-or-bluff') {
       const gd = room.gameData;

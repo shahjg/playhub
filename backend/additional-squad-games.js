@@ -625,80 +625,76 @@ function handleBPNextChain(room, io) {
 }
 
 // ==================== POWER STRUGGLE (COUP CLONE) ====================
+// All state keyed by player NAME (not socket ID) to survive reconnects
 
 function initPowerStruggleGame(room) {
-  // Calculate how many copies of each card we need
-  // Each player needs 2 cards, plus some in reserve
   const playerCount = room.players.length;
-  const cardsNeeded = playerCount * 2 + 3; // Extra cards for exchange action
+  const cardsNeeded = playerCount * 2 + 3;
   const copiesPerInfluence = Math.ceil(cardsNeeded / COUP_INFLUENCES.length);
-  
-  // Create deck with enough copies of each influence
+
   const deck = [];
   COUP_INFLUENCES.forEach(inf => {
     for (let i = 0; i < copiesPerInfluence; i++) {
       deck.push(inf);
     }
   });
-  
-  // Shuffle deck
+
+  // Shuffle
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
-  
+
   room.gameData = {
     deck,
-    playerCards: {},
-    coins: {},
+    playerCards: {},   // keyed by player NAME
+    coins: {},         // keyed by player NAME
     currentTurnIndex: 0,
-    phase: 'action', // action, challenge, block, lose-influence
+    phase: 'action',
     pendingAction: null,
     logs: [],
-    eliminated: []
+    eliminated: [],    // array of player NAMES
+    turnOrder: room.players.map(p => p.name) // stable turn order by name
   };
-  
-  // Deal 2 cards to each player, give 2 coins
+
   room.players.forEach(p => {
-    room.gameData.playerCards[p.id] = [
+    room.gameData.playerCards[p.name] = [
       { card: deck.pop(), dead: false },
       { card: deck.pop(), dead: false }
     ];
-    room.gameData.coins[p.id] = 2;
+    room.gameData.coins[p.name] = 2;
   });
-  
-  console.log(`Power Struggle: ${playerCount} players, ${copiesPerInfluence} copies per influence, ${deck.length} cards remaining`);
+
+  addPSLog(room, 'The power struggle begins. Trust no one.', null);
+  console.log(`[PS] Game init: ${playerCount} players, ${deck.length} cards in deck`);
 }
 
 function sendPowerStruggleState(room, io) {
   const gd = room.gameData;
-  const currentPlayer = room.players.filter(p => !gd.eliminated.includes(p.id))[gd.currentTurnIndex % (room.players.length - gd.eliminated.length)];
-  
+  const aliveTurnOrder = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
+  const currentName = aliveTurnOrder[gd.currentTurnIndex % aliveTurnOrder.length];
+
   room.players.forEach(p => {
-    if (gd.eliminated.includes(p.id)) return;
-    
-    const isMyTurn = currentPlayer && currentPlayer.id === p.id;
-    const myCards = gd.playerCards[p.id] || [];
-    
-    // Build visible state
-    const playersState = room.players.map(pl => ({
-      name: pl.name,
-      id: pl.id,
-      coins: gd.coins[pl.id] || 0,
-      cardCount: (gd.playerCards[pl.id] || []).filter(c => !c.dead).length,
-      eliminated: gd.eliminated.includes(pl.id),
-      // Show dead cards to everyone
-      deadCards: (gd.playerCards[pl.id] || []).filter(c => c.dead).map(c => c.card)
+    const myCards = gd.playerCards[p.name] || [];
+    const isMyTurn = p.name === currentName && !gd.eliminated.includes(p.name);
+
+    const playersState = gd.turnOrder.map(name => ({
+      name,
+      coins: gd.coins[name] || 0,
+      cardCount: (gd.playerCards[name] || []).filter(c => !c.dead).length,
+      eliminated: gd.eliminated.includes(name),
+      deadCards: (gd.playerCards[name] || []).filter(c => c.dead).map(c => c.card)
     }));
-    
+
     io.to(p.id).emit('ps-state', {
-      myCards: myCards,
-      coins: gd.coins,
-      currentPlayer: currentPlayer?.name,
+      myCards,
+      myCoins: gd.coins[p.name] || 0,
+      currentTurn: currentName,
       isMyTurn,
       players: playersState,
       phase: gd.phase,
-      pendingAction: gd.pendingAction
+      pendingAction: gd.pendingAction,
+      logs: gd.logs.slice(-15)
     });
   });
 }
@@ -707,218 +703,230 @@ function handlePowerStruggleAction(room, socketId, action, target, io) {
   const gd = room.gameData;
   const player = room.players.find(p => p.id === socketId);
   if (!player) return;
-  
-  const playerCoins = gd.coins[socketId] || 0;
-  
-  // Log the action
-  let logMessage = `${player.name}`;
-  
+
+  const name = player.name;
+  const coins = gd.coins[name] || 0;
+  let logMsg = '';
+
   switch (action) {
     case 'income':
-      gd.coins[socketId] = playerCoins + 1;
-      logMessage += ' takes Income (+1 coin)';
-      addPSLog(room, logMessage, io);
+      gd.coins[name] = coins + 1;
+      logMsg = `${name} takes Income (+1 coin)`;
+      addPSLog(room, logMsg, io);
       nextPowerStruggleTurn(room, io);
       break;
-      
+
     case 'foreign-aid':
-      logMessage += ' takes Foreign Aid (+2 coins)';
-      gd.pendingAction = { type: 'foreign-aid', player: player.name, playerId: socketId };
-      gd.phase = 'block';
-      addPSLog(room, logMessage, io);
-      // Notify other players they can block
-      room.players.forEach(p => {
-        if (p.id !== socketId && !gd.eliminated.includes(p.id)) {
-          io.to(p.id).emit('ps-action-pending', {
-            actor: player.name,
-            action: 'Foreign Aid',
-            target: null,
-            canChallenge: false,
-            canBlock: true
-          });
-        }
+      logMsg = `${name} takes Foreign Aid (+2 coins)`;
+      gd.pendingAction = { type: 'foreign-aid', player: name };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Foreign Aid', target: null,
+        canChallenge: false, canBlock: true, blockReason: 'Claim Duke to block'
       });
-      sendPowerStruggleState(room, io);
-      // Allow blocking for 8 seconds
       gd.actionTimeout = setTimeout(() => {
         if (gd.pendingAction?.type === 'foreign-aid') {
-          gd.coins[socketId] = playerCoins + 2;
+          gd.coins[name] = (gd.coins[name] || 0) + 2;
           gd.pendingAction = null;
           gd.phase = 'action';
-          addPSLog(room, `${player.name}'s Foreign Aid succeeds`, io);
+          addPSLog(room, `${name}'s Foreign Aid succeeds`, io);
           nextPowerStruggleTurn(room, io);
         }
-      }, 8000);
+      }, 10000);
+      sendPowerStruggleState(room, io);
       break;
-      
+
     case 'coup':
-      if (playerCoins < 7) {
-        io.to(socketId).emit('error', { message: 'Need 7 coins to Coup' });
-        return;
-      }
-      gd.coins[socketId] = playerCoins - 7;
-      logMessage += ` Coups ${target}`;
-      addPSLog(room, logMessage, io);
-      // Target must lose an influence
+      if (coins < 7) { io.to(socketId).emit('ps-error', { message: 'Need 7 coins' }); return; }
+      gd.coins[name] = coins - 7;
+      logMsg = `${name} launches a Coup against ${target}!`;
+      addPSLog(room, logMsg, io);
       forceInfluenceLoss(room, target, io);
       break;
-      
-    case 'duke': // Tax
-      logMessage += ' claims Duke and takes Tax (+3 coins)';
-      gd.pendingAction = { type: 'duke', player: player.name, playerId: socketId };
-      gd.phase = 'challenge';
-      addPSLog(room, logMessage, io);
-      // Notify other players they can challenge
-      room.players.forEach(p => {
-        if (p.id !== socketId && !gd.eliminated.includes(p.id)) {
-          io.to(p.id).emit('ps-action-pending', {
-            actor: player.name,
-            action: 'Tax (Duke)',
-            target: null,
-            canChallenge: true,
-            canBlock: false
-          });
-        }
+
+    case 'tax':
+      logMsg = `${name} claims Duke — collects Tax (+3 coins)`;
+      gd.pendingAction = { type: 'tax', claimedRole: 'Duke', player: name };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Tax', target: null,
+        canChallenge: true, canBlock: false, claimedRole: 'Duke'
       });
-      sendPowerStruggleState(room, io);
-      // Allow challenge for 8 seconds
       gd.actionTimeout = setTimeout(() => {
-        if (gd.pendingAction?.type === 'duke') {
-          gd.coins[socketId] = playerCoins + 3;
+        if (gd.pendingAction?.type === 'tax') {
+          gd.coins[name] = (gd.coins[name] || 0) + 3;
           gd.pendingAction = null;
           gd.phase = 'action';
+          addPSLog(room, `${name} collects 3 coins (Tax)`, io);
           nextPowerStruggleTurn(room, io);
         }
-      }, 8000);
-      break;
-      
-    case 'assassin':
-      if (playerCoins < 3) {
-        io.to(socketId).emit('error', { message: 'Need 3 coins to Assassinate' });
-        return;
-      }
-      gd.coins[socketId] = playerCoins - 3;
-      logMessage += ` claims Assassin and targets ${target}`;
-      gd.pendingAction = { type: 'assassin', player: player.name, playerId: socketId, target };
-      gd.phase = 'challenge';
-      addPSLog(room, logMessage, io);
-      // Notify other players they can challenge or block (target can block with Contessa)
-      room.players.forEach(p => {
-        if (p.id !== socketId && !gd.eliminated.includes(p.id)) {
-          io.to(p.id).emit('ps-action-pending', {
-            actor: player.name,
-            action: 'Assassinate',
-            target: target,
-            canChallenge: true,
-            canBlock: p.name === target // Only target can block with Contessa
-          });
-        }
-      });
+      }, 10000);
       sendPowerStruggleState(room, io);
-      // Allow challenge/block for 8 seconds
+      break;
+
+    case 'assassinate':
+      if (coins < 3) { io.to(socketId).emit('ps-error', { message: 'Need 3 coins' }); return; }
+      gd.coins[name] = coins - 3;
+      logMsg = `${name} claims Assassin — targets ${target}`;
+      gd.pendingAction = { type: 'assassinate', claimedRole: 'Assassin', player: name, target };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Assassinate', target,
+        canChallenge: true, canBlock: false, claimedRole: 'Assassin',
+        targetCanBlock: true, blockReason: 'Claim Contessa to block'
+      });
       gd.actionTimeout = setTimeout(() => {
-        if (gd.pendingAction?.type === 'assassin') {
+        if (gd.pendingAction?.type === 'assassinate') {
           forceInfluenceLoss(room, target, io);
         }
-      }, 8000);
-      break;
-      
-    case 'captain': // Steal
-      logMessage += ` claims Captain and steals from ${target}`;
-      gd.pendingAction = { type: 'captain', player: player.name, playerId: socketId, target };
-      gd.phase = 'challenge';
-      addPSLog(room, logMessage, io);
-      // Notify other players they can challenge or block (target can block with Captain/Ambassador)
-      room.players.forEach(p => {
-        if (p.id !== socketId && !gd.eliminated.includes(p.id)) {
-          io.to(p.id).emit('ps-action-pending', {
-            actor: player.name,
-            action: 'Steal',
-            target: target,
-            canChallenge: true,
-            canBlock: p.name === target // Only target can block
-          });
-        }
-      });
+      }, 10000);
       sendPowerStruggleState(room, io);
-      // Allow challenge/block for 8 seconds
+      break;
+
+    case 'steal':
+      logMsg = `${name} claims Captain — steals from ${target}`;
+      gd.pendingAction = { type: 'steal', claimedRole: 'Captain', player: name, target };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Steal', target,
+        canChallenge: true, canBlock: false, claimedRole: 'Captain',
+        targetCanBlock: true, blockReason: 'Claim Captain or Ambassador to block'
+      });
       gd.actionTimeout = setTimeout(() => {
-        if (gd.pendingAction?.type === 'captain') {
-          const targetPlayer = room.players.find(p => p.name === target);
-          if (targetPlayer) {
-            const stolen = Math.min(2, gd.coins[targetPlayer.id] || 0);
-            gd.coins[targetPlayer.id] -= stolen;
-            gd.coins[socketId] += stolen;
+        if (gd.pendingAction?.type === 'steal') {
+          const stolen = Math.min(2, gd.coins[target] || 0);
+          gd.coins[target] = (gd.coins[target] || 0) - stolen;
+          gd.coins[name] = (gd.coins[name] || 0) + stolen;
+          gd.pendingAction = null;
+          gd.phase = 'action';
+          addPSLog(room, `${name} steals ${stolen} coins from ${target}`, io);
+          nextPowerStruggleTurn(room, io);
+        }
+      }, 10000);
+      sendPowerStruggleState(room, io);
+      break;
+
+    case 'exchange':
+      logMsg = `${name} claims Ambassador — exchanges cards`;
+      gd.pendingAction = { type: 'exchange', claimedRole: 'Ambassador', player: name };
+      gd.phase = 'response';
+      addPSLog(room, logMsg, io);
+      broadcastActionPending(room, socketId, io, {
+        actor: name, action: 'Exchange', target: null,
+        canChallenge: true, canBlock: false, claimedRole: 'Ambassador'
+      });
+      gd.actionTimeout = setTimeout(() => {
+        if (gd.pendingAction?.type === 'exchange') {
+          // Draw 2 from deck, let player pick (simplified: just shuffle their alive cards with 2 from deck and deal back)
+          const myCards = gd.playerCards[name];
+          const aliveIdxs = myCards.map((c, i) => c.dead ? -1 : i).filter(i => i >= 0);
+          if (gd.deck.length >= 2) {
+            const drawn = [gd.deck.pop(), gd.deck.pop()];
+            // Put alive cards + drawn into pool, shuffle, deal back
+            const pool = aliveIdxs.map(i => myCards[i].card).concat(drawn);
+            for (let i = pool.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            aliveIdxs.forEach((idx, k) => { myCards[idx].card = pool[k]; });
+            // Return extras to deck
+            for (let k = aliveIdxs.length; k < pool.length; k++) gd.deck.push(pool[k]);
           }
           gd.pendingAction = null;
           gd.phase = 'action';
+          addPSLog(room, `${name} exchanges cards`, io);
           nextPowerStruggleTurn(room, io);
         }
-      }, 8000);
+      }, 10000);
+      sendPowerStruggleState(room, io);
       break;
-      
+
     default:
-      nextPowerStruggleTurn(room, io);
+      break;
   }
+}
+
+function broadcastActionPending(room, actorSocketId, io, data) {
+  const gd = room.gameData;
+  room.players.forEach(p => {
+    if (p.id !== actorSocketId && !gd.eliminated.includes(p.name)) {
+      const playerData = { ...data };
+      // Only target can block assassination/steal
+      if (data.targetCanBlock) {
+        playerData.canBlock = (p.name === data.target);
+      }
+      io.to(p.id).emit('ps-action-pending', playerData);
+    }
+  });
 }
 
 function handlePowerStruggleRespond(room, socketId, response, io) {
   const gd = room.gameData;
   const player = room.players.find(p => p.id === socketId);
   if (!player || !gd.pendingAction) return;
-  
-  // Clear the action timeout
+
   if (gd.actionTimeout) {
     clearTimeout(gd.actionTimeout);
     gd.actionTimeout = null;
   }
-  
+
   if (response === 'challenge') {
-    // Challenge the claim
     addPSLog(room, `${player.name} challenges!`, io);
-    resolvePowerStruggleChallenge(room, socketId, io);
+    resolvePowerStruggleChallenge(room, player.name, io);
   } else if (response === 'block') {
-    // Block the action
-    addPSLog(room, `${player.name} blocks!`, io);
+    addPSLog(room, `${player.name} blocks the action!`, io);
+    // Blocking can be challenged — for simplicity, just block succeeds
     gd.pendingAction = null;
     gd.phase = 'action';
     nextPowerStruggleTurn(room, io);
   } else if (response === 'allow') {
-    // Allow - do nothing, let timeout handle it
-    // Or if everyone has allowed, proceed immediately
+    // Let timeout handle resolution
   }
 }
 
-function resolvePowerStruggleChallenge(room, challengerId, io) {
+function resolvePowerStruggleChallenge(room, challengerName, io) {
   const gd = room.gameData;
   const action = gd.pendingAction;
   if (!action) return;
-  
-  const claimedCard = getClaimedCard(action.type);
-  const claimantCards = gd.playerCards[action.playerId] || [];
+
+  const claimedCard = action.claimedRole || getClaimedCard(action.type);
+  const claimantCards = gd.playerCards[action.player] || [];
   const hasCard = claimantCards.some(c => !c.dead && c.card === claimedCard);
-  
+
   if (hasCard) {
-    // Challenge fails - challenger loses influence
-    addPSLog(room, `Challenge failed! ${action.player} had ${claimedCard}`, io);
-    const challenger = room.players.find(p => p.id === challengerId);
-    forceInfluenceLoss(room, challenger.name, io);
+    addPSLog(room, `Challenge failed! ${action.player} revealed ${claimedCard}`, io);
+    // Challenger loses influence
+    forceInfluenceLoss(room, challengerName, io);
+    // Claimant swaps revealed card back into deck and draws new one
+    const cardIdx = claimantCards.findIndex(c => !c.dead && c.card === claimedCard);
+    if (cardIdx >= 0 && gd.deck.length > 0) {
+      gd.deck.push(claimantCards[cardIdx].card);
+      // Shuffle deck
+      for (let i = gd.deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [gd.deck[i], gd.deck[j]] = [gd.deck[j], gd.deck[i]];
+      }
+      claimantCards[cardIdx].card = gd.deck.pop();
+    }
   } else {
-    // Challenge succeeds - claimant loses influence
     addPSLog(room, `Challenge succeeded! ${action.player} didn't have ${claimedCard}`, io);
     forceInfluenceLoss(room, action.player, io);
   }
-  
+
   gd.pendingAction = null;
   gd.phase = 'action';
 }
 
 function getClaimedCard(actionType) {
   const mapping = {
-    'duke': 'Duke',
-    'assassin': 'Assassin',
-    'captain': 'Captain',
-    'ambassador': 'Ambassador',
+    'tax': 'Duke', 'duke': 'Duke',
+    'assassinate': 'Assassin', 'assassin': 'Assassin',
+    'steal': 'Captain', 'captain': 'Captain',
+    'exchange': 'Ambassador', 'ambassador': 'Ambassador',
     'contessa': 'Contessa'
   };
   return mapping[actionType] || 'Duke';
@@ -928,77 +936,89 @@ function forceInfluenceLoss(room, targetName, io) {
   const gd = room.gameData;
   const targetPlayer = room.players.find(p => p.name === targetName);
   if (!targetPlayer) return;
-  
+
+  const cards = gd.playerCards[targetName] || [];
+  const aliveCards = cards.filter(c => !c.dead);
+
+  // Auto-lose if only 1 alive card
+  if (aliveCards.length <= 1) {
+    const idx = cards.findIndex(c => !c.dead);
+    if (idx >= 0) handlePowerStruggleLoseInfluenceByName(room, targetName, idx, io);
+    return;
+  }
+
   gd.phase = 'lose-influence';
-  
   io.to(targetPlayer.id).emit('ps-choose-influence', {
-    reason: 'You must lose an influence'
+    reason: 'You must discard an influence card'
   });
+  sendPowerStruggleState(room, io);
 }
 
 function handlePowerStruggleLoseInfluence(room, socketId, cardIndex, io) {
-  const gd = room.gameData;
-  const cards = gd.playerCards[socketId];
-  
-  if (!cards || !cards[cardIndex] || cards[cardIndex].dead) return;
-  
-  cards[cardIndex].dead = true;
-  
   const player = room.players.find(p => p.id === socketId);
-  addPSLog(room, `${player.name} loses ${cards[cardIndex].card}`, io);
-  
-  // Check if player is eliminated
+  if (!player) return;
+  handlePowerStruggleLoseInfluenceByName(room, player.name, cardIndex, io);
+}
+
+function handlePowerStruggleLoseInfluenceByName(room, playerName, cardIndex, io) {
+  const gd = room.gameData;
+  const cards = gd.playerCards[playerName];
+  if (!cards || !cards[cardIndex] || cards[cardIndex].dead) return;
+
+  cards[cardIndex].dead = true;
+  addPSLog(room, `${playerName} loses ${cards[cardIndex].card}`, io);
+
   const aliveCards = cards.filter(c => !c.dead);
   if (aliveCards.length === 0) {
-    gd.eliminated.push(socketId);
-    addPSLog(room, `${player.name} is eliminated!`, io);
+    gd.eliminated.push(playerName);
+    addPSLog(room, `${playerName} has been eliminated!`, io);
   }
-  
-  // Check if game over
-  const alivePlayers = room.players.filter(p => !gd.eliminated.includes(p.id));
+
+  const alivePlayers = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
   if (alivePlayers.length <= 1) {
     endPowerStruggleGame(room, io);
     return;
   }
-  
+
   gd.phase = 'action';
   nextPowerStruggleTurn(room, io);
 }
 
 function addPSLog(room, message, io) {
   room.gameData.logs.push(message);
-  io.to(room.code).emit('ps-log', { message, logs: room.gameData.logs.slice(-10) });
+  if (io) io.to(room.code).emit('ps-log', { message, logs: room.gameData.logs.slice(-15) });
 }
 
 function nextPowerStruggleTurn(room, io) {
   const gd = room.gameData;
-  const alivePlayers = room.players.filter(p => !gd.eliminated.includes(p.id));
-  
+  const alivePlayers = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
+
   if (alivePlayers.length <= 1) {
     endPowerStruggleGame(room, io);
     return;
   }
-  
+
   gd.currentTurnIndex = (gd.currentTurnIndex + 1) % alivePlayers.length;
   gd.phase = 'action';
   gd.pendingAction = null;
-  
-  // Check if current player must coup (10+ coins)
-  const currentPlayer = alivePlayers[gd.currentTurnIndex];
-  if (gd.coins[currentPlayer.id] >= 10) {
-    addPSLog(room, `${currentPlayer.name} has 10+ coins and must Coup`, io);
+
+  const currentName = alivePlayers[gd.currentTurnIndex];
+  if ((gd.coins[currentName] || 0) >= 10) {
+    addPSLog(room, `${currentName} has 10+ coins — must Coup!`, io);
   }
-  
+
   sendPowerStruggleState(room, io);
 }
 
 function endPowerStruggleGame(room, io) {
   const gd = room.gameData;
   room.gameState = 'ended';
-  
-  const alivePlayers = room.players.filter(p => !gd.eliminated.includes(p.id));
-  const winner = alivePlayers[0]?.name || 'No one';
-  
+
+  const alivePlayers = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
+  const winner = alivePlayers[0] || 'No one';
+
+  addPSLog(room, `${winner} seizes total control!`, io);
+
   io.to(room.code).emit('ps-game-over', {
     winner,
     logs: gd.logs
