@@ -795,116 +795,156 @@ function initWerewolfGame(room) {
   }, 5000);
 }
 
-// ── Night phase utilities ──
-// clearMafiaTimers: cancel ALL tracked timers to prevent double-fire
-function clearMafiaTimers(room) {
-  if (room.gameData.nightTimer)   { clearTimeout(room.gameData.nightTimer);   room.gameData.nightTimer = null; }
-  if (room.gameData.failsafeTimer){ clearTimeout(room.gameData.failsafeTimer); room.gameData.failsafeTimer = null; }
+// ══════════════════════════════════════════════════════════════
+// NIGHT PHASE — complete rewrite
+// Each sub-phase is a direct function: runMafia → runSeer → runMedic → finishNight
+// Each sets ONE timeout. When it fires, it calls the next function UNCONDITIONALLY.
+// A monotonic nightId prevents double-advances.
+// ══════════════════════════════════════════════════════════════
+
+let nightIdCounter = 0;
+
+function cancelNightTimer(gd) {
+  if (gd._nightTimeout) { clearTimeout(gd._nightTimeout); gd._nightTimeout = null; }
 }
 
-// nightAdvance: the single function that moves through the night sub-phases
-// order: werewolf → seer → doctor → processNightActions
-function nightAdvance(room) {
-  if (!room.gameData || room.gameData.phase !== 'night') return;
-  const current = room.gameData.nightActiveRole;
-  console.log(`[NIGHT-ADVANCE] room=${room.code} current=${current}`);
-
-  if (current === 'werewolf' || current === 'werewolf-done') {
-    // Mafia finished or timed out → move to seer
-    if (!room.gameData.nightActions.werewolfTarget) {
-      const nonMafia = room.gameData.alivePlayers.filter(p => !p.isMafia);
-      if (nonMafia.length > 0) {
-        const rand = nonMafia[Math.floor(Math.random() * nonMafia.length)];
-        room.gameData.nightActions.werewolfTarget = rand.name;
-        console.log(`[NIGHT] Auto-selected mafia target: ${rand.name}`);
-      }
-    }
-
-    const det = room.gameData.detectiveName;
-    if (det && room.gameData.alivePlayers.some(p => p.name === det)) {
-      startNightSubPhase(room, 'seer', 30);
-    } else {
-      // Skip seer, try doctor
-      const med = room.gameData.medicName;
-      if (med && room.gameData.alivePlayers.some(p => p.name === med)) {
-        startNightSubPhase(room, 'doctor', 30);
-      } else {
-        finishNight(room);
-      }
-    }
-
-  } else if (current === 'seer' || current === 'seer-done') {
-    // Seer finished or timed out → move to doctor
-    const med = room.gameData.medicName;
-    if (med && room.gameData.alivePlayers.some(p => p.name === med)) {
-      startNightSubPhase(room, 'doctor', 30);
-    } else {
-      finishNight(room);
-    }
-
-  } else if (current === 'doctor' || current === 'doctor-done') {
-    // Doctor finished or timed out → process night
-    finishNight(room);
-
-  } else {
-    // Unknown state — just finish the night
-    console.log(`[NIGHT] Unknown nightActiveRole: ${current}, forcing night finish`);
-    finishNight(room);
-  }
-}
-
-// startNightSubPhase: emit the sub-phase event and set its timeout
-function startNightSubPhase(room, role, timeLimit) {
-  if (!room.gameData || room.gameData.phase !== 'night') return;
-  room.gameData.nightActiveRole = role;
-  console.log(`[NIGHT] Starting ${role} phase in room ${room.code} (${timeLimit}s)`);
-
-  io.to(room.code).emit('night-phase-start', {
-    activeRole: role,
-    alivePlayers: room.gameData.alivePlayers,
-    timeLimit: timeLimit
-  });
-
-  // Set phase timeout — UNCONDITIONALLY advances when it fires
-  if (room.gameData.nightTimer) clearTimeout(room.gameData.nightTimer);
-  room.gameData.nightTimer = setTimeout(() => {
-    if (!room.gameData || room.gameData.phase !== 'night') return;
-    console.log(`[NIGHT] ${role} phase TIMED OUT in room ${room.code}`);
-    nightAdvance(room);
-  }, (timeLimit + 1) * 1000);
+// Call this whenever a player action completes a sub-phase early.
+// It cancels the pending timeout and calls the next function after a short delay.
+function earlyAdvance(room, nextFn, delay) {
+  const gd = room.gameData;
+  if (!gd) return;
+  const id = gd.nightId;
+  cancelNightTimer(gd);
+  setTimeout(() => {
+    try { if (gd.nightId === id) nextFn(room); }
+    catch (e) { console.error('[NIGHT] earlyAdvance error:', e); }
+  }, delay || 0);
 }
 
 function startNightPhase(room) {
-  if (!room.gameData || room.gameData.phase === 'results') return;
-  room.gameData.phase = 'night';
-  room.gameData.nightActions = {};
-  room.gameData.werewolfVotes = {};
-  room.gameData.nightActiveRole = null;
-  clearMafiaTimers(room);
+  const gd = room.gameData;
+  if (!gd) return;
+  gd.phase = 'night';
+  gd.nightActions = {};
+  gd.werewolfVotes = {};
+  gd.nightActiveRole = null;
+  nightIdCounter++;
+  gd.nightId = nightIdCounter;
+  cancelNightTimer(gd);
 
-  console.log(`Night ${room.gameData.currentRound} started in room ${room.code}`);
+  console.log(`[NIGHT] ═══ Night ${gd.currentRound} started in room ${room.code} (nightId=${gd.nightId}) ═══`);
 
-  // Start with mafia phase
-  startNightSubPhase(room, 'werewolf', 45);
-
-  // HARD FAILSAFE: if night is STILL running after 120s, force-finish it
-  room.gameData.failsafeTimer = setTimeout(() => {
-    if (room.gameData && room.gameData.phase === 'night') {
-      console.log(`[FAILSAFE] Night stuck for 120s in room ${room.code}, forcing finish`);
-      clearMafiaTimers(room);
-      finishNight(room);
-    }
-  }, 120000);
+  runMafiaPhase(room);
 }
 
-// finishNight: the single exit point from night phase
-function finishNight(room) {
-  if (!room.gameData || room.gameData.phase !== 'night') return;
-  clearMafiaTimers(room);
-  room.gameData.nightActiveRole = null;
+function runMafiaPhase(room) {
+  const gd = room.gameData;
+  if (!gd || gd.phase !== 'night') return;
+  const id = gd.nightId;
+  gd.nightActiveRole = 'werewolf';
 
-  const targetName = room.gameData.nightActions.werewolfTarget;
-  const savedName = room.gameData.nightActions.doctorSave;
+  console.log(`[NIGHT] Mafia phase started (room=${room.code})`);
+  io.to(room.code).emit('night-phase-start', {
+    activeRole: 'werewolf',
+    alivePlayers: gd.alivePlayers,
+    timeLimit: 30
+  });
+
+  cancelNightTimer(gd);
+  gd._nightTimeout = setTimeout(() => {
+    try {
+      if (gd.nightId !== id) return;
+      console.log(`[NIGHT] Mafia phase TIMEOUT (room=${room.code})`);
+      // Auto-pick target if mafia didn't choose
+      if (!gd.nightActions.werewolfTarget) {
+        const targets = gd.alivePlayers.filter(p => !p.isMafia);
+        if (targets.length > 0) {
+          const t = targets[Math.floor(Math.random() * targets.length)];
+          gd.nightActions.werewolfTarget = t.name;
+          console.log(`[NIGHT] Auto-target: ${t.name}`);
+        }
+      }
+      runSeerPhase(room);
+    } catch (e) { console.error('[NIGHT] Mafia timeout error:', e); }
+  }, 31000);
+}
+
+function runSeerPhase(room) {
+  const gd = room.gameData;
+  if (!gd || gd.phase !== 'night') return;
+  const id = gd.nightId;
+
+  const det = gd.detectiveName;
+  const detAlive = det && gd.alivePlayers.some(p => p.name === det);
+
+  if (!detAlive) {
+    console.log(`[NIGHT] No detective alive, skipping seer phase (room=${room.code})`);
+    runMedicPhase(room);
+    return;
+  }
+
+  gd.nightActiveRole = 'seer';
+  console.log(`[NIGHT] Seer phase started (room=${room.code})`);
+  io.to(room.code).emit('night-phase-start', {
+    activeRole: 'seer',
+    alivePlayers: gd.alivePlayers,
+    timeLimit: 20
+  });
+
+  cancelNightTimer(gd);
+  gd._nightTimeout = setTimeout(() => {
+    try {
+      if (gd.nightId !== id) return;
+      console.log(`[NIGHT] Seer phase TIMEOUT (room=${room.code})`);
+      runMedicPhase(room);
+    } catch (e) { console.error('[NIGHT] Seer timeout error:', e); }
+  }, 21000);
+}
+
+function runMedicPhase(room) {
+  const gd = room.gameData;
+  if (!gd || gd.phase !== 'night') return;
+  const id = gd.nightId;
+
+  const med = gd.medicName;
+  const medAlive = med && gd.alivePlayers.some(p => p.name === med);
+
+  if (!medAlive) {
+    console.log(`[NIGHT] No medic alive, skipping medic phase (room=${room.code})`);
+    finishNight(room);
+    return;
+  }
+
+  gd.nightActiveRole = 'doctor';
+  console.log(`[NIGHT] Medic phase started (room=${room.code})`);
+  io.to(room.code).emit('night-phase-start', {
+    activeRole: 'doctor',
+    alivePlayers: gd.alivePlayers,
+    timeLimit: 20
+  });
+
+  cancelNightTimer(gd);
+  gd._nightTimeout = setTimeout(() => {
+    try {
+      if (gd.nightId !== id) return;
+      console.log(`[NIGHT] Medic phase TIMEOUT (room=${room.code})`);
+      finishNight(room);
+    } catch (e) { console.error('[NIGHT] Medic timeout error:', e); }
+  }, 21000);
+}
+
+function finishNight(room) {
+  const gd = room.gameData;
+  if (!gd || gd.phase !== 'night') return;
+  // Prevent double-call
+  gd.phase = 'night-processing';
+  cancelNightTimer(gd);
+  gd.nightActiveRole = null;
+
+  console.log(`[NIGHT] ═══ Night finished in room ${room.code} ═══`);
+
+  const targetName = gd.nightActions.werewolfTarget;
+  const savedName = gd.nightActions.doctorSave;
 
   let killedPlayer = null;
   let savedByDoctor = false;
@@ -912,13 +952,13 @@ function finishNight(room) {
   if (targetName) {
     if (savedName === targetName) {
       savedByDoctor = true;
-      console.log(`Medic saved ${targetName} in room ${room.code}`);
+      console.log(`[NIGHT] Medic saved ${targetName}`);
     } else {
-      killedPlayer = room.gameData.alivePlayers.find(p => p.name === targetName);
+      killedPlayer = gd.alivePlayers.find(p => p.name === targetName);
       if (killedPlayer) {
-        room.gameData.alivePlayers = room.gameData.alivePlayers.filter(p => p.name !== targetName);
-        room.gameData.deadPlayers.push(killedPlayer);
-        console.log(`${killedPlayer.name} was eliminated in room ${room.code}`);
+        gd.alivePlayers = gd.alivePlayers.filter(p => p.name !== targetName);
+        gd.deadPlayers.push(killedPlayer);
+        console.log(`[NIGHT] ${killedPlayer.name} was eliminated`);
       }
     }
   }
@@ -2957,6 +2997,7 @@ io.on('connection', (socket) => {
     if (actionType === 'werewolf-target') {
       if (!room.gameData.werewolfVotes) room.gameData.werewolfVotes = {};
       room.gameData.werewolfVotes[voterName] = targetId;
+      socket.emit('night-action-confirmed', {});
 
       const aliveMafia = room.gameData.alivePlayers.filter(p => p.isMafia);
       const voteCount = Object.keys(room.gameData.werewolfVotes).length;
@@ -2966,21 +3007,15 @@ io.on('connection', (socket) => {
         Object.values(room.gameData.werewolfVotes).forEach(voted => {
           voteCounts[voted] = (voteCounts[voted] || 0) + 1;
         });
-
-        let maxVotes = 0;
-        let target = null;
+        let maxVotes = 0, target = null;
         Object.entries(voteCounts).forEach(([name, count]) => {
           if (count > maxVotes) { maxVotes = count; target = name; }
         });
-
         room.gameData.nightActions.werewolfTarget = target;
         room.gameData.werewolfVotes = {};
-        room.gameData.nightActiveRole = 'werewolf-done';
-        if (room.gameData.nightTimer) { clearTimeout(room.gameData.nightTimer); room.gameData.nightTimer = null; }
-        nightAdvance(room);
+        console.log(`[NIGHT] Mafia chose target: ${target}`);
+        earlyAdvance(room, runSeerPhase, 500);
       }
-
-      socket.emit('night-action-confirmed', {});
 
     } else if (actionType === 'seer-check') {
       const targetPlayer = room.gameData.alivePlayers.find(p => p.name === targetId);
@@ -2991,24 +3026,15 @@ io.on('connection', (socket) => {
         });
         room.gameData.nightActions.seerCheck = targetId;
       }
-      room.gameData.nightActiveRole = 'seer-done';
-      if (room.gameData.nightTimer) { clearTimeout(room.gameData.nightTimer); room.gameData.nightTimer = null; }
       socket.emit('night-action-confirmed', {});
-
-      // Brief delay so detective sees their result before advancing
-      setTimeout(() => {
-        nightAdvance(room);
-      }, 3000);
+      console.log(`[NIGHT] Detective investigated ${targetId}`);
+      earlyAdvance(room, runMedicPhase, 3000);
 
     } else if (actionType === 'doctor-save') {
       room.gameData.nightActions.doctorSave = targetId;
-      room.gameData.nightActiveRole = 'doctor-done';
-      if (room.gameData.nightTimer) { clearTimeout(room.gameData.nightTimer); room.gameData.nightTimer = null; }
       socket.emit('night-action-confirmed', {});
-
-      setTimeout(() => {
-        nightAdvance(room);
-      }, 2000);
+      console.log(`[NIGHT] Medic protected ${targetId}`);
+      earlyAdvance(room, finishNight, 1000);
     }
   });
 
