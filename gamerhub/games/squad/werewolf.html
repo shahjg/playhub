@@ -305,10 +305,6 @@
             100% { transform: translateX(400%); }
         }
 
-        /* Hide all phases by default */
-        .phase { display: none; }
-        .phase.active { display: block; }
-
         /* Role Reveal Phase */
         .role-reveal { text-align: center; }
 
@@ -868,6 +864,257 @@
             transform: translateY(-1px);
         }
 
+        /* ─── Dramatic Event Overlay ─── */
+        .dramatic-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .dramatic-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dramatic-overlay .overlay-bg {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .dramatic-overlay .overlay-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: dramaticPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes dramaticPop {
+            0% { opacity: 0; transform: scale(0.5) translateY(30px); }
+            60% { transform: scale(1.08) translateY(-5px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes dramaticExit {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.85) translateY(-20px); }
+        }
+
+        .dramatic-overlay .event-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: dramaticPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes dramaticPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .dramatic-overlay .event-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            letter-spacing: 6px;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 0 40px currentColor;
+        }
+
+        .dramatic-overlay .event-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .dramatic-overlay.kill .event-title { color: var(--red); }
+        .dramatic-overlay.kill .overlay-bg {
+            background: radial-gradient(ellipse at center, rgba(196, 30, 58, 0.15) 0%, rgba(0, 0, 0, 0.9) 70%);
+        }
+
+        .dramatic-overlay.save .event-title { color: var(--green); }
+        .dramatic-overlay.save .overlay-bg {
+            background: radial-gradient(ellipse at center, rgba(46, 204, 113, 0.12) 0%, rgba(0, 0, 0, 0.9) 70%);
+        }
+
+        .dramatic-overlay.vote-out .event-title { color: var(--gold); }
+        .dramatic-overlay.vote-out .overlay-bg {
+            background: radial-gradient(ellipse at center, rgba(212, 168, 73, 0.12) 0%, rgba(0, 0, 0, 0.9) 70%);
+        }
+
+        .dramatic-overlay.night-falls .event-title { color: var(--blue); }
+        .dramatic-overlay.night-falls .overlay-bg {
+            background: radial-gradient(ellipse at center, rgba(58, 123, 213, 0.1) 0%, rgba(0, 0, 0, 0.92) 70%);
+        }
+
+        .dramatic-overlay.dawn .event-title { color: var(--gold); }
+        .dramatic-overlay.dawn .overlay-bg {
+            background: radial-gradient(ellipse at center, rgba(212, 168, 73, 0.1) 0%, rgba(0, 0, 0, 0.88) 70%);
+        }
+
+        /* Screen shake for kills */
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-4px, -2px); }
+            20% { transform: translate(4px, 2px); }
+            30% { transform: translate(-3px, 3px); }
+            40% { transform: translate(3px, -3px); }
+            50% { transform: translate(-2px, 2px); }
+            60% { transform: translate(2px, -1px); }
+            70% { transform: translate(-1px, 1px); }
+        }
+
+        body.screen-shake {
+            animation: screenShake 0.5s ease-out;
+        }
+
+        /* Blood drip effect for kills */
+        .dramatic-overlay.kill .event-icon::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            width: 4px;
+            height: 0;
+            background: var(--red);
+            border-radius: 0 0 2px 2px;
+            animation: drip 1.5s ease-in 0.3s forwards;
+        }
+
+        @keyframes drip {
+            0% { height: 0; opacity: 1; }
+            70% { height: 30px; opacity: 1; }
+            100% { height: 40px; opacity: 0; }
+        }
+
+        /* ─── Phase Transition Animation ─── */
+        .phase {
+            display: none;
+            animation: phaseEnter 0.5s ease-out;
+        }
+        .phase.active {
+            display: block;
+        }
+
+        @keyframes phaseEnter {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── My Role Button (floating) ─── */
+        .my-role-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 9998;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            padding: 0.7rem 1.3rem;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            color: var(--text);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s;
+        }
+
+        .my-role-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+            border-color: var(--gold);
+        }
+
+        .my-role-btn .role-btn-icon {
+            font-size: 1.3rem;
+        }
+
+        .my-role-btn.mafia { border-color: rgba(196, 30, 58, 0.5); }
+        .my-role-btn.detective { border-color: rgba(155, 89, 182, 0.5); }
+        .my-role-btn.medic { border-color: rgba(58, 123, 213, 0.5); }
+        .my-role-btn.citizen { border-color: rgba(46, 204, 113, 0.5); }
+
+        /* ─── Role Peek Modal ─── */
+        .role-peek-modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 19000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+        }
+
+        .role-peek-modal.active {
+            display: flex;
+        }
+
+        .role-peek-modal .role-card {
+            animation: dramaticPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            max-width: 420px;
+            width: 90%;
+        }
+
+        .role-peek-close {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .role-peek-close button {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 0.6rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-peek-close button:hover {
+            border-color: var(--text-dim);
+            color: var(--text);
+        }
+
+        /* ─── Voting Result Overlay ─── */
+        .dramatic-overlay .vote-result-role {
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .dramatic-overlay .vote-result-role.was-mafia {
+            background: rgba(196, 30, 58, 0.2);
+            border: 1px solid rgba(196, 30, 58, 0.4);
+            color: var(--red);
+        }
+
+        .dramatic-overlay .vote-result-role.was-innocent {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: var(--green);
+        }
+
         /* Footer */
         footer {
             background: rgba(14, 14, 18, 0.95);
@@ -1059,6 +1306,44 @@
         </div>
     </div>
 
+    <!-- Dramatic Event Overlay -->
+    <div class="dramatic-overlay" id="dramaticOverlay">
+        <div class="overlay-bg"></div>
+        <div class="overlay-content">
+            <div class="event-icon" id="dramaticIcon"></div>
+            <div class="event-title" id="dramaticTitle"></div>
+            <div class="event-subtitle" id="dramaticSubtitle"></div>
+        </div>
+    </div>
+
+    <!-- Floating My Role Button -->
+    <button class="my-role-btn" id="myRoleBtn" onclick="showRolePeek()">
+        <span class="role-btn-icon" id="roleBtnIcon">🃏</span>
+        MY ROLE
+    </button>
+
+    <!-- Role Peek Modal -->
+    <div class="role-peek-modal" id="rolePeekModal" onclick="closeRolePeek(event)">
+        <div>
+            <div class="role-card" id="rolePeekCard">
+                <div class="role-stamp">CLASSIFIED DOSSIER</div>
+                <div class="role-icon" id="rolePeekIcon">🕵️</div>
+                <div class="role-name" id="rolePeekName">ROLE</div>
+                <div class="role-description" id="rolePeekDesc"></div>
+                <div class="role-ability" id="rolePeekAbility"></div>
+                <div id="rolePeekMafiaTeam" style="display: none;">
+                    <div class="mafia-family" style="margin-top: 1.5rem;">
+                        <h3>YOUR FAMILY</h3>
+                        <div class="mafia-list" id="rolePeekMafiaList"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="role-peek-close">
+                <button onclick="closeRolePeek()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer>
         <div>&copy; 2024 PlayHub. All games free forever.</div>
@@ -1105,15 +1390,20 @@
             socket.emit('rejoin-room', { roomCode, playerName });
         });
 
+        // Store role data for the peek button
+        let myRoleData = null;
+
         // Role assigned (from init or rejoin)
         socket.on('role-assigned', (data) => {
             console.log('Role assigned:', data);
             myRole = data.role;
+            myRoleData = data;
             isMafia = data.role === 'werewolf';
             isDetective = data.role === 'seer';
             isMedic = data.role === 'doctor';
 
             displayRoleCard(data);
+            setupRoleButton(data.role);
 
             const isHost = localStorage.getItem('tempIsHost') === 'true';
             if (isHost) {
@@ -1130,18 +1420,31 @@
         });
 
         // Night phase
+        let firstNightOfRound = true;
         socket.on('night-phase-start', (data) => {
             console.log('Night phase started:', data);
-            currentPhase = 'night';
             currentNightRole = data.activeRole;
             alivePlayers = data.alivePlayers;
             nightActionSubmitted = false;
 
-            setCityMode('night');
-            showPhase('nightPhase');
-            updatePhaseIndicator(getNightLabel(data.activeRole));
-            buildNightActionUI(data);
-            startTimer('nightTimer', data.timeLimit || 45);
+            // Show dramatic "Night Falls" overlay only on first night sub-phase (mafia)
+            if (data.activeRole === 'werewolf' && currentPhase !== 'night') {
+                currentPhase = 'night';
+                setCityMode('night');
+                showDramaticOverlay('night-falls', '🌙', 'NIGHT FALLS', 'The city sleeps... danger lurks in the shadows.', 2000, () => {
+                    showPhase('nightPhase');
+                    updatePhaseIndicator(getNightLabel(data.activeRole));
+                    buildNightActionUI(data);
+                    startTimer('nightTimer', data.timeLimit || 45);
+                });
+            } else {
+                currentPhase = 'night';
+                setCityMode('night');
+                showPhase('nightPhase');
+                updatePhaseIndicator(getNightLabel(data.activeRole));
+                buildNightActionUI(data);
+                startTimer('nightTimer', data.timeLimit || 45);
+            }
         });
 
         socket.on('night-action-confirmed', () => {
@@ -1162,28 +1465,51 @@
             currentPhase = 'day';
             alivePlayers = data.alivePlayers;
             voteNowPressed = false;
-
             setCityMode('day');
-            showPhase('dayPhase');
-            updatePhaseIndicator('DAYBREAK — TOWN MEETING');
 
-            if (data.killedPlayer) {
-                displayDeathAnnouncement(data.killedPlayer, data.savedByDoctor);
+            // Determine what dramatic overlay to show
+            let overlayType, overlayIcon, overlayTitle, overlaySubtitle;
+
+            if (data.killedPlayer && !data.savedByDoctor) {
+                overlayType = 'kill';
+                overlayIcon = '💀';
+                overlayTitle = data.killedPlayer.name.toUpperCase();
+                overlaySubtitle = 'was found dead this morning... eliminated by the Mafia.';
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 500);
             } else if (data.savedByDoctor) {
-                displayNoDeathAnnouncement(true);
+                overlayType = 'save';
+                overlayIcon = '🛡️';
+                overlayTitle = 'MEDIC SAVE';
+                overlaySubtitle = 'The Medic intervened just in time! No one was eliminated.';
             } else {
-                displayNoDeathAnnouncement(false);
+                overlayType = 'dawn';
+                overlayIcon = '☀️';
+                overlayTitle = 'DAWN BREAKS';
+                overlaySubtitle = 'A quiet night. Everyone survived.';
             }
 
-            updateAlivePlayersList(data.alivePlayers);
-            startTimer('dayTimer', data.timeLimit || 90);
+            showDramaticOverlay(overlayType, overlayIcon, overlayTitle, overlaySubtitle, 2500, () => {
+                showPhase('dayPhase');
+                updatePhaseIndicator('DAYBREAK — TOWN MEETING');
 
-            // Show skip button for host only
-            const isHost = localStorage.getItem('tempIsHost') === 'true';
-            document.getElementById('skipDiscussionBtn').style.display = isHost ? 'inline-block' : 'none';
-            document.getElementById('voteNowBtn').disabled = false;
-            document.getElementById('voteNowBtn').textContent = 'VOTE NOW';
-            document.getElementById('voteNowCount').style.display = 'none';
+                if (data.killedPlayer) {
+                    displayDeathAnnouncement(data.killedPlayer, data.savedByDoctor);
+                } else if (data.savedByDoctor) {
+                    displayNoDeathAnnouncement(true);
+                } else {
+                    displayNoDeathAnnouncement(false);
+                }
+
+                updateAlivePlayersList(data.alivePlayers);
+                startTimer('dayTimer', data.timeLimit || 90);
+
+                const isHost = localStorage.getItem('tempIsHost') === 'true';
+                document.getElementById('skipDiscussionBtn').style.display = isHost ? 'inline-block' : 'none';
+                document.getElementById('voteNowBtn').disabled = false;
+                document.getElementById('voteNowBtn').textContent = 'VOTE NOW';
+                document.getElementById('voteNowCount').style.display = 'none';
+            });
         });
 
         // Vote-now count update from server
@@ -1200,10 +1526,12 @@
             alivePlayers = data.alivePlayers;
             selectedTarget = null;
 
-            showPhase('votingPhase');
-            updatePhaseIndicator('TOWN VOTE — ELIMINATE A SUSPECT');
-            buildVotingGrid(data.alivePlayers);
-            updateVoteCount(0, data.alivePlayers.length);
+            showDramaticOverlay('vote-out', '🗳️', 'TOWN VOTE', 'The citizens must decide... who is the traitor among you?', 2000, () => {
+                showPhase('votingPhase');
+                updatePhaseIndicator('TOWN VOTE — ELIMINATE A SUSPECT');
+                buildVotingGrid(data.alivePlayers);
+                updateVoteCount(0, data.alivePlayers.length);
+            });
         });
 
         socket.on('vote-counted', (data) => {
@@ -1219,10 +1547,29 @@
             console.log('Game results:', data);
             currentPhase = 'results';
             setCityMode('night');
-            showPhase('resultsPhase');
-            updatePhaseIndicator('CASE CLOSED');
-            displayResults(data);
             clearAllTimers();
+
+            // Show dramatic vote-out overlay if someone was eliminated
+            if (data.eliminatedPlayer) {
+                const wasMafia = data.eliminatedPlayer.role === 'werewolf';
+                const roleLabel = getRoleLabel(data.eliminatedPlayer.role);
+                showDramaticOverlay(
+                    'vote-out',
+                    wasMafia ? '⚖️' : '😢',
+                    data.eliminatedPlayer.name.toUpperCase(),
+                    `was voted out by the town. They were <strong style="color:${wasMafia ? 'var(--red)' : 'var(--green)'};">${roleLabel}</strong>.`,
+                    3000,
+                    () => {
+                        showPhase('resultsPhase');
+                        updatePhaseIndicator('CASE CLOSED');
+                        displayResults(data);
+                    }
+                );
+            } else {
+                showPhase('resultsPhase');
+                updatePhaseIndicator('CASE CLOSED');
+                displayResults(data);
+            }
         });
 
         // Room state (reconnection)
@@ -1667,6 +2014,120 @@
         function confirmCustomModal() {
             if (modalCallback) modalCallback();
             closeCustomModal();
+        }
+
+        // ─── Dramatic Overlay System ────────────────
+        let dramaticTimeout = null;
+        function showDramaticOverlay(type, icon, title, subtitle, duration, callback) {
+            const overlay = document.getElementById('dramaticOverlay');
+            const content = overlay.querySelector('.overlay-content');
+
+            // Clear any pending overlay
+            if (dramaticTimeout) { clearTimeout(dramaticTimeout); dramaticTimeout = null; }
+
+            // Set type class
+            overlay.className = `dramatic-overlay ${type}`;
+
+            document.getElementById('dramaticIcon').textContent = icon;
+            document.getElementById('dramaticTitle').textContent = title;
+            document.getElementById('dramaticSubtitle').innerHTML = subtitle;
+
+            // Reset animation
+            content.style.animation = 'none';
+            content.offsetHeight; // force reflow
+            content.style.animation = '';
+
+            // Show
+            overlay.classList.add('active');
+
+            // Auto-hide after duration
+            dramaticTimeout = setTimeout(() => {
+                content.style.animation = 'dramaticExit 0.4s ease-in forwards';
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    overlay.className = 'dramatic-overlay';
+                    content.style.animation = '';
+                    if (callback) callback();
+                }, 400);
+            }, duration);
+        }
+
+        // ─── Role Peek Button ───────────────────────
+        function setupRoleButton(role) {
+            const btn = document.getElementById('myRoleBtn');
+            const icon = document.getElementById('roleBtnIcon');
+            const roles = {
+                werewolf: { icon: '🔫', css: 'mafia' },
+                seer: { icon: '🔍', css: 'detective' },
+                doctor: { icon: '🛡️', css: 'medic' },
+                villager: { icon: '👤', css: 'citizen' }
+            };
+            const cfg = roles[role] || roles.villager;
+            icon.textContent = cfg.icon;
+            btn.className = `my-role-btn ${cfg.css}`;
+            btn.style.display = 'flex';
+        }
+
+        function showRolePeek() {
+            if (!myRoleData) return;
+            const modal = document.getElementById('rolePeekModal');
+            const roles = {
+                werewolf: {
+                    icon: '🔫', name: 'MAFIA',
+                    desc: 'You are part of the Mafia. Eliminate citizens under cover of night and avoid suspicion during the day.',
+                    ability: '<strong>Night Ability:</strong> Vote with your family to choose a target to eliminate.',
+                    css: 'mafia'
+                },
+                seer: {
+                    icon: '🔍', name: 'DETECTIVE',
+                    desc: 'You are the Detective. Investigate suspects to uncover the Mafia hidden among the citizens.',
+                    ability: '<strong>Night Ability:</strong> Choose one player to investigate — learn if they are Mafia or Citizen.',
+                    css: 'detective'
+                },
+                doctor: {
+                    icon: '🛡️', name: 'MEDIC',
+                    desc: 'You are the Medic. Each night you can protect one person from being eliminated.',
+                    ability: '<strong>Night Ability:</strong> Choose one player to protect. If the Mafia targets them, they survive.',
+                    css: 'medic'
+                },
+                villager: {
+                    icon: '👤', name: 'CITIZEN',
+                    desc: 'You are a Citizen. Use your wits to identify the Mafia members and vote them out before it\'s too late.',
+                    ability: '<strong>Day Ability:</strong> Participate in discussions and vote to eliminate suspected Mafia members.',
+                    css: 'citizen'
+                }
+            };
+
+            const cfg = roles[myRole] || roles.villager;
+            document.getElementById('rolePeekCard').className = `role-card ${cfg.css}`;
+            document.getElementById('rolePeekIcon').textContent = cfg.icon;
+            document.getElementById('rolePeekName').textContent = cfg.name;
+            document.getElementById('rolePeekDesc').textContent = cfg.desc;
+            document.getElementById('rolePeekAbility').innerHTML = cfg.ability;
+
+            // Show mafia team if player is mafia
+            const teamDisplay = document.getElementById('rolePeekMafiaTeam');
+            if (isMafia && mafiaFamily.length > 0) {
+                const list = document.getElementById('rolePeekMafiaList');
+                list.innerHTML = '';
+                mafiaFamily.forEach(m => {
+                    const el = document.createElement('div');
+                    el.className = 'mafia-member';
+                    el.textContent = m.name;
+                    list.appendChild(el);
+                });
+                teamDisplay.style.display = 'block';
+            } else {
+                teamDisplay.style.display = 'none';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeRolePeek(event) {
+            // If called from overlay click, only close if clicking background
+            if (event && event.target !== document.getElementById('rolePeekModal')) return;
+            document.getElementById('rolePeekModal').classList.remove('active');
         }
 
         window.addEventListener('beforeunload', () => { socket.disconnect(); });

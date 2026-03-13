@@ -2439,7 +2439,7 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'heads-up') {
         squadGames.initCharadesGame(room, category || 'random', 'headsup');
     } else if (room.gameType === 'secret-roles') {
-        squadGames.initAvalonGame(room, variant || 'standard');
+        missingSquadGames.initAvalonGame(room, io);
     } else if (room.gameType === 'fake-artist') {
         additionalSquadGames.initFakeArtistGame(room);
         additionalSquadGames.startFakeArtistRound(room, io);

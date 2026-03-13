@@ -1137,7 +1137,7 @@ const AVALON_EVIL_COUNT = {
     5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4
 };
 
-function initAvalonGame(room, variant = 'standard') {
+function initAvalonGame(room, variant = 'standard', io) {
     const playerCount = room.players.length;
     
     if (playerCount < 5 || playerCount > 10) {
