@@ -2179,7 +2179,7 @@ io.on('connection', (socket) => {
 
   // START GAME
  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, lobbyMusic } = data;
+    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage } = data;
     const room = rooms.get(roomCode);
 
     if (!room) {
@@ -2208,7 +2208,6 @@ io.on('connection', (socket) => {
       if (customBackgroundImage && typeof customBackgroundImage === 'string' && customBackgroundImage.length < 700000) customization.customBackgroundImage = customBackgroundImage;
       if (themeColor && typeof themeColor === 'string') customization.themeColor = themeColor;
       if (logoImage && typeof logoImage === 'string' && logoImage.length < 150000) customization.logoImage = logoImage;
-      if (lobbyMusic && typeof lobbyMusic === 'string') customization.lobbyMusic = lobbyMusic;
       if (Object.keys(customization).length > 0) room.customization = customization;
     }
 

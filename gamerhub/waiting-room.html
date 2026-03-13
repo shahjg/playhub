@@ -517,8 +517,6 @@ socket.on('game-started', function(data) {
     var cat = data.category || localStorage.getItem('tempCategory') || '';
     if (cat) targetUrl += '&category=' + encodeURIComponent(cat);
     console.log('Redirecting to:', targetUrl);
-    // Stop lobby music
-    if (lobbyAudio) { lobbyAudio.pause(); lobbyAudio = null; }
     window.location.href = targetUrl;
 });
 
@@ -599,7 +597,6 @@ function renderSettings() {
         html += '<div class="setting-group" id="bg-upload-group" style="display:none"><input type="file" id="setting-bgUpload" accept="image/*" onchange="handleBgUpload(this)" style="font-size:0.8rem;color:var(--muted)"><div id="bg-preview" style="margin-top:6px"></div></div>';
         html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Theme Color</label><div id="theme-color-picker" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div></div>';
         html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Logo <span style="font-weight:400;opacity:0.6">(optional)</span></label><input type="file" id="setting-logoUpload" accept="image/*" onchange="handleLogoUpload(this)" style="font-size:0.8rem;color:var(--muted)"><div id="logo-preview" style="margin-top:6px"></div></div>';
-        html += '<div class="setting-group"><label class="setting-label" style="color:#fbbf24">Lobby Music</label><select id="setting-lobbyMusic" onchange="previewMusic(this.value)"><option value="none">None</option><option value="chill">Chill Beats</option><option value="hype">Hype Energy</option><option value="retro">Retro Arcade</option><option value="jazz">Jazz Lounge</option></select></div>';
         html += '</div>';
     }
     container.innerHTML = html;
@@ -634,7 +631,6 @@ function renderColorPicker(players) {
 var customBgData = null;
 var customLogoData = null;
 var selectedThemeColor = null;
-var lobbyAudio = null;
 
 function initCustomizationControls() {
     // Background dropdown toggle upload
@@ -708,17 +704,6 @@ function handleLogoUpload(input) {
     reader.readAsDataURL(file);
 }
 
-function previewMusic(track) {
-    if (lobbyAudio) { lobbyAudio.pause(); lobbyAudio = null; }
-    if (track && track !== 'none') {
-        // Music files would be at /audio/lobby/<track>.mp3
-        lobbyAudio = new Audio('/audio/lobby/' + track + '.mp3');
-        lobbyAudio.loop = true;
-        lobbyAudio.volume = 0.3;
-        lobbyAudio.play().catch(function() {});
-    }
-}
-
 function selectColor(color, taken) { if (taken) return; selectedColor = color; socket.emit('update-player-color', { roomCode: roomCode, color: color }); renderColorPicker(currentRoom ? currentRoom.players : []); }
 function updateSetting(id, value) { socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: value } }); }
 function toggleSetting(id) { var t = document.getElementById('setting-' + id); t.classList.toggle('active'); socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: t.classList.contains('active') } }); }
@@ -759,10 +744,6 @@ document.getElementById('start-btn').onclick = function() {
         if (customBgData) startData.customBackgroundImage = customBgData;
         if (selectedThemeColor) startData.themeColor = selectedThemeColor;
         if (customLogoData) startData.logoImage = customLogoData;
-        var musicEl = document.getElementById('setting-lobbyMusic');
-        if (musicEl && musicEl.value !== 'none') startData.lobbyMusic = musicEl.value;
-        // Stop lobby music when game starts
-        if (lobbyAudio) { lobbyAudio.pause(); lobbyAudio = null; }
     }
     console.log('Emitting start-game:', startData);
     localStorage.setItem('tempCategory', startData.category || '');
