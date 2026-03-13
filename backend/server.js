@@ -1107,15 +1107,14 @@ function endSpyfallGame(room, spyWins, reason) {
   room.gameData.gameOverReason = reason;
   room.gameState = 'ended';
   
-  const spyPlayers = room.gameData.spies.map(spyId =>
-    room.players.find(p => p.id === spyId) || { name: 'Unknown' }
-  );
-  
+  // Use spyNames (stored by name) instead of spies (stored by socket ID which goes stale)
+  const spyNames = room.gameData.spyNames || [];
+
   io.to(room.code).emit('game-over', {
     spyWins: spyWins,
     reason: reason,
-    spyName: spyPlayers.map(p => p.name).join(', '),
-    spyNames: spyPlayers.map(p => p.name),
+    spyName: spyNames.join(', '),
+    spyNames: spyNames,
     location: room.gameData.location,
     twoSpies: room.gameData.twoSpies
   });
@@ -1146,14 +1145,12 @@ function handleSpyfallPhaseTransition(room, socket, roomCode, playerName) {
       caller: room.gameData.voteCaller
     });
   } else if (room.gameData.phase === 'results') {
-    const spyPlayers = room.gameData.spies.map(spyId =>
-      room.players.find(p => p.id === spyId) || { name: 'Unknown' }
-    );
+    const spyNames = room.gameData.spyNames || [];
     socket.emit('game-over', {
       spyWins: room.gameData.spyWins,
       reason: room.gameData.gameOverReason,
-      spyName: spyPlayers.map(p => p.name).join(', '),
-      spyNames: spyPlayers.map(p => p.name),
+      spyName: spyNames.join(', '),
+      spyNames: spyNames,
       location: room.gameData.location,
       twoSpies: room.gameData.twoSpies
     });
@@ -1558,18 +1555,35 @@ function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
   let roleIndex = 0;
   room.players.forEach(player => {
     const isSpy = spies.includes(player.id);
-  
+
     room.gameData.roleAssignments[player.name] = {
       role: isSpy ? 'Spy' : (availableRoles[roleIndex % availableRoles.length] || 'Visitor'),
       location: isSpy ? null : selectedLocation.name,
       isSpy: isSpy
     };
-  
+
     if (!isSpy) {
       roleIndex++;
     }
   });
-  
+
+  // Emit role assignments to all players (like imposter/werewolf do)
+  room.players.forEach(player => {
+    const roleData = room.gameData.roleAssignments[player.name];
+    io.to(player.id).emit('role-assigned', {
+      ...roleData,
+      allLocations: room.gameData.allLocations || []
+    });
+  });
+
+  // Schedule question phase transition (don't rely on rejoin triggering it)
+  room.gameData.phaseTransitionScheduled = true;
+  setTimeout(() => {
+    if (room.gameData && room.gameData.phase === 'role-reveal') {
+      startSpyfallQuestionPhase(room);
+    }
+  }, 5000);
+
   console.log(`Spyfall game initialized in room ${room.code}. Location: ${selectedLocation.name}, Spies: ${spyNames.join(', ')}`);
 }
 
@@ -1631,26 +1645,27 @@ function calculateSpyfallResults(room) {
     }
   });
   
-  const spyCaught = room.gameData.spies.includes(votedOutPlayerId);
   const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
-  
+  // Use name-based spy check (socket IDs go stale after page navigation)
+  const spyCaught = votedOutPlayer && room.gameData.spyNames.includes(votedOutPlayer.name);
+
   room.gameData.voteCounts = voteCounts;
   room.gameData.votedOutPlayerId = votedOutPlayerId;
-  
+
   if (spyCaught) {
-    if (room.gameData.twoSpies && room.gameData.spies.length > 1) {
-      room.gameData.spies = room.gameData.spies.filter(id => id !== votedOutPlayerId);
-      
-      if (room.gameData.spies.length === 0) {
+    if (room.gameData.twoSpies && room.gameData.spyNames.length > 1) {
+      room.gameData.spyNames = room.gameData.spyNames.filter(name => name !== votedOutPlayer.name);
+
+      if (room.gameData.spyNames.length === 0) {
         endSpyfallGame(room, false, `All spies caught! ${votedOutPlayer.name} was the last spy.`);
       } else {
         room.gameData.votes = {};
         room.gameData.phase = 'question';
         startSpyfallTimer(room);
-        
+
         io.to(room.code).emit('spy-caught', {
           caughtSpy: votedOutPlayer,
-          spiesRemaining: room.gameData.spies.length,
+          spiesRemaining: room.gameData.spyNames.length,
           message: `${votedOutPlayer.name} was a spy! But there's still another spy among you...`
         });
       }
@@ -1658,8 +1673,8 @@ function calculateSpyfallResults(room) {
       endSpyfallGame(room, false, `${votedOutPlayer.name} was the spy! Players win!`);
     }
   } else {
-    const spyNames = room.gameData.spyNames.join(' and ');
-    endSpyfallGame(room, true, `${votedOutPlayer.name} was innocent! ${spyNames} ${room.gameData.twoSpies ? 'were' : 'was'} the spy!`);
+    const spyNameStr = room.gameData.spyNames.join(' and ');
+    endSpyfallGame(room, true, `${votedOutPlayer ? votedOutPlayer.name : 'Unknown'} was innocent! ${spyNameStr} ${room.gameData.twoSpies ? 'were' : 'was'} the spy!`);
   }
 }
 
@@ -1825,6 +1840,16 @@ io.on('connection', (socket) => {
 
         // Include allLocations for Spyfall game type
         if (room.gameType === 'spyfall') {
+          // Update stale spy socket IDs on reconnect
+          if (playerRole.isSpy && room.gameData.spies) {
+            const oldId = room.gameData.spies.find(id => id !== socket.id && !room.players.some(p => p.id === id));
+            if (oldId) {
+              room.gameData.spies = room.gameData.spies.map(id => id === oldId ? socket.id : id);
+            } else if (!room.gameData.spies.includes(socket.id)) {
+              // Add new ID if old one was already cleaned up
+              room.gameData.spies.push(socket.id);
+            }
+          }
           socket.emit('role-assigned', {
             ...playerRole,
             allLocations: room.gameData.allLocations || []
@@ -2379,7 +2404,8 @@ io.on('connection', (socket) => {
       return;
     }
     
-    if (!room.gameData.spies.includes(socket.id)) {
+    // Use name-based spy check (socket IDs go stale after page navigation)
+    if (!room.gameData.spyNames.includes(player.playerName)) {
       socket.emit('error', { message: 'Only spies can guess the location' });
       return;
     }
