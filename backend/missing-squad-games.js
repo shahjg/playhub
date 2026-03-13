@@ -71,10 +71,15 @@ function handleAvalonVote(room, playerId, vote, io) {
 }
 
 function handleAvalonQuestVote(room, playerId, vote, io) {
-  room.gameData.questVotes[playerId] = vote;
+  // Only allow team members to vote on the quest
   const teamIds = room.players.filter(p => room.gameData.selectedTeam.includes(p.name)).map(p => p.id);
+  if (!teamIds.includes(playerId)) return;
+  // Good players can only vote success
+  const assignment = room.gameData.assignments[playerId];
+  if (assignment && assignment.team === 'good' && vote === 'fail') vote = 'success';
+  room.gameData.questVotes[playerId] = vote;
   if (teamIds.filter(id => room.gameData.questVotes[id]).length === teamIds.length) {
-    const fails = Object.values(room.gameData.questVotes).filter(v => v === 'fail').length;
+    const fails = teamIds.filter(id => room.gameData.questVotes[id] === 'fail').length;
     const failsNeeded = (room.gameData.currentQuest === 3 && room.players.length >= 7) ? 2 : 1;
     const success = fails < failsNeeded;
     room.gameData.questResults.push(success ? 'success' : 'fail');
