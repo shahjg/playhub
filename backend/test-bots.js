@@ -384,36 +384,30 @@ class Bot {
     });
 
     s.on('night-phase-start', async (data) => {
-      this.log(`🌙 Night ${data.nightNumber || '?'} — Phase: ${data.phase || 'night'}`);
+      this.log(`🌙 Night — Active role: ${data.activeRole || '?'}`);
 
       if (!this.role) return;
       await wait(ACTION_DELAY);
 
-      const alive = data.alivePlayers || this.players;
-      const others = alive.filter(p => p.id !== s.id);
+      const alive = data.alivePlayers || [];
+      const others = alive.filter(p => p.name !== this.name);
       if (others.length === 0) return;
       const target = pick(others);
 
       const roleName = this.role.role || '';
 
-      if (roleName === 'werewolf' || roleName === 'alpha-wolf') {
-        // Only target non-wolves
-        const nonWolves = others.filter(p => !p.isWerewolf);
-        const wolfTarget = nonWolves.length > 0 ? pick(nonWolves) : target;
+      // Server expects player NAMES as targetId, not socket IDs
+      if ((roleName === 'werewolf' || roleName === 'alpha-wolf') && data.activeRole === 'werewolf') {
+        const nonMafia = others.filter(p => !p.isMafia && !p.isWerewolf);
+        const wolfTarget = nonMafia.length > 0 ? pick(nonMafia) : target;
         this.log(`🐺 Targeting: ${wolfTarget.name}`);
-        s.emit('night-action', { roomCode: this.roomCode, actionType: 'werewolf-target', targetId: wolfTarget.id });
-      } else if (roleName === 'seer') {
+        s.emit('night-action', { roomCode: this.roomCode, actionType: 'werewolf-target', targetId: wolfTarget.name });
+      } else if (roleName === 'seer' && data.activeRole === 'seer') {
         this.log(`🔮 Checking: ${target.name}`);
-        s.emit('night-action', { roomCode: this.roomCode, actionType: 'seer-check', targetId: target.id });
-      } else if (roleName === 'doctor') {
+        s.emit('night-action', { roomCode: this.roomCode, actionType: 'seer-check', targetId: target.name });
+      } else if (roleName === 'doctor' && data.activeRole === 'doctor') {
         this.log(`💉 Saving: ${target.name}`);
-        s.emit('night-action', { roomCode: this.roomCode, actionType: 'doctor-save', targetId: target.id });
-      } else if (roleName === 'bodyguard') {
-        this.log(`🛡️ Protecting: ${target.name}`);
-        s.emit('night-action', { roomCode: this.roomCode, actionType: 'bodyguard-protect', targetId: target.id });
-      } else if (roleName === 'vigilante') {
-        this.log(`🔫 Targeting: ${target.name}`);
-        s.emit('night-action', { roomCode: this.roomCode, actionType: 'vigilante-shoot', targetId: target.id });
+        s.emit('night-action', { roomCode: this.roomCode, actionType: 'doctor-save', targetId: target.name });
       }
     });
 
@@ -428,12 +422,12 @@ class Bot {
     s.on('voting-phase-start', async (data) => {
       if (this.gameType !== 'werewolf') return;
       await wait(ACTION_DELAY + Math.random() * 2000);
-      const alive = data.alivePlayers || this.players;
-      const others = alive.filter(p => p.id !== s.id);
+      const alive = data.alivePlayers || [];
+      const others = alive.filter(p => p.name !== this.name);
       if (others.length > 0) {
         const target = pick(others);
         this.log(`🗳️  Voting to eliminate: ${target.name}`);
-        s.emit('submit-vote', { roomCode: this.roomCode, votedPlayerId: target.id });
+        s.emit('submit-vote', { roomCode: this.roomCode, votedPlayerId: target.name });
       }
     });
 

@@ -974,7 +974,9 @@ function startVotingPhase(room) {
 }
 
 function processWerewolfVotingResults(room) {
+  if (!room.gameData || room.gameData.phase === 'results') return;
   if (room.gameData.votingTimer) { clearTimeout(room.gameData.votingTimer); room.gameData.votingTimer = null; }
+  room.gameData.phase = 'processing'; // prevent re-entry
   const voteCounts = {};
 
   // votes are now keyed by voter name → voted name
