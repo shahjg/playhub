@@ -2038,9 +2038,9 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if room is full (party games allow 100, squad 20)
-    const isPartyGame = ['trivia-royale','this-or-that-party','hot-takes-party','never-ever-party','bet-or-bluff','sketch-guess','fools-gold'].includes(room.gameType);
-    const maxPlayers = isPartyGame ? 100 : 20;
+    // Check if room is full (premium can set up to 200, party games default 100, squad 20)
+    const isPartyGame = ['trivia-royale','this-or-that-party','hot-takes-party','never-ever-party','bet-or-bluff','sketch-guess','fools-gold','most-likely-to','punchline'].includes(room.gameType);
+    const maxPlayers = room.premiumPlayerCap || (isPartyGame ? 100 : 20);
     if (room.players.length >= maxPlayers) {
       console.log(`Room ${roomCode} is full (${maxPlayers} max)`);
       socket.emit('join-error', { message: 'Room is full' });
@@ -2179,21 +2179,30 @@ io.on('connection', (socket) => {
 
   // START GAME
  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies, mode, variant, difficulty } = data;
+    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap } = data;
     const room = rooms.get(roomCode);
-    
+
     if (!room) {
       socket.emit('error', { message: 'Room not found' });
       return;
     }
-    
+
     const player = players.get(socket.id);
     if (!player || !player.isHost) {
       socket.emit('error', { message: 'Only host can start the game' });
       return;
     }
-    
-    console.log(`[GAME] Starting ${room.gameType} in ${roomCode}`);
+
+    // Validate premium settings server-side
+    const hostIsPremium = player.isPremium === true;
+    const premiumOptions = {};
+    if (hostIsPremium) {
+      if (roundCount) premiumOptions.roundCount = Math.min(Math.max(parseInt(roundCount) || 10, 5), 20);
+      if (playerCap) { premiumOptions.playerCap = Math.min(Math.max(parseInt(playerCap) || 100, 10), 200); room.premiumPlayerCap = premiumOptions.playerCap; }
+      if (customQuestions && typeof customQuestions === 'string') premiumOptions.customQuestions = customQuestions;
+    }
+
+    console.log(`[GAME] Starting ${room.gameType} in ${roomCode}${hostIsPremium ? ' (premium host)' : ''}`);
 
     room.gameState = 'playing';
 
@@ -2241,7 +2250,7 @@ io.on('connection', (socket) => {
         additionalSquadGames.initFakeArtistGame(room);
         additionalSquadGames.startFakeArtistRound(room, io);
     } else if (room.gameType === 'most-likely-to') {
-        additionalSquadGames.initMostLikelyToGame(room);
+        additionalSquadGames.initMostLikelyToGame(room, premiumOptions);
         additionalSquadGames.startMostLikelyToRound(room, io);
     } else if (room.gameType === 'head2head') {
         additionalSquadGames.initHead2HeadGame(room);
@@ -2249,15 +2258,15 @@ io.on('connection', (socket) => {
     }
     // PARTY GAMES (already work)
     else if (room.gameType === 'trivia-royale') {
-        partyGames.initTriviaRoyaleGame(room, category);
+        partyGames.initTriviaRoyaleGame(room, category, premiumOptions);
     } else if (room.gameType === 'this-or-that-party') {
-        partyGames.initThisOrThatPartyGame(room, category);
+        partyGames.initThisOrThatPartyGame(room, category, premiumOptions);
     } else if (room.gameType === 'hot-takes-party') {
-        partyGames.initHotTakesPartyGame(room, category);
+        partyGames.initHotTakesPartyGame(room, category, premiumOptions);
     } else if (room.gameType === 'never-ever-party') {
-        partyGames.initNeverEverPartyGame(room, category);
+        partyGames.initNeverEverPartyGame(room, category, premiumOptions);
     } else if (room.gameType === 'bet-or-bluff') {
-        partyGames.initBetOrBluffGame(room, category);
+        partyGames.initBetOrBluffGame(room, 500, premiumOptions);
     } else if (room.gameType === 'sketch-guess') {
         partyGames.initSketchGuessGame(room, category || 'random');
     } else if (room.gameType === 'fools-gold') {
@@ -2273,7 +2282,7 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'npat') {
         missingSquadGames.initNPATGame(room, io);
     } else if (room.gameType === 'punchline') {
-        missingSquadGames.initPunchlineGame(room, io);
+        missingSquadGames.initPunchlineGame(room, io, premiumOptions);
     } else if (room.gameType === 'broken-pictionary') {
         additionalSquadGames.initBrokenPictionaryGame(room);
         additionalSquadGames.startBrokenPictionaryWritePhase(room, io);

@@ -172,12 +172,23 @@ function endHead2HeadGame(room, io) {
 
 // ==================== MOST LIKELY TO ====================
 
-function initMostLikelyToGame(room) {
+function initMostLikelyToGame(room, premiumOptions = {}) {
+  const maxRounds = premiumOptions.roundCount || 10;
+  let questions;
+
+  // Parse custom questions: one per line
+  if (premiumOptions.customQuestions) {
+    const custom = premiumOptions.customQuestions.split('\n')
+      .map(line => line.trim()).filter(l => l.length > 0);
+    if (custom.length > 0) questions = custom;
+  }
+  if (!questions) questions = [...MLT_QUESTIONS];
+
   room.gameData = {
-    questions: [...MLT_QUESTIONS].sort(() => Math.random() - 0.5),
+    questions: questions.sort(() => Math.random() - 0.5),
     questionIndex: 0,
     currentRound: 0,
-    totalRounds: Math.min(10, MLT_QUESTIONS.length),
+    totalRounds: Math.min(maxRounds, questions.length),
     votes: {},
     scores: {},
     phase: 'waiting',

@@ -263,15 +263,25 @@ function endNPATGame(room, io) {
 // PUNCHLINE
 const PUNCHLINE_PROMPTS = ["Why did the chicken cross the road?","What do you call a fish without eyes?","Why don't scientists trust atoms?","What did the ocean say to the beach?","Why did the scarecrow win an award?","What do you call a fake noodle?","Why did the bicycle fall over?","What do you call a bear with no teeth?","Why can't you give Elsa a balloon?","What do you call a sleeping dinosaur?"];
 
-function initPunchlineGame(room, io) {
+function initPunchlineGame(room, io, premiumOptions = {}) {
   room.gameState = 'playing';
-  room.gameData = { round: 1, maxRounds: Math.min(room.players.length, 8), prompt: null, answers: {}, votes: {}, scores: {}, phase: 'answering', usedPrompts: [], shuffledAnswers: [] };
+  const maxRounds = premiumOptions.roundCount || Math.min(room.players.length, 8);
+
+  // Parse custom prompts: one per line
+  let customPrompts = null;
+  if (premiumOptions.customQuestions) {
+    const custom = premiumOptions.customQuestions.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (custom.length > 0) customPrompts = custom;
+  }
+
+  room.gameData = { round: 1, maxRounds: maxRounds, prompt: null, answers: {}, votes: {}, scores: {}, phase: 'answering', usedPrompts: [], shuffledAnswers: [], customPrompts: customPrompts };
   room.players.forEach(p => room.gameData.scores[p.id] = 0);
   startPunchlineRound(room, io);
 }
 
 function startPunchlineRound(room, io) {
-  const available = PUNCHLINE_PROMPTS.filter(p => !room.gameData.usedPrompts.includes(p));
+  const pool = room.gameData.customPrompts || PUNCHLINE_PROMPTS;
+  const available = pool.filter(p => !room.gameData.usedPrompts.includes(p));
   const prompt = available[Math.floor(Math.random() * available.length)];
   room.gameData.prompt = prompt; room.gameData.usedPrompts.push(prompt);
   room.gameData.answers = {}; room.gameData.votes = {}; room.gameData.phase = 'answering';

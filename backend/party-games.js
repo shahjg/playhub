@@ -934,89 +934,158 @@ const sketchWords = {
 };
 
 // ==================== INIT FUNCTIONS ====================
-function initTriviaRoyaleGame(room, category = 'general') {
+function initTriviaRoyaleGame(room, category = 'general', premiumOptions = {}) {
+    const maxRounds = premiumOptions.roundCount || 10;
+    let questions = [];
+
+    // Parse custom trivia questions: "Question | Correct | Wrong1 | Wrong2 | Wrong3"
+    if (premiumOptions.customQuestions) {
+        questions = premiumOptions.customQuestions.split('\n')
+            .map(line => line.trim()).filter(l => l.includes('|'))
+            .map(line => {
+                const parts = line.split('|').map(s => s.trim());
+                if (parts.length >= 2) {
+                    const correct = parts[1];
+                    const wrong = parts.slice(2).filter(s => s.length > 0);
+                    while (wrong.length < 3) wrong.push('???');
+                    return { question: parts[0], correct, options: [correct, ...wrong.slice(0, 3)].sort(() => Math.random() - 0.5) };
+                }
+                return null;
+            }).filter(Boolean);
+    }
+
     room.gameData = {
-        questions: [],
-        currentQuestionIndex: 0, 
-        roundNumber: 1, 
-        maxRounds: 10,
-        phase: 'countdown', 
-        answers: {}, 
-        scores: {}, 
+        questions: questions.length ? questions.slice(0, maxRounds) : [],
+        currentQuestionIndex: 0,
+        roundNumber: 1,
+        maxRounds: maxRounds,
+        phase: 'countdown',
+        answers: {},
+        scores: {},
         streaks: {},
-        timePerQuestion: 15, 
+        timePerQuestion: 15,
         roleAssignments: {},
-        category: category
+        category: category,
+        useCustomQuestions: questions.length > 0
     };
-    room.players.forEach(p => { 
-        room.gameData.scores[p.name] = 0; 
-        room.gameData.streaks[p.name] = 0; 
+    room.players.forEach(p => {
+        room.gameData.scores[p.name] = 0;
+        room.gameData.streaks[p.name] = 0;
     });
 }
 
-function initThisOrThatPartyGame(room, category = 'mixed') {
-    const questions = thisOrThatQuestions[category] || thisOrThatQuestions.mixed;
+function initThisOrThatPartyGame(room, category = 'mixed', premiumOptions = {}) {
+    const maxRounds = premiumOptions.roundCount || 10;
+    let questions;
+
+    // Parse custom questions: "Option A | Option B"
+    if (premiumOptions.customQuestions) {
+        const custom = premiumOptions.customQuestions.split('\n')
+            .map(line => line.trim()).filter(l => l.includes('|'))
+            .map(line => { const [a, b] = line.split('|').map(s => s.trim()); return { optionA: a, optionB: b }; })
+            .filter(q => q.optionA && q.optionB);
+        if (custom.length > 0) questions = custom;
+    }
+    if (!questions) questions = thisOrThatQuestions[category] || thisOrThatQuestions.mixed;
+
     room.gameData = {
-        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, 10),
-        currentQuestionIndex: 0, 
-        roundNumber: 1, 
-        maxRounds: 10,
-        phase: 'countdown', 
-        votes: {}, 
-        scores: {}, 
-        timePerRound: 15, 
+        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, maxRounds),
+        currentQuestionIndex: 0,
+        roundNumber: 1,
+        maxRounds: maxRounds,
+        phase: 'countdown',
+        votes: {},
+        scores: {},
+        timePerRound: 15,
         roleAssignments: {},
         category: category
     };
     room.players.forEach(p => { room.gameData.scores[p.name] = 0; });
 }
 
-function initHotTakesPartyGame(room, category = 'mild') {
-    const questions = hotTakesQuestions[category] || hotTakesQuestions.mild;
+function initHotTakesPartyGame(room, category = 'mild', premiumOptions = {}) {
+    const maxRounds = premiumOptions.roundCount || 10;
+    let questions;
+
+    // Parse custom statements: one per line
+    if (premiumOptions.customQuestions) {
+        const custom = premiumOptions.customQuestions.split('\n')
+            .map(line => line.trim()).filter(l => l.length > 0)
+            .map(s => ({ statement: s }));
+        if (custom.length > 0) questions = custom;
+    }
+    if (!questions) questions = hotTakesQuestions[category] || hotTakesQuestions.mild;
+
     room.gameData = {
-        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, 10),
-        currentQuestionIndex: 0, 
-        roundNumber: 1, 
-        maxRounds: 10,
-        phase: 'countdown', 
-        ratings: {}, 
-        scores: {}, 
-        timePerRound: 20, 
+        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, maxRounds),
+        currentQuestionIndex: 0,
+        roundNumber: 1,
+        maxRounds: maxRounds,
+        phase: 'countdown',
+        ratings: {},
+        scores: {},
+        timePerRound: 20,
         roleAssignments: {},
         category: category
     };
     room.players.forEach(p => { room.gameData.scores[p.name] = 0; });
 }
 
-function initNeverEverPartyGame(room, category = 'clean') {
-    const questions = neverEverQuestions[category] || neverEverQuestions.clean;
+function initNeverEverPartyGame(room, category = 'clean', premiumOptions = {}) {
+    const maxRounds = premiumOptions.roundCount || 12;
+    let questions;
+
+    // Parse custom statements: one per line (auto-prefix "Never have I ever" if needed)
+    if (premiumOptions.customQuestions) {
+        const custom = premiumOptions.customQuestions.split('\n')
+            .map(line => line.trim()).filter(l => l.length > 0)
+            .map(s => ({ statement: s.toLowerCase().startsWith('never have i ever') ? s : 'Never have I ever ' + s }));
+        if (custom.length > 0) questions = custom;
+    }
+    if (!questions) questions = neverEverQuestions[category] || neverEverQuestions.clean;
+
     room.gameData = {
-        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, 12),
-        currentQuestionIndex: 0, 
-        roundNumber: 1, 
-        maxRounds: 12,
-        phase: 'countdown', 
-        responses: {}, 
-        scores: {}, 
-        timePerRound: 15, 
+        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, maxRounds),
+        currentQuestionIndex: 0,
+        roundNumber: 1,
+        maxRounds: maxRounds,
+        phase: 'countdown',
+        responses: {},
+        scores: {},
+        timePerRound: 15,
         roleAssignments: {},
         category: category
     };
     room.players.forEach(p => { room.gameData.scores[p.name] = 0; });
 }
 
-function initBetOrBluffGame(room, startingPoints = 500) {
+function initBetOrBluffGame(room, startingPoints = 500, premiumOptions = {}) {
+    const maxRounds = premiumOptions.roundCount || 8;
+    let questions;
+
+    // Parse custom questions: "Question text | unit"
+    if (premiumOptions.customQuestions) {
+        const custom = premiumOptions.customQuestions.split('\n')
+            .map(line => line.trim()).filter(l => l.length > 0)
+            .map(line => {
+                const parts = line.split('|').map(s => s.trim());
+                return { question: parts[0], unit: parts[1] || '' };
+            }).filter(q => q.question);
+        if (custom.length > 0) questions = custom;
+    }
+    if (!questions) questions = [...betOrBluffQuestions];
+
     room.gameData = {
-        questions: [...betOrBluffQuestions].sort(() => Math.random() - 0.5).slice(0, 8),
-        currentQuestionIndex: 0, 
-        roundNumber: 1, 
-        maxRounds: 8,
-        phase: 'countdown', 
-        guesses: {}, 
-        bets: {}, 
+        questions: [...questions].sort(() => Math.random() - 0.5).slice(0, maxRounds),
+        currentQuestionIndex: 0,
+        roundNumber: 1,
+        maxRounds: maxRounds,
+        phase: 'countdown',
+        guesses: {},
+        bets: {},
         chips: {},
-        timePerGuess: 20, 
-        timePerBet: 30, 
+        timePerGuess: 20,
+        timePerBet: 30,
         roleAssignments: {},
         startingPoints: startingPoints
     };

@@ -551,10 +551,18 @@ document.getElementById('modal-close').addEventListener('click',function(){modal
 document.getElementById('modal-btn').addEventListener('click',function(){modal.classList.remove('visible')});
 modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('visible')});
 
+// Party game types that require premium to HOST
+var PARTY_GAMES=['trivia-royale','this-or-that-party','hot-takes-party','never-ever-party','bet-or-bluff','most-likely-to','punchline'];
+
+function showPremiumModal(){document.getElementById('premium-modal').classList.add('visible')}
+function closePremiumModal(){document.getElementById('premium-modal').classList.remove('visible')}
+
 // CREATE ROOM
 btnCreate.addEventListener('click',function(){
     var n=nameInput.value.trim();
     if(!n||n.length<2){showMsg('Name must be at least 2 characters',true);return}
+    // Premium gate for party games
+    if(PARTY_GAMES.indexOf(game.type)!==-1 && !premium){showPremiumModal();return}
     msgBox.textContent='';
     btnCreate.classList.add('btn-loading');
     btnCreate.disabled=true;
@@ -609,6 +617,31 @@ socket.on('join-error',function(d){showMsg(d.message||'Cannot join',true);btnJoi
 function showMsg(t,e){msgBox.textContent=t;msgBox.className='message '+(e?'error':'success')}
 init();
 </script>
+<div class="modal-overlay" id="premium-modal" onclick="if(event.target===this)closePremiumModal()">
+    <div class="modal" style="max-width:420px;text-align:center">
+        <div class="modal-header">
+            <h2 class="modal-title" style="color:#fbbf24">Premium Hosting</h2>
+            <button class="modal-close" onclick="closePremiumModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px 24px">
+            <p style="font-size:1.1rem;margin-bottom:18px;color:rgba(255,255,255,0.8)">Hosting party games is a premium feature.</p>
+            <div style="text-align:left;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:16px;margin-bottom:18px">
+                <div style="font-weight:700;color:#fbbf24;margin-bottom:10px">Premium Host Benefits</div>
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:0.9rem;color:rgba(255,255,255,0.7)">
+                    <div>+ Custom questions - add your own Q&A</div>
+                    <div>+ Up to 200 players per room</div>
+                    <div>+ Choose 5, 10, 15, or 20 rounds</div>
+                    <div>+ Premium badge & styling</div>
+                </div>
+            </div>
+            <p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:16px">Joining games is always free for everyone.</p>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:10px;padding:16px 24px">
+            <button class="modal-btn" style="flex:1;background:rgba(255,255,255,0.1);color:white" onclick="closePremiumModal()">Cancel</button>
+            <a href="/premium" class="modal-btn" style="flex:1;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;text-decoration:none;display:flex;align-items:center;justify-content:center;font-weight:700">Get Premium</a>
+        </div>
+    </div>
+</div>
 <script src="/header.js"></script>
 </body>
 </html>
