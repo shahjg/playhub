@@ -16,7 +16,12 @@
  *   imposter, spyfall, werewolf, herd-mentality, categories,
  *   word-association, codenames, trivia-royale, this-or-that-party,
  *   hot-takes-party, never-ever-party, bet-or-bluff, power-struggle,
- *   most-likely-to, ludo, word-bomb, charades
+ *   most-likely-to, ludo, word-bomb, charades, secret-roles, spectrum,
+ *   npat, punchline, fools-gold, two-truths, insider, celebrity,
+ *   fishbowl
+ *
+ * Not supported (drawing games): fake-artist, broken-pictionary,
+ *   doodle-duel, sketch-guess
  */
 
 const io = require('socket.io-client');
@@ -106,6 +111,61 @@ const WORD_ASSOC = [
   'sun', 'moon', 'star', 'fire', 'water', 'earth', 'sky', 'cloud', 'rain',
   'snow', 'tree', 'flower', 'ocean', 'river', 'mountain', 'forest', 'desert'
 ];
+
+const PUNCHLINE_ANSWERS = [
+  'my ex', 'a raccoon in a tuxedo', 'the entire state of Florida',
+  'someone who peaked in middle school', 'a sentient WiFi router',
+  'that one aunt at Thanksgiving', 'a man named Gerald', 'pure chaos',
+  'three raccoons in a trench coat', 'the CEO of bad decisions',
+  'a conspiracy theorist with a podcast', 'my sleep schedule',
+  'an overconfident pigeon', 'the ghost of a mediocre comedian',
+  'a very confused llama', 'whoever invented Mondays'
+];
+
+const FAKE_TRIVIA_ANSWERS = [
+  'approximately 42', 'the ancient Romans', 'a guy named Steve',
+  'it was actually a hoax', 'nobody really knows', 'about 3.50',
+  'the French, probably', 'a series of unfortunate events',
+  'technically it was cheese', 'the Queen of England', 'a wild guess',
+  'surprisingly, dolphins', 'everyone was wrong', 'the year 1847'
+];
+
+const TWO_TRUTHS_POOL = [
+  'I have been skydiving', 'I can speak three languages', 'I met a celebrity',
+  'I have a pet snake', 'I once won a eating contest', 'I can juggle',
+  'I have been on TV', 'I broke a bone twice', 'I can do a backflip',
+  'I have been to 10 countries', 'I played in a band', 'I can solve a Rubik\'s cube',
+  'I swam with sharks', 'I was born on a holiday', 'I have a twin',
+  'I ran a marathon', 'I lived on a boat', 'I can whistle with my fingers'
+];
+
+const CELEB_WORDS = [
+  'pizza', 'elephant', 'basketball', 'Shakespeare', 'volcano',
+  'astronaut', 'spaghetti', 'penguin', 'sunflower', 'tornado',
+  'karate', 'dinosaur', 'surfing', 'fireworks', 'unicorn',
+  'detective', 'submarine', 'cowboy', 'ballerina', 'werewolf'
+];
+
+const INSIDER_GUESSES = [
+  'is it an animal?', 'is it food?', 'is it bigger than a car?',
+  'can you hold it?', 'is it alive?', 'is it man-made?',
+  'is it found indoors?', 'does it move?', 'is it colorful?',
+  'can you eat it?', 'is it expensive?', 'is it common?'
+];
+
+// NPAT answers by starting letter (partial — bots pick from these)
+const NPAT_NAMES = {
+  fallback: ['Alex', 'Ben', 'Clara', 'Diana', 'Eric', 'Fiona', 'George', 'Hannah']
+};
+const NPAT_PLACES = {
+  fallback: ['Amsterdam', 'Berlin', 'Cairo', 'Denver', 'Edinburgh', 'Florence', 'Geneva']
+};
+const NPAT_ANIMALS = {
+  fallback: ['Ant', 'Bear', 'Cat', 'Dog', 'Eagle', 'Fox', 'Goat', 'Horse']
+};
+const NPAT_THINGS = {
+  fallback: ['Apple', 'Book', 'Chair', 'Door', 'Eraser', 'Fan', 'Glass', 'Hat']
+};
 
 // ═══════════════════════════════════════════════
 // BOT CLASS
@@ -234,9 +294,20 @@ class Bot {
     });
 
     // Game started
-    s.on('game-started', (data) => {
+    s.on('game-started', async (data) => {
       this.gameType = data.gameType;
       this.log(`🎮 Game started: ${data.gameType}`);
+
+      // Codenames: auto-join a team
+      if (data.gameType === 'codenames') {
+        await wait(1000 + this.index * 500);
+        const team = this.index % 2 === 0 ? 'red' : 'blue';
+        const role = this.index < 2 ? 'spymaster' : 'operative';
+        this.codenamesTeam = team;
+        this.codenamesRole = role;
+        this.log(`🔤 Joining ${team} team as ${role}`);
+        s.emit('codenames-join-team', { roomCode: this.roomCode, team, role });
+      }
     });
 
     // ── IMPOSTER ──
@@ -532,6 +603,397 @@ class Bot {
         s.emit('charades-guess', { roomCode: this.roomCode, guess });
       }
     });
+
+    // ── POWER STRUGGLE (Coup) ──
+    s.on('ps-state', async (data) => {
+      this.log(`⚔️  PS state — Turn: ${data.currentPlayer} | Coins: ${data.coins} | Cards: ${(data.myCards || []).length}`);
+      this.psCards = data.myCards || [];
+      this.psCoins = data.coins || 0;
+
+      if (!data.isMyTurn) return;
+      await wait(ACTION_DELAY);
+      const coins = data.coins || 0;
+      const others = this.players.filter(p => p.id !== s.id);
+      const target = others.length > 0 ? pick(others) : null;
+
+      let action, actionData;
+      if (coins >= 10) {
+        action = 'coup';
+        actionData = { roomCode: this.roomCode, action: 'coup', target: target?.id };
+      } else if (coins >= 7 && Math.random() > 0.4) {
+        action = 'coup';
+        actionData = { roomCode: this.roomCode, action: 'coup', target: target?.id };
+      } else {
+        const actions = ['income', 'foreign-aid', 'duke'];
+        if (coins >= 3 && target) actions.push('assassin');
+        if (target) actions.push('captain');
+        action = pick(actions);
+        actionData = { roomCode: this.roomCode, action, target: target?.id };
+      }
+      this.log(`⚔️  Action: ${action}${target ? ' → ' + target.name : ''}`);
+      s.emit('ps-action', actionData);
+    });
+
+    s.on('ps-action-pending', async (data) => {
+      await wait(ACTION_DELAY);
+      const roll = Math.random();
+      let response;
+      if (data.canChallenge && roll < 0.2) {
+        response = 'challenge';
+        this.log(`⚔️  Challenging ${data.actor}'s ${data.action}!`);
+      } else if (data.canBlock && roll < 0.35) {
+        response = 'block';
+        this.log(`🛡️  Blocking ${data.actor}'s ${data.action}`);
+      } else {
+        response = 'allow';
+        this.log(`✅ Allowing ${data.actor}'s ${data.action}`);
+      }
+      s.emit('ps-respond', { roomCode: this.roomCode, response });
+    });
+
+    s.on('ps-choose-influence', async (data) => {
+      await wait(ACTION_DELAY);
+      this.log(`💀 Must lose influence: ${data.reason}`);
+      s.emit('ps-lose-influence', { roomCode: this.roomCode, cardIndex: 0 });
+    });
+
+    s.on('ps-game-over', (data) => {
+      this.log(`🏆 Power Struggle over! Winner: ${data.winner}`);
+    });
+
+    // ── SECRET ROLES (Avalon) ──
+    s.on('avalon-roles', (data) => {
+      this.role = data;
+      this.log(`🏰 Avalon role: ${data.role} (${data.team})`);
+    });
+
+    s.on('avalon-team-select', async (data) => {
+      this.log(`🏰 Quest ${data.quest} — Leader: ${data.leader} needs ${data.teamSize} players`);
+      // If we're the leader, propose a team
+      if (data.leader === this.name) {
+        await wait(ACTION_DELAY);
+        const available = this.players.map(p => p.name);
+        const team = [];
+        const shuffled = [...available].sort(() => Math.random() - 0.5);
+        for (let i = 0; i < data.teamSize && i < shuffled.length; i++) {
+          team.push(shuffled[i]);
+        }
+        this.log(`🏰 Proposing team: ${team.join(', ')}`);
+        s.emit('avalon-propose-team', { roomCode: this.roomCode, team });
+      }
+    });
+
+    s.on('avalon-team-vote', async (data) => {
+      await wait(ACTION_DELAY);
+      const vote = Math.random() > 0.35 ? 'approve' : 'reject';
+      this.log(`🗳️  Team vote: ${vote}`);
+      s.emit('avalon-vote', { roomCode: this.roomCode, vote });
+    });
+
+    s.on('avalon-team-rejected', (data) => {
+      this.log(`❌ Team rejected (${data.rejections} rejections)`);
+    });
+
+    s.on('avalon-quest', async (data) => {
+      await wait(ACTION_DELAY);
+      // Evil players might fail the quest
+      const isEvil = this.role && this.role.team === 'evil';
+      const vote = (isEvil && Math.random() > 0.4) ? 'fail' : 'succeed';
+      this.log(`⚔️  Quest vote: ${vote}`);
+      s.emit('avalon-quest-vote', { roomCode: this.roomCode, vote });
+    });
+
+    s.on('avalon-quest-result', (data) => {
+      this.log(`📊 Quest ${data.success ? 'SUCCEEDED' : 'FAILED'} (${data.fails} fails)`);
+    });
+
+    s.on('avalon-game-over', (data) => {
+      this.log(`🏆 Avalon over! ${data.winner} wins — ${data.reason}`);
+    });
+
+    // ── CODENAMES (full bot support) ──
+    s.on('codenames-started', (data) => {
+      this.log(`🔤 Codenames started`);
+    });
+
+    s.on('codenames-clue-given', async (data) => {
+      this.log(`🔤 Clue: "${data.clue?.word}" (${data.clue?.number})`);
+      // If we're an operative on the current team, guess a word
+      const gs = data.gameState;
+      if (!gs) return;
+      const isOurTurn = (gs.currentTeam === 'red' && this.codenamesTeam === 'red') ||
+                        (gs.currentTeam === 'blue' && this.codenamesTeam === 'blue');
+      if (isOurTurn && this.codenamesRole === 'operative') {
+        await wait(ACTION_DELAY + Math.random() * 2000);
+        // Pick a random unrevealed word
+        const unrevealed = (gs.words || [])
+          .map((w, i) => ({ ...w, index: i }))
+          .filter(w => !w.revealed);
+        if (unrevealed.length > 0) {
+          const target = pick(unrevealed);
+          this.log(`🔤 Guessing: "${target.word}"`);
+          s.emit('codenames-select-word', { roomCode: this.roomCode, wordIndex: target.index });
+        }
+      }
+    });
+
+    s.on('codenames-word-revealed', (data) => {
+      this.log(`🔤 Revealed: ${data.color}`);
+    });
+
+    s.on('codenames-turn-ended', (data) => {
+      this.log(`🔤 Turn ended`);
+    });
+
+    // Codenames spymaster gives clue
+    s.on('codenames-state', async (data) => {
+      if (!data || !data.currentTeam) return;
+      const isOurTurn = data.currentTeam === this.codenamesTeam;
+      if (isOurTurn && this.codenamesRole === 'spymaster' && data.phase === 'clue') {
+        await wait(ACTION_DELAY);
+        const clue = pick(CLUE_WORDS);
+        const number = Math.floor(Math.random() * 2) + 1;
+        this.log(`🔤 Giving clue: "${clue}" ${number}`);
+        s.emit('codenames-give-clue', { roomCode: this.roomCode, word: clue, number });
+      }
+    });
+
+    // ── SPECTRUM / WAVELENGTH ──
+    s.on('wavelength-round', async (data) => {
+      this.log(`🌈 Spectrum: "${data.leftLabel}" ← → "${data.rightLabel}"`);
+      if (data.isPsychic) {
+        await wait(ACTION_DELAY);
+        const clue = pick(CLUE_WORDS);
+        this.log(`🌈 Psychic clue: "${clue}"`);
+        s.emit('wavelength-clue', { roomCode: this.roomCode, clue });
+      }
+    });
+
+    s.on('wavelength-clue', async (data) => {
+      this.log(`🌈 Clue from ${data.psychic}: "${data.clue}"`);
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const guess = Math.floor(Math.random() * 101); // 0-100
+      this.log(`🌈 Guessing position: ${guess}`);
+      s.emit('wavelength-guess', { roomCode: this.roomCode, guess });
+    });
+
+    s.on('wavelength-results', (data) => {
+      this.log(`📊 Spectrum results — Target: ${data.target}`);
+    });
+
+    s.on('wavelength-game-over', (data) => {
+      this.log(`🏆 Spectrum over! Winner: ${data.winner}`);
+    });
+
+    // ── NPAT ──
+    s.on('npat-round', async (data) => {
+      this.log(`📝 NPAT Round ${data.round} — Letter: ${data.letter}`);
+      await wait(ACTION_DELAY + Math.random() * 3000);
+      const letter = (data.letter || 'A').toUpperCase();
+      const categories = data.categories || ['Name', 'Place', 'Animal', 'Thing'];
+      const answers = {};
+      categories.forEach(cat => {
+        const catLower = cat.toLowerCase();
+        let pool;
+        if (catLower.includes('name')) pool = NPAT_NAMES.fallback;
+        else if (catLower.includes('place')) pool = NPAT_PLACES.fallback;
+        else if (catLower.includes('animal')) pool = NPAT_ANIMALS.fallback;
+        else pool = NPAT_THINGS.fallback;
+        // Try to find one starting with the right letter, else use any
+        const matching = pool.filter(w => w[0].toUpperCase() === letter);
+        answers[cat] = matching.length > 0 ? pick(matching) : (letter + pick(pool).substring(1));
+      });
+      this.log(`📝 Answers: ${JSON.stringify(answers)}`);
+      s.emit('npat-submit', { roomCode: this.roomCode, answers });
+    });
+
+    s.on('npat-results', (data) => {
+      this.log(`📊 NPAT results for letter ${data.letter}`);
+    });
+
+    s.on('npat-gameover', (data) => {
+      this.log(`🏆 NPAT over! Winner: ${data.winner}`);
+    });
+
+    // ── PUNCHLINE ──
+    s.on('punchline-prompt', async (data) => {
+      this.log(`😂 Punchline: "${(data.prompt || '').substring(0, 50)}..."`);
+      await wait(ACTION_DELAY + Math.random() * 3000);
+      const answer = pick(PUNCHLINE_ANSWERS);
+      this.log(`📝 Answer: "${answer}"`);
+      s.emit('punchline-answer', { roomCode: this.roomCode, answer });
+    });
+
+    s.on('punchline-voting', async (data) => {
+      this.log(`😂 Voting on ${(data.answers || []).length} punchlines`);
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const answers = data.answers || [];
+      if (answers.length > 0) {
+        const vote = pick(answers);
+        this.log(`📝 Voted for answer #${vote.index}`);
+        s.emit('punchline-vote', { roomCode: this.roomCode, answerIndex: vote.index });
+      }
+    });
+
+    s.on('punchline-results', (data) => {
+      this.log(`📊 Punchline results`);
+    });
+
+    s.on('punchline-game-over', (data) => {
+      this.log(`🏆 Punchline over! Winner: ${data.winner}`);
+    });
+
+    // ── FOOLS GOLD ──
+    s.on('fools-question', async (data) => {
+      this.log(`🤥 Fools Gold: "${(data.question || '').substring(0, 50)}..."`);
+      await wait(ACTION_DELAY + Math.random() * 3000);
+      const answer = pick(FAKE_TRIVIA_ANSWERS);
+      this.log(`📝 Fake answer: "${answer}"`);
+      s.emit('fools-submit-answer', { roomCode: this.roomCode, playerName: this.name, answer });
+    });
+
+    s.on('fools-voting', async (data) => {
+      this.log(`🤥 Voting — ${(data.answers || []).length} answers`);
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const answers = data.answers || [];
+      if (answers.length > 0) {
+        const vote = pick(answers);
+        this.log(`📝 Voted for: "${vote.text}"`);
+        s.emit('fools-submit-vote', { roomCode: this.roomCode, playerName: this.name, answerId: vote.id });
+      }
+    });
+
+    s.on('fools-results', (data) => {
+      this.log(`📊 Fools Gold results`);
+    });
+
+    s.on('fools-game-over', (data) => {
+      this.log(`🏆 Fools Gold over!`);
+    });
+
+    // ── TWO TRUTHS AND A LIE ──
+    s.on('twotruths-write', async (data) => {
+      this.log(`✌️  Two Truths — Round ${data.round} | Writer: ${data.currentPlayer}`);
+      if (data.isYourTurn) {
+        await wait(ACTION_DELAY + Math.random() * 2000);
+        // Pick 3 random statements, one is the "lie"
+        const shuffled = [...TWO_TRUTHS_POOL].sort(() => Math.random() - 0.5);
+        const statements = [shuffled[0], shuffled[1], shuffled[2]];
+        const lieIndex = Math.floor(Math.random() * 3);
+        this.log(`📝 Submitting: [${statements.join(', ')}] — lie: #${lieIndex}`);
+        s.emit('twotruths-submit', { roomCode: this.roomCode, statements, lieIndex });
+      }
+    });
+
+    s.on('twotruths-vote', async (data) => {
+      if (data.currentPlayer === this.name) return; // Don't vote on own
+      this.log(`✌️  Voting on ${data.currentPlayer}'s statements`);
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const voteIndex = Math.floor(Math.random() * 3);
+      this.log(`📝 Guessing lie is #${voteIndex}`);
+      s.emit('twotruths-vote', { roomCode: this.roomCode, voteIndex });
+    });
+
+    s.on('twotruths-results', (data) => {
+      this.log(`📊 Two Truths results — Lie was #${data.lieIndex}`);
+    });
+
+    s.on('twotruths-game-over', (data) => {
+      this.log(`🏆 Two Truths over! Winner: ${data.winner}`);
+    });
+
+    // ── INSIDER ──
+    s.on('insider-roles', async (data) => {
+      this.role = data;
+      this.log(`🕵️  Insider role: ${data.role}${data.word ? ' | Word: ' + data.word : ''}`);
+
+      // After getting role, periodically guess if we're not the master
+      if (data.role === 'master') return;
+      await wait(ACTION_DELAY * 2);
+      const guessCount = Math.floor(Math.random() * 3) + 1;
+      for (let i = 0; i < guessCount; i++) {
+        await wait(ACTION_DELAY * 2 + Math.random() * 4000);
+        if (!this.connected) return;
+        const guess = pick(INSIDER_GUESSES);
+        this.log(`🕵️  Asking: "${guess}"`);
+        s.emit('insider-guess', { roomCode: this.roomCode, guess });
+      }
+    });
+
+    s.on('insider-word-found', async (data) => {
+      this.log(`🕵️  Word found: "${data.word}" by ${data.guesser}`);
+      // Vote for who we think the insider is
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const others = this.players.filter(p => p.name !== this.name);
+      if (others.length > 0) {
+        const target = pick(others);
+        this.log(`🗳️  Voting insider: ${target.name}`);
+        s.emit('insider-vote', { roomCode: this.roomCode, target: target.name });
+      }
+    });
+
+    s.on('insider-timeout', (data) => {
+      this.log(`🕵️  Time's up! Word was "${data.word}"`);
+    });
+
+    s.on('insider-results', (data) => {
+      this.log(`📊 Insider vote results — Insider was ${data.insider}`);
+    });
+
+    s.on('insider-game-over', (data) => {
+      this.log(`🏆 Insider over! ${data.winner} wins`);
+    });
+
+    // ── CELEBRITY ──
+    s.on('celeb-teams', (data) => {
+      this.log(`🌟 Celebrity — Teams assigned`);
+    });
+
+    s.on('celeb-submit-words', async (data) => {
+      await wait(ACTION_DELAY + Math.random() * 2000);
+      const count = data.count || 3;
+      const shuffled = [...CELEB_WORDS].sort(() => Math.random() - 0.5);
+      const words = shuffled.slice(0, count);
+      this.log(`📝 Submitting words: ${words.join(', ')}`);
+      s.emit('celeb-submit-words', { roomCode: this.roomCode, words });
+    });
+
+    s.on('celeb-turn', async (data) => {
+      this.log(`🌟 Turn — ${data.team} | Clue giver: ${data.clueGiver} | Round ${data.round}`);
+      // If we're the clue giver, auto-skip words or mark correct
+      if (data.clueGiver === this.name) {
+        // Simulate giving clues — alternate correct/skip
+        const doTurn = async () => {
+          await wait(ACTION_DELAY);
+          if (Math.random() > 0.3) {
+            this.log(`🌟 Correct!`);
+            s.emit('celeb-correct', { roomCode: this.roomCode });
+          } else {
+            this.log(`🌟 Skip`);
+            s.emit('celeb-skip', { roomCode: this.roomCode });
+          }
+        };
+        // Do a few actions during the turn
+        for (let i = 0; i < 3; i++) {
+          await doTurn();
+        }
+      }
+    });
+
+    s.on('celeb-score', (data) => {
+      this.log(`🌟 Score: A=${data.scoreA} B=${data.scoreB}`);
+    });
+
+    s.on('celeb-round-end', (data) => {
+      this.log(`🌟 Round ${data.round} ended — A=${data.scoreA} B=${data.scoreB}`);
+    });
+
+    s.on('celeb-game-over', (data) => {
+      this.log(`🏆 Celebrity over! ${data.winner} wins (A=${data.scoreA} B=${data.scoreB})`);
+    });
+
+    // ── FISHBOWL (uses celebrity events) ──
+    // Fishbowl shares the celeb-* events, so the celebrity handlers above work for both
 
     // ── GENERIC CATCHALLS ──
     s.on('round-results', (data) => {
