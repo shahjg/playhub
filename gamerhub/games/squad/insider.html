@@ -517,7 +517,7 @@ function showResultBox(win, title, desc) {
 }
 
 // ─── Timer ─────────────────────────────
-function startTimer() { stopTimer(); updTimer(); timerInt = setInterval(() => { state.timeRemaining--; updTimer(); if (state.timeRemaining <= 0) stopTimer(); }, 1000); document.getElementById('timerSection').style.display = 'block'; }
+function startTimer() { stopTimer(); updTimer(); timerInt = setInterval(() => { state.timeRemaining--; updTimer(); if (state.timeRemaining <= 0) { stopTimer(); if (state.phase === 'questioning') { socket.emit('insider-timeout', { roomCode }); } else if (state.phase === 'voting' && state.myVote) { socket.emit('insider-vote', { roomCode, target: state.myVote }); } } }, 1000); document.getElementById('timerSection').style.display = 'block'; }
 function stopTimer() { if (timerInt) { clearInterval(timerInt); timerInt = null; } }
 function updTimer() {
     const m = Math.floor(state.timeRemaining / 60);
