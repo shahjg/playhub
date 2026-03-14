@@ -3294,31 +3294,44 @@ io.on('connection', (socket) => {
       return;
     }
     
-    if (!room.gameData.lastAnswer || !room.gameData.lastAnswerPlayer) {
+    const challengeAnswer = (data.answer || '').toLowerCase().trim() || (room.gameData.lastAnswer || '');
+    const challengePlayer = data.challengedPlayer || room.gameData.lastAnswerPlayer;
+
+    if (!challengeAnswer || !challengePlayer) {
       socket.emit('error', { message: 'Nothing to challenge' });
       return;
     }
-    
+
     // Can't challenge your own answer
-    if (room.gameData.lastAnswerPlayer === player.playerName) {
+    if (challengePlayer === player.playerName) {
       socket.emit('error', { message: 'Cannot challenge your own answer' });
       return;
     }
-    
+
+    // Verify the answer exists in current round
+    if (!isDuplicateAnswer(challengeAnswer, room.gameData.currentAnswers)) {
+      socket.emit('error', { message: 'That answer is not in this round' });
+      return;
+    }
+
     // Clear the current round timeout to pause game
     if (categoriesTimers.has(roomCode)) {
       clearTimeout(categoriesTimers.get(roomCode));
       categoriesTimers.delete(roomCode);
     }
-    
+
+    // Store which specific answer/player is being challenged
+    room.gameData.lastAnswer = challengeAnswer;
+    room.gameData.lastAnswerPlayer = challengePlayer;
+
     room.gameData.phase = 'challenge';
     room.gameData.challengeVotes = {};
     room.gameData.challengedBy = player.playerName;
-    
+
     io.to(roomCode).emit('categories-challenge-start', {
       challenger: player.playerName,
-      challengedPlayer: room.gameData.lastAnswerPlayer,
-      challengedAnswer: room.gameData.lastAnswer,
+      challengedPlayer: challengePlayer,
+      challengedAnswer: challengeAnswer,
       category: categoryDisplayNames[room.gameData.categories[room.gameData.currentCategoryIndex]]
     });
     
@@ -4108,7 +4121,12 @@ function startCategoriesRound(room, io) {
   room.gameData.challengeVotes = {};
   room.gameData.lastAnswer = null;
   room.gameData.lastAnswerPlayer = null;
-  
+
+  // Timer decreases as rounds progress: 15s → 12 → 10 → 9 → 8 → 7 → 7 → 6 → 6 → 6
+  const roundTimers = [15, 12, 10, 9, 8, 7, 7, 6, 6, 6];
+  const roundIdx = Math.min(room.gameData.roundNumber - 1, roundTimers.length - 1);
+  room.gameData.timePerRound = roundTimers[roundIdx];
+
   io.to(room.code).emit('categories-round-start', {
     category: category,
     displayName: displayName,
