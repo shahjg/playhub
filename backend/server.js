@@ -1274,37 +1274,99 @@ function initImposterGame(room, category = 'random') {
     food: [
       'Pizza', 'Sushi', 'Burger', 'Taco', 'Pasta', 'Steak', 'Salad', 'Soup',
       'Sandwich', 'Ice Cream', 'Chocolate', 'Coffee', 'Tea', 'Wine', 'Beer',
-      'Cheese', 'Bacon', 'Chicken', 'Rice', 'Bread', 'Cake', 'Cookie'
+      'Cheese', 'Bacon', 'Chicken', 'Rice', 'Bread', 'Cake', 'Cookie',
+      'Donut', 'Waffle', 'Pancake', 'Ramen', 'Curry', 'Falafel', 'Nachos',
+      'Smoothie', 'Pretzel', 'Popcorn', 'Muffin', 'Croissant', 'Lobster'
     ],
     animals: [
       'Dog', 'Cat', 'Lion', 'Tiger', 'Bear', 'Elephant', 'Giraffe', 'Zebra',
       'Monkey', 'Penguin', 'Dolphin', 'Shark', 'Eagle', 'Owl', 'Parrot',
-      'Snake', 'Rabbit', 'Horse', 'Cow', 'Pig', 'Sheep', 'Chicken'
+      'Snake', 'Rabbit', 'Horse', 'Cow', 'Pig', 'Sheep', 'Chicken',
+      'Octopus', 'Flamingo', 'Cheetah', 'Gorilla', 'Koala', 'Panda', 'Whale',
+      'Turtle', 'Hedgehog', 'Chameleon', 'Peacock', 'Sloth'
     ],
     places: [
       'Beach', 'Mountain', 'Desert', 'Forest', 'City', 'Village', 'Island',
       'Airport', 'Hospital', 'School', 'Library', 'Restaurant', 'Mall',
-      'Park', 'Zoo', 'Museum', 'Theater', 'Stadium', 'Hotel', 'Casino'
+      'Park', 'Zoo', 'Museum', 'Theater', 'Stadium', 'Hotel', 'Casino',
+      'Gym', 'Nightclub', 'Church', 'Prison', 'Farm', 'Submarine', 'Spaceship',
+      'Carnival', 'Rooftop', 'Basement', 'Elevator', 'Treehouse'
     ],
     objects: [
       'Phone', 'Laptop', 'Car', 'Bicycle', 'Watch', 'Camera', 'Television',
       'Chair', 'Table', 'Bed', 'Lamp', 'Mirror', 'Book', 'Pen', 'Wallet',
-      'Keys', 'Umbrella', 'Backpack', 'Shoes', 'Hat', 'Glasses', 'Bottle'
+      'Keys', 'Umbrella', 'Backpack', 'Shoes', 'Hat', 'Glasses', 'Bottle',
+      'Microwave', 'Toothbrush', 'Pillow', 'Candle', 'Scissors', 'Hammer',
+      'Guitar', 'Skateboard', 'Balloon', 'Trophy', 'Diamond'
     ],
     activities: [
       'Swimming', 'Running', 'Dancing', 'Singing', 'Cooking', 'Reading',
       'Writing', 'Painting', 'Football', 'Basketball', 'Tennis', 'Golf',
-      'Yoga', 'Hiking', 'Camping', 'Fishing', 'Shopping', 'Gaming', 'Skiing'
+      'Yoga', 'Hiking', 'Camping', 'Fishing', 'Shopping', 'Gaming', 'Skiing',
+      'Surfing', 'Boxing', 'Archery', 'Karate', 'Skydiving', 'Meditation',
+      'Juggling', 'Gardening', 'Baking', 'Bowling', 'Wrestling'
     ],
     nature: [
       'Ocean', 'River', 'Lake', 'Waterfall', 'Mountain', 'Valley', 'Cave',
       'Volcano', 'Rainbow', 'Sunset', 'Sunrise', 'Storm', 'Snow', 'Rain',
-      'Thunder', 'Lightning', 'Tree', 'Flower', 'Grass', 'Rock', 'Cloud'
+      'Thunder', 'Lightning', 'Tree', 'Flower', 'Grass', 'Rock', 'Cloud',
+      'Glacier', 'Tornado', 'Earthquake', 'Jungle', 'Coral', 'Eclipse',
+      'Tsunami', 'Aurora', 'Comet', 'Fossil', 'Mushroom'
     ],
     entertainment: [
       'Movie', 'Concert', 'Festival', 'Party', 'Wedding', 'Birthday',
       'Game', 'Puzzle', 'Magic', 'Circus', 'Comedy', 'Drama', 'Musical',
-      'Dance', 'Karaoke', 'Podcast', 'Stream', 'Video', 'Music', 'Song'
+      'Dance', 'Karaoke', 'Podcast', 'Stream', 'Video', 'Music', 'Song',
+      'Opera', 'Ballet', 'Standup', 'Talent Show', 'Trivia', 'Escape Room',
+      'Roller Coaster', 'Fireworks', 'Parade', 'Prom'
+    ],
+    movies: [
+      'Titanic', 'Avatar', 'Inception', 'Frozen', 'Jaws', 'Shrek', 'Matrix',
+      'Gladiator', 'Rocky', 'Batman', 'Superman', 'Twilight', 'Avengers',
+      'Jurassic Park', 'Star Wars', 'Harry Potter', 'Finding Nemo', 'Joker',
+      'Barbie', 'Oppenheimer', 'Top Gun', 'Toy Story', 'Lion King', 'Scream',
+      'Ghostbusters', 'Home Alone', 'Die Hard', 'Elf', 'Grease', 'Interstellar'
+    ],
+    professions: [
+      'Doctor', 'Teacher', 'Chef', 'Pilot', 'Firefighter', 'Police Officer',
+      'Astronaut', 'Lawyer', 'Dentist', 'Plumber', 'Mechanic', 'Nurse',
+      'Surgeon', 'DJ', 'Barber', 'Lifeguard', 'Magician', 'Comedian',
+      'Influencer', 'Spy', 'Detective', 'Zookeeper', 'Archaeologist',
+      'Therapist', 'Vet', 'Cashier', 'Janitor', 'Uber Driver', 'Bartender'
+    ],
+    brands: [
+      'Nike', 'Apple', 'Google', 'Netflix', 'Amazon', 'Tesla', 'Starbucks',
+      'McDonalds', 'Disney', 'Spotify', 'Instagram', 'TikTok', 'YouTube',
+      'Samsung', 'Coca Cola', 'Pepsi', 'Gucci', 'Adidas', 'Xbox', 'PlayStation',
+      'Nintendo', 'Uber', 'Airbnb', 'Twitter', 'Snapchat', 'Reddit',
+      'IKEA', 'Lego', 'Walmart', 'Target'
+    ],
+    celebrities: [
+      'Drake', 'Beyonce', 'Taylor Swift', 'Elon Musk', 'The Rock',
+      'Kim Kardashian', 'LeBron James', 'Ronaldo', 'Messi', 'Rihanna',
+      'Oprah', 'Kanye West', 'Bad Bunny', 'Ariana Grande', 'Billie Eilish',
+      'Post Malone', 'Snoop Dogg', 'Gordon Ramsay', 'Mr Beast', 'Zendaya',
+      'Travis Scott', 'Nicki Minaj', 'Ice Spice', 'Harry Styles', 'Dua Lipa'
+    ],
+    sports: [
+      'Soccer', 'Basketball', 'Baseball', 'Football', 'Tennis', 'Golf',
+      'Hockey', 'Cricket', 'Rugby', 'Boxing', 'MMA', 'Wrestling', 'Volleyball',
+      'Swimming', 'Track', 'Gymnastics', 'Skateboarding', 'Surfing',
+      'Snowboarding', 'Lacrosse', 'Badminton', 'Table Tennis', 'Archery',
+      'Fencing', 'Polo', 'Dodgeball', 'Kickball', 'Bowling', 'Darts'
+    ],
+    music: [
+      'Hip Hop', 'Pop', 'Rock', 'Jazz', 'Country', 'EDM', 'R&B', 'Reggae',
+      'Classical', 'Metal', 'Punk', 'Blues', 'Soul', 'Gospel', 'Latin',
+      'K-Pop', 'Afrobeats', 'Techno', 'Trap', 'Drill', 'Lo-Fi',
+      'Acoustic', 'Indie', 'Grunge', 'Disco', 'Salsa', 'Reggaeton'
+    ],
+    school: [
+      'Homework', 'Detention', 'Cafeteria', 'Recess', 'Pop Quiz', 'Textbook',
+      'Backpack', 'Locker', 'Principal', 'Report Card', 'Field Trip', 'Prom',
+      'Graduation', 'Substitute', 'Hall Pass', 'Chalkboard', 'Eraser',
+      'Yearbook', 'Cheerleader', 'Mascot', 'Study Hall', 'Honor Roll',
+      'Tardy', 'Expelled', 'Valedictorian', 'Freshman'
     ],
     spicy: [
       'Bedroom', 'Kissing', 'Dating', 'Flirting', 'Romance', 'Attraction',
@@ -1317,6 +1379,12 @@ function initImposterGame(room, category = 'random') {
       'Nerd', 'Goth', 'Emo', 'Influencer', 'Gamer', 'Vegan', 'CrossFit',
       'Yoga Mom', 'Tech Bro', 'Finance Guy', 'Theater Kid', 'Band Kid',
       'Art Student', 'Frat Boy', 'Sorority Girl'
+    ],
+    memes: [
+      'Rizz', 'Sigma', 'NPC', 'Slay', 'Cap', 'Sus', 'Ratio', 'W',
+      'Bruh', 'Yeet', 'Simp', 'GOAT', 'Boujee', 'Ghosting', 'Flex',
+      'Salty', 'Clutch', 'Vibe Check', 'Main Character', 'Cringe',
+      'Bussin', 'No Cap', 'Deadass', 'Lowkey', 'Highkey', 'Periodt'
     ]
   };
   
