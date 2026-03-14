@@ -2,289 +2,121 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Never Have I Ever – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Never Have I Ever - discover secrets about each other!">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Never Have I Ever – TheGaming.co</title>
     <meta name="theme-color" content="#0a0a0f">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
-            --p1:#f472b6;--p2:#60a5fa;
-            --text-dark:#1a1a2e;--text-muted:#6b7280;
-        }
+        :root{--bg:#0a0a0f;--card:#12121f;--accent:#f97316;--accent2:#eab308;--green:#22c55e;--red:#ef4444;--text:#fff;--dim:rgba(255,255,255,0.45);--border:rgba(255,255,255,0.06)}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
-        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
-
-        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
-
-        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
-        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
-        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
-        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
-        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        .hero-title{font-size:clamp(2rem,7vw,3.5rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
-        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
-
-        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
-        .game-container{width:100%;max-width:450px;display:flex;flex-direction:column;gap:16px}
-
-        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08)}
-        .score-card.p1 .score-label{color:var(--p1)}
-        .score-card.p2 .score-label{color:var(--p2)}
-        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
-        .score-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text-dark)}
-        .score-sub{font-size:0.7rem;color:var(--text-muted)}
-
-        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
-
-        .phase{display:none}
-        .phase.active{display:block}
-
-        .category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-        .category-card{background:#fdf2f8;border:2px solid #fce7f3;border-radius:14px;padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.2s}
-        .category-card:hover{border-color:var(--accent);transform:translateY(-2px)}
-        .category-icon{font-size:2rem;margin-bottom:8px}
-        .category-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;margin-bottom:4px}
-        .category-desc{font-size:0.75rem;color:var(--text-muted)}
-
-        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;text-align:center;margin-bottom:20px;color:var(--accent-dark)}
-
-        .progress-bar{height:6px;background:#eee;border-radius:3px;margin-bottom:16px;overflow:hidden}
-        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width 0.3s}
-        .progress-text{text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:20px}
-
-        .prompt-card{text-align:center;padding:20px 10px}
-        .prompt-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--accent-dark);margin-bottom:16px}
-        .prompt-text{font-size:1.15rem;line-height:1.6;margin-bottom:24px;min-height:60px;font-weight:500}
-        .prompt-hint{font-size:0.85rem;color:var(--text-muted);margin-bottom:20px}
-        .response-btns{display:flex;gap:12px;justify-content:center}
-        .response-btn{flex:1;max-width:130px;padding:14px;border-radius:12px;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;cursor:pointer;transition:all 0.2s}
-        .response-btn.have{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
-        .response-btn.havent{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
-        .response-btn:hover{transform:scale(1.05)}
-
-        .end-screen{text-align:center;padding:30px}
-        .end-emoji{font-size:4rem;margin-bottom:16px}
-        .end-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:8px;color:var(--accent-dark)}
-        .end-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
-
-        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
-
-        .actions{display:flex;gap:10px;justify-content:center}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(249,115,22,0.06),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(10,10,15,0.94);backdrop-filter:blur(20px)}
+        header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s}.back:hover{color:var(--accent)}.back svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hdr-code{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:3px;color:var(--accent);padding:3px 10px;border:1px solid rgba(249,115,22,0.15);border-radius:4px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:500px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .lobby-icon{font-size:3.5rem;margin-bottom:12px}.lobby-title{font-size:2.3rem;letter-spacing:4px;text-align:center;margin-bottom:4px}.lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:rgba(255,255,255,0.04);border:2px solid var(--border);border-radius:12px;color:#fff;text-align:center;outline:none;transition:.3s;margin-bottom:12px}.name-input:focus{border-color:var(--accent)}.name-input::placeholder{color:rgba(255,255,255,0.2)}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:12px;cursor:pointer;transition:.2s}
+        .btn-create{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 16px rgba(249,115,22,0.3)}
+        .btn-join{background:rgba(255,255,255,0.04);border:1px solid var(--border)!important;color:var(--text)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .code-input{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;text-align:center;background:rgba(255,255,255,0.04);border:2px solid var(--border);border-radius:12px;color:var(--accent);outline:none;text-transform:uppercase}.code-input:focus{border-color:var(--accent)}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center}.setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--accent);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border)}.p-chip.me{border-color:var(--accent);color:var(--accent)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .spice-row{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:360px}
+        .spice-btn{flex:1;padding:12px 8px;border-radius:10px;text-align:center;cursor:pointer;border:2px solid var(--border);background:rgba(255,255,255,0.02);transition:.2s;font-size:.75rem;font-weight:700}.spice-btn.sel{border-color:var(--accent);background:rgba(249,115,22,0.08);color:var(--accent)}.spice-icon{font-size:1.4rem;display:block;margin-bottom:4px}
+        .pack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:360px;margin-bottom:20px}
+        .pack-btn{padding:14px 8px;border-radius:10px;text-align:center;cursor:pointer;border:2px solid var(--border);background:rgba(255,255,255,0.02);transition:.2s;font-size:.7rem;font-weight:700}.pack-btn.sel{border-color:var(--accent);background:rgba(249,115,22,0.08);color:var(--accent)}.pack-icon{font-size:1.2rem;display:block;margin-bottom:4px}
+        .progress{width:100%;max-width:400px;margin-bottom:16px}.prog-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:6px}.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}.prog-txt{text-align:center;font-size:.7rem;color:var(--dim)}
+        .q-card{width:100%;max-width:420px;text-align:center;margin-bottom:20px;padding:36px 24px;border-radius:20px;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.1);animation:fadeUp .4s ease-out}
+        .q-label{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:4px;color:var(--accent);margin-bottom:16px}
+        .q-text{font-size:clamp(1.3rem,4.5vw,1.8rem);font-weight:700;line-height:1.4}
+        .choice-row{display:flex;gap:12px;width:100%;max-width:400px;margin-bottom:12px}
+        .choice-btn{flex:1;padding:20px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:2px solid;border-radius:14px;cursor:pointer;transition:.2s;text-align:center}
+        .choice-btn.have{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);color:#86efac}
+        .choice-btn.havent{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);color:#fca5a5}
+        .choice-btn:hover{transform:scale(1.02)}.choice-btn:active{transform:scale(0.98)}
+        .choice-btn.chosen.have{border-color:var(--green);box-shadow:0 4px 20px rgba(34,197,94,0.3);background:rgba(34,197,94,0.12)}
+        .choice-btn.chosen.havent{border-color:var(--red);box-shadow:0 4px 20px rgba(239,68,68,0.3);background:rgba(239,68,68,0.12)}
+        .choice-btn.disabled{pointer-events:none;opacity:.5}
+        .partner-status{text-align:center;font-size:.75rem;color:var(--dim);min-height:20px;margin-bottom:8px}.partner-status.chose{color:var(--green)}
+        .reveal{width:100%;max-width:400px;text-align:center;animation:fadeUp .3s ease-out}
+        .reveal-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:3px;margin-bottom:12px}.reveal-title.match{color:var(--green)}.reveal-title.diff{color:var(--accent)}
+        .reveal-choices{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
+        .r-chip{padding:8px 14px;border-radius:10px;font-size:.8rem;font-weight:600;border:1px solid var(--border)}.r-chip .r-name{color:var(--accent);margin-right:6px}
+        .react-row{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+        .react-btn{font-size:1.5rem;padding:8px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,0.02);cursor:pointer;transition:.2s;width:44px;height:44px;display:flex;align-items:center;justify-content:center}.react-btn:hover{transform:scale(1.15);border-color:var(--accent)}
+        .incoming-react{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:5rem;z-index:200;pointer-events:none;animation:reactPop .8s ease-out forwards}
+        @keyframes reactPop{0%{opacity:1;transform:translate(-50%,-50%) scale(0.3)}30%{transform:translate(-50%,-50%) scale(1.3)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
+        .next-btn{padding:14px 32px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.3);transition:.2s}.next-btn:hover{transform:translateY(-2px)}
+        .fav-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:0;color:var(--dim);font-size:.8rem;cursor:pointer;transition:.2s}.fav-btn.saved{color:var(--accent2);border-color:var(--accent2)}
+        .btn-row{display:flex;gap:10px;align-items:center;justify-content:center}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px}.end-sub{color:var(--dim);font-size:.85rem;margin-bottom:20px;text-align:center}
+        .end-stat{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--accent);text-align:center}.end-stat-lbl{font-size:.65rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:20px}
+        .end-btns{display:flex;gap:10px;width:100%;max-width:320px}
+        .error-msg{color:#ef4444;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
     </style>
 </head>
 <body>
-    <div id="site-header"></div>
-    <main>
-        <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">🙈</div>
-                <h1 class="hero-title">NEVER HAVE I EVER</h1>
-                <p class="hero-sub">Discover secrets about each other!</p>
-            </div>
-        </section>
-
-        <div class="game-wrapper">
-            <div class="game-container">
-                <div class="score-bar">
-                    <div class="score-card p1">
-                        <div class="score-label">Player 1</div>
-                        <div class="score-value" id="score1">0</div>
-                        <div class="score-sub">confessions</div>
-                    </div>
-                    <div class="score-card p2">
-                        <div class="score-label">Player 2</div>
-                        <div class="score-value" id="score2">0</div>
-                        <div class="score-sub">confessions</div>
-                    </div>
-                </div>
-
-                <div class="game-board">
-                    <div class="phase active" id="categoryPhase">
-                        <div class="phase-title">CHOOSE A MODE</div>
-                        <div class="category-grid">
-                            <div class="category-card" onclick="selectCategory('clean')">
-                                <div class="category-icon">😇</div>
-                                <div class="category-name">CLEAN</div>
-                                <div class="category-desc">Family friendly</div>
-                            </div>
-                            <div class="category-card" onclick="selectCategory('social')">
-                                <div class="category-icon">👯</div>
-                                <div class="category-name">SOCIAL</div>
-                                <div class="category-desc">Life experiences</div>
-                            </div>
-                            <div class="category-card" onclick="selectCategory('party')">
-                                <div class="category-icon">🎉</div>
-                                <div class="category-name">PARTY</div>
-                                <div class="category-desc">Wild times</div>
-                            </div>
-                            <div class="category-card" onclick="selectCategory('spicy')">
-                                <div class="category-icon">🔥</div>
-                                <div class="category-name">SPICY</div>
-                                <div class="category-desc">Adults only</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="playPhase">
-                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-                        <div class="progress-text"><span id="currentNum">1</span> of 15</div>
-                        <div class="prompt-card">
-                            <div class="prompt-title">NEVER HAVE I EVER...</div>
-                            <div class="prompt-text" id="promptText"></div>
-                            <div class="prompt-hint">Both players answer honestly!</div>
-                            <div class="response-btns">
-                                <button class="response-btn have" onclick="respond(true)">I HAVE 🙋</button>
-                                <button class="response-btn havent" onclick="respond(false)">NEVER 🙅</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="resultPhase">
-                        <div class="prompt-card">
-                            <div class="prompt-title">RESULTS</div>
-                            <div class="prompt-text" id="resultText"></div>
-                            <div class="prompt-hint">Discuss and share your stories!</div>
-                            <div class="actions">
-                                <button class="btn btn-primary" onclick="nextPrompt()">Next</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="endPhase">
-                        <div class="end-screen">
-                            <div class="end-emoji">🎊</div>
-                            <div class="end-title">GAME COMPLETE!</div>
-                            <div class="end-sub" id="endSub">You've learned so much about each other!</div>
-                            <div class="actions">
-                                <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
+<div class="bg"></div>
+<header><nav class="nav"><a href="/duos.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">NEVER HAVE I EVER</span><span class="hdr-code" id="hdrCode" style="display:none"></span></nav></header>
+<main>
+<div class="phase on" id="phLobby"><div class="lobby-icon">🙈</div><h1 class="lobby-title">NEVER HAVE I EVER</h1><p class="lobby-sub">Confess what you've done — or haven't</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-create" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-join" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
+<div class="phase" id="phSetup"><h2 class="setup-title">GAME SETUP</h2><p class="setup-sub">Share this code with your partner</p><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div><div class="section-label">Spice Level</div><div class="spice-row"><div class="spice-btn sel" data-v="clean" onclick="pickSpice(this)"><span class="spice-icon">😇</span>Clean</div><div class="spice-btn" data-v="medium" onclick="pickSpice(this)"><span class="spice-icon">😏</span>Medium</div><div class="spice-btn" data-v="spicy" onclick="pickSpice(this)"><span class="spice-icon">🔥</span>Spicy 18+</div></div><div class="section-label">Pack</div><div class="pack-grid"><div class="pack-btn sel" data-v="classic" onclick="pickPack(this)"><span class="pack-icon">🎯</span>Classic</div><div class="pack-btn" data-v="couples" onclick="pickPack(this)"><span class="pack-icon">💕</span>Couples</div></div><button class="btn btn-create" id="startBtn" onclick="startGame()" disabled style="width:100%;max-width:320px">WAITING FOR PARTNER...</button><div class="error-msg" id="setupErr"></div></div>
+<div class="phase" id="phGame"><div class="progress"><div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div><div class="prog-txt" id="progTxt">1 / ?</div></div><div class="q-card"><div class="q-label">NEVER HAVE I EVER...</div><div class="q-text" id="qText">Loading...</div></div><div class="choice-row"><button class="choice-btn have" id="btnHave" onclick="choose('a')">🙋 I HAVE</button><button class="choice-btn havent" id="btnHavent" onclick="choose('b')">🙅 NEVER</button></div><div class="partner-status" id="partnerStatus"></div><div class="react-row"><button class="react-btn" onclick="react('😂')">😂</button><button class="react-btn" onclick="react('❤️')">❤️</button><button class="react-btn" onclick="react('😮')">😮</button><button class="react-btn" onclick="react('🔥')">🔥</button></div></div>
+<div class="phase" id="phReveal"><div class="reveal"><div class="reveal-title" id="revealTitle">RESULTS</div><div class="reveal-choices" id="revealChoices"></div><div class="react-row"><button class="react-btn" onclick="react('😂')">😂</button><button class="react-btn" onclick="react('❤️')">❤️</button><button class="react-btn" onclick="react('😮')">😮</button><button class="react-btn" onclick="react('🔥')">🔥</button></div><div class="btn-row"><button class="fav-btn" id="favBtn" onclick="fav()">♡ Save</button><button class="next-btn" onclick="next()">NEXT →</button></div></div></div>
+<div class="phase" id="phEnd"><div class="end-icon">🎉</div><h2 class="end-title">ALL DONE!</h2><p class="end-sub" id="endSub">Great confessions!</p><div class="end-stat" id="endStat">0</div><div class="end-stat-lbl">Statements Answered</div><div class="end-btns"><button class="btn btn-join" onclick="location.reload()">NEW GAME</button><button class="btn btn-create" onclick="location.href='/duos.html'">MORE GAMES</button></div></div>
+</main>
 <script>
-const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-
-const prompts={
-    clean:["Stayed up all night","Eaten something off the floor","Forgotten someone's name right after meeting them","Pretended to laugh at a joke I didn't get","Sung in the shower","Talked to myself out loud","Tripped in public","Had food stuck in my teeth all day","Waved back at someone who wasn't waving at me","Walked into a glass door","Cried during a movie","Laughed so hard I cried","Danced when nobody was watching","Made up an excuse to leave early","Blamed a fart on someone else"],
-    social:["Been on a blind date","Ghosted someone","Been ghosted","Lied on my resume","Called in sick when I wasn't","Regifted a present","Read someone's diary or messages","Spread a rumor","Had a crush on a friend's partner","Pretended to be busy to avoid someone","Unfollowed an ex on social media","Stalked someone's social media","Lied about my age","Pretended to text to avoid conversation","Faked being interested in someone's story"],
-    party:["Done a walk of shame","Drunk texted an ex","Thrown up from drinking","Kissed a stranger","Had a one night stand","Been kicked out of a bar","Blacked out from drinking","Lied about how many people I've been with","Had a friends with benefits","Kissed someone of the same gender","Done something illegal","Been arrested","Skinny dipped","Crashed a party","Had a hangover at work"],
-    spicy:["Faked an orgasm","Watched adult content with a partner","Sent explicit photos","Had a threesome","Done it in public","Been caught in the act","Had a one night stand I regret","Hooked up with a coworker","Had a secret relationship","Role played in bed","Used toys with a partner","Had phone or video intimacy","Kissed someone in a relationship","Been unfaithful","Had a fantasy about a friend's partner"]
-};
-
-let category='';
-let deck=[];
-let round=0;
-const totalRounds=15;
-let scores={1:0,2:0};
-let currentAnswer=null;
-let answering=1;
-
-function shuffle(arr){
-    for(let i=arr.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [arr[i],arr[j]]=[arr[j],arr[i]];
-    }
-    return arr;
-}
-
-function showPhase(id){
-    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
-function selectCategory(cat){
-    category=cat;
-    deck=shuffle([...prompts[cat]]);
-    round=0;
-    scores={1:0,2:0};
-    answering=1;
-    updateScores();
-    showPrompt();
-}
-
-function showPrompt(){
-    if(round>=totalRounds||deck.length===0){
-        endGame();
-        return;
-    }
-    const p=deck.pop();
-    document.getElementById('promptText').textContent=p;
-    updateProgress();
-    showPhase('playPhase');
-}
-
-function updateProgress(){
-    const pct=(round/totalRounds)*100;
-    document.getElementById('progressFill').style.width=pct+'%';
-    document.getElementById('currentNum').textContent=round+1;
-}
-
-function updateScores(){
-    document.getElementById('score1').textContent=scores[1];
-    document.getElementById('score2').textContent=scores[2];
-}
-
-function respond(hasDonel){
-    if(answering===1){
-        currentAnswer=hasDonel;
-        if(hasDonel)scores[1]++;
-        answering=2;
-        document.querySelector('.prompt-hint').textContent='Now Player 2 answers!';
-    }else{
-        if(hasDonel)scores[2]++;
-        updateScores();
-        
-        let result='';
-        if(currentAnswer&&hasDonel)result="You've BOTH done it! Share your stories! 🔥";
-        else if(!currentAnswer&&!hasDonel)result="Neither of you have! Interesting... 🤔";
-        else if(currentAnswer)result="Only Player 1 has done it! Spill the tea! ☕";
-        else result="Only Player 2 has done it! Tell us more! 👀";
-        
-        document.getElementById('resultText').textContent=result;
-        answering=1;
-        showPhase('resultPhase');
-    }
-}
-
-function nextPrompt(){
-    round++;
-    document.querySelector('.prompt-hint').textContent='Both players answer honestly!';
-    showPrompt();
-}
-
-function endGame(){
-    const winner=scores[1]>scores[2]?'Player 1':scores[2]>scores[1]?'Player 2':'Tie';
-    document.getElementById('endSub').textContent=`P1: ${scores[1]} confessions | P2: ${scores[2]} confessions`;
-    showPhase('endPhase');
-}
-
-function resetGame(){
-    category='';
-    deck=[];
-    round=0;
-    scores={1:0,2:0};
-    answering=1;
-    showPhase('categoryPhase');
-}
+const BK='https://web-production-519c7.up.railway.app',sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={code:null,name:null,num:0,spice:'clean',pack:'classic',q:null,total:0,idx:0,chose:null,players:[],faved:false};
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('duo-create',{gameType:'never-have-i-ever',playerName:n,pack:G.pack,spice:G.spice});}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter your name');if(!c||c.length<4)return err('lobbyErr','Enter room code');G.name=n;sk.connect();sk.emit('duo-join',{code:c,playerName:n});}
+function pickSpice(el){document.querySelectorAll('.spice-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.spice=el.dataset.v;}
+function pickPack(el){document.querySelectorAll('.pack-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.pack=el.dataset.v;}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+function startGame(){sk.emit('duo-start',{code:G.code});}
+function renderPlayers(){const b=document.getElementById('playersBox');b.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)b.innerHTML+='<div class="p-chip waiting">Waiting...</div>';const s=document.getElementById('startBtn');s.disabled=G.players.length<2;s.textContent=G.players.length>=2?'START GAME':'WAITING FOR PARTNER...';}
+function choose(c){if(G.chose)return;G.chose=c;document.getElementById(c==='a'?'btnHave':'btnHavent').classList.add('chosen');document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));sk.emit('duo-choice',{code:G.code,choice:c});}
+function showQ(d){G.idx=d.index;G.q=d.question;G.total=d.total;G.chose=null;G.faved=false;document.getElementById('progFill').style.width=((G.idx/G.total)*100)+'%';document.getElementById('progTxt').textContent=(G.idx+1)+' / '+G.total;const t=typeof G.q==='string'?G.q:'';document.getElementById('qText').textContent=t.replace(/^never have i ever\s*/i,'');document.querySelectorAll('.choice-btn').forEach(b=>{b.classList.remove('chosen','disabled');});document.getElementById('partnerStatus').textContent='';document.getElementById('hdrCode').textContent=G.code;document.getElementById('hdrCode').style.display='';show('phGame');}
+function showReveal(d){const m=d.match;document.getElementById('revealTitle').textContent=m?'YOU BOTH MATCH! 🎉':'DIFFERENT!';document.getElementById('revealTitle').className='reveal-title '+(m?'match':'diff');document.getElementById('revealChoices').innerHTML=Object.entries(d.choices).map(([n,c])=>`<div class="r-chip"><span class="r-name">${esc(n)}</span>${c==='a'?'🙋 I have':'🙅 Never'}</div>`).join('');show('phReveal');}
+function next(){sk.emit('duo-next',{code:G.code});}
+function fav(){G.faved=!G.faved;document.getElementById('favBtn').textContent=G.faved?'♥ Saved':'♡ Save';document.getElementById('favBtn').classList.toggle('saved',G.faved);if(G.faved)sk.emit('duo-favorite',{code:G.code,index:G.idx});}
+function react(e){sk.emit('duo-react',{code:G.code,emoji:e});}
+sk.on('duo-created',d=>{G.code=d.code;G.num=d.playerNum;G.players=[G.name];document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSetup');});
+sk.on('duo-joined',d=>{G.code=d.code;G.num=d.playerNum;G.players=d.players;if(d.started&&d.question){showQ({index:d.currentIndex,question:d.question,total:d.total});return;}document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSetup');});
+sk.on('duo-player-joined',d=>{G.players=d.players;renderPlayers();});
+sk.on('duo-round',d=>showQ(d));
+sk.on('duo-player-chose',d=>{document.getElementById('partnerStatus').textContent=d.playerName+' has answered';document.getElementById('partnerStatus').className='partner-status chose';});
+sk.on('duo-reveal',d=>showReveal(d));
+sk.on('duo-reaction',d=>{const el=document.createElement('div');el.className='incoming-react';el.textContent=d.emoji;document.body.appendChild(el);setTimeout(()=>el.remove(),1000);});
+sk.on('duo-end',d=>{document.getElementById('endStat').textContent=d.total;document.getElementById('endSub').textContent='You went through '+d.total+' confessions!';show('phEnd');});
+sk.on('duo-player-left',d=>{document.getElementById('partnerStatus').textContent=d.playerName+' disconnected';});
+sk.on('duo-error',d=>err('lobbyErr',d.message)||err('setupErr',d.message));
+function err(id,m){const el=document.getElementById(id);if(el){el.textContent=m;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+document.getElementById('nameInput').addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput').addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
 <script src="/header.js"></script>
-<script src="/js/engagement.js" defer></script>
 </body>
 </html>

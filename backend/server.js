@@ -8,6 +8,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 const partyGames = require('./party-games');
 const missingSquadGames = require('./missing-squad-games');
+const { initDuoHandlers } = require('./duo-games');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -1896,6 +1897,7 @@ io.on('connection', (socket) => {
   partyGames.setupPartyGameHandlers(io, socket, rooms, players);
   missingSquadGames.setupMissingSquadGameHandlers(io, socket, rooms, players);
   additionalSquadGames.registerAdditionalSquadGameHandlers(io, socket, rooms, players);
+  initDuoHandlers(io, socket);
   
   // CREATE ROOM (initial creation only)
   socket.on('create-room', rateLimitedHandler((data) => {
