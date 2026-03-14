@@ -4520,7 +4520,7 @@ renderFriendCard(f) {
     const path = window.location.pathname.toLowerCase();
     const games = {
       'spyhunt': 'Spyhunt', 'spyfall': 'Spyhunt', 'codenames': 'Codenames',
-      'werewolf': 'Werewolf', 'imposter': 'Imposter', 'herd': 'Herd Mentality',
+      'werewolf': 'Werewolf', 'imposter': 'Imposter', 'herd': 'Think Alike',
       'kiss-marry': 'Kiss Marry Kill', 'this-or-that': 'This or That',
       '21-questions': '21 Questions', 'questions': '21 Questions',
       'sketch': 'Sketch & Guess', 'draw': 'Sketch & Guess', 'trivia': 'Trivia'
@@ -4535,7 +4535,7 @@ renderFriendCard(f) {
     const urls = {
       'Spyhunt': '/spyhunt/lobby.html', 'Codenames': '/codenames/lobby.html',
       'Werewolf': '/werewolf/lobby.html', 'Imposter': '/imposter/lobby.html',
-      'Herd Mentality': '/herd-mentality/lobby.html', 'Kiss Marry Kill': '/kiss-marry-kill/lobby.html',
+      'Think Alike': '/herd-mentality/lobby.html', 'Kiss Marry Kill': '/kiss-marry-kill/lobby.html',
       'This or That': '/this-or-that/lobby.html', '21 Questions': '/21-questions/lobby.html',
       'Sketch & Guess': '/sketch/lobby.html', 'Trivia': '/trivia/lobby.html'
     };

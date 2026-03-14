@@ -439,7 +439,7 @@ class Bot {
       this.log(`🏆 Game over! Winners: ${data.winners || data.winner || 'unknown'}`);
     });
 
-    // ── HERD MENTALITY ──
+    // ── THINK ALIKE ──
     s.on('question-phase', async (data) => {
       if (this.gameType !== 'herd-mentality') return;
       this.log(`❓ Question: ${data.question}`);

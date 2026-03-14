@@ -371,7 +371,7 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================
-// HERD MENTALITY HELPER FUNCTIONS
+// THINK ALIKE HELPER FUNCTIONS
 // ============================================
 
 const herdMentalityQuestions = [
@@ -455,7 +455,7 @@ function initHerdMentalityGame(room, category = 'standard') {
     room.gameData.scores[player.name] = 0;
   });
   
-  console.log(`Herd Mentality game initialized in room ${room.code} (win at ${winThreshold} points)`);
+  console.log(`Think Alike game initialized in room ${room.code} (win at ${winThreshold} points)`);
   
   // Start first question
   setTimeout(() => {
@@ -466,23 +466,26 @@ function initHerdMentalityGame(room, category = 'standard') {
 function startHerdQuestion(room) {
   room.gameData.phase = 'question';
   room.gameData.answers = {};
-  
+
   const question = room.gameData.questions[room.gameData.currentQuestionIndex];
-  
+
   console.log(`Starting question ${room.gameData.roundNumber} in room ${room.code}`);
-  
+
   io.to(room.code).emit('question-phase', {
     question: question,
     roundNumber: room.gameData.roundNumber,
-    timeLimit: 30
+    timeLimit: 30,
+    playerCount: room.players.length
   });
-  
-  // Auto-proceed after 35 seconds
-  setTimeout(() => {
+
+  // Force advance after timer expires (30s + 2s buffer)
+  if (room.gameData.questionTimer) clearTimeout(room.gameData.questionTimer);
+  room.gameData.questionTimer = setTimeout(() => {
     if (room.gameData.phase === 'question') {
+      console.log(`Timer expired for room ${room.code}, force advancing to results`);
       calculateHerdResults(room);
     }
-  }, 35000);
+  }, 32000);
 }
 
 function calculateHerdResults(room) {
@@ -609,7 +612,7 @@ function showHerdScoreboard(room) {
 function endHerdGame(room, winner) {
   room.gameData.phase = 'game-over';
   
-  console.log(`Herd Mentality game ended in room ${room.code}, winner: ${winner}`);
+  console.log(`Think Alike game ended in room ${room.code}, winner: ${winner}`);
   
   io.to(room.code).emit('game-over', {
     winner: winner,
@@ -2866,7 +2869,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // HERD MENTALITY - SUBMIT ANSWER
+  // THINK ALIKE - SUBMIT ANSWER
   socket.on('submit-answer', (data) => {
     const { roomCode, answer } = data;
     const room = rooms.get(roomCode);
@@ -2884,17 +2887,38 @@ io.on('connection', (socket) => {
     
     // Store answer
     room.gameData.answers[player.playerName] = answer;
-    
+
     console.log(`${player.playerName} submitted answer: ${answer}`);
-    
+
     // Confirm submission
     socket.emit('answer-submitted');
-    
+
+    // Broadcast how many have answered (without revealing answers)
+    io.to(roomCode).emit('answer-count-update', {
+      answeredCount: Object.keys(room.gameData.answers).length,
+      totalCount: room.players.length,
+      playerName: player.playerName
+    });
+
     // Check if all players have answered
     if (Object.keys(room.gameData.answers).length === room.players.length) {
+      if (room.gameData.questionTimer) clearTimeout(room.gameData.questionTimer);
       calculateHerdResults(room);
     }
   });
+
+  // THINK ALIKE - TIMER EXPIRED (client tells server to force advance)
+  socket.on('herd-timer-expired', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    if (!room || room.gameType !== 'herd-mentality') return;
+    if (room.gameData.phase !== 'question') return;
+
+    console.log(`Client reported timer expired for room ${roomCode}, force advancing`);
+    if (room.gameData.questionTimer) clearTimeout(room.gameData.questionTimer);
+    calculateHerdResults(room);
+  });
+
   // ============================================
   // CODENAMES SOCKET HANDLERS
   // ============================================
@@ -3913,7 +3937,33 @@ const categoriesWordBank = {
   
   weather: ['sunny', 'cloudy', 'rainy', 'stormy', 'windy', 'snowy', 'foggy', 'misty', 'humid', 'dry', 'hot', 'cold', 'warm', 'cool', 'freezing', 'hail', 'sleet', 'thunder', 'lightning', 'tornado', 'hurricane', 'typhoon', 'cyclone', 'blizzard', 'drought', 'flood', 'rainbow', 'sunshine', 'overcast', 'partly cloudy', 'clear', 'frost', 'ice', 'breeze', 'gust', 'monsoon'],
   
-  emotions: ['happy', 'sad', 'angry', 'scared', 'afraid', 'excited', 'nervous', 'anxious', 'worried', 'stressed', 'relaxed', 'calm', 'peaceful', 'content', 'satisfied', 'proud', 'embarrassed', 'ashamed', 'guilty', 'jealous', 'envious', 'lonely', 'bored', 'tired', 'exhausted', 'energetic', 'surprised', 'shocked', 'confused', 'frustrated', 'annoyed', 'disgusted', 'hopeful', 'grateful', 'thankful', 'loving', 'loved', 'romantic', 'nostalgic', 'melancholy', 'depressed', 'cheerful', 'joyful', 'ecstatic', 'miserable', 'furious', 'terrified', 'curious', 'interested', 'inspired']
+  emotions: ['happy', 'sad', 'angry', 'scared', 'afraid', 'excited', 'nervous', 'anxious', 'worried', 'stressed', 'relaxed', 'calm', 'peaceful', 'content', 'satisfied', 'proud', 'embarrassed', 'ashamed', 'guilty', 'jealous', 'envious', 'lonely', 'bored', 'tired', 'exhausted', 'energetic', 'surprised', 'shocked', 'confused', 'frustrated', 'annoyed', 'disgusted', 'hopeful', 'grateful', 'thankful', 'loving', 'loved', 'romantic', 'nostalgic', 'melancholy', 'depressed', 'cheerful', 'joyful', 'ecstatic', 'miserable', 'furious', 'terrified', 'curious', 'interested', 'inspired'],
+
+  capital_cities: ['washington', 'ottawa', 'mexico city', 'london', 'paris', 'berlin', 'rome', 'madrid', 'lisbon', 'amsterdam', 'brussels', 'vienna', 'warsaw', 'moscow', 'kyiv', 'stockholm', 'oslo', 'copenhagen', 'helsinki', 'dublin', 'athens', 'ankara', 'cairo', 'pretoria', 'nairobi', 'canberra', 'wellington', 'tokyo', 'beijing', 'seoul', 'new delhi', 'bangkok', 'hanoi', 'jakarta', 'manila', 'singapore', 'kuala lumpur', 'riyadh', 'tehran', 'baghdad', 'brasilia', 'buenos aires', 'lima', 'bogota', 'havana', 'ottawa', 'bern', 'prague', 'budapest', 'bucharest'],
+
+  boys_names: ['james', 'john', 'robert', 'michael', 'william', 'david', 'richard', 'joseph', 'thomas', 'charles', 'christopher', 'daniel', 'matthew', 'anthony', 'mark', 'donald', 'steven', 'paul', 'andrew', 'joshua', 'ryan', 'brandon', 'tyler', 'jason', 'kevin', 'justin', 'brian', 'adam', 'nathan', 'jack', 'oliver', 'noah', 'liam', 'ethan', 'lucas', 'mason', 'logan', 'alexander', 'benjamin', 'henry', 'sebastian', 'owen', 'leo', 'max', 'jake', 'luke', 'dylan', 'connor', 'aaron', 'kyle'],
+
+  girls_names: ['mary', 'patricia', 'jennifer', 'linda', 'barbara', 'elizabeth', 'susan', 'jessica', 'sarah', 'karen', 'lisa', 'nancy', 'betty', 'margaret', 'sandra', 'ashley', 'emily', 'donna', 'michelle', 'dorothy', 'carol', 'amanda', 'melissa', 'deborah', 'stephanie', 'rebecca', 'sharon', 'laura', 'rachel', 'olivia', 'emma', 'ava', 'sophia', 'isabella', 'mia', 'charlotte', 'amelia', 'harper', 'evelyn', 'abigail', 'ella', 'grace', 'chloe', 'zoey', 'lily', 'hannah', 'natalie', 'victoria', 'madison', 'luna'],
+
+  school_subjects: ['math', 'mathematics', 'english', 'science', 'history', 'geography', 'physics', 'chemistry', 'biology', 'art', 'music', 'gym', 'pe', 'physical education', 'computer science', 'spanish', 'french', 'german', 'latin', 'economics', 'psychology', 'sociology', 'philosophy', 'literature', 'drama', 'theater', 'photography', 'woodwork', 'home economics', 'health', 'algebra', 'geometry', 'calculus', 'statistics', 'trigonometry', 'astronomy', 'environmental science', 'engineering', 'business', 'accounting'],
+
+  dances: ['waltz', 'tango', 'salsa', 'cha cha', 'foxtrot', 'swing', 'jive', 'samba', 'rumba', 'ballet', 'tap', 'jazz', 'hip hop', 'breakdancing', 'contemporary', 'modern', 'flamenco', 'bollywood', 'line dance', 'square dance', 'polka', 'mambo', 'merengue', 'bachata', 'cumbia', 'reggaeton', 'krumping', 'popping', 'locking', 'moonwalk', 'macarena', 'twist', 'hustle', 'electric slide', 'two step', 'can can', 'charleston', 'disco'],
+
+  languages: ['english', 'spanish', 'french', 'german', 'italian', 'portuguese', 'russian', 'chinese', 'mandarin', 'cantonese', 'japanese', 'korean', 'arabic', 'hindi', 'urdu', 'bengali', 'turkish', 'polish', 'dutch', 'swedish', 'norwegian', 'danish', 'finnish', 'greek', 'hebrew', 'thai', 'vietnamese', 'indonesian', 'malay', 'swahili', 'tagalog', 'czech', 'romanian', 'hungarian', 'persian', 'ukrainian', 'latin', 'sign language', 'welsh', 'irish'],
+
+  currencies: ['dollar', 'euro', 'pound', 'yen', 'yuan', 'rupee', 'ruble', 'won', 'peso', 'real', 'franc', 'krona', 'krone', 'lira', 'rand', 'baht', 'ringgit', 'dinar', 'dirham', 'shekel', 'zloty', 'forint', 'koruna', 'bitcoin', 'ethereum', 'dogecoin'],
+
+  fast_food: ['mcdonalds', 'burger king', 'wendys', 'taco bell', 'chick fil a', 'subway', 'kfc', 'popeyes', 'five guys', 'in n out', 'chipotle', 'panda express', 'dominos', 'pizza hut', 'papa johns', 'little caesars', 'arby', 'sonic', 'jack in the box', 'whataburger', 'shake shack', 'raising canes', 'wingstop', 'jersey mikes', 'jimmy johns', 'firehouse subs', 'panera', 'dunkin', 'starbucks', 'dairy queen', 'culvers', 'hardees', 'carl jr', 'del taco', 'el pollo loco', 'white castle', 'zaxbys', 'bojangles', 'cookout', 'nandos'],
+
+  things_in_space: ['star', 'sun', 'moon', 'planet', 'earth', 'mars', 'jupiter', 'saturn', 'venus', 'mercury', 'neptune', 'uranus', 'pluto', 'asteroid', 'comet', 'meteor', 'meteorite', 'galaxy', 'milky way', 'nebula', 'black hole', 'supernova', 'constellation', 'satellite', 'space station', 'rocket', 'spacecraft', 'astronaut', 'alien', 'telescope', 'orbit', 'gravity', 'cosmos', 'universe', 'pulsar', 'quasar', 'dark matter', 'wormhole', 'light year', 'solar system'],
+
+  things_that_are_red: ['fire', 'blood', 'rose', 'tomato', 'strawberry', 'cherry', 'apple', 'watermelon', 'pepper', 'chili', 'lobster', 'crab', 'cardinal', 'fire truck', 'fire hydrant', 'stop sign', 'lipstick', 'ruby', 'garnet', 'brick', 'lava', 'sunset', 'mars', 'heart', 'valentine', 'ketchup', 'salsa', 'hot sauce', 'ladybug', 'poppy', 'hibiscus', 'poinsettia', 'cranberry', 'raspberry', 'pomegranate', 'red velvet', 'santa', 'rudolph'],
+
+  cartoon_characters: ['bugs bunny', 'daffy duck', 'tweety', 'tom', 'jerry', 'scooby doo', 'shaggy', 'fred flintstone', 'barney rubble', 'popeye', 'garfield', 'snoopy', 'charlie brown', 'winnie the pooh', 'tigger', 'piglet', 'eeyore', 'dora', 'spongebob', 'patrick', 'squidward', 'bart simpson', 'homer simpson', 'peter griffin', 'stewie griffin', 'eric cartman', 'stan marsh', 'morty', 'rick', 'finn', 'jake', 'gumball', 'powerpuff girls', 'dexter', 'johnny bravo', 'courage', 'ed', 'edd', 'eddy', 'samurai jack', 'ben 10', 'naruto', 'goku', 'luffy', 'ash ketchum'],
+
+  songs: ['bohemian rhapsody', 'imagine', 'yesterday', 'hey jude', 'hotel california', 'stairway to heaven', 'thriller', 'billie jean', 'like a prayer', 'smells like teen spirit', 'wonderwall', 'sweet caroline', 'dancing queen', 'africa', 'dont stop believing', 'take on me', 'happy', 'uptown funk', 'shape of you', 'blinding lights', 'bad guy', 'old town road', 'despacito', 'gangnam style', 'somebody that i used to know', 'rolling in the deep', 'hello', 'shake it off', 'let it go', 'baby shark', 'call me maybe', 'fireflies', 'mr brightside', 'sweet home alabama', 'all star', 'we will rock you', 'we are the champions', 'living on a prayer', 'eye of the tiger', 'lose yourself'],
+
+  books: ['harry potter', 'lord of the rings', 'hunger games', 'percy jackson', 'divergent', 'twilight', 'game of thrones', 'dune', 'narnia', 'hobbit', 'pride and prejudice', 'great gatsby', 'to kill a mockingbird', '1984', 'brave new world', 'animal farm', 'catcher in the rye', 'little women', 'jane eyre', 'wuthering heights', 'moby dick', 'dracula', 'frankenstein', 'sherlock holmes', 'war and peace', 'crime and punishment', 'catch 22', 'fahrenheit 451', 'lord of the flies', 'the alchemist', 'da vinci code', 'gone girl', 'fault in our stars', 'maze runner', 'diary of a wimpy kid', 'captain underpants', 'goosebumps', 'charlie and the chocolate factory', 'matilda', 'cat in the hat']
 };
 
 // Category display names
@@ -3950,7 +4000,20 @@ const categoryDisplayNames = {
   things_at_beach: 'Things at the Beach',
   things_at_school: 'Things at School',
   weather: 'Weather/Climate',
-  emotions: 'Emotions/Feelings'
+  emotions: 'Emotions/Feelings',
+  capital_cities: 'Capital Cities',
+  boys_names: "Boys' Names",
+  girls_names: "Girls' Names",
+  school_subjects: 'School Subjects',
+  dances: 'Dances',
+  languages: 'Languages',
+  currencies: 'Currencies',
+  fast_food: 'Fast Food Items',
+  things_in_space: 'Things in Space',
+  things_that_are_red: 'Things That Are Red',
+  cartoon_characters: 'Cartoon Characters',
+  songs: 'Famous Songs',
+  books: 'Books'
 };
 
 // Fuzzy string matching using Levenshtein distance

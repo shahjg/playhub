@@ -3,838 +3,574 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Herd Mentality - PlayHub</title>
+    <title>Think Alike - TheGaming.co</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --pink:#ec4899;--pink-light:#fbcfe8;--pink-dark:#be185d;
+            --purple:#8b5cf6;--purple-light:#c4b5fd;
+            --blue:#3b82f6;--blue-light:#93c5fd;
+            --green:#22c55e;--green-light:#86efac;
+            --yellow:#eab308;--yellow-light:#fde68a;
+            --orange:#f97316;
+            --red:#ef4444;
+            --bg:#fdf2f8;--bg2:#fce7f3;
+            --card:#ffffff;--card-border:rgba(236,72,153,0.15);
+            --text:#1e1b4b;--text-muted:#6b7280;
+            --shadow:0 4px 20px rgba(236,72,153,0.12);
+            --shadow-lg:0 8px 40px rgba(236,72,153,0.18)
         }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        h1, h2, h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 1px;
-        }
-
-        /* Header */
-        nav {
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 4px solid #000;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-nav {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 2px;
-            color: #1a1a1a;
-        }
-
-        .room-code-header {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: #ff6b9d;
-            letter-spacing: 2px;
-        }
-
-        /* Main Container */
-        .container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem 1rem;
-        }
-
-        .game-card {
-            background: white;
-            border: 4px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            padding: 2.5rem;
-            max-width: 800px;
-            width: 100%;
-            min-height: 500px;
-        }
-
-        /* Question Phase */
-        .question-phase {
-            text-align: center;
-        }
-
-        .round-number {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: #666;
-            margin-bottom: 1rem;
-            letter-spacing: 2px;
-        }
-
-        .question-text {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
-            color: #ff6b9d;
-            margin-bottom: 2rem;
-            line-height: 1.2;
-        }
-
-        .timer {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
-            color: #000;
-            margin-bottom: 2rem;
-        }
-
-        .timer.urgent {
-            color: #ff4757;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .answer-input {
-            width: 100%;
-            padding: 1.5rem;
-            font-size: 1.2rem;
-            font-family: 'Inter', sans-serif;
-            border: 3px solid #000;
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-
-        .answer-input:focus {
-            outline: none;
-            border-color: #ff6b9d;
-            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.3);
-        }
-
-        .answer-input:disabled {
-            background: #f5f5f5;
-            cursor: not-allowed;
-        }
-
-        .submit-btn {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: #ff6b9d;
-            color: white;
-            border: 4px solid #000;
-            border-radius: 10px;
-            padding: 1rem 3rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .waiting-message {
-            margin-top: 2rem;
-            font-size: 1.1rem;
-            color: #666;
-            font-weight: 600;
-        }
-
-        /* Results Phase */
-        .results-phase {
-            text-align: center;
-        }
-
-        .results-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
-            color: #ff6b9d;
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
-        }
-
-        .answer-groups {
-            margin-bottom: 2rem;
-        }
-
-        .answer-group {
-            background: #f8f9fa;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .answer-group.majority {
-            background: linear-gradient(135deg, #00d2ff 0%, #3a47d5 100%);
-            color: white;
-            border-color: #000;
-        }
-
-        .answer-group.pink-cow {
-            background: linear-gradient(135deg, #ff6b9d 0%, #ff4757 100%);
-            color: white;
-            border-color: #000;
-        }
-
-        .group-answer {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: 1px;
-        }
-
-        .group-count {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .group-players {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-        }
-
-        .player-badge {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            border: 2px solid #000;
-        }
-
-        .answer-group.majority .player-badge {
-            background: rgba(255, 255, 255, 0.95);
-            color: #3a47d5;
-        }
-
-        .answer-group.pink-cow .player-badge {
-            background: rgba(255, 255, 255, 0.95);
-            color: #ff4757;
-        }
-
-        .pink-cow-announcement {
-            background: #fff3cd;
-            border: 3px solid #ffc107;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin: 2rem 0;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .pink-cow-emoji {
-            font-size: 2rem;
-            margin-right: 0.5rem;
-        }
-
-        /* Scoreboard Phase */
-        .scoreboard-phase {
-            text-align: center;
-        }
-
-        .scoreboard-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
-            color: #ff6b9d;
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
-        }
-
-        .score-list {
-            margin-bottom: 2rem;
-        }
-
-        .score-item {
-            background: #f8f9fa;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .score-item.has-cow {
-            background: #fff3cd;
-            border-color: #ffc107;
-        }
-
-        .score-item.leading {
-            background: linear-gradient(135deg, #00d2ff 0%, #3a47d5 100%);
-            color: white;
-        }
-
-        .player-rank {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-            width: 50px;
-        }
-
-        .player-info {
-            flex: 1;
-            text-align: left;
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-
-        .player-score {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-        }
-
-        .next-round-timer {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #666;
-            margin-top: 2rem;
-        }
-
-        /* Game Over */
-        .game-over-phase {
-            text-align: center;
-        }
-
-        .winner-announcement {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 3.5rem;
-            color: #ff6b9d;
-            margin-bottom: 1rem;
-            letter-spacing: 2px;
-        }
-
-        .winner-name {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 4rem;
-            color: #000;
-            margin-bottom: 2rem;
-            letter-spacing: 3px;
-        }
-
-        .final-scores {
-            margin: 2rem 0;
-        }
-
-        .play-again-btn, .lobby-btn {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.3rem;
-            letter-spacing: 2px;
-            background: #ff6b9d;
-            color: white;
-            border: 4px solid #000;
-            border-radius: 10px;
-            padding: 1rem 2rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            margin: 0.5rem;
-        }
-
-        .lobby-btn {
-            background: #6c757d;
-        }
-
-        .play-again-btn:hover, .lobby-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            font-size: 1.5rem;
-            color: #666;
-            padding: 3rem;
-        }
-
-        /* Hide phases by default */
-        .phase {
-            display: none;
-        }
-
-        .phase.active {
-            display: block;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .game-card {
-                padding: 1.5rem;
-            }
-
-            .question-text {
-                font-size: 1.8rem;
-            }
-
-            .timer {
-                font-size: 2.5rem;
-            }
-
-            .answer-input {
-                font-size: 1rem;
-                padding: 1rem;
-            }
-
-            .group-answer {
-                font-size: 1.5rem;
-            }
-
-            .winner-announcement {
-                font-size: 2.5rem;
-            }
-
-            .winner-name {
-                font-size: 3rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            nav {
-                padding: 1rem;
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .logo-nav {
-                font-size: 1.5rem;
-            }
-
-            .room-code-header {
-                font-size: 1.2rem;
-            }
-
-            .question-text {
-                font-size: 1.5rem;
-            }
-
-            .results-title, .scoreboard-title {
-                font-size: 2rem;
-            }
+        body{font-family:'Fredoka',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+        /* Fun animated background */
+        .bg-wrap{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .bg-blobs{position:absolute;inset:0}
+        .blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.4;animation:blobFloat 8s ease-in-out infinite}
+        .blob:nth-child(1){width:400px;height:400px;background:var(--pink-light);top:-100px;left:-100px;animation-delay:0s}
+        .blob:nth-child(2){width:350px;height:350px;background:var(--purple-light);bottom:-80px;right:-80px;animation-delay:2s}
+        .blob:nth-child(3){width:300px;height:300px;background:var(--blue-light);top:40%;left:60%;animation-delay:4s}
+        @keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,15px) scale(0.95)}}
+
+        /* Header bar */
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:54px;display:flex;align-items:center;padding:0 16px;background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);border-bottom:2px solid var(--card-border)}
+        .nav{width:100%;max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:var(--bg2);border:none;color:var(--text-muted);font-size:.8rem;font-weight:600;text-decoration:none;transition:.2s}
+        .back:hover{background:var(--pink-light);color:var(--pink-dark)}
+        .back svg{width:14px;height:14px}
+        .room-badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:3px;color:var(--pink);background:var(--bg2);padding:4px 14px;border-radius:20px}
+        .logo-text{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--pink)}
+
+        /* Main layout */
+        main{position:relative;z-index:1;padding:70px 16px 32px;min-height:100vh;max-width:560px;margin:0 auto}
+
+        /* Phase visibility */
+        .phase{display:none}.phase.active{display:block;animation:phaseIn .4s ease-out}
+        @keyframes phaseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+        /* Card base */
+        .game-card{background:var(--card);border-radius:24px;padding:28px 24px;box-shadow:var(--shadow);border:1px solid var(--card-border);position:relative;overflow:hidden}
+        .game-card::before{content:'';position:absolute;top:0;left:20%;right:20%;height:3px;background:linear-gradient(90deg,var(--pink),var(--purple),var(--blue));border-radius:0 0 4px 4px}
+
+        /* Round indicator */
+        .round-bar{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:20px}
+        .round-pip{width:10px;height:10px;border-radius:50%;background:var(--bg2);border:2px solid var(--card-border);transition:.3s}
+        .round-pip.done{background:var(--green);border-color:var(--green)}
+        .round-pip.current{background:var(--pink);border-color:var(--pink);transform:scale(1.3);box-shadow:0 0 10px rgba(236,72,153,0.4)}
+        .round-txt{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:3px;color:var(--text-muted);margin-left:8px}
+
+        /* ===== QUESTION PHASE ===== */
+        .question-card{text-align:center}
+        .question-emoji{font-size:3rem;margin-bottom:8px;animation:emojiPop .5s cubic-bezier(0.34,1.56,0.64,1)}
+        @keyframes emojiPop{from{transform:scale(0)}to{transform:scale(1)}}
+        .question-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,6vw,2.8rem);letter-spacing:2px;color:var(--text);line-height:1.15;margin-bottom:20px;background:linear-gradient(135deg,var(--pink-dark),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .question-sub{font-size:.85rem;color:var(--text-muted);margin-bottom:20px;font-weight:500}
+
+        /* Timer */
+        .timer-ring{width:80px;height:80px;margin:0 auto 20px;position:relative}
+        .timer-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+        .timer-ring circle{fill:none;stroke-width:5}
+        .timer-bg{stroke:var(--bg2)}
+        .timer-progress{stroke:var(--pink);stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s}
+        .timer-progress.urgent{stroke:var(--red);animation:timerPulse .5s ease infinite}
+        @keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.6}}
+        .timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--text)}
+        .timer-text.urgent{color:var(--red)}
+
+        /* Answer input */
+        .answer-wrap{margin-bottom:16px}
+        .answer-input{width:100%;padding:16px 20px;font-size:1.1rem;font-family:'Fredoka',sans-serif;font-weight:500;border:3px solid var(--bg2);border-radius:16px;background:var(--bg);text-align:center;color:var(--text);transition:.3s;outline:none}
+        .answer-input:focus{border-color:var(--pink);box-shadow:0 0 0 4px rgba(236,72,153,0.15);background:white}
+        .answer-input::placeholder{color:#d1d5db}
+        .answer-input:disabled{background:var(--bg2);opacity:.6}
+
+        /* Submit button */
+        .btn-submit{width:100%;padding:16px;border-radius:16px;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;border:none;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+        .btn-submit.primary{background:linear-gradient(135deg,var(--pink),var(--purple));color:white;box-shadow:0 4px 16px rgba(236,72,153,0.3)}
+        .btn-submit.primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(236,72,153,0.4)}
+        .btn-submit.primary::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:transform .5s}
+        .btn-submit.primary:hover:not(:disabled)::before{transform:translateX(100%)}
+        .btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+        /* Player submission bubbles */
+        .submitted-section{margin-top:20px}
+        .submitted-label{font-size:.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;text-align:center}
+        .submitted-bubbles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+        .player-bubble{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg2);border:2px solid var(--card-border);border-radius:20px;font-size:.8rem;font-weight:600;color:var(--text-muted);transition:.3s}
+        .player-bubble.answered{background:var(--green-light);border-color:var(--green);color:#166534;animation:bubblePop .3s cubic-bezier(0.34,1.56,0.64,1)}
+        @keyframes bubblePop{from{transform:scale(0.8)}to{transform:scale(1)}}
+        .player-bubble .check{display:none;font-size:.7rem}
+        .player-bubble.answered .check{display:inline}
+        .player-bubble.waiting::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:dotBlink 1.2s ease infinite}
+        @keyframes dotBlink{0%,100%{opacity:.3}50%{opacity:1}}
+
+        /* ===== RESULTS PHASE ===== */
+        .results-card{text-align:center}
+        .results-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;margin-bottom:4px}
+        .results-question{font-size:.85rem;color:var(--text-muted);margin-bottom:20px;font-weight:500}
+
+        /* Answer group cards */
+        .answer-group{border-radius:16px;padding:16px;margin-bottom:12px;border:2px solid var(--card-border);background:var(--bg);transition:.3s;animation:groupSlide .4s ease-out backwards}
+        @keyframes groupSlide{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+        .answer-group:nth-child(2){animation-delay:.1s}
+        .answer-group:nth-child(3){animation-delay:.2s}
+        .answer-group:nth-child(4){animation-delay:.3s}
+
+        .answer-group.majority{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-color:var(--green);box-shadow:0 4px 16px rgba(34,197,94,0.15)}
+        .answer-group.majority .group-badge{background:var(--green);color:white}
+        .answer-group.pink-cow{background:linear-gradient(135deg,#fdf2f8,#fce7f3);border-color:var(--pink);box-shadow:0 4px 16px rgba(236,72,153,0.15)}
+        .answer-group.pink-cow .group-badge{background:var(--pink);color:white}
+        .answer-group.other{opacity:.7}
+
+        .group-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+        .group-answer-text{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px}
+        .group-badge{font-size:.65rem;font-weight:700;padding:4px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:1px;background:var(--bg2);color:var(--text-muted)}
+        .group-players{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+        .group-player{font-size:.8rem;font-weight:600;padding:4px 12px;background:white;border-radius:12px;border:1px solid var(--card-border)}
+        .answer-group.majority .group-player{border-color:var(--green);color:#166534}
+        .answer-group.pink-cow .group-player{border-color:var(--pink);color:var(--pink-dark)}
+
+        /* Pink Cow moment */
+        .cow-moment{position:relative;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:20px;padding:24px;margin-bottom:20px;text-align:center;color:white;overflow:hidden;animation:cowAppear .6s cubic-bezier(0.34,1.56,0.64,1)}
+        @keyframes cowAppear{from{transform:scale(0.5) rotate(-5deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+        .cow-moment::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,0.2),transparent 60%)}
+        .cow-emoji{font-size:4rem;display:block;margin-bottom:8px;animation:cowBounce 1s ease infinite}
+        @keyframes cowBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .cow-text{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px}
+        .cow-name{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;margin-top:4px}
+
+        /* ===== SCOREBOARD PHASE ===== */
+        .scoreboard-card{text-align:center}
+        .scoreboard-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;margin-bottom:16px}
+        .score-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+        .score-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border-radius:14px;border:2px solid var(--card-border);transition:.3s;animation:scoreSlide .3s ease-out backwards}
+        @keyframes scoreSlide{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+        .score-row:nth-child(1){animation-delay:0s}
+        .score-row:nth-child(2){animation-delay:.05s}
+        .score-row:nth-child(3){animation-delay:.1s}
+        .score-row:nth-child(4){animation-delay:.15s}
+        .score-row.leading{background:linear-gradient(135deg,#fef3c7,#fde68a);border-color:var(--yellow)}
+        .score-row.has-cow{border-color:var(--pink);background:var(--pink-light)}
+        .score-rank{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;width:32px;color:var(--text-muted)}
+        .score-rank.gold{color:var(--yellow)}
+        .score-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;color:white;flex-shrink:0}
+        .score-name{flex:1;text-align:left;font-weight:600;font-size:.95rem}
+        .score-cow{font-size:1.2rem}
+        .score-pts{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--purple)}
+        .score-row.has-cow .score-pts{color:var(--text-muted);text-decoration:line-through;opacity:.5}
+
+        .next-timer{font-size:.85rem;color:var(--text-muted);font-weight:600;margin-top:12px}
+
+        /* ===== GAME OVER ===== */
+        .gameover-card{text-align:center}
+        .gameover-crown{font-size:4rem;animation:crownBounce 1.5s ease infinite}
+        @keyframes crownBounce{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+        .gameover-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:4px;background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+        .gameover-winner{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:var(--text);margin-bottom:20px}
+        .gameover-btns{display:flex;gap:10px;margin-top:20px}
+        .gameover-btns .btn-submit{flex:1;font-size:1.1rem;padding:14px}
+        .btn-secondary{background:var(--bg2);color:var(--text);border:2px solid var(--card-border)}
+        .btn-secondary:hover{border-color:var(--pink);color:var(--pink)}
+
+        /* Confetti */
+        @keyframes confettiFall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+        .confetti{position:fixed;top:0;z-index:201;animation:confettiFall 3s linear forwards;pointer-events:none;border-radius:2px}
+
+        /* Loading */
+        .loading-card{text-align:center;padding:60px 20px}
+        .loading-emoji{font-size:3.5rem;animation:cowBounce 1.5s ease infinite}
+        .loading-text{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--text-muted);margin-top:12px}
+
+        /* Avatar colors */
+        .av-1{background:var(--pink)}.av-2{background:var(--purple)}.av-3{background:var(--blue)}
+        .av-4{background:var(--green)}.av-5{background:var(--orange)}.av-6{background:var(--yellow);color:var(--text)!important}
+        .av-7{background:#14b8a6}.av-8{background:#f43f5e}
+
+        @media(max-width:480px){
+            .game-card{padding:20px 16px;border-radius:20px}
+            .question-text{font-size:1.6rem}
+            .cow-emoji{font-size:3rem}
         }
     </style>
-    <link rel="stylesheet" href="/header.css">
 </head>
 <body>
-    <div id="site-header"></div>
-    <!-- Header -->
-    <nav>
-        <div class="logo-nav">PLAYHUB</div>
-        <div class="room-code-header" id="roomCodeHeader">ROOM: ------</div>
-    </nav>
+<div class="bg-wrap"><div class="bg-blobs"><div class="blob"></div><div class="blob"></div><div class="blob"></div></div></div>
 
-    <!-- Main Container -->
-    <div class="container">
-        <div class="game-card">
-            <!-- Loading State -->
-            <div id="loadingPhase" class="phase active">
-                <div class="loading">
-                    🐄 Loading Herd Mentality...
-                </div>
+<header><nav class="nav">
+    <div style="display:flex;align-items:center;gap:8px">
+        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
+        <span class="room-badge" id="roomBadge">------</span>
+    </div>
+    <span class="logo-text">THINK ALIKE</span>
+    <div></div>
+</nav></header>
+
+<main>
+    <!-- Loading -->
+    <div id="loadingPhase" class="phase active">
+        <div class="game-card loading-card">
+            <div class="loading-emoji">🐄</div>
+            <div class="loading-text">Loading Think Alike...</div>
+        </div>
+    </div>
+
+    <!-- Question Phase -->
+    <div id="questionPhase" class="phase">
+        <div class="game-card question-card">
+            <div class="round-bar" id="roundBar">
+                <span class="round-txt">ROUND <span id="roundNum">1</span></span>
+            </div>
+            <div class="question-emoji" id="questionEmoji">🤔</div>
+            <div class="question-text" id="questionText">Loading question...</div>
+            <div class="question-sub">Write what you think everyone else will say!</div>
+
+            <div class="timer-ring" id="timerRing">
+                <svg viewBox="0 0 80 80">
+                    <circle class="timer-bg" cx="40" cy="40" r="35"/>
+                    <circle class="timer-progress" id="timerProgress" cx="40" cy="40" r="35" stroke-dasharray="220" stroke-dashoffset="0"/>
+                </svg>
+                <div class="timer-text" id="timerText">30</div>
             </div>
 
-            <!-- Question Phase -->
-            <div id="questionPhase" class="phase question-phase">
-                <div class="round-number" id="roundNumber">ROUND 1</div>
-                <div class="question-text" id="questionText">Loading question...</div>
-                <div class="timer" id="timer">30</div>
-                <input type="text" 
-                       id="answerInput" 
-                       class="answer-input" 
-                       placeholder="Type your answer here..."
-                       maxlength="50">
-                <button class="submit-btn" id="submitBtn" onclick="submitAnswer()">
-                    SUBMIT ANSWER
-                </button>
-                <div class="waiting-message" id="waitingMessage" style="display: none;">
-                    ⏳ Waiting for other players...
-                </div>
+            <div class="answer-wrap">
+                <input type="text" id="answerInput" class="answer-input" placeholder="Type your answer..." maxlength="50" autocomplete="off">
             </div>
+            <button class="btn-submit primary" id="submitBtn" onclick="submitAnswer()">SUBMIT ANSWER</button>
 
-            <!-- Results Phase -->
-            <div id="resultsPhase" class="phase results-phase">
-                <div class="results-title">📊 RESULTS</div>
-                <div id="pinkCowAnnouncement" class="pink-cow-announcement" style="display: none;">
-                    <span class="pink-cow-emoji">🐄</span>
-                    <span id="pinkCowText">Pink Cow announcement</span>
-                </div>
-                <div class="answer-groups" id="answerGroups">
-                    <!-- Answer groups will be populated here -->
-                </div>
-            </div>
-
-            <!-- Scoreboard Phase -->
-            <div id="scoreboardPhase" class="phase scoreboard-phase">
-                <div class="scoreboard-title">🏆 SCOREBOARD</div>
-                <div class="score-list" id="scoreList">
-                    <!-- Scores will be populated here -->
-                </div>
-                <div class="next-round-timer" id="nextRoundTimer">
-                    Next round in 5...
-                </div>
-            </div>
-
-            <!-- Game Over Phase -->
-            <div id="gameOverPhase" class="phase game-over-phase">
-                <div class="winner-announcement">🎉 WINNER! 🎉</div>
-                <div class="winner-name" id="winnerName">Player Name</div>
-                <div class="final-scores">
-                    <div class="scoreboard-title">FINAL SCORES</div>
-                    <div class="score-list" id="finalScoreList">
-                        <!-- Final scores will be populated here -->
-                    </div>
-                </div>
-                <div>
-                    <button class="play-again-btn" onclick="playAgain()">
-                        🔄 PLAY AGAIN
-                    </button>
-                    <button class="lobby-btn" onclick="backToLobby()">
-                        🏠 BACK TO LOBBY
-                    </button>
-                </div>
+            <div class="submitted-section" id="submittedSection">
+                <div class="submitted-label"><span id="answeredCount">0</span> / <span id="totalCount">0</span> answered</div>
+                <div class="submitted-bubbles" id="submittedBubbles"></div>
             </div>
         </div>
     </div>
 
-    <script>
-        const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
-        const socket = io(BACKEND_URL, {
-            transports: ['websocket', 'polling']
-        });
+    <!-- Results Phase -->
+    <div id="resultsPhase" class="phase">
+        <div class="game-card results-card">
+            <div class="results-title">RESULTS</div>
+            <div class="results-question" id="resultsQuestion"></div>
+            <div id="cowMoment" style="display:none"></div>
+            <div id="answerGroups"></div>
+        </div>
+    </div>
 
-        // Get room code from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('room');
-        const playerName = localStorage.getItem('playerName');
+    <!-- Scoreboard Phase -->
+    <div id="scoreboardPhase" class="phase">
+        <div class="game-card scoreboard-card">
+            <div class="scoreboard-title">SCOREBOARD</div>
+            <div class="score-list" id="scoreList"></div>
+            <div class="next-timer" id="nextRoundTimer">Next round in 5...</div>
+        </div>
+    </div>
 
-        // Game state
-        let currentPhase = 'loading';
-        let timerInterval = null;
-        let hasSubmitted = false;
+    <!-- Game Over Phase -->
+    <div id="gameOverPhase" class="phase">
+        <div class="game-card gameover-card">
+            <div class="gameover-crown">👑</div>
+            <div class="gameover-title">WINNER!</div>
+            <div class="gameover-winner" id="winnerName">Player</div>
+            <div class="score-list" id="finalScoreList"></div>
+            <div class="gameover-btns">
+                <button class="btn-submit btn-secondary" onclick="backToLobby()">LEAVE</button>
+                <button class="btn-submit primary" onclick="playAgain()">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+</main>
 
-        // Initialize
-        if (roomCode) {
-            document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
-        }
+<script>
+const BACKEND_URL='https://web-production-519c7.up.railway.app';
+const socket=io(BACKEND_URL,{transports:['websocket','polling']});
 
-        console.log('Herd Mentality game loaded:', { roomCode, playerName });
+const urlParams=new URLSearchParams(location.search);
+const roomCode=urlParams.get('room');
+const playerName=localStorage.getItem('tempPlayerName')||localStorage.getItem('playerName');
 
-        // Socket events
-        socket.on('connect', () => {
-            console.log('Connected:', socket.id);
-            
-            // Rejoin room
-            socket.emit('rejoin-room', {
-                roomCode: roomCode,
-                playerName: playerName
-            });
-        });
+let currentPhase='loading';
+let timerInterval=null;
+let hasSubmitted=false;
+let allPlayers=[];
+let currentQuestion='';
 
-        // Question phase starts
-        socket.on('question-phase', (data) => {
-            console.log('Question phase:', data);
-            showQuestionPhase(data);
-        });
+if(roomCode) document.getElementById('roomBadge').textContent=roomCode;
 
-        // Results phase
-        socket.on('results-phase', (data) => {
-            console.log('Results phase:', data);
-            showResultsPhase(data);
-        });
+const questionEmojis=['🤔','💭','🧠','❓','💡','🎯','🎲','⚡','🔮','🌟'];
 
-        // Scoreboard phase
-        socket.on('scoreboard-phase', (data) => {
-            console.log('Scoreboard phase:', data);
-            showScoreboardPhase(data);
-        });
+// Socket connection
+socket.on('connect',()=>{
+    socket.emit('rejoin-room',{roomCode,playerName});
+});
 
-        // Game over
-        socket.on('game-over', (data) => {
-            console.log('Game over:', data);
-            showGameOverPhase(data);
-        });
+socket.on('room-joined',d=>{
+    allPlayers=(d.room.players||[]).map(p=>p.name);
+    renderPlayerBubbles();
+});
+socket.on('player-joined',d=>{
+    allPlayers=(d.room.players||[]).map(p=>p.name);
+    renderPlayerBubbles();
+});
+socket.on('player-disconnected',d=>{
+    allPlayers=(d.room.players||[]).map(p=>p.name);
+});
 
-        // Answer submitted confirmation
-        socket.on('answer-submitted', () => {
-            hasSubmitted = true;
-            document.getElementById('answerInput').disabled = true;
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('waitingMessage').style.display = 'block';
-        });
+// Question phase
+socket.on('question-phase',data=>{
+    currentPhase='question';
+    hasSubmitted=false;
+    currentQuestion=data.question;
 
-        // Error handling
-        socket.on('error', (data) => {
-            console.error('Error:', data);
-            alert(data.message);
-        });
+    document.getElementById('answerInput').value='';
+    document.getElementById('answerInput').disabled=false;
+    document.getElementById('submitBtn').disabled=false;
+    document.getElementById('submitBtn').textContent='SUBMIT ANSWER';
 
-        // Show question phase
-        function showQuestionPhase(data) {
-            currentPhase = 'question';
-            hasSubmitted = false;
-            
-            // Reset inputs
-            document.getElementById('answerInput').value = '';
-            document.getElementById('answerInput').disabled = false;
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('waitingMessage').style.display = 'none';
-            
-            // Update UI
-            document.getElementById('roundNumber').textContent = `ROUND ${data.roundNumber}`;
-            document.getElementById('questionText').textContent = data.question;
-            
-            // Show phase
-            hideAllPhases();
-            document.getElementById('questionPhase').classList.add('active');
-            
-            // Start timer
-            startTimer(data.timeLimit || 30);
-            
-            // Focus input
-            document.getElementById('answerInput').focus();
-        }
+    document.getElementById('roundNum').textContent=data.roundNumber;
+    document.getElementById('questionText').textContent=data.question;
+    document.getElementById('questionEmoji').textContent=questionEmojis[Math.floor(Math.random()*questionEmojis.length)];
 
-        // Submit answer
-        function submitAnswer() {
-            const answer = document.getElementById('answerInput').value.trim();
-            
-            if (!answer) {
-                alert('Please enter an answer!');
-                return;
+    if(data.playerCount) {
+        allPlayers=allPlayers.length>=data.playerCount?allPlayers:allPlayers;
+        document.getElementById('totalCount').textContent=data.playerCount;
+    } else {
+        document.getElementById('totalCount').textContent=allPlayers.length;
+    }
+    document.getElementById('answeredCount').textContent='0';
+
+    // Reset player bubbles
+    renderPlayerBubbles();
+
+    hideAllPhases();
+    document.getElementById('questionPhase').classList.add('active');
+
+    startTimer(data.timeLimit||30);
+    document.getElementById('answerInput').focus();
+});
+
+// Answer count update
+socket.on('answer-count-update',data=>{
+    document.getElementById('answeredCount').textContent=data.answeredCount;
+    document.getElementById('totalCount').textContent=data.totalCount;
+
+    // Mark the player who just answered
+    const bubble=document.querySelector(`.player-bubble[data-name="${CSS.escape(data.playerName)}"]`);
+    if(bubble){
+        bubble.classList.remove('waiting');
+        bubble.classList.add('answered');
+    }
+});
+
+// Answer submitted confirmation
+socket.on('answer-submitted',()=>{
+    hasSubmitted=true;
+    document.getElementById('answerInput').disabled=true;
+    document.getElementById('submitBtn').disabled=true;
+    document.getElementById('submitBtn').textContent='ANSWER LOCKED IN ✓';
+
+    // Mark self
+    const bubble=document.querySelector(`.player-bubble[data-name="${CSS.escape(playerName)}"]`);
+    if(bubble){bubble.classList.remove('waiting');bubble.classList.add('answered');}
+});
+
+// Results phase
+socket.on('results-phase',data=>{
+    currentPhase='results';
+    if(timerInterval) clearInterval(timerInterval);
+
+    hideAllPhases();
+    document.getElementById('resultsPhase').classList.add('active');
+    document.getElementById('resultsQuestion').textContent=currentQuestion;
+
+    showResults(data);
+});
+
+// Scoreboard phase
+socket.on('scoreboard-phase',data=>{
+    currentPhase='scoreboard';
+    hideAllPhases();
+    document.getElementById('scoreboardPhase').classList.add('active');
+    displayScoreboard(data.scores,data.pinkCowHolder,'scoreList');
+
+    let countdown=5;
+    const el=document.getElementById('nextRoundTimer');
+    el.textContent=`Next round in ${countdown}...`;
+    const ci=setInterval(()=>{
+        countdown--;
+        if(countdown>0) el.textContent=`Next round in ${countdown}...`;
+        else{clearInterval(ci);el.textContent='Starting...';}
+    },1000);
+});
+
+// Game over
+socket.on('game-over',data=>{
+    currentPhase='gameOver';
+    if(timerInterval) clearInterval(timerInterval);
+    hideAllPhases();
+    document.getElementById('gameOverPhase').classList.add('active');
+    document.getElementById('winnerName').textContent=data.winner;
+    displayScoreboard(data.finalScores,null,'finalScoreList');
+    spawnConfetti();
+});
+
+// Error
+socket.on('error',data=>console.error('Error:',data));
+
+// === FUNCTIONS ===
+
+function submitAnswer(){
+    const answer=document.getElementById('answerInput').value.trim();
+    if(!answer){document.getElementById('answerInput').focus();return;}
+    if(hasSubmitted) return;
+    socket.emit('submit-answer',{roomCode,answer});
+}
+
+function startTimer(seconds){
+    if(timerInterval) clearInterval(timerInterval);
+    let timeLeft=seconds;
+    const circle=document.getElementById('timerProgress');
+    const text=document.getElementById('timerText');
+    const circumference=220; // 2*pi*35
+    circle.style.strokeDashoffset='0';
+    circle.classList.remove('urgent');
+    text.classList.remove('urgent');
+    text.textContent=timeLeft;
+
+    timerInterval=setInterval(()=>{
+        timeLeft--;
+        text.textContent=Math.max(0,timeLeft);
+        const offset=circumference*(1-timeLeft/seconds);
+        circle.style.strokeDashoffset=offset;
+
+        if(timeLeft<=10){circle.classList.add('urgent');text.classList.add('urgent');}
+
+        if(timeLeft<=0){
+            clearInterval(timerInterval);
+            // Auto-submit if answer typed
+            if(!hasSubmitted){
+                const answer=document.getElementById('answerInput').value.trim();
+                if(answer) submitAnswer();
             }
-            
-            if (hasSubmitted) {
-                return;
-            }
-            
-            console.log('Submitting answer:', answer);
-            
-            socket.emit('submit-answer', {
-                roomCode: roomCode,
-                answer: answer
-            });
+            // Tell server timer expired
+            socket.emit('herd-timer-expired',{roomCode});
+        }
+    },1000);
+}
+
+function renderPlayerBubbles(){
+    const container=document.getElementById('submittedBubbles');
+    container.innerHTML=allPlayers.map(name=>`
+        <div class="player-bubble waiting" data-name="${esc(name)}">
+            ${esc(name)} <span class="check">✓</span>
+        </div>
+    `).join('');
+}
+
+function showResults(data){
+    const groupsContainer=document.getElementById('answerGroups');
+    groupsContainer.innerHTML='';
+
+    // Pink cow moment
+    const cowEl=document.getElementById('cowMoment');
+    if(data.pinkCowPlayer){
+        cowEl.style.display='block';
+        cowEl.innerHTML=`<div class="cow-moment">
+            <span class="cow-emoji">🐄</span>
+            <div class="cow-text">THE PINK COW GOES TO</div>
+            <div class="cow-name">${esc(data.pinkCowPlayer)}</div>
+        </div>`;
+    } else {
+        cowEl.style.display='none';
+    }
+
+    // Sort groups
+    const sorted=Object.entries(data.groups).sort((a,b)=>b[1].count-a[1].count);
+    let hasMajority=false;
+
+    sorted.forEach(([answer,group])=>{
+        const div=document.createElement('div');
+        div.className='answer-group';
+
+        if(group.isMajority){
+            div.classList.add('majority');
+            hasMajority=true;
+        } else if(group.isPinkCow){
+            div.classList.add('pink-cow');
+        } else {
+            div.classList.add('other');
         }
 
-        // Enter key to submit
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('answerInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    submitAnswer();
-                }
-            });
-        });
+        const badgeText=group.isMajority?`MAJORITY — ${group.count} players`:
+                        group.isPinkCow?'PINK COW 🐄':
+                        `${group.count} player${group.count!==1?'s':''}`;
 
-        // Timer
-        function startTimer(seconds) {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            
-            let timeLeft = seconds;
-            const timerEl = document.getElementById('timer');
-            
-            timerEl.textContent = timeLeft;
-            timerEl.classList.remove('urgent');
-            
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                timerEl.textContent = timeLeft;
-                
-                if (timeLeft <= 10) {
-                    timerEl.classList.add('urgent');
-                }
-                
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    
-                    // Auto-submit if not submitted
-                    if (!hasSubmitted) {
-                        const answer = document.getElementById('answerInput').value.trim();
-                        if (answer) {
-                            submitAnswer();
-                        }
-                    }
-                }
-            }, 1000);
-        }
+        div.innerHTML=`
+            <div class="group-header">
+                <div class="group-answer-text">${esc(answer)}</div>
+                <div class="group-badge">${badgeText}</div>
+            </div>
+            <div class="group-players">
+                ${group.players.map(p=>`<span class="group-player">${esc(p)}</span>`).join('')}
+            </div>
+        `;
+        groupsContainer.appendChild(div);
+    });
 
-        // Show results phase
-        function showResultsPhase(data) {
-            currentPhase = 'results';
-            
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            
-            hideAllPhases();
-            document.getElementById('resultsPhase').classList.add('active');
-            
-            // Show answer groups
-            const groupsContainer = document.getElementById('answerGroups');
-            groupsContainer.innerHTML = '';
-            
-            // Sort groups by count (majority first)
-            const sortedGroups = Object.entries(data.groups).sort((a, b) => b[1].count - a[1].count);
-            
-            sortedGroups.forEach(([answer, group]) => {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'answer-group';
-                
-                // Check if this is the majority or pink cow
-                if (group.isMajority) {
-                    groupDiv.classList.add('majority');
-                }
-                if (group.isPinkCow) {
-                    groupDiv.classList.add('pink-cow');
-                }
-                
-                groupDiv.innerHTML = `
-                    <div class="group-answer">${answer}</div>
-                    <div class="group-count">${group.count} player${group.count !== 1 ? 's' : ''}</div>
-                    <div class="group-players">
-                        ${group.players.map(p => `<span class="player-badge">${p}</span>`).join('')}
-                    </div>
-                `;
-                
-                groupsContainer.appendChild(groupDiv);
-            });
-            
-            // Show pink cow announcement if applicable
-            if (data.pinkCowPlayer) {
-                const announcement = document.getElementById('pinkCowAnnouncement');
-                document.getElementById('pinkCowText').textContent = 
-                    `${data.pinkCowPlayer} got the Pink Cow!`;
-                announcement.style.display = 'block';
-            } else {
-                document.getElementById('pinkCowAnnouncement').style.display = 'none';
-            }
-        }
+    // Confetti if majority found
+    if(hasMajority) spawnConfetti();
+}
 
-        // Show scoreboard phase
-        function showScoreboardPhase(data) {
-            currentPhase = 'scoreboard';
-            
-            hideAllPhases();
-            document.getElementById('scoreboardPhase').classList.add('active');
-            
-            displayScoreboard(data.scores, data.pinkCowHolder, 'scoreList');
-            
-            // Countdown to next round
-            let countdown = 5;
-            const timerEl = document.getElementById('nextRoundTimer');
-            timerEl.textContent = `Next round in ${countdown}...`;
-            
-            const countdownInterval = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    timerEl.textContent = `Next round in ${countdown}...`;
-                } else {
-                    clearInterval(countdownInterval);
-                    timerEl.textContent = 'Starting...';
-                }
-            }, 1000);
-        }
+function displayScoreboard(scores,pinkCowHolder,containerId){
+    const el=document.getElementById(containerId);
+    const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
 
-        // Show game over phase
-        function showGameOverPhase(data) {
-            currentPhase = 'gameOver';
-            
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            
-            hideAllPhases();
-            document.getElementById('gameOverPhase').classList.add('active');
-            
-            document.getElementById('winnerName').textContent = data.winner;
-            displayScoreboard(data.finalScores, null, 'finalScoreList');
-        }
+    el.innerHTML=sorted.map(([name,score],i)=>{
+        const avClass='av-'+(((i+1)%8)+1);
+        const isLeading=i===0&&score>0;
+        const hasCow=pinkCowHolder===name;
+        const initial=name.charAt(0).toUpperCase();
+        return `<div class="score-row${isLeading?' leading':''}${hasCow?' has-cow':''}">
+            <div class="score-rank${i===0?' gold':''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</div>
+            <div class="score-avatar ${avClass}">${initial}</div>
+            <div class="score-name">${esc(name)}</div>
+            ${hasCow?'<div class="score-cow">🐄</div>':''}
+            <div class="score-pts">${score}</div>
+        </div>`;
+    }).join('');
+}
 
-        // Display scoreboard
-        function displayScoreboard(scores, pinkCowHolder, containerId) {
-            const scoreList = document.getElementById(containerId);
-            scoreList.innerHTML = '';
-            
-            // Sort by score
-            const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-            
-            sortedScores.forEach(([player, score], index) => {
-                const scoreItem = document.createElement('div');
-                scoreItem.className = 'score-item';
-                
-                if (index === 0) {
-                    scoreItem.classList.add('leading');
-                }
-                
-                if (pinkCowHolder === player) {
-                    scoreItem.classList.add('has-cow');
-                }
-                
-                scoreItem.innerHTML = `
-                    <div class="player-rank">${index + 1}.</div>
-                    <div class="player-info">
-                        ${player}
-                        ${pinkCowHolder === player ? ' 🐄' : ''}
-                    </div>
-                    <div class="player-score">${score}</div>
-                `;
-                
-                scoreList.appendChild(scoreItem);
-            });
-        }
+function hideAllPhases(){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));}
 
-        // Hide all phases
-        function hideAllPhases() {
-            document.querySelectorAll('.phase').forEach(phase => {
-                phase.classList.remove('active');
-            });
-        }
+function spawnConfetti(){
+    const colors=['#ec4899','#8b5cf6','#3b82f6','#22c55e','#eab308','#f97316','#14b8a6'];
+    for(let i=0;i<50;i++){
+        const c=document.createElement('div');c.className='confetti';
+        c.style.left=Math.random()*100+'vw';
+        c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.width=(6+Math.random()*10)+'px';
+        c.style.height=(6+Math.random()*10)+'px';
+        c.style.animationDuration=(2+Math.random()*2)+'s';
+        c.style.animationDelay=(Math.random()*0.6)+'s';
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),5000);
+    }
+}
 
-        // Play again
-        function playAgain() {
-            window.location.href = `/waiting-room.html?room=${roomCode}&name=${playerName}`;
-        }
+function playAgain(){location.href=`/waiting-room.html?room=${roomCode}&name=${playerName}`;}
+function backToLobby(){location.href='/squad-games.html';}
 
-        // Back to lobby
-        function backToLobby() {
-            window.location.href = 'lobby.html?game=herd-mentality';
-        }
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 
-        // Handle disconnect
-        window.addEventListener('beforeunload', () => {
-            socket.disconnect();
-        });
-    </script>
-    <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+// Enter key to submit
+document.getElementById('answerInput').addEventListener('keypress',e=>{
+    if(e.key==='Enter') submitAnswer();
+});
+
+window.addEventListener('beforeunload',()=>socket.disconnect());
+</script>
+<script src="/header.js"></script>
 </body>
 </html>

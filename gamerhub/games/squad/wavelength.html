@@ -3,160 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wavelength - TheGaming.co</title>
-    <meta name="description" content="Wavelength - Give clues to help your team guess where the target is on the spectrum!">
-    <meta name="theme-color" content="#06b6d4">
+    <title>Spectrum - TheGaming.co</title>
+    <meta name="description" content="Spectrum - Give clues to help your team guess where the target is on the spectrum!">
+    <meta name="theme-color" content="#f97316">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#0a1520;--card:#122535;--accent:#06b6d4;--glow:rgba(6,182,212,0.4);--green:#22c55e;--red:#ef4444;--gold:#fbbf24;--purple:#a855f7;--text:#fff;--dim:rgba(255,255,255,0.6);--border:rgba(255,255,255,0.1)}
-        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-        .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 30%,rgba(6,182,212,0.12) 0%,transparent 50%)}
-        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 12px;background:rgba(10,21,32,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        :root{
+            --bg:#0a0604;--bg2:#1a0f08;--card:rgba(26,15,8,0.85);
+            --accent:#f97316;--accent-glow:rgba(249,115,22,0.4);
+            --gold:#eab308;--green:#22c55e;--red:#ef4444;--cyan:#06b6d4;--purple:#8b5cf6;
+            --text:#fff;--dim:rgba(255,255,255,0.55);--border:rgba(255,255,255,0.08)
+        }
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+        /* Animated background */
+        .bg-wrap{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .bg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(249,115,22,0.08) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 20% 80%,rgba(139,92,246,0.05) 0%,transparent 50%),var(--bg)}
+        .bg-particles{position:absolute;inset:0}
+        .bg-particles span{position:absolute;width:2px;height:2px;background:var(--accent);border-radius:50%;opacity:0;animation:particleFade 4s ease-in-out infinite}
+        .bg-particles span:nth-child(1){top:20%;left:15%;animation-delay:0s}
+        .bg-particles span:nth-child(2){top:60%;left:80%;animation-delay:1s}
+        .bg-particles span:nth-child(3){top:40%;left:45%;animation-delay:2s}
+        .bg-particles span:nth-child(4){top:75%;left:25%;animation-delay:0.5s}
+        .bg-particles span:nth-child(5){top:30%;left:70%;animation-delay:1.5s}
+        .bg-particles span:nth-child(6){top:85%;left:60%;animation-delay:3s}
+        @keyframes particleFade{0%,100%{opacity:0;transform:translateY(0) scale(1)}50%{opacity:0.6;transform:translateY(-20px) scale(2)}}
+
+        /* Header */
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;display:flex;align-items:center;padding:0 16px;background:rgba(10,6,4,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
         .nav{width:100%;max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
-        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.75rem;font-weight:600;text-transform:uppercase;text-decoration:none;transition:.2s}
-        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:var(--red)}
+        .back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--dim);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s}
+        .back:hover{background:rgba(239,68,68,0.1);color:var(--red);border-color:rgba(239,68,68,0.3)}
         .back svg{width:14px;height:14px}
-        .badge{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;color:var(--accent);background:var(--card);padding:4px 10px;border-radius:4px}
-        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff}
-        main{position:relative;z-index:1;padding:65px 16px 24px;min-height:100vh;max-width:600px;margin:0 auto}
-        .round{text-align:center;margin-bottom:16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim)}
-        .round span{color:var(--accent)}
-        
-        .psychic-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;margin-bottom:20px}
-        .psychic-card.is-me{border-color:var(--accent);box-shadow:0 0 30px var(--glow)}
-        .psychic-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
-        .psychic-name{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--accent)}
-        
-        /* Spectrum Display */
-        .spectrum-section{margin-bottom:24px}
-        .spectrum-labels{display:flex;justify-content:space-between;margin-bottom:8px}
-        .spectrum-label{font-size:.8rem;color:var(--dim);max-width:40%;text-align:center}
-        .spectrum-label.left{text-align:left}
-        .spectrum-label.right{text-align:right}
-        
-        .spectrum-track{position:relative;height:60px;background:linear-gradient(90deg,var(--red),var(--gold),var(--green));border-radius:30px;overflow:hidden}
-        .spectrum-target{position:absolute;top:0;bottom:0;width:60px;background:rgba(255,255,255,0.3);border:3px solid #fff;border-radius:30px;transform:translateX(-50%);display:none;box-shadow:0 0 20px rgba(255,255,255,0.5)}
-        .spectrum-target.visible{display:block}
-        .spectrum-guess{position:absolute;top:50%;width:4px;height:80%;background:var(--purple);border-radius:2px;transform:translate(-50%,-50%);display:none}
-        .spectrum-guess.visible{display:block}
-        
-        .slider-wrap{margin-top:16px}
-        .slider{width:100%;height:40px;-webkit-appearance:none;background:var(--card);border-radius:20px;outline:none;cursor:pointer}
-        .slider::-webkit-slider-thumb{-webkit-appearance:none;width:50px;height:50px;background:var(--accent);border-radius:50%;cursor:grab;box-shadow:0 0 20px var(--glow)}
-        .slider::-moz-range-thumb{width:50px;height:50px;background:var(--accent);border-radius:50%;cursor:grab}
-        .slider:disabled{opacity:.5;cursor:not-allowed}
-        
-        .clue-display{background:linear-gradient(135deg,var(--card),rgba(6,182,212,0.1));border:2px solid var(--accent);border-radius:16px;padding:24px;text-align:center;margin-bottom:20px;box-shadow:0 0 30px var(--glow)}
-        .clue-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
-        .clue-txt{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:3px}
-        
+        .badge{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:3px;color:var(--accent);background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);padding:4px 12px;border-radius:6px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;background:linear-gradient(135deg,#f97316,#eab308);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+        /* Main */
+        main{position:relative;z-index:1;padding:68px 16px 32px;min-height:100vh;max-width:520px;margin:0 auto}
+
+        /* Round indicator */
+        .round-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
+        .round-pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.12);transition:.3s}
+        .round-pip.done{background:var(--accent);box-shadow:0 0 8px var(--accent-glow)}
+        .round-pip.current{background:var(--accent);box-shadow:0 0 12px var(--accent-glow);transform:scale(1.3)}
+        .round-txt{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:3px;color:var(--dim);margin-left:8px}
+
+        /* Psychic card */
+        .psychic-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:14px;margin-bottom:24px;backdrop-filter:blur(10px);transition:.3s}
+        .psychic-card.is-me{border-color:var(--accent);box-shadow:0 0 40px rgba(249,115,22,0.15)}
+        .psychic-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--gold));display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+        .psychic-info{flex:1}
+        .psychic-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px}
+        .psychic-name{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--accent)}
+
+        /* === THE DIAL — semicircle spectrum === */
+        .dial-container{position:relative;width:100%;max-width:440px;margin:0 auto 8px;aspect-ratio:2/1.15}
+        .dial-svg{width:100%;height:100%;overflow:visible}
+
+        /* Spectrum labels */
+        .spectrum-labels{display:flex;justify-content:space-between;padding:0 8px;margin-bottom:20px}
+        .spectrum-label{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;max-width:40%;line-height:1.2}
+        .spectrum-label.left{color:var(--red);text-align:left}
+        .spectrum-label.right{color:var(--purple);text-align:right}
+
+        /* Clue display */
+        .clue-card{position:relative;background:var(--card);border:2px solid var(--accent);border-radius:16px;padding:20px;text-align:center;margin-bottom:20px;backdrop-filter:blur(10px);overflow:hidden}
+        .clue-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(249,115,22,0.15),transparent 70%)}
+        .clue-card::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+        .clue-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:3px;margin-bottom:6px;position:relative}
+        .clue-txt{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:4px;position:relative;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:clueGlow 2s ease-in-out infinite}
+        @keyframes clueGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(249,115,22,0.3))}50%{filter:drop-shadow(0 0 20px rgba(249,115,22,0.6))}}
+
+        /* Clue input */
         .clue-input-wrap{margin-bottom:20px}
-        .clue-input{width:100%;padding:16px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-size:1.2rem;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;text-align:center;transition:.2s}
-        .clue-input:focus{outline:0;border-color:var(--accent)}
-        .clue-input:disabled{opacity:.5}
-        
-        .btn{width:100%;padding:14px 24px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:.2s;border:0}
-        .btn-p{background:linear-gradient(135deg,var(--accent),#0891b2);color:#fff}
-        .btn-p:hover{filter:brightness(1.1);transform:translateY(-2px)}
-        .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none}
-        .btn-s{background:0;border:2px solid var(--border);color:var(--text)}
-        
-        .score-display{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
-        .score-box{text-align:center;padding:12px 24px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
-        .score-box-lbl{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
-        .score-box-val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--accent)}
-        
-        .result-msg{text-align:center;padding:16px;background:var(--card);border-radius:12px;margin-bottom:20px;font-size:1.1rem}
-        .result-msg.perfect{background:rgba(34,197,94,0.2);color:var(--green)}
-        .result-msg.close{background:rgba(251,191,36,0.2);color:var(--gold)}
-        .result-msg.miss{background:rgba(239,68,68,0.2);color:var(--red)}
-        
-        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:24px}
-        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);margin-bottom:12px}
-        .score-list{display:flex;flex-direction:column;gap:8px}
-        .score-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px}
-        .score-row.top{background:rgba(6,182,212,0.15)}
-        .score-name{font-weight:600}
-        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--accent)}
-        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.9rem}
-        
-        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+        .clue-input{width:100%;padding:16px 20px;background:rgba(26,15,8,0.9);border:2px solid var(--border);border-radius:14px;color:var(--text);font-size:1.3rem;font-family:'Bebas Neue',sans-serif;letter-spacing:3px;text-align:center;transition:.3s;backdrop-filter:blur(10px)}
+        .clue-input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 30px rgba(249,115,22,0.15)}
+        .clue-input::placeholder{color:rgba(255,255,255,0.2)}
+        .clue-input:disabled{opacity:.4}
+
+        /* Slider */
+        .slider-wrap{margin-bottom:20px;padding:0 4px}
+        .slider{width:100%;height:44px;-webkit-appearance:none;background:linear-gradient(90deg,var(--red),#f97316,var(--gold),var(--green),var(--cyan),var(--purple));border-radius:22px;outline:none;cursor:pointer;position:relative}
+        .slider::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:52px;background:white;border-radius:8px;cursor:grab;box-shadow:0 0 20px rgba(255,255,255,0.4),0 4px 12px rgba(0,0,0,0.3);border:3px solid rgba(255,255,255,0.9);transition:box-shadow .2s}
+        .slider::-webkit-slider-thumb:hover{box-shadow:0 0 30px rgba(255,255,255,0.6),0 6px 16px rgba(0,0,0,0.4)}
+        .slider::-moz-range-thumb{width:36px;height:52px;background:white;border-radius:8px;cursor:grab;border:3px solid rgba(255,255,255,0.9)}
+        .slider:disabled{opacity:.4;cursor:not-allowed}
+        .slider-hint{text-align:center;font-size:.7rem;color:var(--dim);margin-top:6px;letter-spacing:1px}
+
+        /* Action button */
+        .btn{width:100%;padding:16px 24px;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;cursor:pointer;transition:all .25s;border:0;position:relative;overflow:hidden}
+        .btn-p{background:linear-gradient(135deg,var(--accent),#ea580c);color:#fff;box-shadow:0 6px 24px var(--accent-glow)}
+        .btn-p::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);transform:translateX(-100%);transition:transform .5s}
+        .btn-p:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 36px var(--accent-glow)}
+        .btn-p:hover:not(:disabled)::before{transform:translateX(100%)}
+        .btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+        .btn-s{background:rgba(255,255,255,0.04);border:2px solid var(--border)!important;color:var(--text)}
+        .btn-s:hover{border-color:var(--accent)!important;color:var(--accent)}
+
+        /* Score display */
+        .score-row-main{display:flex;gap:12px;margin-bottom:20px}
+        .score-card{flex:1;text-align:center;padding:12px;background:var(--card);border-radius:14px;border:1px solid var(--border);backdrop-filter:blur(10px)}
+        .score-card-lbl{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px}
+        .score-card-val{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--accent);line-height:1.1}
+        .score-card.highlight{border-color:var(--accent);box-shadow:0 0 20px rgba(249,115,22,0.1)}
+
+        /* Result */
+        .result-msg{text-align:center;padding:16px 20px;border-radius:14px;margin-bottom:20px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;animation:resultPop .4s cubic-bezier(0.34,1.56,0.64,1)}
+        @keyframes resultPop{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+        .result-msg.perfect{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--green)}
+        .result-msg.close{background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.3);color:var(--gold)}
+        .result-msg.miss{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--red)}
+
+        /* Scoreboard */
+        .scoreboard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-top:24px;backdrop-filter:blur(10px)}
+        .sb-title{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:3px;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+        .sb-title::before{content:'';flex:0 0 3px;height:14px;background:var(--accent);border-radius:2px}
+        .score-list{display:flex;flex-direction:column;gap:6px}
+        .score-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid transparent;border-radius:10px;transition:.2s}
+        .score-row.top{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.15)}
+        .score-name{font-weight:600;font-size:.9rem}
+        .score-val{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--accent)}
+        .empty{text-align:center;padding:20px;color:var(--dim);font-size:.85rem}
+
+        /* Game over overlay */
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;backdrop-filter:blur(10px)}
         .overlay.active{display:flex}
-        .modal{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center}
-        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
-        .modal-btns{display:flex;gap:12px;margin-top:24px}
-        .modal-btns .btn{flex:1;padding:12px;font-size:1rem}
+        .modal{background:linear-gradient(180deg,var(--bg2),var(--bg));border:2px solid var(--accent);border-radius:24px;padding:36px 28px;max-width:420px;width:100%;text-align:center;position:relative;overflow:hidden}
+        .modal::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(249,115,22,0.15),transparent 60%)}
+        .modal h2{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:6px;background:linear-gradient(135deg,var(--gold),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;position:relative}
+        .modal-score{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--accent);position:relative;animation:scoreCountUp .6s ease-out}
+        @keyframes scoreCountUp{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+        .modal-score-lbl{color:var(--dim);font-size:.8rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;position:relative}
+        .modal .scoreboard{margin-bottom:24px}
+        .modal-btns{display:flex;gap:12px}
+        .modal-btns .btn{flex:1;padding:14px;font-size:1.1rem}
+
+        /* Confetti for perfect scores */
+        @keyframes confettiFall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+        .confetti{position:fixed;top:0;width:8px;height:8px;z-index:201;animation:confettiFall 3s linear forwards;pointer-events:none;border-radius:1px}
+
+        /* Phase transitions */
+        .fade-in{animation:fadeSlideIn .4s ease-out}
+        @keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+        @media(max-width:400px){
+            .dial-container{max-width:320px}
+            .clue-txt{font-size:2rem}
+            .spectrum-label{font-size:.85rem}
+        }
     </style>
 </head>
 <body>
-<div class="bg"></div>
+<div class="bg-wrap">
+    <div class="bg-grad"></div>
+    <div class="bg-particles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+
 <header><nav class="nav">
-    <div style="display:flex;align-items:center;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px">
         <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
         <span class="badge" id="room">------</span>
     </div>
-    <span class="logo">📡 WAVELENGTH</span>
+    <span class="logo">SPECTRUM</span>
     <div></div>
 </nav></header>
 
 <main>
-    <div class="round">ROUND <span id="roundNum">1</span> / <span id="totalRounds">?</span></div>
-    
+    <!-- Round pips -->
+    <div class="round-bar" id="roundBar">
+        <span class="round-txt">ROUND <span id="roundNum">1</span> / <span id="totalRounds">?</span></span>
+    </div>
+
+    <!-- Psychic -->
     <div class="psychic-card" id="psychicCard">
-        <div class="psychic-lbl" id="psychicLbl">Psychic</div>
-        <div class="psychic-name" id="psychicName">Waiting...</div>
-    </div>
-    
-    <div class="spectrum-section">
-        <div class="spectrum-labels">
-            <div class="spectrum-label left" id="labelLeft">Cold</div>
-            <div class="spectrum-label right" id="labelRight">Hot</div>
-        </div>
-        <div class="spectrum-track" id="spectrumTrack">
-            <div class="spectrum-target" id="target"></div>
-            <div class="spectrum-guess" id="guessMarker"></div>
-        </div>
-        <div class="slider-wrap" id="sliderWrap" style="display:none">
-            <input type="range" class="slider" id="slider" min="0" max="100" value="50">
+        <div class="psychic-icon" id="psychicIcon">🎯</div>
+        <div class="psychic-info">
+            <div class="psychic-lbl" id="psychicLbl">Psychic</div>
+            <div class="psychic-name" id="psychicName">Waiting...</div>
         </div>
     </div>
-    
+
+    <!-- Semicircle Dial -->
+    <div class="dial-container" id="dialContainer">
+        <svg class="dial-svg" viewBox="0 0 400 230" id="dialSvg">
+            <defs>
+                <linearGradient id="spectrumGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ef4444"/>
+                    <stop offset="20%" stop-color="#f97316"/>
+                    <stop offset="40%" stop-color="#eab308"/>
+                    <stop offset="60%" stop-color="#22c55e"/>
+                    <stop offset="80%" stop-color="#06b6d4"/>
+                    <stop offset="100%" stop-color="#8b5cf6"/>
+                </linearGradient>
+                <filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                <clipPath id="semiClip"><path d="M10 210 A190 190 0 0 1 390 210 L390 215 L10 215 Z"/></clipPath>
+            </defs>
+            <!-- Outer ring glow -->
+            <path d="M15 210 A185 185 0 0 1 385 210" fill="none" stroke="url(#spectrumGrad)" stroke-width="52" stroke-linecap="round" opacity="0.12"/>
+            <!-- Main semicircle -->
+            <path d="M20 210 A180 180 0 0 1 380 210" fill="none" stroke="url(#spectrumGrad)" stroke-width="44" stroke-linecap="round" opacity="0.85"/>
+            <!-- Score zone marks -->
+            <g opacity="0.3">
+                <line x1="200" y1="32" x2="200" y2="52" stroke="white" stroke-width="1"/>
+                <line x1="110" y1="68" x2="120" y2="84" stroke="white" stroke-width="1"/>
+                <line x1="290" y1="68" x2="280" y2="84" stroke="white" stroke-width="1"/>
+            </g>
+            <!-- Target zone (hidden by default) -->
+            <g id="targetZone" opacity="0" filter="url(#glow)">
+                <path id="targetArc" d="" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="48" stroke-linecap="butt"/>
+                <path id="targetArcInner" d="" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="52" stroke-linecap="butt"/>
+            </g>
+            <!-- Guess needle -->
+            <g id="guessNeedle" opacity="0">
+                <line id="guessLine" x1="200" y1="210" x2="200" y2="40" stroke="#a855f7" stroke-width="3" stroke-linecap="round" filter="url(#glow)"/>
+                <circle cx="200" cy="40" r="6" fill="#a855f7" id="guessDot"/>
+            </g>
+            <!-- Center hub -->
+            <circle cx="200" cy="210" r="14" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+            <circle cx="200" cy="210" r="5" fill="var(--accent)"/>
+            <!-- Needle (for psychic preview / slider) -->
+            <g id="needleGroup" style="transform-origin:200px 210px">
+                <line id="needleLine" x1="200" y1="210" x2="200" y2="40" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+                <circle id="needleTip" cx="200" cy="40" r="7" fill="white" filter="url(#glow)"/>
+            </g>
+        </svg>
+    </div>
+
+    <!-- Spectrum labels -->
+    <div class="spectrum-labels">
+        <div class="spectrum-label left" id="labelLeft">Cold</div>
+        <div class="spectrum-label right" id="labelRight">Hot</div>
+    </div>
+
+    <!-- Slider (for guessers) -->
+    <div class="slider-wrap" id="sliderWrap" style="display:none">
+        <input type="range" class="slider" id="slider" min="0" max="100" value="50">
+        <div class="slider-hint">Drag to place your guess on the dial</div>
+    </div>
+
     <!-- Clue Display (for guessers) -->
-    <div class="clue-display" id="clueDisplay" style="display:none">
+    <div class="clue-card" id="clueDisplay" style="display:none">
         <div class="clue-lbl">The Clue</div>
         <div class="clue-txt" id="clueTxt">???</div>
     </div>
-    
+
     <!-- Clue Input (for psychic) -->
     <div class="clue-input-wrap" id="clueInputWrap" style="display:none">
         <input type="text" class="clue-input" id="clueInput" placeholder="Enter your clue..." maxlength="30">
     </div>
-    
+
     <div class="result-msg" id="resultMsg" style="display:none"></div>
-    
-    <div class="score-display">
-        <div class="score-box"><div class="score-box-lbl">Team Score</div><div class="score-box-val" id="teamScore">0</div></div>
-        <div class="score-box"><div class="score-box-lbl">Round</div><div class="score-box-val" id="roundScore">0</div></div>
+
+    <div class="score-row-main">
+        <div class="score-card"><div class="score-card-lbl">Team Score</div><div class="score-card-val" id="teamScore">0</div></div>
+        <div class="score-card" id="roundScoreCard"><div class="score-card-lbl">This Round</div><div class="score-card-val" id="roundScore">-</div></div>
     </div>
-    
-    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Submit</button>
-    
+
+    <button class="btn btn-p" id="actionBtn" onclick="handleAction()" disabled>Waiting...</button>
+
     <div class="scoreboard">
-        <div class="sb-title">Individual Scores</div>
-        <div class="score-list" id="scoreList"><div class="empty">Scores appear here</div></div>
+        <div class="sb-title">Player Scores</div>
+        <div class="score-list" id="scoreList"><div class="empty">Scores appear after the first round</div></div>
     </div>
 </main>
 
 <div class="overlay" id="gameoverOverlay">
     <div class="modal">
-        <h2>🏆 GAME OVER</h2>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--accent);margin-bottom:16px" id="finalTeamScore">0</div>
-        <div style="color:var(--dim);margin-bottom:24px">Team Points</div>
-        <div class="scoreboard"><div class="sb-title">Individual Scores</div><div class="score-list" id="finalScores"></div></div>
+        <h2>GAME OVER</h2>
+        <div class="modal-score" id="finalTeamScore">0</div>
+        <div class="modal-score-lbl">Team Points</div>
+        <div class="scoreboard"><div class="sb-title">Final Standings</div><div class="score-list" id="finalScores"></div></div>
         <div class="modal-btns">
             <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
             <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
@@ -175,6 +296,45 @@ if(!roomCode||!playerName)location.href='/lobby.html?game=wavelength';
 
 let state={players:[],scores:{},teamScore:0,psychic:'',phase:'waiting',targetPos:50,guessPos:50,clue:'',isPsychic:false,isHost:localStorage.getItem('tempIsHost')==='true'};
 
+/* ===== DIAL HELPERS ===== */
+function posToAngle(pos){return Math.PI-((pos/100)*Math.PI)}
+function angleToXY(angle,r){return{x:200+r*Math.cos(angle),y:210-r*Math.sin(angle)}}
+function setNeedle(pos){
+    const a=posToAngle(pos);const tip=angleToXY(a,170);
+    document.getElementById('needleLine').setAttribute('x2',tip.x);
+    document.getElementById('needleLine').setAttribute('y2',tip.y);
+    document.getElementById('needleTip').setAttribute('cx',tip.x);
+    document.getElementById('needleTip').setAttribute('cy',tip.y);
+}
+function setGuessNeedle(pos){
+    const a=posToAngle(pos);const tip=angleToXY(a,170);
+    document.getElementById('guessLine').setAttribute('x2',tip.x);
+    document.getElementById('guessLine').setAttribute('y2',tip.y);
+    document.getElementById('guessDot').setAttribute('cx',tip.x);
+    document.getElementById('guessDot').setAttribute('cy',tip.y);
+}
+function showTarget(pos){
+    const zone=document.getElementById('targetZone');
+    const halfW=5;// 5% each side = 10% target zone
+    const a1=posToAngle(Math.min(100,pos+halfW));
+    const a2=posToAngle(Math.max(0,pos-halfW));
+    const r=180;
+    const p1=angleToXY(a1,r),p2=angleToXY(a2,r);
+    const largeArc=(a1-a2)>Math.PI?1:0;
+    const d=`M${p1.x} ${p1.y} A${r} ${r} 0 ${largeArc} 0 ${p2.x} ${p2.y}`;
+    document.getElementById('targetArc').setAttribute('d',d);
+    document.getElementById('targetArcInner').setAttribute('d',d);
+    zone.style.transition='opacity .6s';zone.style.opacity='1';
+}
+function hideTarget(){document.getElementById('targetZone').style.opacity='0';}
+
+setNeedle(50);
+
+/* ===== SLIDER → NEEDLE SYNC ===== */
+const slider=document.getElementById('slider');
+slider.addEventListener('input',()=>{setNeedle(parseInt(slider.value));});
+
+/* ===== SOCKET EVENTS ===== */
 socket.on('connect',()=>socket.emit('rejoin-room',{roomCode,playerName}));
 socket.on('room-joined',d=>{state.players=d.room.players||[];const me=state.players.find(p=>p.name===playerName);if(me)state.isHost=me.isHost;});
 socket.on('player-joined',d=>{state.players=d.room.players||[];});
@@ -186,19 +346,22 @@ socket.on('wavelength-round',d=>{
     document.getElementById('totalRounds').textContent=d.totalRounds;
     document.getElementById('psychicName').textContent=d.psychic;
     document.getElementById('psychicCard').classList.toggle('is-me',state.isPsychic);
-    document.getElementById('psychicLbl').textContent=state.isPsychic?'You\'re the Psychic!':'Psychic';
+    document.getElementById('psychicLbl').textContent=state.isPsychic?'YOU ARE THE PSYCHIC':'Psychic';
+    document.getElementById('psychicIcon').textContent=state.isPsychic?'🧠':'🎯';
     document.getElementById('labelLeft').textContent=d.leftLabel;
     document.getElementById('labelRight').textContent=d.rightLabel;
-    
-    // Show/hide target for psychic
-    const target=document.getElementById('target');
-    target.style.left=d.target+'%';
-    target.classList.toggle('visible',state.isPsychic);
-    document.getElementById('guessMarker').classList.remove('visible');
+    document.getElementById('roundScore').textContent='-';
+
+    // Reset dial
+    hideTarget();
+    document.getElementById('guessNeedle').style.opacity='0';
     document.getElementById('resultMsg').style.display='none';
-    
+    setNeedle(50);
+
     if(state.isPsychic){
+        showTarget(d.target);
         document.getElementById('clueInputWrap').style.display='block';
+        document.getElementById('clueInputWrap').classList.add('fade-in');
         document.getElementById('clueDisplay').style.display='none';
         document.getElementById('sliderWrap').style.display='none';
         document.getElementById('clueInput').value='';
@@ -206,11 +369,13 @@ socket.on('wavelength-round',d=>{
         document.getElementById('actionBtn').textContent='Submit Clue';
         document.getElementById('actionBtn').disabled=true;
         document.getElementById('clueInput').oninput=()=>{document.getElementById('actionBtn').disabled=!document.getElementById('clueInput').value.trim();};
+        // Needle shows target for psychic
+        setNeedle(d.target);
     }else{
         document.getElementById('clueInputWrap').style.display='none';
         document.getElementById('clueDisplay').style.display='none';
         document.getElementById('sliderWrap').style.display='none';
-        document.getElementById('actionBtn').textContent='Waiting for clue...';
+        document.getElementById('actionBtn').textContent='Waiting for Clue...';
         document.getElementById('actionBtn').disabled=true;
     }
 });
@@ -219,44 +384,54 @@ socket.on('wavelength-clue',d=>{
     state.phase='guessing';state.clue=d.clue;
     document.getElementById('clueTxt').textContent=d.clue;
     document.getElementById('clueDisplay').style.display='block';
+    document.getElementById('clueDisplay').classList.add('fade-in');
     document.getElementById('clueInputWrap').style.display='none';
-    
+
     if(!state.isPsychic){
         document.getElementById('sliderWrap').style.display='block';
-        document.getElementById('slider').disabled=false;
-        document.getElementById('slider').value=50;
+        document.getElementById('sliderWrap').classList.add('fade-in');
+        slider.disabled=false;
+        slider.value=50;
+        setNeedle(50);
         document.getElementById('actionBtn').textContent='Lock In Guess';
         document.getElementById('actionBtn').disabled=false;
     }else{
-        document.getElementById('actionBtn').textContent='Waiting for guesses...';
+        document.getElementById('actionBtn').textContent='Waiting for Guesses...';
         document.getElementById('actionBtn').disabled=true;
     }
 });
 
 socket.on('wavelength-results',d=>{
     state.phase='results';state.teamScore=d.teamScore;state.scores=d.scores;
-    
-    // Show target and guess
-    document.getElementById('target').classList.add('visible');
-    const guessMarker=document.getElementById('guessMarker');
-    guessMarker.style.left=d.guess+'%';
-    guessMarker.classList.add('visible');
-    
-    // Show result message
+
+    // Reveal target
+    showTarget(d.target);
+
+    // Show guess needle
+    setGuessNeedle(d.guess);
+    document.getElementById('guessNeedle').style.transition='opacity .4s';
+    document.getElementById('guessNeedle').style.opacity='1';
+
+    // Animate main needle to guess position
+    setNeedle(d.guess);
+
+    // Result message
     const diff=Math.abs(d.guess-d.target);
     const msg=document.getElementById('resultMsg');
     msg.style.display='block';
-    if(diff<=5){msg.className='result-msg perfect';msg.textContent='🎯 PERFECT! +4 points';}
-    else if(diff<=15){msg.className='result-msg close';msg.textContent='👍 Close! +2 points';}
-    else{msg.className='result-msg miss';msg.textContent='😬 Miss! +0 points';}
-    
+    msg.classList.add('fade-in');
+    if(diff<=5){msg.className='result-msg perfect fade-in';msg.textContent='BULLSEYE! +4 points';spawnConfetti();}
+    else if(diff<=15){msg.className='result-msg close fade-in';msg.textContent='CLOSE! +2 points';}
+    else{msg.className='result-msg miss fade-in';msg.textContent='MISS! +0 points';}
+
     document.getElementById('teamScore').textContent=d.teamScore;
     document.getElementById('roundScore').textContent=d.roundPoints;
     updateScoreboard();
-    
+
+    document.getElementById('sliderWrap').style.display='none';
     document.getElementById('actionBtn').textContent=state.isHost?'Next Round':'Waiting...';
     document.getElementById('actionBtn').disabled=!state.isHost;
-    document.getElementById('slider').disabled=true;
+    slider.disabled=true;
 });
 
 socket.on('wavelength-game-over',d=>{state.scores=d.scores;state.teamScore=d.teamScore;showGameOver();});
@@ -268,11 +443,11 @@ function handleAction(){
         socket.emit('wavelength-clue',{roomCode,clue});
         document.getElementById('clueInput').disabled=true;
         document.getElementById('actionBtn').disabled=true;
-        document.getElementById('actionBtn').textContent='Clue Submitted!';
+        document.getElementById('actionBtn').textContent='Clue Sent!';
     }else if(state.phase==='guessing'&&!state.isPsychic){
-        const guess=parseInt(document.getElementById('slider').value);
+        const guess=parseInt(slider.value);
         socket.emit('wavelength-guess',{roomCode,guess});
-        document.getElementById('slider').disabled=true;
+        slider.disabled=true;
         document.getElementById('actionBtn').disabled=true;
         document.getElementById('actionBtn').textContent='Guess Locked!';
     }else if(state.phase==='results'&&state.isHost){
@@ -285,11 +460,12 @@ function updateScoreboard(){
     const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]).slice(0,8);
     if(!sorted.length){container.innerHTML='<div class="empty">No scores yet</div>';return;}
     container.innerHTML=sorted.map(([name,score],i)=>`
-        <div class="score-row ${i===0?'top':''}"><span class="score-name">${esc(name)}</span><span class="score-val">${score}</span></div>
+        <div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>
     `).join('');
 }
 
 function showGameOver(){
+    spawnConfetti();
     document.getElementById('finalTeamScore').textContent=state.teamScore;
     const container=document.getElementById('finalScores');
     const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
@@ -297,6 +473,21 @@ function showGameOver(){
         <div class="score-row ${i===0?'top':''}"><span class="score-name">${i===0?'👑 ':''}${esc(name)}</span><span class="score-val">${score}</span></div>
     `).join('');
     document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+function spawnConfetti(){
+    const colors=['#f97316','#eab308','#22c55e','#ef4444','#06b6d4','#8b5cf6','#ec4899'];
+    for(let i=0;i<40;i++){
+        const c=document.createElement('div');c.className='confetti';
+        c.style.left=Math.random()*100+'vw';
+        c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDuration=(2+Math.random()*2)+'s';
+        c.style.animationDelay=(Math.random()*0.8)+'s';
+        c.style.width=(5+Math.random()*8)+'px';
+        c.style.height=(5+Math.random()*8)+'px';
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),5000);
+    }
 }
 
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
