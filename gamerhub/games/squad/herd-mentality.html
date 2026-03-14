@@ -10,6 +10,7 @@
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="/js/cosmetics.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -295,6 +296,7 @@ let currentPhase='loading';
 let timerInterval=null;
 let hasSubmitted=false;
 let allPlayers=[];
+let playerData={};
 let currentQuestion='';
 
 if(roomCode) document.getElementById('roomBadge').textContent=roomCode;
@@ -303,19 +305,22 @@ const questionEmojis=['🤔','💭','🧠','❓','💡','🎯','🎲','⚡','�
 
 // Socket connection
 socket.on('connect',()=>{
-    socket.emit('rejoin-room',{roomCode,playerName});
+    const _isPrem=localStorage.getItem('tempIsPremium')==='true';
+    const _cosm=JSON.parse(localStorage.getItem('tempCosmetics')||'null');
+    socket.emit('rejoin-room',{roomCode,playerName,isPremium:_isPrem,cosmetics:_cosm});
 });
 
+function storePlayers(players){allPlayers=players.map(p=>p.name);players.forEach(p=>{playerData[p.name]={isPremium:p.isPremium||false,cosmetics:p.cosmetics||null};});}
 socket.on('room-joined',d=>{
-    allPlayers=(d.room.players||[]).map(p=>p.name);
+    storePlayers(d.room.players||[]);
     renderPlayerBubbles();
 });
 socket.on('player-joined',d=>{
-    allPlayers=(d.room.players||[]).map(p=>p.name);
+    storePlayers(d.room.players||[]);
     renderPlayerBubbles();
 });
 socket.on('player-disconnected',d=>{
-    allPlayers=(d.room.players||[]).map(p=>p.name);
+    storePlayers(d.room.players||[]);
 });
 
 // Question phase
@@ -464,7 +469,7 @@ function renderPlayerBubbles(){
     const container=document.getElementById('submittedBubbles');
     container.innerHTML=allPlayers.map(name=>`
         <div class="player-bubble waiting" data-name="${esc(name)}">
-            ${esc(name)} <span class="check">✓</span>
+            ${pName(name)} <span class="check">✓</span>
         </div>
     `).join('');
 }
@@ -480,7 +485,7 @@ function showResults(data){
         cowEl.innerHTML=`<div class="cow-moment">
             <span class="cow-emoji">🐄</span>
             <div class="cow-text">THE PINK COW GOES TO</div>
-            <div class="cow-name">${esc(data.pinkCowPlayer)}</div>
+            <div class="cow-name">${pName(data.pinkCowPlayer)}</div>
         </div>`;
     } else {
         cowEl.style.display='none';
@@ -513,7 +518,7 @@ function showResults(data){
                 <div class="group-badge">${badgeText}</div>
             </div>
             <div class="group-players">
-                ${group.players.map(p=>`<span class="group-player">${esc(p)}</span>`).join('')}
+                ${group.players.map(p=>`<span class="group-player">${pName(p)}</span>`).join('')}
             </div>
         `;
         groupsContainer.appendChild(div);
@@ -535,7 +540,7 @@ function displayScoreboard(scores,pinkCowHolder,containerId){
         return `<div class="score-row${isLeading?' leading':''}${hasCow?' has-cow':''}">
             <div class="score-rank${i===0?' gold':''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</div>
             <div class="score-avatar ${avClass}">${initial}</div>
-            <div class="score-name">${esc(name)}</div>
+            <div class="score-name">${pName(name)}</div>
             ${hasCow?'<div class="score-cow">🐄</div>':''}
             <div class="score-pts">${score}</div>
         </div>`;
@@ -563,6 +568,11 @@ function playAgain(){location.href=`/waiting-room.html?room=${roomCode}&name=${p
 function backToLobby(){location.href='/squad-games.html';}
 
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function pName(name){
+    const pd=playerData[name];
+    if(pd&&pd.cosmetics&&window.TGCOCosmetics) return window.TGCOCosmetics.renderInlineName({name,cosmetics:pd.cosmetics,isPremium:pd.isPremium});
+    return esc(name);
+}
 
 // Enter key to submit
 document.getElementById('answerInput').addEventListener('keypress',e=>{

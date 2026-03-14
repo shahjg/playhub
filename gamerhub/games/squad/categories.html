@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+    <script src="/js/cosmetics.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -288,7 +289,7 @@
 
 <script>
 const BK='https://web-production-519c7.up.railway.app';
-const S={room:null,name:null,sk:null,t:0,ti:null,cat:null,feed:[],scores:{},players:[],tMax:15,mode:'classic',lives:{},eliminated:[],alive:[],amDead:false};
+const S={room:null,name:null,sk:null,t:0,ti:null,cat:null,feed:[],scores:{},players:[],playerData:{},tMax:15,mode:'classic',lives:{},eliminated:[],alive:[],amDead:false};
 
 const up=new URLSearchParams(location.search);
 S.room=up.get('room')||localStorage.getItem('tempRoomCode');
@@ -298,10 +299,13 @@ if(!S.room||!S.name) location.href='/lobby.html?game=categories';
 document.getElementById('roomBadge').textContent=S.room||'------';
 
 S.sk=io(BK,{transports:['websocket','polling']});
-S.sk.on('connect',()=>S.sk.emit('rejoin-room',{roomCode:S.room,playerName:S.name}));
-S.sk.on('room-joined',d=>{S.players=(d.room.players||[]).map(p=>p.name);});
-S.sk.on('player-joined',d=>{S.players=(d.room.players||[]).map(p=>p.name);});
-S.sk.on('player-disconnected',d=>{S.players=(d.room.players||[]).map(p=>p.name);});
+const _isPrem=localStorage.getItem('tempIsPremium')==='true';
+const _cosm=JSON.parse(localStorage.getItem('tempCosmetics')||'null');
+S.sk.on('connect',()=>S.sk.emit('rejoin-room',{roomCode:S.room,playerName:S.name,isPremium:_isPrem,cosmetics:_cosm}));
+function storePlayerData(players){S.players=players.map(p=>p.name);players.forEach(p=>{S.playerData[p.name]={isPremium:p.isPremium||false,cosmetics:p.cosmetics||null};});}
+S.sk.on('room-joined',d=>{storePlayerData(d.room.players||[]);});
+S.sk.on('player-joined',d=>{storePlayerData(d.room.players||[]);});
+S.sk.on('player-disconnected',d=>{storePlayerData(d.room.players||[]);});
 
 // === ROUND START ===
 S.sk.on('categories-round-start',d=>{
@@ -422,7 +426,7 @@ function renderFeed(){
         const canChal=e.p!==S.name;
         return `<div class="f-row">
             <div class="f-avatar ${av}">${e.p.charAt(0).toUpperCase()}</div>
-            <div class="f-body"><div class="f-name">${esc(e.p)}</div><div class="f-ans">${esc(e.a)}</div></div>
+            <div class="f-body"><div class="f-name">${pName(e.p)}</div><div class="f-ans">${esc(e.a)}</div></div>
             ${canChal?`<button class="f-chal" onclick="doChallenge('${esc(e.a)}','${esc(e.p)}')">CHALLENGE</button>`:''}
         </div>`;
     }).join('');
@@ -438,7 +442,7 @@ function renderSb(sc,id){
         return `<div class="s-row${i===0&&s>0?' lead':''}">
             <div class="s-rank${i===0?' g':''}">${i<3?['🥇','🥈','🥉'][i]:(i+1)}</div>
             <div class="s-av ${av}">${n.charAt(0).toUpperCase()}</div>
-            <div class="s-name">${esc(n)}${n===S.name?' <span class="u">(YOU)</span>':''}</div>
+            <div class="s-name">${pName(n)}${n===S.name?' <span class="u">(YOU)</span>':''}</div>
             <div class="s-pts">${s}</div>
         </div>`;
     }).join('');
@@ -483,6 +487,11 @@ function confetti(){
 }
 
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function pName(name){
+    const pd=S.playerData[name];
+    if(pd&&pd.cosmetics&&window.TGCOCosmetics) return window.TGCOCosmetics.renderInlineName({name,cosmetics:pd.cosmetics,isPremium:pd.isPremium});
+    return esc(name);
+}
 
 document.getElementById('answerInput').addEventListener('keypress',e=>{if(e.key==='Enter')submitAnswer();});
 window.addEventListener('beforeunload',()=>S.sk.disconnect());
