@@ -4,223 +4,284 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Codenames - PlayHub</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="description" content="Codenames - Team word-guessing game of spies and secrets">
+    <meta name="theme-color" content="#fbbf24">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #08060e;
+            --card: #12101c;
+            --surface: #1a1728;
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.3);
+            --red-dim: rgba(239, 68, 68, 0.15);
+            --blue: #3b82f6;
+            --blue-glow: rgba(59, 130, 246, 0.3);
+            --blue-dim: rgba(59, 130, 246, 0.15);
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.3);
+            --gold-dim: rgba(251, 191, 36, 0.15);
+            --assassin: #1a1a1a;
+            --text: #eae8e4;
+            --dim: rgba(255, 255, 255, 0.45);
+            --border: rgba(255, 255, 255, 0.07);
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            overflow-x: hidden;
         }
 
-        /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 4px solid #000;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-            padding: 1rem 2rem;
-            position: relative;
-            z-index: 10;
+        /* Animated background */
+        .scene-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .scene-bg .glow {
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 50% 40% at 25% 20%, rgba(239, 68, 68, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 50% at 75% 75%, rgba(59, 130, 246, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 30% 30% at 50% 50%, rgba(251, 191, 36, 0.03) 0%, transparent 70%);
         }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .scene-bg .dots {
+            position: absolute; inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 15% 25%, rgba(239,68,68,0.3) 50%, transparent 50%),
+                radial-gradient(1px 1px at 55% 10%, rgba(59,130,246,0.25) 50%, transparent 50%),
+                radial-gradient(1px 1px at 85% 40%, rgba(255,255,255,0.12) 50%, transparent 50%),
+                radial-gradient(1px 1px at 35% 65%, rgba(251,191,36,0.2) 50%, transparent 50%),
+                radial-gradient(1px 1px at 92% 78%, rgba(59,130,246,0.2) 50%, transparent 50%),
+                radial-gradient(1px 1px at 10% 85%, rgba(239,68,68,0.15) 50%, transparent 50%),
+                radial-gradient(1px 1px at 70% 55%, rgba(251,191,36,0.15) 50%, transparent 50%);
+            animation: driftDots 30s linear infinite;
         }
+        @keyframes driftDots { 0% { transform: translateY(0); } 100% { transform: translateY(-20px); } }
 
-        .logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            color: #000;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
-
-        .room-code-header {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: #667eea;
-            letter-spacing: 2px;
-        }
-
-        /* Main Container */
-        .container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            padding: 2rem 1rem;
+        /* Layout */
+        main {
             position: relative;
             z-index: 1;
-        }
-
-        .game-container {
-            max-width: 1400px;
-            width: 100%;
-        }
-
-        /* Team Setup Phase */
-        .team-setup {
-            background: rgba(255, 255, 255, 0.98);
-            border: 4px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            padding: 2.5rem;
-            max-width: 800px;
+            padding: 70px 16px 32px;
+            min-height: 100vh;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
-        .team-setup h1 {
+        .room-badge {
+            display: inline-block;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            color: var(--gold);
+            background: var(--card);
+            border: 1px solid var(--gold-dim);
+            padding: 5px 14px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        /* =========== TEAM SETUP PHASE =========== */
+        .team-setup {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .setup-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.6rem;
+            letter-spacing: 4px;
             text-align: center;
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
+            color: var(--gold);
+            text-shadow: 0 0 25px var(--gold-glow);
+            margin-bottom: 8px;
+        }
+
+        .setup-subtitle {
+            text-align: center;
+            color: var(--dim);
+            font-size: 0.85rem;
+            margin-bottom: 28px;
         }
 
         .teams-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .team-section {
-            border: 4px solid #000;
-            border-radius: 15px;
-            padding: 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
         }
 
-        .team-section.red-team {
-            background: #ff6b6b;
-            color: white;
+        .team-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
         }
 
-        .team-section.blue-team {
-            background: #4dabf7;
-            color: white;
-        }
+        .team-section.red-team { border-color: rgba(239,68,68,0.2); }
+        .team-section.red-team::before { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+        .team-section.red-team:hover { box-shadow: 0 0 25px var(--red-glow); }
 
-        .team-section h2 {
+        .team-section.blue-team { border-color: rgba(59,130,246,0.2); }
+        .team-section.blue-team::before { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+        .team-section.blue-team:hover { box-shadow: 0 0 25px var(--blue-glow); }
+
+        .team-header {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 16px;
         }
 
-        .spymaster-slot, .operatives-list {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.5);
+        .red-team .team-header { color: var(--red); text-shadow: 0 0 15px var(--red-glow); }
+        .blue-team .team-header { color: var(--blue); text-shadow: 0 0 15px var(--blue-glow); }
+
+        .role-slot {
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            padding: 12px;
+            margin-bottom: 10px;
         }
 
         .slot-label {
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            opacity: 0.9;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--dim);
+            margin-bottom: 8px;
         }
 
         .player-tag {
-            background: rgba(255, 255, 255, 0.9);
-            color: #000;
-            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            padding: 7px 12px;
             border-radius: 8px;
-            margin: 0.5rem 0;
+            margin: 4px 0;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+
+        .slot-empty {
+            color: var(--dim);
+            font-size: 0.8rem;
+            font-style: italic;
+            padding: 4px 0;
         }
 
         .join-team-btn {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #000;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
+            font-size: 1rem;
+            letter-spacing: 2px;
             width: 100%;
-            margin-top: 0.5rem;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.25s;
+            color: #fff;
         }
 
-        .join-team-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        .red-team .join-team-btn {
+            background: linear-gradient(135deg, var(--red), #dc2626);
+            box-shadow: 0 4px 15px var(--red-glow);
+        }
+        .red-team .join-team-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239,68,68,0.5);
+        }
+
+        .blue-team .join-team-btn {
+            background: linear-gradient(135deg, var(--blue), #2563eb);
+            box-shadow: 0 4px 15px var(--blue-glow);
+        }
+        .blue-team .join-team-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59,130,246,0.5);
         }
 
         .join-team-btn:disabled {
-            background: #ccc;
+            opacity: 0.35;
             cursor: not-allowed;
-            opacity: 0.6;
+            transform: none !important;
         }
 
         .start-game-section {
             text-align: center;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 3px solid #000;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
         }
 
         .start-game-btn {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: 4px solid #000;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            color: #000;
+            border: none;
             border-radius: 10px;
-            padding: 1rem 3rem;
+            padding: 14px 48px;
             cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
+            box-shadow: 0 4px 20px var(--gold-glow);
+            transition: all 0.25s;
         }
 
         .start-game-btn:hover:not(:disabled) {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(251,191,36,0.5);
         }
 
         .start-game-btn:disabled {
-            background: #ccc;
+            opacity: 0.3;
             cursor: not-allowed;
-            opacity: 0.6;
+            transform: none !important;
         }
 
-        /* Game Board */
-        .game-board {
-            display: none;
+        .start-hint {
+            color: var(--dim);
+            font-size: 0.78rem;
+            margin-top: 10px;
         }
 
-        .game-board.active {
-            display: block;
-        }
+        /* =========== GAME BOARD PHASE =========== */
+        .game-board { display: none; }
+        .game-board.active { display: block; }
 
         .game-header {
-            background: rgba(255, 255, 255, 0.98);
-            border: 4px solid #000;
-            border-radius: 20px;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--red), var(--gold), var(--blue));
+            opacity: 0.5;
         }
 
         .game-info {
@@ -228,446 +289,506 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 12px;
         }
 
         .current-turn {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 2px;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            transition: color 0.3s, text-shadow 0.3s;
         }
 
         .current-turn.red {
-            color: #ff6b6b;
+            color: var(--red);
+            text-shadow: 0 0 15px var(--red-glow);
         }
 
         .current-turn.blue {
-            color: #4dabf7;
+            color: var(--blue);
+            text-shadow: 0 0 15px var(--blue-glow);
         }
 
         .scores {
             display: flex;
-            gap: 2rem;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
+            gap: 20px;
         }
 
         .score-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
         }
 
+        .score-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .score-label.red { color: var(--red); }
+        .score-label.blue { color: var(--blue); }
+
         .score-box {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #000;
-            border-radius: 8px;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
             font-weight: 700;
+            color: #fff;
+            transition: box-shadow 0.3s;
         }
 
         .score-box.red {
-            background: #ff6b6b;
-            color: white;
+            background: var(--red);
+            box-shadow: 0 0 15px var(--red-glow);
         }
 
         .score-box.blue {
-            background: #4dabf7;
-            color: white;
+            background: var(--blue);
+            box-shadow: 0 0 15px var(--blue-glow);
         }
 
         .clue-display {
-            text-align: center;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border: 3px solid #000;
+            margin-top: 14px;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 10px;
+            text-align: center;
         }
 
         .clue-text {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.5rem;
-            letter-spacing: 2px;
-            color: #667eea;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            color: var(--gold);
+            text-shadow: 0 0 20px var(--gold-glow);
+        }
+
+        .clue-text.waiting {
+            color: var(--dim);
+            text-shadow: none;
+            font-size: 1.2rem;
         }
 
         .clue-input-section {
             display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
+            gap: 10px;
+            margin-top: 12px;
             flex-wrap: wrap;
         }
 
         .clue-input, .clue-number {
             flex: 1;
-            min-width: 200px;
-            padding: 0.75rem;
-            font-size: 1.1rem;
-            border: 3px solid #000;
-            border-radius: 10px;
+            min-width: 180px;
+            padding: 10px 14px;
+            font-size: 1rem;
             font-family: 'Inter', sans-serif;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        .clue-number {
-            max-width: 100px;
+        .clue-input:focus, .clue-number:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 10px var(--gold-glow);
         }
 
-        .give-clue-btn, .end-turn-btn {
+        .clue-number { max-width: 90px; min-width: 70px; }
+
+        .give-clue-btn {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            background: #667eea;
-            color: white;
-            border: 3px solid #000;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
             cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
+            transition: all 0.25s;
         }
 
-        .give-clue-btn:hover, .end-turn-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        .give-clue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--gold-glow);
         }
 
         .end-turn-btn {
-            background: #ff6b6b;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 28px;
+            cursor: pointer;
+            transition: all 0.25s;
         }
 
-        /* Word Grid */
+        .end-turn-btn:hover {
+            background: rgba(255,255,255,0.14);
+            transform: translateY(-1px);
+        }
+
+        /* =========== WORD GRID =========== */
         .word-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 1rem;
-            margin-top: 2rem;
+            gap: 10px;
+            margin-top: 16px;
         }
 
         .word-card {
-            aspect-ratio: 3/2;
-            background: white;
-            border: 4px solid #000;
-            border-radius: 15px;
+            aspect-ratio: 5/3;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
             position: relative;
             overflow: hidden;
+            transition: all 0.3s;
+            padding: 6px;
+        }
+
+        .word-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: transparent;
+            transition: background 0.3s;
         }
 
         .word-card:hover:not(.revealed):not(.spymaster-view) {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 0 20px rgba(255,255,255,0.05);
+            transform: translateY(-2px);
         }
 
+        .word-card.operative-selectable:hover {
+            border-color: var(--gold) !important;
+            box-shadow: 0 0 20px var(--gold-glow) !important;
+        }
+
+        /* Spymaster view — subtle top-edge color highlight */
+        .word-card.spymaster-view { cursor: default; }
+        .word-card.spymaster-view.red::before { background: var(--red); }
+        .word-card.spymaster-view.blue::before { background: var(--blue); }
+        .word-card.spymaster-view.neutral::before { background: var(--gold); }
+        .word-card.spymaster-view.assassin::before { background: #fff; }
+        .word-card.spymaster-view.assassin { border-color: rgba(255,255,255,0.15); }
+
+        /* Revealed cards — dramatic solid fill with glow */
         .word-card.revealed {
             cursor: default;
+            color: #fff;
+            border-color: transparent;
+            animation: cardReveal 0.5s ease-out;
         }
 
         .word-card.revealed.red {
-            background: #ff6b6b;
-            color: white;
+            background: var(--red);
+            box-shadow: 0 0 25px var(--red-glow), inset 0 0 30px rgba(0,0,0,0.2);
         }
 
         .word-card.revealed.blue {
-            background: #4dabf7;
-            color: white;
+            background: var(--blue);
+            box-shadow: 0 0 25px var(--blue-glow), inset 0 0 30px rgba(0,0,0,0.2);
         }
 
         .word-card.revealed.neutral {
-            background: #e9ecef;
-            color: #666;
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--gold);
+            border-color: var(--gold-dim);
+            box-shadow: 0 0 15px var(--gold-glow);
         }
 
         .word-card.revealed.assassin {
             background: #000;
-            color: white;
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 0 30px rgba(255,255,255,0.1);
         }
 
-        /* Spymaster View */
-        .word-card.spymaster-view {
-            cursor: default;
-        }
-
-        .word-card.spymaster-view::before {
-            content: '';
+        .word-card.revealed.assassin::after {
+            content: '\u2620';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            font-size: 1.6rem;
             opacity: 0.3;
-            pointer-events: none;
+            bottom: 4px;
+            right: 8px;
         }
 
-        .word-card.spymaster-view.red::before {
-            background: #ff6b6b;
+        @keyframes cardReveal {
+            0% { transform: scale(0.9) rotateY(90deg); opacity: 0.3; }
+            50% { transform: scale(1.05) rotateY(0deg); opacity: 1; }
+            100% { transform: scale(1) rotateY(0deg); opacity: 1; }
         }
 
-        .word-card.spymaster-view.blue::before {
-            background: #4dabf7;
-        }
-
-        .word-card.spymaster-view.neutral::before {
-            background: #e9ecef;
-        }
-
-        .word-card.spymaster-view.assassin::before {
-            background: #000;
-        }
-
-        /* Game Over Modal */
+        /* =========== GAME OVER MODAL =========== */
         .game-over-modal {
             display: none;
             position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(8px);
         }
 
-        .game-over-modal.active {
-            display: flex;
-        }
+        .game-over-modal.active { display: flex; }
 
         .game-over-content {
-            background: white;
-            border: 4px solid #000;
-            border-radius: 20px;
-            padding: 3rem;
-            max-width: 500px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 40px 36px;
+            max-width: 420px;
+            width: 90%;
             text-align: center;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: modalIn 0.4s ease-out;
         }
+
+        @keyframes modalIn {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .game-over-content::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+
+        .game-over-content.red-win::before { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+        .game-over-content.blue-win::before { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
 
         .game-over-content h2 {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            letter-spacing: 2px;
+            font-size: 2.6rem;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
         }
 
         .game-over-content h2.red {
-            color: #ff6b6b;
+            color: var(--red);
+            text-shadow: 0 0 20px var(--red-glow);
         }
 
         .game-over-content h2.blue {
-            color: #4dabf7;
+            color: var(--blue);
+            text-shadow: 0 0 20px var(--blue-glow);
         }
 
-        .play-again-btn {
+        .game-over-reason {
+            color: var(--dim);
+            font-size: 1rem;
+            margin-top: 8px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.15rem;
             letter-spacing: 2px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: 4px solid #000;
+            border: none;
             border-radius: 10px;
-            padding: 1rem 3rem;
+            padding: 12px 28px;
             cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
-            margin-top: 2rem;
+            transition: all 0.25s;
         }
 
-        .play-again-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+        .modal-btn.primary {
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            color: #000;
+            box-shadow: 0 4px 15px var(--gold-glow);
         }
 
-        /* Footer */
-        footer {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            text-align: center;
-            padding: 1.5rem;
-            position: relative;
-            z-index: 10;
+        .modal-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(251,191,36,0.5);
         }
 
-        /* Responsive */
-        @media (max-width: 968px) {
-            .teams-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .word-grid {
-                gap: 0.5rem;
-            }
-
-            .word-card {
-                font-size: 0.9rem;
-            }
-
-            .game-info {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .clue-input-section {
-                flex-direction: column;
-            }
-
-            .clue-input, .clue-number {
-                min-width: 100%;
-            }
+        .modal-btn.secondary {
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+            border: 1px solid var(--border);
         }
 
-        @media (max-width: 600px) {
-            .word-grid {
-                gap: 0.3rem;
-            }
+        .modal-btn.secondary:hover {
+            background: rgba(255,255,255,0.14);
+            transform: translateY(-1px);
+        }
 
-            .word-card {
-                font-size: 0.75rem;
-                border: 2px solid #000;
-            }
+        /* =========== RESPONSIVE =========== */
+        @media (max-width: 768px) {
+            .teams-grid { grid-template-columns: 1fr; }
+            .word-grid { gap: 6px; }
+            .word-card { font-size: 0.78rem; letter-spacing: 0; }
+            .game-info { flex-direction: column; text-align: center; }
+            .clue-input-section { flex-direction: column; }
+            .clue-input, .clue-number { min-width: 100%; }
+            .clue-number { max-width: 100%; }
+            .setup-title { font-size: 2rem; }
+            main { padding: 60px 10px 24px; }
+        }
 
-            .header-content {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
+        @media (max-width: 480px) {
+            .word-grid { gap: 4px; }
+            .word-card { font-size: 0.65rem; aspect-ratio: 4/3; border-radius: 6px; }
+            .scores { gap: 12px; }
+            .current-turn { font-size: 1.2rem; }
+            .clue-text { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div id="site-header"></div>
+    <div id="site-header" data-back-url="/squad-games" data-back-text="Squad"></div>
 
-    <!-- Main Container -->
-    <div class="container">
-        <div class="game-container">
-            <!-- Team Setup Phase -->
-            <div class="team-setup" id="teamSetup">
-                <h1>🕵️ CODENAMES 🕵️</h1>
-                <div class="teams-grid">
-                    <!-- Red Team -->
-                    <div class="team-section red-team">
-                        <h2>🔴 RED TEAM</h2>
-                        <div class="spymaster-slot">
-                            <div class="slot-label">👑 SPYMASTER</div>
-                            <div id="redSpymaster">Empty</div>
-                            <button class="join-team-btn" onclick="joinTeam('red', 'spymaster')" id="joinRedSpymaster">
-                                Become Spymaster
-                            </button>
-                        </div>
-                        <div class="operatives-list">
-                            <div class="slot-label">🔍 OPERATIVES</div>
-                            <div id="redOperatives">No operatives yet</div>
-                            <button class="join-team-btn" onclick="joinTeam('red', 'operative')" id="joinRedOperative">
-                                Join as Operative
-                            </button>
-                        </div>
+    <!-- Animated background -->
+    <div class="scene-bg">
+        <div class="glow"></div>
+        <div class="dots"></div>
+    </div>
+
+    <main>
+        <div class="room-badge" id="roomBadge"></div>
+
+        <!-- ============ TEAM SETUP PHASE ============ -->
+        <div class="team-setup" id="teamSetup">
+            <div class="setup-title">CODENAMES</div>
+            <div class="setup-subtitle">Choose your team and role to begin</div>
+
+            <div class="teams-grid">
+                <!-- Red Team -->
+                <div class="team-section red-team">
+                    <div class="team-header">RED TEAM</div>
+                    <div class="role-slot">
+                        <div class="slot-label">Spymaster</div>
+                        <div id="redSpymaster"><span class="slot-empty">Empty</span></div>
+                        <button class="join-team-btn" onclick="joinTeam('red', 'spymaster')" id="joinRedSpymaster">
+                            Become Spymaster
+                        </button>
                     </div>
-
-                    <!-- Blue Team -->
-                    <div class="team-section blue-team">
-                        <h2>🔵 BLUE TEAM</h2>
-                        <div class="spymaster-slot">
-                            <div class="slot-label">👑 SPYMASTER</div>
-                            <div id="blueSpymaster">Empty</div>
-                            <button class="join-team-btn" onclick="joinTeam('blue', 'spymaster')" id="joinBlueSpymaster">
-                                Become Spymaster
-                            </button>
-                        </div>
-                        <div class="operatives-list">
-                            <div class="slot-label">🔍 OPERATIVES</div>
-                            <div id="blueOperatives">No operatives yet</div>
-                            <button class="join-team-btn" onclick="joinTeam('blue', 'operative')" id="joinBlueOperative">
-                                Join as Operative
-                            </button>
-                        </div>
+                    <div class="role-slot">
+                        <div class="slot-label">Operatives</div>
+                        <div id="redOperatives"><span class="slot-empty">No operatives yet</span></div>
+                        <button class="join-team-btn" onclick="joinTeam('red', 'operative')" id="joinRedOperative">
+                            Join as Operative
+                        </button>
                     </div>
                 </div>
 
-                <div class="start-game-section">
-                    <button class="start-game-btn" id="startGameBtn" onclick="startGamePhase()" disabled>
-                        START GAME
-                    </button>
-                    <p style="margin-top: 1rem; color: #666;">
-                        Need: Both spymasters + at least 1 operative per team
-                    </p>
+                <!-- Blue Team -->
+                <div class="team-section blue-team">
+                    <div class="team-header">BLUE TEAM</div>
+                    <div class="role-slot">
+                        <div class="slot-label">Spymaster</div>
+                        <div id="blueSpymaster"><span class="slot-empty">Empty</span></div>
+                        <button class="join-team-btn" onclick="joinTeam('blue', 'spymaster')" id="joinBlueSpymaster">
+                            Become Spymaster
+                        </button>
+                    </div>
+                    <div class="role-slot">
+                        <div class="slot-label">Operatives</div>
+                        <div id="blueOperatives"><span class="slot-empty">No operatives yet</span></div>
+                        <button class="join-team-btn" onclick="joinTeam('blue', 'operative')" id="joinBlueOperative">
+                            Join as Operative
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Game Board -->
-            <div class="game-board" id="gameBoard">
-                <div class="game-header">
-                    <div class="game-info">
-                        <div class="current-turn" id="currentTurn">RED TEAM'S TURN</div>
-                        <div class="scores">
-                            <div class="score-item">
-                                <span>🔴</span>
-                                <div class="score-box red" id="redScore">9</div>
-                            </div>
-                            <div class="score-item">
-                                <span>🔵</span>
-                                <div class="score-box blue" id="blueScore">8</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="clue-display">
-                        <div id="clueDisplay">
-                            <div class="clue-text" id="clueText">Waiting for spymaster...</div>
-                        </div>
-                        
-                        <!-- Spymaster Clue Input -->
-                        <div class="clue-input-section" id="clueInputSection" style="display: none;">
-                            <input type="text" class="clue-input" id="clueInput" placeholder="Enter one-word clue..." maxlength="20">
-                            <input type="number" class="clue-number" id="clueNumber" placeholder="0" min="0" max="9">
-                            <button class="give-clue-btn" onclick="giveClue()">Give Clue</button>
-                        </div>
-
-                        <!-- End Turn Button -->
-                        <div id="endTurnSection" style="display: none; margin-top: 1rem;">
-                            <button class="end-turn-btn" onclick="endTurn()">End Turn</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Word Grid -->
-                <div class="word-grid" id="wordGrid">
-                    <!-- 25 word cards will be generated here -->
-                </div>
+            <div class="start-game-section">
+                <button class="start-game-btn" id="startGameBtn" onclick="startGamePhase()" disabled>
+                    START GAME
+                </button>
+                <p class="start-hint">Both spymasters + at least 1 operative per team required</p>
             </div>
         </div>
-    </div>
+
+        <!-- ============ GAME BOARD PHASE ============ -->
+        <div class="game-board" id="gameBoard">
+            <div class="game-header">
+                <div class="game-info">
+                    <div class="current-turn" id="currentTurn">RED TEAM'S TURN</div>
+                    <div class="scores">
+                        <div class="score-item">
+                            <span class="score-label red">RED</span>
+                            <div class="score-box red" id="redScore">9</div>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label blue">BLUE</span>
+                            <div class="score-box blue" id="blueScore">8</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clue-display">
+                    <div id="clueDisplay">
+                        <div class="clue-text waiting" id="clueText">Waiting for spymaster...</div>
+                    </div>
+
+                    <!-- Spymaster Clue Input -->
+                    <div class="clue-input-section" id="clueInputSection" style="display: none;">
+                        <input type="text" class="clue-input" id="clueInput" placeholder="Enter one-word clue..." maxlength="20">
+                        <input type="number" class="clue-number" id="clueNumber" placeholder="0" min="0" max="9">
+                        <button class="give-clue-btn" onclick="giveClue()">GIVE CLUE</button>
+                    </div>
+
+                    <!-- End Turn Button -->
+                    <div id="endTurnSection" style="display: none; margin-top: 12px;">
+                        <button class="end-turn-btn" onclick="endTurn()">END TURN</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Word Grid -->
+            <div class="word-grid" id="wordGrid"></div>
+        </div>
+    </main>
 
     <!-- Game Over Modal -->
     <div class="game-over-modal" id="gameOverModal">
-        <div class="game-over-content">
+        <div class="game-over-content" id="gameOverContent">
             <h2 id="winnerText">RED TEAM WINS!</h2>
-            <p id="gameOverMessage" style="font-size: 1.2rem; margin-top: 1rem;"></p>
-            <button class="play-again-btn" onclick="playAgain()">PLAY AGAIN</button>
-            <button class="play-again-btn" onclick="backToLobby()" style="background: #495057; margin-left: 1rem;">
-                BACK TO LOBBY
-            </button>
+            <p class="game-over-reason" id="gameOverMessage"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="playAgain()">PLAY AGAIN</button>
+                <button class="modal-btn secondary" onclick="backToLobby()">BACK TO LOBBY</button>
+            </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <div>© 2024 PlayHub. All games free forever.</div>
-    </footer>
-
-    <!-- Socket.io Client -->
-    <link rel="stylesheet" href="/header.css">
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
         const BACKEND_URL = 'https://web-production-519c7.up.railway.app';
         const socket = io(BACKEND_URL);
@@ -675,7 +796,7 @@
         // Get room code from URL
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
-        const playerName = localStorage.getItem('playerName');
+        const playerName = localStorage.getItem('tempPlayerName') || localStorage.getItem('playerName') || 'Player';
 
         // Game state
         let myTeam = null;
@@ -684,70 +805,71 @@
         let currentClue = null;
         let guessesRemaining = 0;
 
-        console.log('🎮 Codenames initialized:', { roomCode, playerName });
+        console.log('Codenames initialized:', { roomCode, playerName });
 
         if (!roomCode || !playerName) {
             alert('Missing room code or player name!');
-            window.location.href = 'party-games.html';
+            window.location.href = '/squad-games.html';
         }
 
-        document.getElementById('roomCodeHeader').textContent = `ROOM: ${roomCode}`;
+        // Display room code
+        document.getElementById('roomBadge').textContent = 'ROOM: ' + roomCode;
 
         // Socket connection
         socket.on('connect', () => {
-            console.log('✅ Connected to server');
+            console.log('Connected to server');
             socket.emit('rejoin-room', { roomCode, playerName });
         });
 
         socket.on('room-joined', (data) => {
-            console.log('✅ Room joined:', data);
+            console.log('Room joined:', data);
             updateTeamSetup(data.room);
         });
 
         socket.on('room-state', (data) => {
-            console.log('📡 Room state:', data);
+            console.log('Room state:', data);
             if (data.success) {
                 updateTeamSetup(data.room);
             }
         });
 
         socket.on('team-updated', (data) => {
-            console.log('👥 Team updated:', data);
+            console.log('Team updated:', data);
             updateTeamSetup(data.room);
         });
 
         socket.on('codenames-started', (data) => {
-            console.log('🎮 Game started:', data);
+            console.log('Game started:', data);
             gameState = data.gameState;
             startGame(data.gameState);
         });
 
         socket.on('codenames-clue-given', (data) => {
-            console.log('💡 Clue given:', data);
+            console.log('Clue given:', data);
             currentClue = data.clue;
             guessesRemaining = data.clue.number + 1;
             updateClueDisplay(data.clue);
         });
 
         socket.on('codenames-word-revealed', (data) => {
-            console.log('🔍 Word revealed:', data);
+            console.log('Word revealed:', data);
             gameState = data.gameState;
             revealWord(data.wordIndex, data.color);
             updateScores(data.gameState);
-            
+
             if (data.gameState.phase === 'game_over') {
                 showGameOver(data.gameState.winner, data.gameState.gameOverReason);
             }
         });
 
         socket.on('codenames-turn-ended', (data) => {
-            console.log('🔄 Turn ended:', data);
+            console.log('Turn ended:', data);
             gameState = data.gameState;
             updateTurnDisplay(data.gameState);
         });
 
         socket.on('error', (data) => {
-            console.error('❌ Error:', data);
+            console.error('Error:', data);
             alert(data.message);
         });
 
@@ -770,25 +892,25 @@
             const redSpymaster = teams.red.spymaster;
             const redOperatives = teams.red.operatives;
 
-            document.getElementById('redSpymaster').innerHTML = redSpymaster 
-                ? `<div class="player-tag">${redSpymaster.name}</div>`
-                : 'Empty';
+            document.getElementById('redSpymaster').innerHTML = redSpymaster
+                ? '<div class="player-tag">' + redSpymaster.name + '</div>'
+                : '<span class="slot-empty">Empty</span>';
 
             document.getElementById('redOperatives').innerHTML = redOperatives.length > 0
-                ? redOperatives.map(p => `<div class="player-tag">${p.name}</div>`).join('')
-                : 'No operatives yet';
+                ? redOperatives.map(p => '<div class="player-tag">' + p.name + '</div>').join('')
+                : '<span class="slot-empty">No operatives yet</span>';
 
             // Update Blue Team
             const blueSpymaster = teams.blue.spymaster;
             const blueOperatives = teams.blue.operatives;
 
             document.getElementById('blueSpymaster').innerHTML = blueSpymaster
-                ? `<div class="player-tag">${blueSpymaster.name}</div>`
-                : 'Empty';
+                ? '<div class="player-tag">' + blueSpymaster.name + '</div>'
+                : '<span class="slot-empty">Empty</span>';
 
             document.getElementById('blueOperatives').innerHTML = blueOperatives.length > 0
-                ? blueOperatives.map(p => `<div class="player-tag">${p.name}</div>`).join('')
-                : 'No operatives yet';
+                ? blueOperatives.map(p => '<div class="player-tag">' + p.name + '</div>').join('')
+                : '<span class="slot-empty">No operatives yet</span>';
 
             // Update my team/role
             if (redSpymaster && redSpymaster.name === playerName) {
@@ -810,7 +932,7 @@
             document.getElementById('joinBlueSpymaster').disabled = !!blueSpymaster;
 
             // Check if can start
-            const canStart = redSpymaster && blueSpymaster && 
+            const canStart = redSpymaster && blueSpymaster &&
                            redOperatives.length > 0 && blueOperatives.length > 0;
             document.getElementById('startGameBtn').disabled = !canStart;
         }
@@ -842,7 +964,7 @@
                 card.textContent = wordData.word;
                 card.dataset.index = index;
 
-                // If spymaster, show colors
+                // If spymaster, show color hints via top-edge
                 if (myRole === 'spymaster') {
                     card.classList.add('spymaster-view', wordData.color);
                 }
@@ -854,6 +976,7 @@
 
                 // Add click handler for operatives
                 if (myRole === 'operative' && !wordData.revealed) {
+                    card.classList.add('operative-selectable');
                     card.onclick = () => selectWord(index);
                 }
 
@@ -864,8 +987,8 @@
         // Update turn display
         function updateTurnDisplay(state) {
             const turnEl = document.getElementById('currentTurn');
-            turnEl.textContent = `${state.currentTeam.toUpperCase()} TEAM'S TURN`;
-            turnEl.className = `current-turn ${state.currentTeam}`;
+            turnEl.textContent = state.currentTeam.toUpperCase() + " TEAM'S TURN";
+            turnEl.className = 'current-turn ' + state.currentTeam;
 
             // Show clue input for spymaster on their turn
             const isMyTurn = state.currentTeam === myTeam;
@@ -886,11 +1009,14 @@
             }
 
             // Update clue display
+            const clueTextEl = document.getElementById('clueText');
             if (clueGiven) {
                 updateClueDisplay(state.currentClue);
             } else {
-                document.getElementById('clueText').textContent = 
-                    isMyTurn ? 'Waiting for spymaster...' : `${state.currentTeam.toUpperCase()} spymaster is thinking...`;
+                clueTextEl.className = 'clue-text waiting';
+                clueTextEl.textContent = isMyTurn
+                    ? 'Waiting for spymaster...'
+                    : state.currentTeam.toUpperCase() + ' spymaster is thinking...';
             }
         }
 
@@ -916,7 +1042,9 @@
 
         // Update clue display
         function updateClueDisplay(clue) {
-            document.getElementById('clueText').textContent = `${clue.word} - ${clue.number}`;
+            const el = document.getElementById('clueText');
+            el.className = 'clue-text';
+            el.textContent = clue.word + '  \u2014  ' + clue.number;
         }
 
         // Select word (operative)
@@ -939,6 +1067,7 @@
         function revealWord(index, color) {
             const cards = document.querySelectorAll('.word-card');
             const card = cards[index];
+            card.classList.remove('operative-selectable');
             card.classList.add('revealed', color);
             card.onclick = null;
 
@@ -962,10 +1091,12 @@
         // Show game over
         function showGameOver(winner, reason) {
             const modal = document.getElementById('gameOverModal');
+            const content = document.getElementById('gameOverContent');
             const winnerText = document.getElementById('winnerText');
             const messageText = document.getElementById('gameOverMessage');
 
-            winnerText.textContent = `${winner.toUpperCase()} TEAM WINS!`;
+            content.className = 'game-over-content ' + winner + '-win';
+            winnerText.textContent = winner.toUpperCase() + ' TEAM WINS!';
             winnerText.className = winner;
 
             if (reason === 'assassin') {
@@ -977,14 +1108,14 @@
             modal.classList.add('active');
         }
 
-        // Play again
+        // Play again — go back to waiting room
         function playAgain() {
-            location.reload();
+            window.location.href = '/waiting-room.html?room=' + roomCode;
         }
 
         // Back to lobby
         function backToLobby() {
-            window.location.href = `lobby.html?game=codenames`;
+            window.location.href = '/waiting-room.html?room=' + roomCode;
         }
 
         // Handle browser close/refresh
@@ -993,6 +1124,6 @@
         });
     </script>
     <script src="/header.js"></script>
-<script src="/js/engagement.js"></script>
+    <script src="/js/engagement.js"></script>
 </body>
 </html>
