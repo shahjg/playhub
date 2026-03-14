@@ -103,11 +103,22 @@ function endAvalonGame(room, winner, reason, io) {
 }
 
 // INSIDER
-const INSIDER_WORDS = ['Lighthouse','Parachute','Submarine','Telescope','Trampoline','Volcano','Waterfall','Dinosaur','Astronaut','Helicopter','Pyramid','Compass','Thermometer','Chandelier','Accordion','Escalator','Microphone','Skateboard','Saxophone','Bulldozer'];
+const INSIDER_WORDS = [
+  'Lighthouse','Parachute','Submarine','Telescope','Trampoline','Volcano','Waterfall','Dinosaur',
+  'Astronaut','Helicopter','Pyramid','Compass','Thermometer','Chandelier','Accordion','Escalator',
+  'Microphone','Skateboard','Saxophone','Bulldozer','Fireworks','Jellyfish','Pineapple','Snowflake',
+  'Thunderstorm','Sunflower','Basketball','Trampoline','Kangaroo','Penguin','Elephant','Rollercoaster',
+  'Hamburger','Popcorn','Birthday','Campfire','Chocolate','Earthquake','Giraffe','Honeybee',
+  'Iceberg','Karate','Limousine','Moonlight','Notebook','Orchestra','Photograph','Quicksand',
+  'Rainbow','Spaghetti','Typewriter','Umbrella','Vampire','Xylophone','Yo-Yo','Zipper',
+  'Airport','Backpack','Cactus','Dolphin','Elevator','Flamingo','Graffiti','Hammock',
+  'Igloo','Jukebox','Kayak','Lemonade','Magnet','Noodles','Origami','Perfume',
+  'Quilting','Robot','Sunrise','Tornado','Unicorn','Violin','Windmill','Zebra'
+];
 
 function initInsiderGame(room, io) {
   const pc = room.players.length;
-  if (pc < 4 || pc > 8) { io.to(room.code).emit('error', { message: 'Insider requires 4-8 players' }); return; }
+  if (pc < 3 || pc > 12) { io.to(room.code).emit('error', { message: 'Insider requires 3-12 players' }); return; }
   const shuffled = [...room.players].sort(() => Math.random() - 0.5);
   const master = shuffled[0], insider = shuffled[1];
   const word = INSIDER_WORDS[Math.floor(Math.random() * INSIDER_WORDS.length)];
