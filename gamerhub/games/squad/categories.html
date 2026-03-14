@@ -155,6 +155,28 @@
         @keyframes confFall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
         .conf{position:fixed;top:0;z-index:301;animation:confFall 3s linear forwards;pointer-events:none;border-radius:2px}
 
+        /* Lives bar */
+        .lives-bar{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+        .life-chip{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;font-size:.7rem;font-weight:700;border:1px solid var(--border);background:rgba(255,255,255,0.02);color:var(--dim);transition:.3s}
+        .life-chip.me{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,0.05)}
+        .life-chip.dead{opacity:.3;text-decoration:line-through;border-color:var(--red)}
+        .life-hearts{color:var(--red);font-size:.7rem;letter-spacing:1px}
+
+        /* Eliminated banner */
+        .elim-banner{display:none;text-align:center;padding:16px;margin-bottom:14px;border-radius:12px;background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.2)}
+        .elim-banner.on{display:block;animation:fadeIn .4s ease}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .elim-banner .elim-title{font-family:'Orbitron',monospace;font-size:.8rem;letter-spacing:3px;color:var(--red);margin-bottom:4px}
+        .elim-banner .elim-sub{font-size:.75rem;color:var(--dim)}
+
+        /* Elimination round-end overlay */
+        .elim-card{background:linear-gradient(180deg,#1a0505,var(--bg));border:2px solid var(--red)}
+        .elim-card::before{background:radial-gradient(ellipse at 50% 0%,rgba(255,23,68,0.12),transparent 60%)}
+        .elim-skull{font-size:3rem;margin-bottom:8px;position:relative}
+        .elim-msg{font-family:'Orbitron',monospace;font-size:.8rem;letter-spacing:3px;color:var(--red);margin-bottom:8px;position:relative}
+        .elim-names{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;color:#fff;position:relative;margin-bottom:4px}
+        .elim-lives-left{font-size:.75rem;color:var(--dim);position:relative}
+
         @media(max-width:400px){
             .cat-name{font-size:2.2rem}
             .answer-input{padding:13px 14px;font-size:1rem}
@@ -180,6 +202,15 @@
 <main>
     <div class="top-bar">
         <div class="round-pill">RND <b id="roundNum">1</b> / <b id="totalRounds">10</b></div>
+    </div>
+
+    <!-- Lives bar (elimination mode only) -->
+    <div class="lives-bar" id="livesBar" style="display:none"></div>
+
+    <!-- Eliminated banner -->
+    <div class="elim-banner" id="elimBanner">
+        <div class="elim-title">ELIMINATED</div>
+        <div class="elim-sub">You're now spectating</div>
     </div>
 
     <div class="cat-card">
@@ -223,6 +254,17 @@
     </div>
 </div>
 
+<!-- Elimination Round Result -->
+<div class="ov" id="elimOv">
+    <div class="ov-bg"></div>
+    <div class="ov-card elim-card">
+        <div class="elim-skull">💀</div>
+        <div class="elim-msg" id="elimOvMsg">ELIMINATED</div>
+        <div class="elim-names" id="elimOvNames">Player</div>
+        <div class="elim-lives-left" id="elimOvSub"></div>
+    </div>
+</div>
+
 <!-- Countdown -->
 <div class="ov cd-ov" id="cdOv">
     <div class="ov-bg"></div>
@@ -246,7 +288,7 @@
 
 <script>
 const BK='https://web-production-519c7.up.railway.app';
-const S={room:null,name:null,sk:null,t:0,ti:null,cat:null,feed:[],scores:{},players:[],tMax:15};
+const S={room:null,name:null,sk:null,t:0,ti:null,cat:null,feed:[],scores:{},players:[],tMax:15,mode:'classic',lives:{},eliminated:[],alive:[],amDead:false};
 
 const up=new URLSearchParams(location.search);
 S.room=up.get('room')||localStorage.getItem('tempRoomCode');
@@ -263,15 +305,29 @@ S.sk.on('player-disconnected',d=>{S.players=(d.room.players||[]).map(p=>p.name);
 
 // === ROUND START ===
 S.sk.on('categories-round-start',d=>{
-    hideOv('cdOv');
+    hideOv('cdOv');hideOv('elimOv');
     const el=document.getElementById('catName');
     el.textContent=d.displayName;el.style.animation='none';el.offsetHeight;el.style.animation='catReveal .4s cubic-bezier(0.34,1.56,0.64,1)';
     document.getElementById('roundNum').textContent=d.roundNumber;
     S.cat=d.displayName;S.feed=[];S.tMax=d.timeLimit;
+    S.mode=d.mode||'classic';
+    if(d.lives) S.lives=d.lives;
+    if(d.eliminated) S.eliminated=d.eliminated;
+    if(d.alivePlayers) S.alive=d.alivePlayers;
+    S.amDead=S.eliminated.includes(S.name);
     renderFeed();updateScores(d.scores);
     S.t=d.timeLimit;startTimer();
-    const inp=document.getElementById('answerInput');inp.value='';inp.disabled=false;inp.focus();
-    document.getElementById('goBtn').disabled=false;
+    const inp=document.getElementById('answerInput');
+    if(S.amDead){
+        inp.disabled=true;inp.placeholder='Spectating...';
+        document.getElementById('goBtn').disabled=true;
+        document.getElementById('elimBanner').classList.add('on');
+    } else {
+        inp.value='';inp.disabled=false;inp.placeholder='Type fast...';inp.focus();
+        document.getElementById('goBtn').disabled=false;
+        document.getElementById('elimBanner').classList.remove('on');
+    }
+    renderLives();
 });
 
 // === VALID ANSWER ===
@@ -309,7 +365,25 @@ S.sk.on('categories-challenge-result',d=>{
 });
 
 // === ROUND END / GAME OVER ===
-S.sk.on('categories-round-end',d=>{updateScores(d.scores);stopTimer();showCd(d.nextRoundIn);});
+S.sk.on('categories-round-end',d=>{
+    updateScores(d.scores);stopTimer();
+    if(d.lives) S.lives=d.lives;
+    if(d.eliminated) S.eliminated=d.eliminated;
+    if(d.alivePlayers) S.alive=d.alivePlayers;
+    S.amDead=S.eliminated.includes(S.name);
+    renderLives();
+    // Show elimination overlay if someone was eliminated
+    if(d.eliminatedThisRound && d.eliminatedThisRound.length>0){
+        const names=d.eliminatedThisRound.join(', ');
+        document.getElementById('elimOvNames').textContent=names;
+        document.getElementById('elimOvMsg').textContent=d.eliminatedThisRound.includes(S.name)?'YOU\'RE OUT':'ELIMINATED';
+        document.getElementById('elimOvSub').textContent=S.alive.length+' player'+(S.alive.length!==1?'s':'')+' remaining';
+        showOv('elimOv');
+        setTimeout(()=>{hideOv('elimOv');showCd(d.nextRoundIn>2?d.nextRoundIn-2:1);},2000);
+    } else {
+        showCd(d.nextRoundIn);
+    }
+});
 S.sk.on('categories-game-over',d=>{
     stopTimer();
     document.getElementById('goWinner').textContent=d.winner==='TIE'?'TIE!':d.winner+' WINS!';
@@ -366,6 +440,22 @@ function renderSb(sc,id){
             <div class="s-av ${av}">${n.charAt(0).toUpperCase()}</div>
             <div class="s-name">${esc(n)}${n===S.name?' <span class="u">(YOU)</span>':''}</div>
             <div class="s-pts">${s}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderLives(){
+    const bar=document.getElementById('livesBar');
+    if(S.mode!=='elimination'){bar.style.display='none';return;}
+    bar.style.display='flex';
+    const allP=[...S.alive,...S.eliminated];
+    bar.innerHTML=allP.map(p=>{
+        const dead=S.eliminated.includes(p);
+        const lives=S.lives[p]||0;
+        const isMe=p===S.name;
+        const hearts=dead?'💀':'❤️'.repeat(Math.max(0,lives));
+        return `<div class="life-chip${isMe?' me':''}${dead?' dead':''}">
+            ${esc(p)} <span class="life-hearts">${hearts}</span>
         </div>`;
     }).join('');
 }

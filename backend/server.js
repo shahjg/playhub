@@ -2497,7 +2497,7 @@ io.on('connection', (socket) => {
     } else if (room.gameType === 'codenames') {
         console.log('Codenames starting');
     } else if (room.gameType === 'categories') {
-        initCategoriesGame(room);
+        initCategoriesGame(room, mode || 'classic');
     } else if (room.gameType === 'word-association') {
         initWordAssociationGame(room);
     }
@@ -3238,7 +3238,13 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Not accepting answers right now' });
       return;
     }
-    
+
+    // Block eliminated players in elimination mode
+    if (room.gameData.mode === 'elimination' && room.gameData.eliminated.includes(player.playerName)) {
+      socket.emit('error', { message: 'You have been eliminated!' });
+      return;
+    }
+
     const normalizedAnswer = answer.toLowerCase().trim();
     
     // Check if already used this game (fuzzy match)
@@ -3267,6 +3273,10 @@ io.on('connection', (socket) => {
     room.gameData.scores[player.playerName] = (room.gameData.scores[player.playerName] || 0) + 1;
     room.gameData.lastAnswer = normalizedAnswer;
     room.gameData.lastAnswerPlayer = player.playerName;
+    // Track who answered this round (for elimination)
+    if (!room.gameData.roundAnswerers.includes(player.playerName)) {
+      room.gameData.roundAnswerers.push(player.playerName);
+    }
     
     // Notify everyone
     io.to(roomCode).emit('categories-valid-answer', {
@@ -3398,37 +3408,17 @@ io.on('connection', (socket) => {
   socket.on('categories-time-up', (data) => {
     const { roomCode } = data;
     const room = rooms.get(roomCode);
-    
+
     if (!room || !room.gameData) return;
     if (room.gameData.phase !== 'playing') return;
-    
-    // Clear the timer that initiated this call
+
+    // Clear the fallback timer
     if (categoriesTimers.has(roomCode)) {
       clearTimeout(categoriesTimers.get(roomCode));
       categoriesTimers.delete(roomCode);
     }
-    
-    // Move to next round
-    room.gameData.currentCategoryIndex++;
-    room.gameData.roundNumber++;
-    
-    if (room.gameData.currentCategoryIndex >= room.gameData.categories.length || room.gameData.roundNumber > 10) {
-      // Game over
-      endCategoriesGame(room, io);
-    } else {
-      // Next round
-      room.gameData.phase = 'round-end';
-      io.to(roomCode).emit('categories-round-end', {
-        scores: room.gameData.scores,
-        nextRoundIn: 3,
-        lastAnswer: room.gameData.lastAnswer,
-        lastAnswerPlayer: room.gameData.lastAnswerPlayer
-      });
-      
-      setTimeout(() => {
-        startCategoriesRound(room, io);
-      }, 3000);
-    }
+
+    processCategoriesRoundEnd(room, io);
   });
 
     // ========== NEW GAMES HANDLERS ==========
@@ -4082,32 +4072,43 @@ function isDuplicateAnswer(answer, previousAnswers) {
 }
 
 // Initialize Categories game
-function initCategoriesGame(room) {
+function initCategoriesGame(room, mode = 'classic') {
   const categories = Object.keys(categoriesWordBank);
   const shuffledCategories = [...categories].sort(() => Math.random() - 0.5);
-  
+  const isElim = mode === 'elimination';
+
   room.gameData = {
     phase: 'countdown',
+    mode: mode,
     categories: shuffledCategories,
     currentCategoryIndex: 0,
     roundNumber: 1,
     scores: {},
     usedAnswers: [],
-    currentAnswers: [], // Answers for current round
+    currentAnswers: [],
+    roundAnswerers: [],   // players who answered this round (for elimination)
     timePerRound: 10,
     roundStartTime: null,
     challengeVotes: {},
     lastAnswer: null,
     lastAnswerPlayer: null,
-    roleAssignments: {}
+    roleAssignments: {},
+    // Elimination fields
+    lives: {},
+    eliminated: [],
+    alivePlayers: []
   };
-  
-  // Initialize scores
+
+  // Initialize scores and lives
   room.players.forEach(player => {
     room.gameData.scores[player.name] = 0;
+    if (isElim) {
+      room.gameData.lives[player.name] = 3;
+      room.gameData.alivePlayers.push(player.name);
+    }
   });
-  
-  console.log(`Categories game initialized in room ${room.code}`);
+
+  console.log(`Categories game initialized in room ${room.code} (mode: ${mode})`);
 }
 
 // Start a new Categories round
@@ -4117,6 +4118,7 @@ function startCategoriesRound(room, io) {
   
   room.gameData.phase = 'playing';
   room.gameData.currentAnswers = [];
+  room.gameData.roundAnswerers = [];
   room.gameData.roundStartTime = Date.now();
   room.gameData.challengeVotes = {};
   room.gameData.lastAnswer = null;
@@ -4132,45 +4134,20 @@ function startCategoriesRound(room, io) {
     displayName: displayName,
     roundNumber: room.gameData.roundNumber,
     timeLimit: room.gameData.timePerRound,
-    scores: room.gameData.scores
+    scores: room.gameData.scores,
+    mode: room.gameData.mode,
+    lives: room.gameData.lives,
+    eliminated: room.gameData.eliminated,
+    alivePlayers: room.gameData.alivePlayers
   });
 
-  // Set timeout for the round
+  // Server-side fallback: if no client sends categories-time-up, force advance
   const timer = setTimeout(() => {
-    // Client sends 'categories-time-up' when timer hits 0 to avoid server lag issues,
-    // but the server logic for processing the next round is included in that handler.
-    // If the client fails, the round might hang, but this is the standard pattern 
-    // for high-latency games.
-    // However, for completeness, adding a basic server-side fallback:
-    const roomCode = room.code;
-    if (categoriesTimers.has(roomCode)) {
-      clearTimeout(categoriesTimers.get(roomCode));
-      categoriesTimers.delete(roomCode);
+    if (room.gameData && room.gameData.phase === 'playing') {
+      console.log(`Categories fallback timer for room ${room.code}`);
+      processCategoriesRoundEnd(room, io);
     }
-    
-    // Simulate end of round if client signal fails
-    if (room.gameData.phase === 'playing') {
-       // Only process the end of round if we are still in 'playing' phase
-       room.gameData.currentCategoryIndex++;
-       room.gameData.roundNumber++;
-       
-       if (room.gameData.currentCategoryIndex >= room.gameData.categories.length || room.gameData.roundNumber > 10) {
-         endCategoriesGame(room, io);
-       } else {
-         room.gameData.phase = 'round-end';
-         io.to(roomCode).emit('categories-round-end', {
-           scores: room.gameData.scores,
-           nextRoundIn: 3,
-           lastAnswer: room.gameData.lastAnswer,
-           lastAnswerPlayer: room.gameData.lastAnswerPlayer
-         });
-         
-         setTimeout(() => {
-           startCategoriesRound(room, io);
-         }, 3000);
-       }
-    }
-  }, room.gameData.timePerRound * 1000 + 1000); // 1 extra second for safety
+  }, room.gameData.timePerRound * 1000 + 2000);
   categoriesTimers.set(room.code, timer);
   
   console.log(`Categories round ${room.gameData.roundNumber} started: ${displayName}`);
@@ -4262,35 +4239,137 @@ function resolveCategoriesChallenge(room, io) {
   console.log(`Categories challenge resolved: ${challengeSuccessful ? 'SUCCESSFUL' : 'FAILED'}`);
 }
 
+function processCategoriesRoundEnd(room, io) {
+  const roomCode = room.code;
+
+  // Clear timer
+  if (categoriesTimers.has(roomCode)) {
+    clearTimeout(categoriesTimers.get(roomCode));
+    categoriesTimers.delete(roomCode);
+  }
+
+  // Process elimination
+  let eliminatedThisRound = [];
+  if (room.gameData.mode === 'elimination' && room.gameData.alivePlayers.length > 1) {
+    const alive = [...room.gameData.alivePlayers];
+    const answered = room.gameData.roundAnswerers;
+    const didntAnswer = alive.filter(p => !answered.includes(p));
+
+    if (didntAnswer.length > 0 && didntAnswer.length < alive.length) {
+      // Players who didn't answer lose a life
+      didntAnswer.forEach(p => {
+        room.gameData.lives[p]--;
+        if (room.gameData.lives[p] <= 0) {
+          room.gameData.eliminated.push(p);
+          room.gameData.alivePlayers = room.gameData.alivePlayers.filter(x => x !== p);
+          eliminatedThisRound.push(p);
+        }
+      });
+    } else if (didntAnswer.length === 0 && alive.length > 1) {
+      // Everyone answered — player with fewest answers this round loses a life
+      const answerCounts = {};
+      alive.forEach(p => { answerCounts[p] = 0; });
+      room.gameData.roundAnswerers.forEach(p => { answerCounts[p] = (answerCounts[p] || 0) + 1; });
+      let minCount = Infinity;
+      let loser = null;
+      alive.forEach(p => {
+        if ((answerCounts[p] || 0) < minCount) { minCount = answerCounts[p] || 0; loser = p; }
+      });
+      if (loser) {
+        room.gameData.lives[loser]--;
+        if (room.gameData.lives[loser] <= 0) {
+          room.gameData.eliminated.push(loser);
+          room.gameData.alivePlayers = room.gameData.alivePlayers.filter(x => x !== loser);
+          eliminatedThisRound.push(loser);
+        }
+      }
+    }
+  }
+
+  // Check elimination win condition
+  if (room.gameData.mode === 'elimination' && room.gameData.alivePlayers.length <= 1) {
+    endCategoriesGame(room, io);
+    return;
+  }
+
+  // Advance round
+  room.gameData.currentCategoryIndex++;
+  room.gameData.roundNumber++;
+
+  const maxRounds = room.gameData.mode === 'elimination' ? 999 : 10;
+  if (room.gameData.currentCategoryIndex >= room.gameData.categories.length || room.gameData.roundNumber > maxRounds) {
+    endCategoriesGame(room, io);
+  } else {
+    room.gameData.phase = 'round-end';
+    io.to(roomCode).emit('categories-round-end', {
+      scores: room.gameData.scores,
+      nextRoundIn: 4,
+      lastAnswer: room.gameData.lastAnswer,
+      lastAnswerPlayer: room.gameData.lastAnswerPlayer,
+      mode: room.gameData.mode,
+      lives: room.gameData.lives,
+      eliminated: room.gameData.eliminated,
+      eliminatedThisRound: eliminatedThisRound,
+      alivePlayers: room.gameData.alivePlayers
+    });
+
+    setTimeout(() => {
+      startCategoriesRound(room, io);
+    }, 4000);
+  }
+}
+
 function endCategoriesGame(room, io) {
   room.gameData.phase = 'game-over';
   room.gameState = 'ended';
-  
+
   // Clear any active timer
   if (categoriesTimers.has(room.code)) {
     clearTimeout(categoriesTimers.get(room.code));
     categoriesTimers.delete(room.code);
   }
-  
-  // Find winner
-  let maxScore = -Infinity;
+
   let winner = null;
-  
-  Object.entries(room.gameData.scores).forEach(([playerName, score]) => {
-    if (score > maxScore) {
-      maxScore = score;
-      winner = playerName;
+  let winners = [];
+
+  if (room.gameData.mode === 'elimination') {
+    // In elimination, the last player(s) alive win
+    if (room.gameData.alivePlayers.length === 1) {
+      winner = room.gameData.alivePlayers[0];
+      winners = [winner];
+    } else if (room.gameData.alivePlayers.length > 1) {
+      // Multiple alive — highest score among them wins
+      let maxScore = -Infinity;
+      room.gameData.alivePlayers.forEach(p => {
+        if ((room.gameData.scores[p] || 0) > maxScore) {
+          maxScore = room.gameData.scores[p] || 0;
+          winner = p;
+        }
+      });
+      winners = room.gameData.alivePlayers.filter(p => (room.gameData.scores[p] || 0) === maxScore);
+      if (winners.length > 1) winner = 'TIE';
+    } else {
+      winner = 'NOBODY';
+      winners = [];
     }
-  });
-  
-  // Check for tie
-  const winners = Object.entries(room.gameData.scores).filter(([p, s]) => s === maxScore).map(([p, s]) => p);
-  
+  } else {
+    // Classic mode — highest score
+    let maxScore = -Infinity;
+    Object.entries(room.gameData.scores).forEach(([playerName, score]) => {
+      if (score > maxScore) { maxScore = score; winner = playerName; }
+    });
+    winners = Object.entries(room.gameData.scores).filter(([p, s]) => s === maxScore).map(([p]) => p);
+    if (winners.length > 1) winner = 'TIE';
+  }
+
   io.to(room.code).emit('categories-game-over', {
-    winner: winners.length === 1 ? winner : 'TIE',
+    winner: winner,
     winners: winners,
     finalScores: room.gameData.scores,
-    totalRounds: room.gameData.roundNumber - 1
+    totalRounds: room.gameData.roundNumber - 1,
+    mode: room.gameData.mode,
+    lives: room.gameData.lives,
+    eliminated: room.gameData.eliminated
   });
   
   console.log(`Categories game ended in room ${room.code}. Winner: ${winners.join(', ')}`);
