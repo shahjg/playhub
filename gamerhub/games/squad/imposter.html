@@ -283,10 +283,13 @@
         .word-display {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 3.5rem;
-            letter-spacing: 5px;
+            letter-spacing: 6px;
             color: var(--gold);
-            text-shadow: 0 0 30px var(--gold-glow);
+            text-shadow: 0 0 30px var(--gold-glow), 0 2px 8px rgba(0,0,0,0.3);
             margin: 16px 0;
+            padding: 12px 0;
+            background: rgba(251, 191, 36, 0.04);
+            border-radius: 10px;
         }
 
         .role-instruction {
@@ -298,12 +301,24 @@
 
         /* Word reminder during clue phase */
         .word-reminder {
-            background: var(--card);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 12px;
-            padding: 16px;
+            background: linear-gradient(145deg, var(--card), rgba(251, 191, 36, 0.03));
+            border: 1px solid rgba(251, 191, 36, 0.15);
+            border-radius: 14px;
+            padding: 18px;
             margin-bottom: 20px;
             text-align: center;
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .word-reminder::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.4;
         }
 
         .word-display-small {
@@ -423,21 +438,37 @@
         .clues-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
+            gap: 10px;
             margin-top: 20px;
         }
 
         .clue-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: linear-gradient(145deg, var(--surface), rgba(139, 92, 246, 0.04));
+            border: 1px solid rgba(139, 92, 246, 0.15);
             border-radius: 12px;
             padding: 14px 10px;
             text-align: center;
-            animation: fadeSlideIn 0.4s ease-out;
+            animation: clueAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clue-item::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.5;
+        }
+
+        @keyframes clueAppear {
+            0% { opacity: 0; transform: scale(0.85) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .clue-player {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--dim);
             margin-bottom: 6px;
             text-transform: uppercase;
@@ -446,9 +477,10 @@
 
         .clue-word {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             color: var(--accent);
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--accent-glow);
         }
 
         /* Waiting message */
@@ -525,12 +557,12 @@
         }
 
         .vote-player-card {
-            background: var(--surface);
+            background: linear-gradient(145deg, var(--surface), rgba(255,255,255,0.02));
             border: 2px solid var(--border);
             border-radius: 14px;
-            padding: 18px 14px;
+            padding: 20px 14px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -545,25 +577,43 @@
             transition: background 0.3s;
         }
 
+        .vote-player-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(139,92,246,0.06), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
         .vote-player-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(139, 92, 246, 0.3);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 20px var(--accent-glow);
         }
 
         .vote-player-card:hover::before {
             background: linear-gradient(90deg, transparent, var(--accent), transparent);
         }
 
+        .vote-player-card:hover::after {
+            opacity: 1;
+        }
+
         .vote-player-card.selected {
             border-color: var(--red);
             background: linear-gradient(145deg, var(--card), rgba(239, 68, 68, 0.1));
-            box-shadow: 0 0 30px var(--red-glow);
+            box-shadow: 0 0 30px var(--red-glow), 0 8px 24px rgba(0,0,0,0.3);
             transform: translateY(-4px);
         }
 
         .vote-player-card.selected::before {
             background: linear-gradient(90deg, transparent, var(--red), transparent);
+        }
+
+        .vote-player-card.selected::after {
+            background: radial-gradient(circle at 50% 0%, rgba(239,68,68,0.08), transparent 70%);
+            opacity: 1;
         }
 
         .vote-player-name {
@@ -1334,7 +1384,10 @@
                 titleEl.textContent = '\u{1F3AD} THE IMPOSTER';
                 titleEl.style.color = 'var(--red)';
                 wordEl.textContent = '';
-                infoEl.textContent = 'You don\'t know the word. Blend in!';
+                const teamInfo = window._imposterTeam && window._imposterTeam.length > 0
+                    ? 'Partner: ' + window._imposterTeam.join(', ')
+                    : 'You don\'t know the word. Blend in!';
+                infoEl.textContent = teamInfo;
             } else {
                 card.classList.remove('imposter-peek');
                 titleEl.textContent = '\u{1F50D} INVESTIGATOR';
@@ -1424,10 +1477,14 @@
             myRole = data.role;
             isImposter = data.isImposter;
             myWord = data.word;
+            window._imposterTeam = data.imposterTeam || [];
 
             // Show dramatic overlay first
             if (isImposter) {
-                showDramaticOverlay('\u{1F3AD}', 'THE IMPOSTER', 'imposter', '', 'You don\'t know the word. Blend in!', 2500);
+                const teamMsg = window._imposterTeam.length > 0
+                    ? 'Your partner: ' + window._imposterTeam.join(', ') + '. Blend in together!'
+                    : 'You don\'t know the word. Blend in!';
+                showDramaticOverlay('\u{1F3AD}', 'THE IMPOSTER', 'imposter', '', teamMsg, 2500);
             } else {
                 showDramaticOverlay('\u{1F50D}', 'INVESTIGATOR', 'investigator', myWord, 'Give subtle clues about this word.', 2500);
             }
@@ -1504,8 +1561,6 @@
             updateCluesDisplay();
             updateClueProgress(data.totalClues, data.totalPlayers);
             totalPlayers = data.totalPlayers;
-
-            showToast(`${data.playerName} submitted a clue`);
         });
 
         // Voting phase started
@@ -1557,7 +1612,10 @@
                 roleTitle.textContent = '\u{1F3AD} THE IMPOSTER';
                 imposterSection.classList.remove('hidden');
                 wordSection.classList.add('hidden');
-                roleInstruction.textContent = 'Try to blend in! Give a clue that sounds like you know the word, but be careful not to be too obvious.';
+                const teamText = window._imposterTeam && window._imposterTeam.length > 0
+                    ? '\nYour partner: ' + window._imposterTeam.join(', ')
+                    : '';
+                roleInstruction.textContent = 'Try to blend in! Give a clue that sounds like you know the word, but be careful not to be too obvious.' + teamText;
             } else {
                 roleCard.classList.remove('imposter');
                 roleTitle.textContent = '\u{1F50D} INVESTIGATOR';
@@ -1871,8 +1929,9 @@
                 const revealedWord = document.getElementById('revealedWord');
                 const voteResults = document.getElementById('voteResults');
 
-                // Set imposter name and word
-                imposterName.textContent = data.imposter.name.toUpperCase();
+                // Set imposter name(s) and word
+                const allImposters = data.imposterNames || [data.imposter.name];
+                imposterName.textContent = allImposters.map(n => n.toUpperCase()).join(' & ');
                 revealedWord.textContent = data.word.toUpperCase();
 
                 // Set result based on outcome

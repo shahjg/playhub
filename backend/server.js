@@ -1268,7 +1268,7 @@ function handleSpyfallPhaseTransition(room, socket, roomCode, playerName) {
 }
 
 // Initialize Imposter game
-function initImposterGame(room, category = 'random') {
+function initImposterGame(room, category = 'random', twoImposters = false) {
   // Word lists by category
   const wordCategories = {
     food: [
@@ -1398,37 +1398,47 @@ function initImposterGame(room, category = 'random') {
   }
   
   const word = words[Math.floor(Math.random() * words.length)];
-  
-  // Randomly select imposter
-  const imposterIndex = Math.floor(Math.random() * room.players.length);
-  const imposterId = room.players[imposterIndex].id;
-  
+
+  // Determine number of imposters (2 only if enabled AND 5+ players)
+  const imposterCount = (twoImposters && room.players.length >= 5) ? 2 : 1;
+
+  // Randomly select imposter(s)
+  const shuffledIndices = [...Array(room.players.length).keys()].sort(() => Math.random() - 0.5);
+  const imposterIndices = shuffledIndices.slice(0, imposterCount);
+  const imposterIds = imposterIndices.map(i => room.players[i].id);
+  const imposterNames = imposterIndices.map(i => room.players[i].name);
+
   // Store game data with role assignments
   room.gameData = {
     word: word,
     category: category,
-    imposterId: imposterId,
-    imposterName: room.players[imposterIndex].name,
+    imposterId: imposterIds[0], // primary imposter (for backwards compat with voting results)
+    imposterIds: imposterIds,
+    imposterName: imposterNames[0],
+    imposterNames: imposterNames,
+    imposterCount: imposterCount,
     clues: [],
     votes: {},
     skipVotes: [],
     currentRound: 1,
     maxRounds: 3,
-    phase: 'role-reveal', // phases: role-reveal, clue-giving, voting, results
-    roleAssignments: {} // Store roles by player name (not socket ID, since IDs change)
+    phase: 'role-reveal',
+    roleAssignments: {}
   };
-  
+
   // Store role assignments by player name
   room.players.forEach((player, index) => {
-    const isImposter = index === imposterIndex;
+    const isImposter = imposterIndices.includes(index);
+    const teammates = isImposter && imposterCount > 1 ? imposterNames.filter(n => n !== player.name) : [];
     room.gameData.roleAssignments[player.name] = {
       role: isImposter ? 'imposter' : 'player',
       word: isImposter ? null : word,
-      isImposter: isImposter
+      isImposter: isImposter,
+      imposterTeam: teammates
     };
   });
-  
-  console.log(`Game initialized in room ${room.code}. Category: ${category}, Imposter: ${room.gameData.imposterName}, Word: ${word}`);
+
+  console.log(`Game initialized in room ${room.code}. Category: ${category}, Imposters: ${imposterNames.join(', ')}, Word: ${word}`);
 }
 
 // Initialize Spyfall game
@@ -1788,20 +1798,23 @@ function calculateImposterResults(room) {
     }
   });
   
-  // Determine if imposter was caught
-  const imposterPlayer = room.players.find(p => p.name === room.gameData.imposterName);
-  const imposterCaught = votedOutPlayerId === (imposterPlayer ? imposterPlayer.id : room.gameData.imposterId);
+  // Determine if imposter was caught (check against all imposter IDs)
+  const imposterIds = room.gameData.imposterIds || [room.gameData.imposterId];
+  const imposterNames = room.gameData.imposterNames || [room.gameData.imposterName];
+  const imposterCaught = imposterIds.includes(votedOutPlayerId);
   const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
-  
+  const imposterPlayer = room.players.find(p => p.name === imposterNames[0]);
+
   room.gameData.phase = 'results';
   room.gameData.voteCounts = voteCounts;
   room.gameData.votedOutPlayerId = votedOutPlayerId;
   room.gameData.imposterCaught = imposterCaught;
-  
+
   // Send results to all players
   io.to(room.code).emit('game-results', {
     imposterCaught: imposterCaught,
     imposter: imposterPlayer,
+    imposterNames: imposterNames,
     votedOut: votedOutPlayer,
     word: room.gameData.word,
     voteCounts: voteCounts
@@ -2430,7 +2443,7 @@ io.on('connection', (socket) => {
 
   // START GAME
  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, reformation, useInquisitor } = data;
+    const { roomCode, category, twoSpies, twoImposters, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, reformation, useInquisitor } = data;
     const room = rooms.get(roomCode);
 
     if (!room) {
@@ -2471,7 +2484,7 @@ io.on('connection', (socket) => {
     try {
     // OLD GAMES (already work)
     if (room.gameType === 'imposter') {
-        initImposterGame(room, category || 'random');
+        initImposterGame(room, category || 'random', twoImposters === 'true' || twoImposters === true);
     } else if (room.gameType === 'spyfall') {
         initSpyfallGame(room, category || 'classic', twoSpies || false);
     } else if (room.gameType === 'werewolf') {
