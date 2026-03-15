@@ -8,7 +8,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 const partyGames = require('./party-games');
 const missingSquadGames = require('./missing-squad-games');
-const { initDuoHandlers, getQuestions } = require('./duo-games');
+const { initDuoHandlers, getQuestions, PACK_CATALOG } = require('./duo-games');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -377,6 +377,11 @@ app.get('/api/duo-questions', (req, res) => {
   if (!game) return res.status(400).json({ error: 'Missing game parameter' });
   const questions = getQuestions(game, pack || 'classic', spice || 'clean');
   res.json({ questions });
+});
+
+// Duo pack catalog API
+app.get('/api/duo-packs', (req, res) => {
+  res.json({ packs: PACK_CATALOG });
 });
 
 // ============================================

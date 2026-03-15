@@ -234,14 +234,791 @@ function initDuoHandlers(io, socket) {
 // ============================================
 
 function getQuestions(gameType, pack, spice) {
+  // Try universal packs first (shared across all game types)
+  let questions = [];
+  if (UNIVERSAL_PACKS[pack]) {
+    const uPack = UNIVERSAL_PACKS[pack];
+    questions = uPack[spice] && uPack[spice].length > 0 ? uPack[spice] : uPack['clean'] || [];
+    if (questions.length > 0) return [...questions].sort(() => Math.random() - 0.5);
+  }
+
+  // Fall back to game-specific packs
   const bank = QUESTION_BANKS[gameType];
   if (!bank) return [];
   const packData = bank[pack] || bank['classic'] || bank[Object.keys(bank)[0]];
   if (!packData) return [];
-  const questions = packData[spice] || packData['clean'] || [];
-  // Shuffle
+  // FIX: check array length, not just truthiness (empty arrays are truthy)
+  questions = (packData[spice] && packData[spice].length > 0) ? packData[spice] : packData['clean'] || [];
   return [...questions].sort(() => Math.random() - 0.5);
 }
+
+// ============================================
+// UNIVERSAL PACKS (work across all 5 game types)
+// Each pack has 21 questions per intensity level
+// ============================================
+const UNIVERSAL_PACKS = {
+  // === 💼 CAREER & PRODUCTIVITY ===
+  'hustle-culture': {
+    meta: { name: 'Hustle Culture', icon: '💼', filter: 'sfw', intensityLabels: ['Professional', 'Candid', 'Brutally Honest'] },
+    clean: [
+      "What's the earliest you've ever woken up for work and was it worth it?",
+      "Do you think hustle culture is inspiring or toxic?",
+      "What's a productivity hack that actually changed your life?",
+      "Would you rather have a 4-day work week or work from home permanently?",
+      "What's the longest you've ever worked without a break?",
+      "Do you check work emails on vacation? Be honest.",
+      "What's a job you'd do for free just because you love it?",
+      "Do you think working overtime is dedication or poor time management?",
+      "What's the best career advice you've ever received?",
+      "Have you ever burned out? What did it feel like?",
+      "Do you think side hustles are necessary or overrated?",
+      "What's the most useless meeting you've ever been in?",
+      "Do you live to work or work to live?",
+      "What would you do with an extra 3 hours every day?",
+      "Have you ever pretended to be busy at work?",
+      "What's one thing you'd automate about your job if you could?",
+      "Do you think morning routines are overhyped?",
+      "What's a skill you wish you started learning 5 years ago?",
+      "Have you ever turned down a promotion? Would you?",
+      "What does 'success' look like to you right now vs 5 years ago?",
+      "If money wasn't a factor, what would your daily routine look like?"
+    ],
+    medium: [
+      "Have you ever lied on your resume? What about?",
+      "What's the most toxic workplace you've experienced?",
+      "Do you secretly judge people who don't work hard?",
+      "Have you ever cried because of work stress?",
+      "What's something your boss doesn't know about how you feel about your job?",
+      "Do you think your salary reflects your actual value?",
+      "Have you ever taken credit for someone else's work?",
+      "What's the pettiest reason you've wanted to quit a job?",
+      "Do you think nepotism is always wrong?",
+      "Have you ever sabotaged a coworker, even unintentionally?",
+      "What's something about your industry that would shock outsiders?",
+      "Do you think hustle culture has ruined your ability to relax?",
+      "Have you ever worked a job you were ashamed to tell people about?",
+      "What's the biggest sacrifice you've made for your career?",
+      "Do you compare your career progress to your friends?",
+      "Have you ever stayed at a job just for the money despite hating it?",
+      "What's the hardest feedback you've ever received at work?",
+      "Do you think work-life balance is actually achievable?",
+      "Have you ever had a workplace crush that affected your performance?",
+      "What would make you walk out of a job today?",
+      "Do you think your parents' work ethic shaped yours — for better or worse?"
+    ],
+    spicy: [
+      "What's the most unethical thing you've witnessed at work?",
+      "Have you ever fantasized about publicly quitting your job?",
+      "Do you think capitalism rewards the wrong people?",
+      "What's the most soul-crushing aspect of modern work culture?",
+      "Have you ever had a complete identity crisis about your career?",
+      "Do you secretly resent people who 'made it' without working as hard as you?",
+      "What's a truth about your career you've never said out loud?",
+      "Have you ever used your body, charm, or looks to get ahead professionally?",
+      "Do you think meritocracy is a myth?",
+      "What's something you've done at work that could have gotten you fired?",
+      "Have you ever betrayed a colleague to advance your career?",
+      "Do you think your generation has it harder or is just more vocal?",
+      "What's the darkest thought you've had about your career path?",
+      "Have you ever questioned whether your entire career was a mistake?",
+      "Do you think most CEOs deserve their salaries?",
+      "What's the most manipulative thing you've seen in a workplace?",
+      "Have you ever had a breakdown over career pressure?",
+      "Do you think ambition makes people selfish?",
+      "What would you confess to your boss if there were zero consequences?",
+      "Have you ever felt like a fraud in your professional life?",
+      "If you could restart your career from scratch, what would you actually do?"
+    ]
+  },
+  'dream-jobs': {
+    meta: { name: 'Dream Jobs', icon: '✨', filter: 'sfw', intensityLabels: ['Professional', 'Candid', 'Brutally Honest'] },
+    clean: [
+      "What was your dream job when you were 10 years old?",
+      "If you could shadow anyone for a week, whose job would you pick?",
+      "What's a job that looks glamorous but probably isn't?",
+      "Would you rather be a famous actor or a famous scientist?",
+      "What's the coolest job title you've ever heard?",
+      "If you could create a brand new job that doesn't exist, what would it be?",
+      "What job would you be terrible at but still want to try?",
+      "Would you rather work in space or deep underwater?",
+      "What's a job you think will exist in 20 years that doesn't exist now?",
+      "If you could get paid to do any hobby, which one?",
+      "Would you rather be a travel blogger or a food critic?",
+      "What's a job that sounds boring but is probably amazing?",
+      "Would you rather be your own boss with less money or work for someone with more money?",
+      "What's the weirdest job you've ever heard of?",
+      "If you had to pick a career in the arts, what would it be?",
+      "Would you rather work 60 hours doing something you love or 20 hours doing something you hate?",
+      "What career would you pick if you could master it overnight?",
+      "Do you think passion or stability matters more in choosing a career?",
+      "What job do you think is the most underrated?",
+      "If you could switch careers with your best friend, would you?",
+      "What would your dream work-from-home setup look like?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🧠 PSYCHOLOGY & PERSONALITY ===
+  'love-languages': {
+    meta: { name: 'Love Languages', icon: '💕', filter: 'relationship', intensityLabels: ['Sweet', 'Flirty', 'Steamy'] },
+    clean: [
+      "What's your primary love language and when did you figure it out?",
+      "Do you prefer receiving gifts or quality time?",
+      "What's the most thoughtful thing someone has done for you?",
+      "Do you express love the same way you want to receive it?",
+      "Words of affirmation or physical touch — which matters more to you?",
+      "What's a small act of service that makes you feel deeply loved?",
+      "Do you think love languages can change over time?",
+      "What's the best gift you've ever received and why did it mean so much?",
+      "How do you know when someone truly cares about you?",
+      "Do you feel loved when someone remembers small details about you?",
+      "What's more meaningful — a love letter or a surprise date?",
+      "Do you think some love languages are more 'valuable' than others?",
+      "What does quality time actually look like for you?",
+      "Have you ever had your love language completely ignored by a partner?",
+      "What's a way someone showed love that surprised you?",
+      "Do you think you and your best friend have compatible love languages?",
+      "What's the most underrated way to show someone you care?",
+      "Do you feel more loved through words or actions?",
+      "What's a love language you wish you were better at expressing?",
+      "How important is physical affection in your daily life?",
+      "What's a love language you didn't understand until someone showed it to you?"
+    ],
+    medium: [
+      "Has a mismatch in love languages ever ruined a relationship for you?",
+      "Do you secretly keep score of how much effort your partner puts in?",
+      "What's the love language you're worst at receiving?",
+      "Have you ever faked appreciation for a love language that doesn't resonate with you?",
+      "Do you think your love language comes from what you lacked growing up?",
+      "What's the most vulnerable thing you need from a partner that you hate admitting?",
+      "Have you ever felt 'loved' but not 'desired'? What's the difference?",
+      "Do you think love languages are real or just a personality quiz gimmick?",
+      "What's the most painful way someone has failed to love you in your language?",
+      "Have you ever changed how you love someone because they told you it wasn't enough?",
+      "Do you communicate your needs or expect people to just know?",
+      "What's a need you have in relationships that you've never fully expressed?",
+      "Have you ever loved someone whose love language felt exhausting to speak?",
+      "Do you think modern dating makes love languages harder to practice?",
+      "What would it take for you to feel 100% loved?",
+      "Have you ever received love in a way that made you uncomfortable?",
+      "Do you think some people are just bad at love?",
+      "What's the hardest love language for you to believe when someone shows it?",
+      "Have you ever used love languages as an excuse to avoid deeper issues?",
+      "Do you think love should feel easy or does real love require constant effort?",
+      "What's a relationship pattern you keep repeating that relates to your love language?"
+    ],
+    spicy: [
+      "What's the most intimate non-physical thing a partner could do for you?",
+      "Has anyone ever made you feel desired in a way that overwhelmed you?",
+      "What does being 'wanted' vs being 'loved' feel like to you?",
+      "What's a physical touch that drives you absolutely crazy?",
+      "Have you ever confused physical attraction with emotional connection?",
+      "What's the boldest way someone has ever expressed desire for you?",
+      "Do you think passion fades or do people just get lazy?",
+      "What's something a partner could say right now that would make your heart race?",
+      "Have you ever withheld affection as punishment?",
+      "What's the most electrically charged moment you've ever experienced with someone?",
+      "Do you think vulnerability is the ultimate form of intimacy?",
+      "What's a physical act of love that means more than words ever could?",
+      "Have you ever been so attracted to someone it scared you?",
+      "What does 'being seen' by a partner actually mean to you?",
+      "What's the difference between passion and obsession in your experience?",
+      "Have you ever said 'I love you' purely from physical desire?",
+      "What's the most intense moment of connection you've ever felt?",
+      "Do you think great intimacy requires emotional safety or just chemistry?",
+      "What would make you feel completely surrendered to someone?",
+      "What's a confession about your desires you've never made out loud?",
+      "If you could design the perfect intimate evening, what would every detail be?"
+    ]
+  },
+  'introvert-vs-extrovert': {
+    meta: { name: 'Introvert vs Extrovert', icon: '🧠', filter: 'sfw', intensityLabels: ['Surface', 'Deep Dive', 'Soul Baring'] },
+    clean: [
+      "On a scale of 1-10, how introverted or extroverted are you?",
+      "What's your ideal Friday night?",
+      "Do you recharge by being alone or being around people?",
+      "What's the longest you've gone without talking to anyone?",
+      "Do you enjoy networking events or dread them?",
+      "Are you the person who leaves the party early or shuts it down?",
+      "Do you prefer deep 1-on-1 conversations or group hangouts?",
+      "What's your social battery like — how long until it runs out?",
+      "Do you think you're more introverted or extroverted than people assume?",
+      "What's the most extroverted thing you've ever done?",
+      "Do you need alone time after socializing?",
+      "Are you comfortable with silence in a conversation?",
+      "What's the biggest misconception about your personality type?",
+      "Would you rather have 3 close friends or 30 acquaintances?",
+      "Do you talk to strangers easily or avoid it?",
+      "What's the most introverted thing you've done recently?",
+      "Do you prefer texting or calling?",
+      "Are you the planner or the one who goes along?",
+      "What environment makes you feel most yourself?",
+      "Do you think introversion and extroversion are fixed or fluid?",
+      "What's something about your social style you wish people understood?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🎬 ENTERTAINMENT & FANDOM ===
+  'guilty-pleasures': {
+    meta: { name: 'Guilty Pleasures', icon: '🎬', filter: 'latenight', intensityLabels: ['Chuckles', 'Roast Mode', 'Unhinged'] },
+    clean: [
+      "What's a TV show you're embarrassed to admit you watch?",
+      "What's a song you blast when nobody's around?",
+      "Do you have a comfort movie you've seen 10+ times?",
+      "What's a food combination you love that others find weird?",
+      "Do you have a guilty pleasure YouTube rabbit hole?",
+      "What's a trend you publicly hate but secretly enjoy?",
+      "What's the most embarrassing thing in your Spotify Wrapped?",
+      "Do you have a secret social media account for anything?",
+      "What's a 'basic' thing you genuinely enjoy?",
+      "What's the trashiest reality TV show you've binged?",
+      "Do you read fanfiction? Be honest.",
+      "What's a childhood show you still secretly watch?",
+      "What celebrity gossip are you way too invested in?",
+      "What's an app you're embarrassed by your screen time on?",
+      "Do you have a karaoke song that you absolutely destroy?",
+      "What's a hobby you'd never post about online?",
+      "What's the most unhinged thing in your search history that's totally innocent?",
+      "Do you have a snack you eat in secret?",
+      "What's a genre of music you pretend not to like?",
+      "What's the most binge-worthy thing you've consumed in one sitting?",
+      "What guilty pleasure would you defend to the death?"
+    ],
+    medium: [],
+    spicy: []
+  },
+  'nostalgia': {
+    meta: { name: 'Nostalgic Media', icon: '📼', filter: 'sfw', intensityLabels: ['Light', 'Medium', 'Intense'] },
+    clean: [
+      "What's the first movie you remember watching in a cinema?",
+      "What TV show shaped your childhood more than anything?",
+      "What song instantly transports you back to high school?",
+      "What video game defined your childhood?",
+      "What was the first album or CD you ever owned?",
+      "What's a cancelled TV show you still wish would come back?",
+      "What movie did you watch on repeat as a kid?",
+      "What's a toy from your childhood that you still think about?",
+      "What's a food from your childhood that doesn't taste the same anymore?",
+      "What was the first website you ever visited regularly?",
+      "What after-school activity defined your childhood?",
+      "What's a commercial jingle you still remember?",
+      "What was your first online username?",
+      "What's a trend from your teen years that you can't believe was real?",
+      "What was the first phone you ever owned?",
+      "What's a book that changed you when you were young?",
+      "What's a smell that instantly takes you back to childhood?",
+      "What was your first celebrity crush?",
+      "What's a movie you thought was amazing as a kid but is terrible now?",
+      "What's a fashion choice from your past you'd never repeat?",
+      "If you could relive one day from your childhood, which would it be?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🤝 SOCIAL & RELATIONSHIPS ===
+  'deal-breakers': {
+    meta: { name: 'Deal Breakers', icon: '🚩', filter: 'relationship', intensityLabels: ['Sweet', 'Flirty', 'Steamy'] },
+    clean: [
+      "What's your #1 non-negotiable deal breaker in a relationship?",
+      "Is being a bad texter a deal breaker for you?",
+      "Could you date someone with completely different political views?",
+      "Is being close to your family a requirement in a partner?",
+      "Would you date someone who doesn't like your friends?",
+      "Is ambition a deal breaker or a preference?",
+      "Could you be with someone who doesn't want to travel?",
+      "Is a sense of humor a deal breaker or a bonus?",
+      "Would you date someone who's always on their phone?",
+      "Could you be with someone who hates your favourite music?",
+      "Is financial stability a deal breaker or does love conquer all?",
+      "Would you date someone who doesn't want kids if you do?",
+      "Is being a morning person vs night owl a compatibility issue?",
+      "Could you date someone with no social media presence at all?",
+      "Is a messy living space a deal breaker?",
+      "Would you date someone your parents disapprove of?",
+      "Is a partner who doesn't cook at all a deal breaker?",
+      "Could you be with someone who never apologises first?",
+      "Is someone who's always late a deal breaker?",
+      "Would you date someone who doesn't read any books?",
+      "What deal breaker have you compromised on in the past and how did it go?"
+    ],
+    medium: [
+      "Could you date someone who's still friends with their ex?",
+      "Is someone who follows a lot of attractive people online a red flag?",
+      "Would you stay with someone who lied about something small?",
+      "Is emotional unavailability a deal breaker or something you'd try to fix?",
+      "Could you date someone who's been unfaithful in a past relationship?",
+      "Is someone who never posts you online a deal breaker?",
+      "Would you date someone who talks about their ex often?",
+      "Is a difference in libido a deal breaker?",
+      "Could you be with someone who doesn't believe in marriage?",
+      "Is someone who avoids conflict a deal breaker?",
+      "Would you date someone with a lot of debt?",
+      "Is a partner who's too close to a friend of the opposite gender concerning?",
+      "Could you stay with someone who's terrible at gift giving?",
+      "Is someone who can't cry or show emotion a deal breaker?",
+      "Would you date someone who drinks or smokes regularly?",
+      "Is a partner who doesn't want to meet your family a deal breaker?",
+      "Could you be with someone who never compliments you?",
+      "Is a significant age gap a deal breaker?",
+      "Would you date someone who's been in love many times?",
+      "Is a partner who never initiates plans a deal breaker?",
+      "What's a deal breaker you have that you know is probably unfair?"
+    ],
+    spicy: []
+  },
+  'trust-loyalty': {
+    meta: { name: 'Trust & Loyalty', icon: '🤝', filter: 'heated', intensityLabels: ['Surface', 'Deep Dive', 'Soul Baring'] },
+    clean: [
+      "How long does it take you to fully trust someone?",
+      "Do you believe trust can be fully rebuilt after it's broken?",
+      "What's the most important thing someone can do to earn your trust?",
+      "Have you ever trusted someone instantly and been right?",
+      "What does loyalty mean to you in one sentence?",
+      "Is loyalty to family more important than loyalty to friends?",
+      "Would you keep a friend's secret even if it could hurt someone else?",
+      "Do you think trust is given or earned?",
+      "What's the fastest way someone can lose your trust?",
+      "Have you ever been betrayed by someone you never expected it from?",
+      "Do you think blind loyalty is admirable or dangerous?",
+      "What's more important — honesty or kindness?",
+      "Would you tell a friend if their partner was cheating?",
+      "Do you have trust issues? Where do they come from?",
+      "What's a promise you've never broken?",
+      "Would you rather be betrayed by a friend or a partner?",
+      "Do you think some people are just naturally more trustworthy?",
+      "What's the biggest test of loyalty you've experienced?",
+      "Do you forgive easily or does it take a long time?",
+      "What would you never forgive, no matter what?",
+      "Who in your life has shown you what true loyalty looks like?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🛸 SCI-FI & THE UNKNOWN ===
+  'apocalypse': {
+    meta: { name: 'Apocalypse Survival', icon: '🛸', filter: 'latenight', intensityLabels: ['Tame', 'Chaotic', 'Full Send'] },
+    clean: [
+      "What's the first thing you'd do if the internet went down permanently?",
+      "Zombie apocalypse — what's your weapon of choice?",
+      "Where would you go to survive the end of the world?",
+      "Who are 3 people you'd want in your survival team?",
+      "Would you rather face zombies, aliens, or a supervolcano?",
+      "What's one skill you'd wish you had in a survival situation?",
+      "Could you survive a week in the wilderness with nothing?",
+      "What movie apocalypse scenario scares you most?",
+      "Would you rather live underground or on a boat after an apocalypse?",
+      "What everyday item would be most valuable in a post-apocalyptic world?",
+      "Would you trust strangers or go it alone?",
+      "What's the first thing you'd loot from a store?",
+      "Could you eat bugs to survive?",
+      "What modern luxury would you miss the most?",
+      "Do you think humanity would rebuild or descend into chaos?",
+      "Would you rather have unlimited food or unlimited shelter?",
+      "What's the most realistic apocalypse scenario?",
+      "Could you kill a zombie version of someone you love?",
+      "Would you join a commune or start your own settlement?",
+      "What's your go-to survival plan right now?",
+      "Do you think you'd thrive or barely survive?"
+    ],
+    medium: [],
+    spicy: []
+  },
+  'conspiracy-theories': {
+    meta: { name: 'Conspiracy Theories', icon: '👁️', filter: 'latenight', intensityLabels: ['Tame', 'Chaotic', 'Full Send'] },
+    clean: [
+      "What conspiracy theory do you find most convincing?",
+      "Do you think we've been told the full truth about the moon landing?",
+      "What's the most believable 'what if' theory you've heard?",
+      "Do you think there are secret societies running the world?",
+      "What's a conspiracy theory that turned out to be true?",
+      "Do you believe in the Mandela Effect?",
+      "What historical event do you think has hidden details we don't know?",
+      "Do you think social media algorithms manipulate our opinions?",
+      "What's the wildest conspiracy theory you've ever heard?",
+      "Do you think governments hide evidence of UFOs?",
+      "Would you want to know the truth about everything or stay blissfully ignorant?",
+      "Do you think there's a cover-up about any major event?",
+      "What's a coincidence that feels like it can't be random?",
+      "Do you think big pharma hides cures for profit?",
+      "What conspiracy theory would change everything if proven true?",
+      "Do you think we're being watched more than we realise?",
+      "What's a technology that feels too advanced to be real?",
+      "Do you think some 'accidents' in history were actually planned?",
+      "What's a conspiracy theory you wish was true?",
+      "Do you think the media tells us what they want us to believe?",
+      "If you could find out the truth about ONE conspiracy, which would it be?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🎲 WILDCARD & CHAOS ===
+  'petty-arguments': {
+    meta: { name: 'Petty Arguments', icon: '🎲', filter: 'latenight', intensityLabels: ['Chuckles', 'Roast Mode', 'Unhinged'] },
+    clean: [
+      "Is a hot dog a sandwich? Defend your answer.",
+      "Does pineapple belong on pizza?",
+      "Is water wet?",
+      "Should toilet paper go over or under?",
+      "Is cereal a soup?",
+      "At what temperature does it stop being 'cold' and start being 'cool'?",
+      "Is a thumb a finger?",
+      "Should you wet the toothbrush before or after putting on toothpaste?",
+      "Is it pronounced 'gif' or 'jif'?",
+      "Do you fold or scrunch?",
+      "Should you bite or lick ice cream?",
+      "Is the dress blue and black or white and gold?",
+      "Are tomatoes a fruit or a vegetable?",
+      "Should milk go before or after cereal?",
+      "Is a burrito a sandwich?",
+      "How many holes does a straw have — one or two?",
+      "Is it 'brunch' if it's after 2pm?",
+      "Do fish drink water?",
+      "Should you sleep with socks on or off?",
+      "Is a pop tart a calzone?",
+      "What age is officially 'old'?"
+    ],
+    medium: [],
+    spicy: []
+  },
+  'irrational-fears': {
+    meta: { name: 'Irrational Fears', icon: '😱', filter: 'latenight', intensityLabels: ['Tame', 'Chaotic', 'Full Send'] },
+    clean: [
+      "What's a completely irrational fear you have?",
+      "Do you check behind the shower curtain when you enter a bathroom?",
+      "What's something normal that gives you the creeps?",
+      "Have you ever been scared of something that you know can't hurt you?",
+      "What's the weirdest thing that makes you anxious?",
+      "Do you sleep with a body part hanging off the bed?",
+      "What childhood fear do you still carry?",
+      "Does the ocean at night terrify you?",
+      "What's a sound that instantly makes you uncomfortable?",
+      "Have you ever been afraid of the dark as an adult?",
+      "What's a fear you've never told anyone about?",
+      "Do you have a fear that developed from a movie?",
+      "What's the most embarrassing thing you're afraid of?",
+      "Does deep water scare you? Why or why not?",
+      "What animal are you irrationally afraid of?",
+      "Have you ever had a fear so strong it stopped you from doing something?",
+      "What's a fear you know is ridiculous but can't shake?",
+      "Do you believe in any superstitions because of fear?",
+      "What fear would you eliminate if you could?",
+      "What's the scariest thing that ever happened to you?",
+      "Do you think fear is useful or just holds you back?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🏠 FAMILY & UPBRINGING ===
+  'family-blueprint': {
+    meta: { name: 'Family Blueprint', icon: '🏠', filter: 'heated', intensityLabels: ['Wholesome', 'Real Talk', 'No Secrets'] },
+    clean: [
+      "What's a family tradition you genuinely love?",
+      "Are you closer to your mum or your dad?",
+      "What's the most valuable thing your parents taught you?",
+      "Do you want to raise your kids differently from how you were raised?",
+      "What's a family recipe that means the world to you?",
+      "Who in your family do you look up to most?",
+      "What's a funny family story that gets told every holiday?",
+      "Do you think birth order affects personality?",
+      "What's one thing about your upbringing that you're grateful for?",
+      "Do you have a family member who feels more like a best friend?",
+      "What's a tradition from your culture that you want to keep alive?",
+      "What was your family's approach to showing affection?",
+      "Do you think family dinners together are important?",
+      "What's the best vacation your family ever took?",
+      "What's a lesson you learned the hard way growing up?",
+      "Do you think you're more like your mum or your dad?",
+      "What's something your family does that other families think is weird?",
+      "What's the best piece of advice from a grandparent?",
+      "How has your family shaped your view of relationships?",
+      "What do you wish your parents had done differently?",
+      "What's a family value you'll always carry with you?"
+    ],
+    medium: [
+      "What's something about your upbringing you've had to unlearn?",
+      "Do you think your parents' relationship affected your attachment style?",
+      "What's a family secret that eventually came out?",
+      "Have you ever felt like the black sheep of your family?",
+      "What's the hardest conversation you've ever had with a parent?",
+      "Do you think your family communicates well or avoids conflict?",
+      "What's a wound from childhood that you're still healing?",
+      "Have you ever resented a sibling? For what?",
+      "What's something your parents don't know about your life?",
+      "Do you think your family pressured you into a life path?",
+      "What's the most toxic dynamic in your family?",
+      "Have you ever had to parent your own parent?",
+      "What's a lie your family told you that you believed for too long?",
+      "Do you think your family's financial situation shaped who you are?",
+      "What's a boundary you've had to set with a family member?",
+      "Have you ever felt more at home with a friend's family than your own?",
+      "What's the hardest thing about being an adult child?",
+      "Do you think generational trauma is real in your family?",
+      "What's something you forgave a family member for but never forgot?",
+      "How has your family shaped your biggest insecurity?",
+      "If you could change one thing about your family dynamics, what would it be?"
+    ],
+    spicy: []
+  },
+
+  // === 🌅 FUTURE & AMBITION ===
+  'five-year-plan': {
+    meta: { name: '5 Year Plan', icon: '🌅', filter: 'sfw', intensityLabels: ['Surface', 'Deep Dive', 'Soul Baring'] },
+    clean: [
+      "Where do you see yourself living in 5 years?",
+      "What's one goal you want to accomplish before you turn 40?",
+      "Do you have a financial goal you're actively working toward?",
+      "What skill do you want to master in the next few years?",
+      "Do you want to own a home? What would it look like?",
+      "What does your dream retirement look like?",
+      "Do you want to start a business someday?",
+      "What's a country you need to visit before you die?",
+      "Do you think you'll be in the same career 5 years from now?",
+      "What legacy do you want to leave behind?",
+      "Do you want to write a book, create art, or build something lasting?",
+      "What's a fear that's holding you back from your biggest ambition?",
+      "Do you plan your future meticulously or let life happen?",
+      "What would you do if you knew you couldn't fail?",
+      "What's the boldest thing on your bucket list?",
+      "Do you think you'll be happier in the future or are you happiest now?",
+      "What's one habit you want to build in the next year?",
+      "Do you want kids? Why or why not?",
+      "What does 'making it' look like to you?",
+      "If money and time were unlimited, what would your life look like?",
+      "What's the one thing you'd regret not doing if you died tomorrow?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === ⚖️ ETHICS & MORALITY ===
+  'gray-areas': {
+    meta: { name: 'Gray Areas', icon: '⚖️', filter: 'heated', intensityLabels: ['Casual', 'Opinionated', 'No Filter'] },
+    clean: [
+      "Is it ever okay to lie to protect someone's feelings?",
+      "Would you steal food to feed your family?",
+      "Is it wrong to ghost someone instead of confronting them?",
+      "Should you always tell a friend if their partner is cheating?",
+      "Is it ethical to eat meat?",
+      "Would you report a friend for something illegal?",
+      "Is it okay to date your friend's ex?",
+      "Should wealthy people be required to give to charity?",
+      "Is it wrong to read someone's diary or phone?",
+      "Would you sacrifice one person to save five?",
+      "Is cancel culture justice or mob mentality?",
+      "Should AI art be considered real art?",
+      "Is it ethical to keep animals in zoos?",
+      "Should parents monitor their teenager's phone?",
+      "Is it wrong to profit from someone else's misfortune?",
+      "Should billionaires exist?",
+      "Is it okay to not forgive someone?",
+      "Would you snitch on a coworker for something minor?",
+      "Is it wrong to pretend to be happy when you're not?",
+      "Should everyone have to vote?",
+      "What's an ethical dilemma you genuinely don't know the answer to?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 💔 BREAKUPS & PAST ===
+  'breakups': {
+    meta: { name: 'Breakups & Past', icon: '💔', filter: 'relationship', intensityLabels: ['Sweet', 'Flirty', 'Steamy'] },
+    clean: [
+      "What's the biggest lesson a breakup taught you?",
+      "Do you believe in staying friends with an ex?",
+      "What's a red flag you ignored in a past relationship?",
+      "How long does it take you to get over someone?",
+      "What's the best breakup advice you've ever received?",
+      "Do you think rebound relationships ever work?",
+      "What's something positive that came from your worst breakup?",
+      "Have you ever been dumped and later realized they were right to do it?",
+      "What's the kindest way someone has broken up with you?",
+      "Do you believe in 'the one' or do you think there are many people you could be happy with?",
+      "What's a pattern in your past relationships you've noticed?",
+      "Have you ever broken up with someone and regretted it?",
+      "What did your last relationship teach you about yourself?",
+      "Do you think closure is necessary or overrated?",
+      "What's the hardest part of a breakup for you?",
+      "Have you ever gone back to an ex? How did it go?",
+      "What's a deal breaker you discovered through experience?",
+      "Do you think people can change after a relationship ends?",
+      "What's the most mature breakup you've ever had?",
+      "How do you handle the mutual friends situation after a breakup?",
+      "What would you tell your past self about love?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 💑 FUTURE TOGETHER ===
+  'future-together': {
+    meta: { name: 'Future Together', icon: '💑', filter: 'relationship', intensityLabels: ['Sweet', 'Flirty', 'Steamy'] },
+    clean: [
+      "What does your dream home together look like?",
+      "City apartment or house with a garden?",
+      "Do you want pets? What kind?",
+      "How do you feel about combining finances?",
+      "What's your take on marriage — important or just a piece of paper?",
+      "Where in the world would you want to live together?",
+      "How many kids do you want, if any?",
+      "What's a tradition you'd want to start as a couple?",
+      "How would you want to split household responsibilities?",
+      "What's a vacation you'd want to take together every year?",
+      "Do you want a big wedding or something intimate?",
+      "What's the most important thing in building a life together?",
+      "Would you move to a new city for your partner's career?",
+      "How do you feel about in-laws living nearby?",
+      "What's a hobby you'd want to do together?",
+      "How would you want to handle disagreements in the future?",
+      "What's your retirement dream as a couple?",
+      "Do you want to build something together — a business, a project?",
+      "How important is alone time even in a committed relationship?",
+      "What scares you most about building a future with someone?",
+      "What does 'growing old together' look like in your mind?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🌍 CULTURE & IDENTITY ===
+  'culture-identity': {
+    meta: { name: 'Culture & Identity', icon: '🌍', filter: 'heated', intensityLabels: ['Casual', 'Opinionated', 'No Filter'] },
+    clean: [
+      "What part of your cultural heritage are you most proud of?",
+      "Do you feel connected to where your family comes from?",
+      "What cultural tradition do you practice and love?",
+      "Have you ever felt caught between two cultures?",
+      "What food connects you to your roots?",
+      "Do you code-switch? In what situations?",
+      "What's something about your culture you wish more people understood?",
+      "Do you feel like a 'global citizen' or deeply rooted in one place?",
+      "What language do you wish you could speak?",
+      "How has your cultural background shaped your worldview?",
+      "What's a stereotype about your culture that frustrates you?",
+      "Do you celebrate traditional holidays or make your own traditions?",
+      "What's a cultural practice you've adopted from another culture?",
+      "How important is passing down cultural heritage to the next generation?",
+      "What's a moment when you felt most connected to your identity?",
+      "Do you think where you grew up defines who you are?",
+      "What's a piece of music or art that represents your identity?",
+      "Have you ever felt like you had to hide part of your identity?",
+      "What does 'home' mean to you culturally?",
+      "How do you feel about cultural appropriation vs appreciation?",
+      "What aspect of your identity has taken the longest to accept?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🎭 RANDOM BAG ===
+  'random-deep': {
+    meta: { name: 'Random Deep', icon: '🎭', filter: 'latenight', intensityLabels: ['Light', 'Medium', 'Intense'] },
+    clean: [
+      "What's something you pretend to be confident about but aren't?",
+      "If you could know the absolute truth about one thing, what would it be?",
+      "What's a small decision that completely changed the course of your life?",
+      "Do you think you're living the life you were meant to live?",
+      "What's the most interesting thing about you that people never ask about?",
+      "If your life was a movie, what genre would it be?",
+      "What's a moment that made you see the world differently?",
+      "Do you think everyone has a purpose?",
+      "What's a compliment that stuck with you for years?",
+      "If you could have a conversation with your future self, what would you ask?",
+      "What's the most important lesson you've learned in the last year?",
+      "Do you think nostalgia helps or hurts us?",
+      "What's something ordinary that you find deeply beautiful?",
+      "If you could master one emotion, which would it be?",
+      "What's a question you're afraid to know the answer to?",
+      "Do you think people can truly change?",
+      "What's the bravest thing you've done that nobody saw?",
+      "If you could send a message to everyone on Earth, what would it say?",
+      "What keeps you going on your hardest days?",
+      "What's something you need to hear but nobody tells you?",
+      "What would your tombstone say if it had to be honest?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 🕌 RELIGION & SPIRITUALITY ===
+  'spirituality': {
+    meta: { name: 'Beliefs & Spirituality', icon: '🕌', filter: 'heated', intensityLabels: ['Casual', 'Opinionated', 'No Filter'] },
+    clean: [
+      "Do you consider yourself spiritual, religious, neither, or both?",
+      "What do you think happens after we die?",
+      "Do you believe in a higher power?",
+      "Has your relationship with faith changed over time?",
+      "What's the most spiritual experience you've ever had?",
+      "Do you think science and religion can coexist?",
+      "What's a belief you hold that you can't fully explain?",
+      "Do you pray or meditate? What does it do for you?",
+      "What's a question about existence that keeps you up at night?",
+      "Do you believe in signs or synchronicities?",
+      "What role does faith play in your daily life?",
+      "Have you ever had a moment that felt 'bigger' than coincidence?",
+      "Do you think morality requires religion?",
+      "What spiritual practice from another culture interests you?",
+      "Do you believe in karma or 'what goes around comes around'?",
+      "What was the most formative spiritual moment of your life?",
+      "Do you think organised religion does more good or harm?",
+      "What would you want to teach your children about faith?",
+      "Have you ever lost faith? What brought you back — or didn't?",
+      "Do you believe in the concept of a soul?",
+      "What's the biggest unanswered question you have about life?"
+    ],
+    medium: [],
+    spicy: []
+  },
+
+  // === 👨‍👩‍👧 LIVING WITH FAMILY ===
+  'living-with-family': {
+    meta: { name: 'Living with Family', icon: '👨‍👩‍👧', filter: 'heated', intensityLabels: ['Wholesome', 'Real Talk', 'No Secrets'] },
+    clean: [
+      "What's the hardest part about living with your family as an adult?",
+      "Do you have enough privacy at home?",
+      "What's a house rule you secretly disagree with?",
+      "How do you handle financial expectations from your family?",
+      "When do you think is the right time to move out?",
+      "What's the biggest thing you and your family argue about?",
+      "How do you balance independence with family obligations?",
+      "Do your parents treat you as an adult or still as a child?",
+      "What's the best thing about still living with family?",
+      "How do you handle bringing a partner home?",
+      "What boundary has been the hardest to establish?",
+      "Do you feel guilty about wanting your own space?",
+      "How do generational differences affect your daily life?",
+      "What's something your family doesn't understand about your life?",
+      "Do you contribute to household expenses? How does that work?",
+      "What's a conversation you need to have but keep avoiding?",
+      "How do you handle disagreements about lifestyle choices?",
+      "Do you feel like you're putting your life on hold?",
+      "What would you miss most about living with family?",
+      "How has living with family affected your personal growth?",
+      "What's the first thing you'll do when you have your own place?"
+    ],
+    medium: [],
+    spicy: []
+  }
+};
+
+// Pack metadata for client-side filtering and display
+const PACK_CATALOG = Object.entries(UNIVERSAL_PACKS).map(([id, pack]) => ({
+  id,
+  name: pack.meta.name,
+  icon: pack.meta.icon,
+  filter: pack.meta.filter,
+  intensityLabels: pack.meta.intensityLabels,
+  hasClean: (pack.clean || []).length > 0,
+  hasMedium: (pack.medium || []).length > 0,
+  hasSpicy: (pack.spicy || []).length > 0
+}));
 
 // ============================================
 // WOULD YOU RATHER
@@ -1754,4 +2531,4 @@ const QUESTION_BANKS = {
   '21-questions': Q21_QUESTIONS
 };
 
-module.exports = { initDuoHandlers, duoRooms, getQuestions, QUESTION_BANKS };
+module.exports = { initDuoHandlers, duoRooms, getQuestions, QUESTION_BANKS, PACK_CATALOG };
