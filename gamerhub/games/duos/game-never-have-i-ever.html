@@ -4,116 +4,415 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Never Have I Ever – TheGaming.co</title>
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="theme-color" content="#fef7ed">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#0a0a0f;--card:#12121f;--accent:#f97316;--accent2:#eab308;--green:#22c55e;--red:#ef4444;--text:#fff;--dim:rgba(255,255,255,0.45);--border:rgba(255,255,255,0.06)}
+        :root{
+            --bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;
+            --warm:#e8825c;--warm2:#d4644a;--warmL:#fbd5c3;--warmLL:#fef0e7;
+            --rose:#e88da1;--roseL:#fce4ec;
+            --green:#4caf50;--greenL:#e8f5e9;--greenBd:rgba(76,175,80,0.25);
+            --softRed:#e07070;--softRedL:#fdeaea;--softRedBd:rgba(224,112,112,0.25);
+            --gold:#e8a838;
+            --text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);
+            --shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)
+        }
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
         body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
         h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
-        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(249,115,22,0.06),transparent 60%),var(--bg)}
-        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(10,10,15,0.94);backdrop-filter:blur(20px)}
-        header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent)}
+
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(232,130,92,0.08),transparent 60%),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(232,141,161,0.06),transparent 50%),var(--bg)}
+
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
         .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
-        .back{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s}.back:hover{color:var(--accent)}.back svg{width:12px;height:12px}
-        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .hdr-code{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:3px;color:var(--accent);padding:3px 10px;border:1px solid rgba(249,115,22,0.15);border-radius:4px}
+        .back{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s}
+        .back:hover{color:var(--warm);border-color:rgba(232,130,92,0.3)}
+        .back svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-code{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:3px;color:var(--warm);padding:3px 10px;border:1px solid rgba(232,130,92,0.2);border-radius:6px;background:var(--warmLL)}
+
         main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:500px;margin:0 auto;width:100%}
+
         .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        .lobby-icon{font-size:3.5rem;margin-bottom:12px}.lobby-title{font-size:2.3rem;letter-spacing:4px;text-align:center;margin-bottom:4px}.lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
-        .name-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:rgba(255,255,255,0.04);border:2px solid var(--border);border-radius:12px;color:#fff;text-align:center;outline:none;transition:.3s;margin-bottom:12px}.name-input:focus{border-color:var(--accent)}.name-input::placeholder{color:rgba(255,255,255,0.2)}
+
+        /* === MODE SELECT === */
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}
+        .mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:rgba(232,130,92,0.2)}
+        .mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}
+        .mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}
+        .mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+
+        /* === LOBBY (online mode) === */
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}
+        .name-input:focus{border-color:var(--warm);box-shadow:0 0 0 4px rgba(232,130,92,0.1)}
+        .name-input::placeholder{color:#c4b0a5}
         .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
-        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:12px;cursor:pointer;transition:.2s}
-        .btn-create{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 16px rgba(249,115,22,0.3)}
-        .btn-join{background:rgba(255,255,255,0.04);border:1px solid var(--border)!important;color:var(--text)}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(232,130,92,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
         .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}
+        .or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
         .join-row{display:flex;gap:8px;width:100%;max-width:320px}
-        .code-input{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;text-align:center;background:rgba(255,255,255,0.04);border:2px solid var(--border);border-radius:12px;color:var(--accent);outline:none;text-transform:uppercase}.code-input:focus{border-color:var(--accent)}
-        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center}.setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--accent);text-align:center;margin-bottom:4px}
+        .code-input{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;text-align:center;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--warm);outline:none;text-transform:uppercase;box-shadow:var(--shadow)}
+        .code-input:focus{border-color:var(--warm)}
+
+        /* === SETUP === */
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
         .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
         .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
-        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border)}.p-chip.me{border-color:var(--accent);color:var(--accent)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}
+        .p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}
+        .p-chip.waiting{color:var(--dim);border-style:dashed}
         .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
         .spice-row{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:360px}
-        .spice-btn{flex:1;padding:12px 8px;border-radius:10px;text-align:center;cursor:pointer;border:2px solid var(--border);background:rgba(255,255,255,0.02);transition:.2s;font-size:.75rem;font-weight:700}.spice-btn.sel{border-color:var(--accent);background:rgba(249,115,22,0.08);color:var(--accent)}.spice-icon{font-size:1.4rem;display:block;margin-bottom:4px}
+        .spice-btn{flex:1;padding:12px 8px;border-radius:12px;text-align:center;cursor:pointer;border:2px solid var(--border);background:var(--card);transition:.2s;font-size:.75rem;font-weight:700;color:var(--dim);box-shadow:var(--shadow)}
+        .spice-btn.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .spice-btn:hover{border-color:rgba(232,130,92,0.3)}
+        .spice-icon{font-size:1.4rem;display:block;margin-bottom:4px}
         .pack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:360px;margin-bottom:20px}
-        .pack-btn{padding:14px 8px;border-radius:10px;text-align:center;cursor:pointer;border:2px solid var(--border);background:rgba(255,255,255,0.02);transition:.2s;font-size:.7rem;font-weight:700}.pack-btn.sel{border-color:var(--accent);background:rgba(249,115,22,0.08);color:var(--accent)}.pack-icon{font-size:1.2rem;display:block;margin-bottom:4px}
-        .progress{width:100%;max-width:400px;margin-bottom:16px}.prog-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:6px}.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}.prog-txt{text-align:center;font-size:.7rem;color:var(--dim)}
-        .q-card{width:100%;max-width:420px;text-align:center;margin-bottom:20px;padding:36px 24px;border-radius:20px;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.1);animation:fadeUp .4s ease-out}
-        .q-label{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:4px;color:var(--accent);margin-bottom:16px}
-        .q-text{font-size:clamp(1.3rem,4.5vw,1.8rem);font-weight:700;line-height:1.4}
+        .pack-btn{padding:14px 8px;border-radius:12px;text-align:center;cursor:pointer;border:2px solid var(--border);background:var(--card);transition:.2s;font-size:.7rem;font-weight:700;letter-spacing:1px;color:var(--dim);box-shadow:var(--shadow)}
+        .pack-btn.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .pack-btn:hover{border-color:rgba(232,130,92,0.3)}
+        .pack-icon{font-size:1.2rem;display:block;margin-bottom:4px}
+
+        /* === GAME === */
+        .progress{width:100%;max-width:400px;margin-bottom:16px}
+        .prog-bar{height:5px;background:rgba(232,130,92,0.12);border-radius:3px;overflow:hidden;margin-bottom:6px}
+        .prog-fill{height:100%;background:linear-gradient(90deg,var(--warm),var(--rose));border-radius:3px;transition:width .3s}
+        .prog-txt{text-align:center;font-size:.7rem;color:var(--dim);letter-spacing:1px}
+
+        .q-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:28px 22px;text-align:center;margin-bottom:20px;animation:fadeUp .4s ease-out}
+        .q-label{font-size:.7rem;letter-spacing:3px;color:var(--dim);margin-bottom:16px;text-transform:uppercase}
+        .q-text{font-size:clamp(1.3rem,4.5vw,1.8rem);font-weight:700;line-height:1.4;color:var(--text)}
+
         .choice-row{display:flex;gap:12px;width:100%;max-width:400px;margin-bottom:12px}
-        .choice-btn{flex:1;padding:20px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:2px solid;border-radius:14px;cursor:pointer;transition:.2s;text-align:center}
-        .choice-btn.have{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);color:#86efac}
-        .choice-btn.havent{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);color:#fca5a5}
+        .choice-btn{flex:1;padding:22px 16px;border-radius:16px;border:2px solid;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;cursor:pointer;transition:all .2s;text-align:center}
+        .choice-btn.have{background:var(--greenL);border-color:var(--greenBd);color:#2e7d32}
+        .choice-btn.never{background:var(--softRedL);border-color:var(--softRedBd);color:#c0392b}
         .choice-btn:hover{transform:scale(1.02)}.choice-btn:active{transform:scale(0.98)}
-        .choice-btn.chosen.have{border-color:var(--green);box-shadow:0 4px 20px rgba(34,197,94,0.3);background:rgba(34,197,94,0.12)}
-        .choice-btn.chosen.havent{border-color:var(--red);box-shadow:0 4px 20px rgba(239,68,68,0.3);background:rgba(239,68,68,0.12)}
+        .choice-btn.chosen.have{border-color:var(--green);box-shadow:0 4px 20px rgba(76,175,80,0.2);background:#d7f0d9}
+        .choice-btn.chosen.never{border-color:var(--softRed);box-shadow:0 4px 20px rgba(224,112,112,0.2);background:#f9d4d4}
         .choice-btn.disabled{pointer-events:none;opacity:.5}
-        .partner-status{text-align:center;font-size:.75rem;color:var(--dim);min-height:20px;margin-bottom:8px}.partner-status.chose{color:var(--green)}
-        .reveal{width:100%;max-width:400px;text-align:center;animation:fadeUp .3s ease-out}
-        .reveal-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:3px;margin-bottom:12px}.reveal-title.match{color:var(--green)}.reveal-title.diff{color:var(--accent)}
+        .partner-status{text-align:center;font-size:.75rem;color:var(--dim);margin-top:8px;min-height:20px}
+        .partner-status.chose{color:var(--green)}
+
+        /* Reveal */
+        .reveal{width:100%;max-width:420px;text-align:center;animation:fadeUp .3s ease-out}
+        .reveal-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:28px 22px;margin-bottom:16px}
+        .reveal-match{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;margin-bottom:12px}
+        .reveal-match.yes{color:var(--green)}.reveal-match.no{color:var(--warm)}
         .reveal-choices{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
-        .r-chip{padding:8px 14px;border-radius:10px;font-size:.8rem;font-weight:600;border:1px solid var(--border)}.r-chip .r-name{color:var(--accent);margin-right:6px}
+        .r-chip{padding:8px 14px;border-radius:12px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--bg2)}
+        .r-chip .r-name{color:var(--warm);margin-right:6px}
+
+        /* Reactions */
         .react-row{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
-        .react-btn{font-size:1.5rem;padding:8px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,0.02);cursor:pointer;transition:.2s;width:44px;height:44px;display:flex;align-items:center;justify-content:center}.react-btn:hover{transform:scale(1.15);border-color:var(--accent)}
+        .react-btn{font-size:1.5rem;padding:8px;border-radius:50%;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:.2s;width:44px;height:44px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+        .react-btn:hover{transform:scale(1.15);border-color:var(--warm)}
         .incoming-react{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:5rem;z-index:200;pointer-events:none;animation:reactPop .8s ease-out forwards}
         @keyframes reactPop{0%{opacity:1;transform:translate(-50%,-50%) scale(0.3)}30%{transform:translate(-50%,-50%) scale(1.3)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
-        .next-btn{padding:14px 32px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.3);transition:.2s}.next-btn:hover{transform:translateY(-2px)}
-        .fav-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:0;color:var(--dim);font-size:.8rem;cursor:pointer;transition:.2s}.fav-btn.saved{color:var(--accent2);border-color:var(--accent2)}
-        .btn-row{display:flex;gap:10px;align-items:center;justify-content:center}
-        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px}.end-sub{color:var(--dim);font-size:.85rem;margin-bottom:20px;text-align:center}
-        .end-stat{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--accent);text-align:center}.end-stat-lbl{font-size:.65rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:20px}
-        .end-btns{display:flex;gap:10px;width:100%;max-width:320px}
-        .error-msg{color:#ef4444;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+
+        .next-btn{padding:14px 32px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;background:linear-gradient(135deg,var(--warm),var(--rose));border:none;border-radius:14px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(232,130,92,0.25);transition:.2s}
+        .next-btn:hover{transform:translateY(-2px)}
+        .fav-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:.8rem;cursor:pointer;transition:.2s;box-shadow:var(--shadow)}
+        .fav-btn:hover,.fav-btn.saved{color:var(--gold);border-color:var(--gold)}
+        .btn-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+
+        /* === END === */
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}
+        .end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-stat{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--gold);text-align:center;line-height:1}
+        .end-stat-lbl{font-size:.65rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+        .end-btns{display:flex;gap:10px;width:100%}
+
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+
+        @keyframes confFall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+        .conf{position:fixed;top:0;z-index:300;animation:confFall 3s linear forwards;pointer-events:none;border-radius:2px}
     </style>
 </head>
 <body>
 <div class="bg"></div>
-<header><nav class="nav"><a href="/duos.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">NEVER HAVE I EVER</span><span class="hdr-code" id="hdrCode" style="display:none"></span></nav></header>
+<header><nav class="nav">
+    <a href="/duos.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <span class="hdr-title">NEVER HAVE I EVER</span>
+    <span class="hdr-code" id="hdrCode" style="display:none"></span>
+</nav></header>
+
 <main>
-<div class="phase on" id="phLobby"><div class="lobby-icon">🙈</div><h1 class="lobby-title">NEVER HAVE I EVER</h1><p class="lobby-sub">Confess what you've done — or haven't</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-create" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-join" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
-<div class="phase" id="phSetup"><h2 class="setup-title">GAME SETUP</h2><p class="setup-sub">Share this code with your partner</p><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div><div class="section-label">Spice Level</div><div class="spice-row"><div class="spice-btn sel" data-v="clean" onclick="pickSpice(this)"><span class="spice-icon">😇</span>Clean</div><div class="spice-btn" data-v="medium" onclick="pickSpice(this)"><span class="spice-icon">😏</span>Medium</div><div class="spice-btn" data-v="spicy" onclick="pickSpice(this)"><span class="spice-icon">🔥</span>Spicy 18+</div></div><div class="section-label">Pack</div><div class="pack-grid"><div class="pack-btn sel" data-v="classic" onclick="pickPack(this)"><span class="pack-icon">🎯</span>Classic</div><div class="pack-btn" data-v="couples" onclick="pickPack(this)"><span class="pack-icon">💕</span>Couples</div></div><button class="btn btn-create" id="startBtn" onclick="startGame()" disabled style="width:100%;max-width:320px">WAITING FOR PARTNER...</button><div class="error-msg" id="setupErr"></div></div>
-<div class="phase" id="phGame"><div class="progress"><div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div><div class="prog-txt" id="progTxt">1 / ?</div></div><div class="q-card"><div class="q-label">NEVER HAVE I EVER...</div><div class="q-text" id="qText">Loading...</div></div><div class="choice-row"><button class="choice-btn have" id="btnHave" onclick="choose('a')">🙋 I HAVE</button><button class="choice-btn havent" id="btnHavent" onclick="choose('b')">🙅 NEVER</button></div><div class="partner-status" id="partnerStatus"></div><div class="react-row"><button class="react-btn" onclick="react('😂')">😂</button><button class="react-btn" onclick="react('❤️')">❤️</button><button class="react-btn" onclick="react('😮')">😮</button><button class="react-btn" onclick="react('🔥')">🔥</button></div></div>
-<div class="phase" id="phReveal"><div class="reveal"><div class="reveal-title" id="revealTitle">RESULTS</div><div class="reveal-choices" id="revealChoices"></div><div class="react-row"><button class="react-btn" onclick="react('😂')">😂</button><button class="react-btn" onclick="react('❤️')">❤️</button><button class="react-btn" onclick="react('😮')">😮</button><button class="react-btn" onclick="react('🔥')">🔥</button></div><div class="btn-row"><button class="fav-btn" id="favBtn" onclick="fav()">♡ Save</button><button class="next-btn" onclick="next()">NEXT →</button></div></div></div>
-<div class="phase" id="phEnd"><div class="end-icon">🎉</div><h2 class="end-title">ALL DONE!</h2><p class="end-sub" id="endSub">Great confessions!</p><div class="end-stat" id="endStat">0</div><div class="end-stat-lbl">Statements Answered</div><div class="end-btns"><button class="btn btn-join" onclick="location.reload()">NEW GAME</button><button class="btn btn-create" onclick="location.href='/duos.html'">MORE GAMES</button></div></div>
+<!-- MODE SELECT -->
+<div class="phase on" id="phMode">
+    <div class="mode-icon">🙈</div>
+    <h1 class="mode-title">NEVER HAVE I EVER</h1>
+    <p class="mode-sub">Confess what you've done — or haven't</p>
+    <div class="mode-cards">
+        <div class="mode-card primary" onclick="startCouch()">
+            <div class="mode-card-icon">🛋️</div>
+            <div class="mode-card-title">SAME DEVICE</div>
+            <div class="mode-card-desc">Share one screen — perfect for cozy nights in</div>
+        </div>
+        <div class="mode-card" onclick="show('phLobby')">
+            <div class="mode-card-icon">📱</div>
+            <div class="mode-card-title">ONLINE</div>
+            <div class="mode-card-desc">Play on separate devices with a room code</div>
+        </div>
+    </div>
+</div>
+
+<!-- LOBBY (online) -->
+<div class="phase" id="phLobby">
+    <div class="mode-icon">📱</div>
+    <h2 class="setup-title">ONLINE MODE</h2>
+    <p class="lobby-sub">Play on separate phones</p>
+    <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off">
+    <div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div>
+    <div class="or-line">OR JOIN</div>
+    <div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div>
+    <div class="error-msg" id="lobbyErr"></div>
+</div>
+
+<!-- SETUP (online + couch shared) -->
+<div class="phase" id="phSetup">
+    <h2 class="setup-title">GAME SETUP</h2>
+    <p class="setup-sub" id="setupSub">Share this code with your partner</p>
+    <div id="onlineSetupInfo">
+        <div class="setup-code" id="setupCode">------</div>
+        <div class="setup-copy" onclick="copyCode()">Tap to copy</div>
+        <div class="players-box" id="playersBox"></div>
+    </div>
+    <div class="section-label">Spice Level</div>
+    <div class="spice-row">
+        <div class="spice-btn sel" data-v="clean" onclick="pickSpice(this)"><span class="spice-icon">😇</span>Clean</div>
+        <div class="spice-btn" data-v="medium" onclick="pickSpice(this)"><span class="spice-icon">😏</span>Medium</div>
+        <div class="spice-btn" data-v="spicy" onclick="pickSpice(this)"><span class="spice-icon">🔥</span>Spicy 18+</div>
+    </div>
+    <div class="section-label">Question Pack</div>
+    <div class="pack-grid">
+        <div class="pack-btn sel" data-v="classic" onclick="pickPack(this)"><span class="pack-icon">🎯</span>Classic</div>
+        <div class="pack-btn" data-v="couples" onclick="pickPack(this)"><span class="pack-icon">💕</span>Couples</div>
+    </div>
+    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button>
+    <div class="error-msg" id="setupErr"></div>
+</div>
+
+<!-- GAME -->
+<div class="phase" id="phGame">
+    <div class="progress"><div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div><div class="prog-txt" id="progTxt">1 / ?</div></div>
+    <div class="q-card">
+        <div class="q-label">NEVER HAVE I EVER...</div>
+        <div class="q-text" id="qText">Loading...</div>
+    </div>
+    <div class="choice-row">
+        <button class="choice-btn have" id="btnHave" onclick="choose('a')">🙋 I HAVE</button>
+        <button class="choice-btn never" id="btnNever" onclick="choose('b')">🙅 NEVER</button>
+    </div>
+    <div class="partner-status" id="partnerStatus"></div>
+    <div class="react-row">
+        <button class="react-btn" onclick="react('😂')">😂</button>
+        <button class="react-btn" onclick="react('❤️')">❤️</button>
+        <button class="react-btn" onclick="react('😮')">😮</button>
+        <button class="react-btn" onclick="react('🔥')">🔥</button>
+    </div>
+</div>
+
+<!-- REVEAL -->
+<div class="phase" id="phReveal">
+    <div class="reveal">
+        <div class="reveal-card">
+            <div class="reveal-match" id="revealMatch">RESULTS</div>
+            <div class="reveal-choices" id="revealChoices"></div>
+        </div>
+        <div class="react-row">
+            <button class="react-btn" onclick="react('😂')">😂</button>
+            <button class="react-btn" onclick="react('❤️')">❤️</button>
+            <button class="react-btn" onclick="react('😮')">😮</button>
+            <button class="react-btn" onclick="react('🔥')">🔥</button>
+        </div>
+        <div class="btn-row">
+            <button class="fav-btn" id="favBtn" onclick="fav()">♡ Save</button>
+            <button class="next-btn" onclick="next()">NEXT →</button>
+        </div>
+    </div>
+</div>
+
+<!-- END -->
+<div class="phase" id="phEnd">
+    <div class="end-card">
+        <div class="end-icon">🙈</div>
+        <h2 class="end-title">ALL DONE!</h2>
+        <p class="end-sub" id="endSub">Great confessions!</p>
+        <div class="end-stat" id="endStat">0</div>
+        <div class="end-stat-lbl">Statements Answered</div>
+        <div class="end-btns">
+            <button class="btn btn-secondary" onclick="location.reload()">PLAY AGAIN</button>
+            <button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button>
+        </div>
+    </div>
+</div>
 </main>
+
 <script>
-const BK='https://web-production-519c7.up.railway.app',sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
-let G={code:null,name:null,num:0,spice:'clean',pack:'classic',q:null,total:0,idx:0,chose:null,players:[],faved:false};
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={code:null,name:null,num:0,spice:'clean',pack:'classic',q:null,total:0,idx:0,chose:null,players:[],faved:false,couch:false,questions:[],totalAnswered:0};
+
 function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('duo-create',{gameType:'never-have-i-ever',playerName:n,pack:G.pack,spice:G.spice});}
-function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter your name');if(!c||c.length<4)return err('lobbyErr','Enter room code');G.name=n;sk.connect();sk.emit('duo-join',{code:c,playerName:n});}
+
+// ============ COUCH PLAY (same device) ============
+function startCouch(){
+    G.couch=true;
+    document.getElementById('onlineSetupInfo').style.display='none';
+    document.getElementById('setupSub').textContent='Pick your settings and start!';
+    document.getElementById('startBtn').textContent='START';
+    document.getElementById('startBtn').disabled=false;
+    show('phSetup');
+}
+
+async function startCouchGame(){
+    try{
+        const res=await fetch(`${BK}/api/duo-questions?game=never-have-i-ever&pack=${G.pack}&spice=${G.spice}`);
+        const data=await res.json();
+        G.questions=data.questions;G.total=G.questions.length;G.idx=0;G.totalAnswered=0;
+        showCouchQuestion();
+    }catch(e){err('setupErr','Failed to load questions');}
+}
+
+function showCouchQuestion(){
+    if(G.idx>=G.questions.length){showCouchEnd();return;}
+    G.q=G.questions[G.idx];G.chose=null;G.faved=false;
+    document.getElementById('progFill').style.width=((G.idx/G.total)*100)+'%';
+    document.getElementById('progTxt').textContent=(G.idx+1)+' / '+G.total;
+    const t=typeof G.q==='string'?G.q:'';
+    document.getElementById('qText').textContent=t.replace(/^never have i ever\s*/i,'');
+    document.querySelectorAll('.choice-btn').forEach(b=>{b.classList.remove('chosen','disabled');});
+    document.getElementById('partnerStatus').textContent='Discuss and tap your choice!';
+    document.getElementById('partnerStatus').className='partner-status';
+    document.getElementById('hdrCode').style.display='none';
+    show('phGame');
+}
+
+function couchChoose(c){
+    G.chose=c;G.totalAnswered++;
+    document.getElementById(c==='a'?'btnHave':'btnNever').classList.add('chosen');
+    document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
+    document.getElementById('partnerStatus').innerHTML='<button class="next-btn" onclick="couchNext()" style="margin-top:12px">NEXT →</button>';
+}
+
+function couchNext(){G.idx++;showCouchQuestion();}
+
+function showCouchEnd(){
+    document.getElementById('endStat').textContent=G.total;
+    document.getElementById('endSub').textContent='You went through '+G.total+' confessions!';
+    show('phEnd');miniConfetti();
+}
+
+// ============ ONLINE PLAY ============
+function createRoom(){
+    const name=document.getElementById('nameInput').value.trim();
+    if(!name)return err('lobbyErr','Enter your name');
+    G.name=name;sk.connect();
+    sk.emit('duo-create',{gameType:'never-have-i-ever',playerName:name,pack:G.pack,spice:G.spice});
+}
+function joinRoom(){
+    const name=document.getElementById('nameInput').value.trim();
+    const code=document.getElementById('codeInput').value.trim().toUpperCase();
+    if(!name)return err('lobbyErr','Enter your name');
+    if(!code||code.length<4)return err('lobbyErr','Enter room code');
+    G.name=name;sk.connect();
+    sk.emit('duo-join',{code,playerName:name});
+}
+
+// ============ SHARED ============
 function pickSpice(el){document.querySelectorAll('.spice-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.spice=el.dataset.v;}
 function pickPack(el){document.querySelectorAll('.pack-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.pack=el.dataset.v;}
 function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
-function startGame(){sk.emit('duo-start',{code:G.code});}
-function renderPlayers(){const b=document.getElementById('playersBox');b.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)b.innerHTML+='<div class="p-chip waiting">Waiting...</div>';const s=document.getElementById('startBtn');s.disabled=G.players.length<2;s.textContent=G.players.length>=2?'START GAME':'WAITING FOR PARTNER...';}
-function choose(c){if(G.chose)return;G.chose=c;document.getElementById(c==='a'?'btnHave':'btnHavent').classList.add('chosen');document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));sk.emit('duo-choice',{code:G.code,choice:c});}
-function showQ(d){G.idx=d.index;G.q=d.question;G.total=d.total;G.chose=null;G.faved=false;document.getElementById('progFill').style.width=((G.idx/G.total)*100)+'%';document.getElementById('progTxt').textContent=(G.idx+1)+' / '+G.total;const t=typeof G.q==='string'?G.q:'';document.getElementById('qText').textContent=t.replace(/^never have i ever\s*/i,'');document.querySelectorAll('.choice-btn').forEach(b=>{b.classList.remove('chosen','disabled');});document.getElementById('partnerStatus').textContent='';document.getElementById('hdrCode').textContent=G.code;document.getElementById('hdrCode').style.display='';show('phGame');}
-function showReveal(d){const m=d.match;document.getElementById('revealTitle').textContent=m?'YOU BOTH MATCH! 🎉':'DIFFERENT!';document.getElementById('revealTitle').className='reveal-title '+(m?'match':'diff');document.getElementById('revealChoices').innerHTML=Object.entries(d.choices).map(([n,c])=>`<div class="r-chip"><span class="r-name">${esc(n)}</span>${c==='a'?'🙋 I have':'🙅 Never'}</div>`).join('');show('phReveal');}
+
+function startGame(){
+    if(G.couch){startCouchGame();return;}
+    sk.emit('duo-start',{code:G.code});
+}
+
+function renderPlayers(){
+    const box=document.getElementById('playersBox');
+    box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');
+    if(G.players.length<2) box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';
+    const btn=document.getElementById('startBtn');
+    if(G.players.length>=2){btn.disabled=false;btn.textContent='START GAME';}
+    else{btn.disabled=true;btn.textContent='WAITING FOR PARTNER...';}
+}
+
+function choose(c){
+    if(G.couch){couchChoose(c);return;}
+    if(G.chose)return;
+    G.chose=c;
+    document.getElementById(c==='a'?'btnHave':'btnNever').classList.add('chosen');
+    document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
+    sk.emit('duo-choice',{code:G.code,choice:c});
+}
+
+function showQuestion(data){
+    G.idx=data.index;G.q=data.question;G.total=data.total;G.chose=null;G.faved=false;
+    document.getElementById('progFill').style.width=((G.idx/G.total)*100)+'%';
+    document.getElementById('progTxt').textContent=(G.idx+1)+' / '+G.total;
+    const t=typeof G.q==='string'?G.q:'';
+    document.getElementById('qText').textContent=t.replace(/^never have i ever\s*/i,'');
+    document.querySelectorAll('.choice-btn').forEach(b=>{b.classList.remove('chosen','disabled');});
+    document.getElementById('partnerStatus').textContent='';
+    document.getElementById('partnerStatus').className='partner-status';
+    document.getElementById('hdrCode').textContent=G.code;
+    document.getElementById('hdrCode').style.display='';
+    document.getElementById('favBtn').textContent='♡ Save';
+    document.getElementById('favBtn').classList.remove('saved');
+    show('phGame');
+}
+
+function showReveal(data){
+    const match=data.match;
+    document.getElementById('revealMatch').textContent=match?'YOU BOTH MATCH! 🎉':'DIFFERENT!';
+    document.getElementById('revealMatch').className='reveal-match '+(match?'yes':'no');
+    document.getElementById('revealChoices').innerHTML=Object.entries(data.choices).map(([name,c])=>{
+        return `<div class="r-chip"><span class="r-name">${esc(name)}</span>${c==='a'?'🙋 I have':'🙅 Never'}</div>`;
+    }).join('');
+    show('phReveal');
+    if(match) miniConfetti();
+}
+
 function next(){sk.emit('duo-next',{code:G.code});}
-function fav(){G.faved=!G.faved;document.getElementById('favBtn').textContent=G.faved?'♥ Saved':'♡ Save';document.getElementById('favBtn').classList.toggle('saved',G.faved);if(G.faved)sk.emit('duo-favorite',{code:G.code,index:G.idx});}
-function react(e){sk.emit('duo-react',{code:G.code,emoji:e});}
-sk.on('duo-created',d=>{G.code=d.code;G.num=d.playerNum;G.players=[G.name];document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSetup');});
-sk.on('duo-joined',d=>{G.code=d.code;G.num=d.playerNum;G.players=d.players;if(d.started&&d.question){showQ({index:d.currentIndex,question:d.question,total:d.total});return;}document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSetup');});
+function fav(){G.faved=!G.faved;document.getElementById('favBtn').textContent=G.faved?'♥ Saved':'♡ Save';document.getElementById('favBtn').classList.toggle('saved',G.faved);if(G.faved&&!G.couch) sk.emit('duo-favorite',{code:G.code,index:G.idx});}
+function react(emoji){if(!G.couch) sk.emit('duo-react',{code:G.code,emoji});}
+
+// === SOCKET EVENTS ===
+sk.on('duo-created',d=>{G.code=d.code;G.num=d.playerNum;G.players=[G.name];document.getElementById('onlineSetupInfo').style.display='';document.getElementById('setupSub').textContent='Share this code with your partner';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSetup');});
+sk.on('duo-joined',d=>{G.code=d.code;G.num=d.playerNum;G.players=d.players;if(d.started&&d.question){showQuestion({index:d.currentIndex,question:d.question,total:d.total});return;}document.getElementById('onlineSetupInfo').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSetup');});
 sk.on('duo-player-joined',d=>{G.players=d.players;renderPlayers();});
-sk.on('duo-round',d=>showQ(d));
+sk.on('duo-round',d=>showQuestion(d));
 sk.on('duo-player-chose',d=>{document.getElementById('partnerStatus').textContent=d.playerName+' has answered';document.getElementById('partnerStatus').className='partner-status chose';});
 sk.on('duo-reveal',d=>showReveal(d));
 sk.on('duo-reaction',d=>{const el=document.createElement('div');el.className='incoming-react';el.textContent=d.emoji;document.body.appendChild(el);setTimeout(()=>el.remove(),1000);});
-sk.on('duo-end',d=>{document.getElementById('endStat').textContent=d.total;document.getElementById('endSub').textContent='You went through '+d.total+' confessions!';show('phEnd');});
+sk.on('duo-end',d=>{document.getElementById('endStat').textContent=d.total;document.getElementById('endSub').textContent='You went through '+d.total+' confessions!';show('phEnd');miniConfetti();});
 sk.on('duo-player-left',d=>{document.getElementById('partnerStatus').textContent=d.playerName+' disconnected';});
 sk.on('duo-error',d=>err('lobbyErr',d.message)||err('setupErr',d.message));
-function err(id,m){const el=document.getElementById(id);if(el){el.textContent=m;setTimeout(()=>el.textContent='',3000);}}
+
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function miniConfetti(){const cl=['#e8825c','#e88da1','#e8a838','#5b8fd9','#4caf50','#d4644a'];for(let i=0;i<25;i++){const c=document.createElement('div');c.className='conf';c.style.left=Math.random()*100+'vw';c.style.background=cl[Math.floor(Math.random()*cl.length)];c.style.width=(4+Math.random()*6)+'px';c.style.height=(4+Math.random()*6)+'px';c.style.animationDuration=(2+Math.random()*2)+'s';c.style.animationDelay=(Math.random()*0.4)+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4000);}}
+
 document.getElementById('nameInput').addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
 document.getElementById('codeInput').addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>

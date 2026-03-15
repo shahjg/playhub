@@ -8,7 +8,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 const partyGames = require('./party-games');
 const missingSquadGames = require('./missing-squad-games');
-const { initDuoHandlers } = require('./duo-games');
+const { initDuoHandlers, getQuestions } = require('./duo-games');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -369,6 +369,14 @@ function generateRoomCode() {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', rooms: rooms.size, players: players.size });
+});
+
+// Duo questions API (for couch/same-device mode)
+app.get('/api/duo-questions', (req, res) => {
+  const { game, pack, spice } = req.query;
+  if (!game) return res.status(400).json({ error: 'Missing game parameter' });
+  const questions = getQuestions(game, pack || 'classic', spice || 'clean');
+  res.json({ questions });
 });
 
 // ============================================

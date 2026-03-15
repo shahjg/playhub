@@ -1754,4 +1754,4 @@ const QUESTION_BANKS = {
   '21-questions': Q21_QUESTIONS
 };
 
-module.exports = { initDuoHandlers, duoRooms };
+module.exports = { initDuoHandlers, duoRooms, getQuestions, QUESTION_BANKS };
