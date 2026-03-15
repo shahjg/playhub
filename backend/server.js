@@ -9,6 +9,7 @@ const { createClient } = require('@supabase/supabase-js');
 const partyGames = require('./party-games');
 const missingSquadGames = require('./missing-squad-games');
 const { initDuoHandlers, getQuestions, PACK_CATALOG } = require('./duo-games');
+const { initActCreateHandlers, getActItems, ACT_PACK_CATALOG, STORY_WILDCARDS } = require('./duo-act-create');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -382,6 +383,26 @@ app.get('/api/duo-questions', (req, res) => {
 // Duo pack catalog API
 app.get('/api/duo-packs', (req, res) => {
   res.json({ packs: PACK_CATALOG });
+});
+
+// Act & Create items API (for couch mode)
+app.get('/api/act-items', (req, res) => {
+  const { game, pack, intensity } = req.query;
+  if (!game) return res.status(400).json({ error: 'Missing game parameter' });
+  const items = getActItems(game, pack || 'movies', intensity || 'clean');
+  res.json({ items });
+});
+
+// Act & Create pack catalog API
+app.get('/api/act-packs', (req, res) => {
+  const { game } = req.query;
+  if (game && ACT_PACK_CATALOG[game]) return res.json({ packs: ACT_PACK_CATALOG[game] });
+  res.json({ packs: ACT_PACK_CATALOG });
+});
+
+// Story wildcards API
+app.get('/api/story-wildcards', (req, res) => {
+  res.json({ wildcards: STORY_WILDCARDS });
 });
 
 // ============================================
@@ -1911,6 +1932,7 @@ io.on('connection', (socket) => {
   missingSquadGames.setupMissingSquadGameHandlers(io, socket, rooms, players);
   additionalSquadGames.registerAdditionalSquadGameHandlers(io, socket, rooms, players);
   initDuoHandlers(io, socket);
+  initActCreateHandlers(io, socket);
   
   // CREATE ROOM (initial creation only)
   socket.on('create-room', rateLimitedHandler((data) => {

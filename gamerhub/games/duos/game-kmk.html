@@ -2,373 +2,146 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kiss Marry Kill – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Kiss Marry Kill - the classic choice game!">
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kiss Marry Kill – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
-            --kiss:#ec4899;--marry:#8b5cf6;--kill:#ef4444;
-            --p1:#f472b6;--p2:#60a5fa;
-            --text-dark:#1a1a2e;--text-muted:#6b7280;
-        }
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#d06080;--warm2:#a84060;--warmL:#f0c0d0;--warmLL:#fef0f4;--rose:#d87898;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1);--kiss:#e86090;--marry:#9060c0;--kill:#d04040}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
-        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
-
-        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
-
-        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
-        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
-        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
-        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
-        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
-        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
-
-        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
-        .game-container{width:100%;max-width:450px;display:flex;flex-direction:column;gap:16px}
-
-        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
-
-        .phase{display:none}
-        .phase.active{display:block}
-
-        .category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-        .category-card{background:#fdf2f8;border:2px solid #fce7f3;border-radius:14px;padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.2s}
-        .category-card:hover{border-color:var(--accent);transform:translateY(-2px)}
-        .category-icon{font-size:2rem;margin-bottom:8px}
-        .category-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;margin-bottom:4px}
-        .category-desc{font-size:0.75rem;color:var(--text-muted)}
-
-        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;text-align:center;margin-bottom:20px;color:var(--accent-dark)}
-
-        .progress-bar{height:6px;background:#eee;border-radius:3px;margin-bottom:16px;overflow:hidden}
-        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width 0.3s}
-        .progress-text{text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:16px}
-
-        .player-turn{text-align:center;margin-bottom:16px}
-        .player-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px}
-        .player-badge.p1{background:var(--accent-light);color:var(--accent-dark)}
-        .player-badge.p2{background:#dbeafe;color:#1d4ed8}
-
-        .options-card{text-align:center}
-        .options-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-        .option-item{display:flex;align-items:center;gap:12px;padding:14px;background:#fdf2f8;border:2px solid #fce7f3;border-radius:12px}
-        .option-name{flex:1;font-weight:600;text-align:left}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(208,96,128,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(208,96,128,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px}
+        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(208,96,128,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
+        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:420px;margin-bottom:12px}
+        .back-to-packs{font-size:.7rem;font-weight:700;color:var(--dim);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}.back-to-packs:hover{color:var(--warm)}
+        .q-counter{font-size:.75rem;font-weight:700;color:var(--dim);letter-spacing:1px}
+        .match-bar{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
+        .match-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
+        .match-chip .m-label{font-size:.7rem;color:var(--dim)}.match-chip .m-val{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
+        .turn-badge{display:inline-block;padding:6px 18px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:12px}
+        .turn-badge.p1{background:var(--warmLL);color:var(--warm2);border:1px solid var(--warm)}
+        .turn-badge.p2{background:#e8f0fe;color:#3060a0;border:1px solid #90b0d8}
+        .kmk-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:24px;margin-bottom:16px}
+        .kmk-card h3{text-align:center;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:16px}
+        .option-row{display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg2);border-radius:14px;margin-bottom:8px;border:2px solid transparent;transition:.2s}
+        .option-name{flex:1;font-weight:700;font-size:.95rem}
         .choice-btns{display:flex;gap:6px}
-        .choice-btn{width:36px;height:36px;border-radius:10px;border:2px solid #eee;background:#fff;font-size:1rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
-        .choice-btn:hover{transform:scale(1.1)}
-        .choice-btn.kiss:hover,.choice-btn.kiss.selected{border-color:var(--kiss);background:#fce7f3}
-        .choice-btn.marry:hover,.choice-btn.marry.selected{border-color:var(--marry);background:#ede9fe}
-        .choice-btn.kill:hover,.choice-btn.kill.selected{border-color:var(--kill);background:#fee2e2}
-
-        .submit-area{text-align:center}
-
-        .result-card{text-align:center;padding:20px}
-        .result-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;margin-bottom:16px;color:var(--accent-dark)}
-        .result-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
-        .result-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fdf2f8;border-radius:10px}
-        .result-name{font-weight:600}
-        .result-choices{display:flex;gap:8px}
-        .result-badge{padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600}
-        .result-badge.kiss{background:#fce7f3;color:var(--kiss)}
-        .result-badge.marry{background:#ede9fe;color:var(--marry)}
-        .result-badge.kill{background:#fee2e2;color:var(--kill)}
-        .match-indicator{font-size:0.85rem;color:var(--text-muted);margin-bottom:16px}
-        .match-indicator.match{color:#22c55e}
-
-        .end-screen{text-align:center;padding:30px}
-        .end-emoji{font-size:4rem;margin-bottom:16px}
-        .end-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:8px;color:var(--accent-dark)}
-        .end-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
-
-        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
-        .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
-
-        .actions{display:flex;gap:10px;justify-content:center}
+        .choice-btn{width:44px;height:44px;border-radius:12px;border:2px solid var(--border);background:var(--card);font-size:1.1rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}.choice-btn:hover{transform:scale(1.1)}
+        .choice-btn.kiss.sel{border-color:var(--kiss);background:#fce8f0}
+        .choice-btn.marry.sel{border-color:var(--marry);background:#f0e8fc}
+        .choice-btn.kill.sel{border-color:var(--kill);background:#fce8e8}
+        .game-btns{display:flex;gap:10px;width:100%;max-width:420px}
+        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+        .cover-screen h2{font-size:2rem;letter-spacing:4px;color:var(--warm2);margin-bottom:8px}
+        .cover-screen p{color:var(--dim);font-size:.85rem;margin-bottom:24px}
+        .result-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:24px;text-align:center;margin-bottom:16px}
+        .result-card h3{font-size:1.5rem;letter-spacing:2px;color:var(--warm2);margin-bottom:16px}
+        .result-row{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg2);border-radius:12px;margin-bottom:8px}
+        .result-name{font-weight:700;font-size:.9rem;flex:1}
+        .result-badges{display:flex;gap:6px}
+        .r-badge{padding:4px 10px;border-radius:8px;font-size:.7rem;font-weight:700;letter-spacing:1px}
+        .r-badge.kiss{background:#fce8f0;color:var(--kiss)}.r-badge.marry{background:#f0e8fc;color:var(--marry)}.r-badge.kill{background:#fce8e8;color:var(--kill)}
+        .match-msg{font-size:.9rem;margin:12px 0;padding:8px 16px;border-radius:10px}
+        .match-msg.yes{background:#e8f8e8;color:#308030}.match-msg.no{background:var(--bg2);color:var(--dim)}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+        @keyframes revealIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+        .reveal-anim{animation:revealIn .4s ease-out}
     </style>
 </head>
 <body>
-    <div id="site-header"></div>
-    <main>
-        <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">💋💍💀</div>
-                <h1 class="hero-title">KISS MARRY KILL</h1>
-                <p class="hero-sub">The classic choice game!</p>
-            </div>
-        </section>
-
-        <div class="game-wrapper">
-            <div class="game-container">
-                <div class="game-board">
-                    <div class="phase active" id="categoryPhase">
-                        <div class="phase-title">CHOOSE A CATEGORY</div>
-                        <div class="category-grid">
-                            <div class="category-card" onclick="selectCategory('celebs')">
-                                <div class="category-icon">⭐</div>
-                                <div class="category-name">CELEBRITIES</div>
-                                <div class="category-desc">Famous people</div>
-                            </div>
-                            <div class="category-card" onclick="selectCategory('fictional')">
-                                <div class="category-icon">🎬</div>
-                                <div class="category-name">FICTIONAL</div>
-                                <div class="category-desc">Movie & TV characters</div>
-                            </div>
-                            <div class="category-card" onclick="selectCategory('random')">
-                                <div class="category-icon">🎲</div>
-                                <div class="category-name">RANDOM</div>
-                                <div class="category-desc">Wild mix</div>
-                            </div>
-                            <div class="category-card" onclick="selectCategory('food')">
-                                <div class="category-icon">🍕</div>
-                                <div class="category-name">FOODS</div>
-                                <div class="category-desc">Eat forever, once, never</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="playPhase">
-                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-                        <div class="progress-text">Round <span id="currentNum">1</span> of 5</div>
-                        
-                        <div class="player-turn">
-                            <span class="player-badge p1" id="playerBadge">PLAYER 1</span>
-                        </div>
-                        
-                        <div class="options-card">
-                            <div class="options-list" id="optionsList"></div>
-                            <div class="submit-area">
-                                <button class="btn btn-primary" id="submitBtn" onclick="submitChoices()" disabled>Lock In</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="resultPhase">
-                        <div class="result-card">
-                            <div class="result-title">ROUND RESULTS</div>
-                            <div class="result-list" id="resultList"></div>
-                            <div class="match-indicator" id="matchIndicator"></div>
-                            <div class="actions">
-                                <button class="btn btn-primary" onclick="nextRound()">Next Round</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="endPhase">
-                        <div class="end-screen">
-                            <div class="end-emoji">🎉</div>
-                            <div class="end-title">GAME COMPLETE!</div>
-                            <div class="end-sub" id="endSub">You agreed on 3/5 rounds!</div>
-                            <div class="actions">
-                                <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">KISS MARRY KILL</span><div class="hdr-right"></div></nav></header>
+<main>
+<div class="phase on" id="phMode"><div class="mode-icon">💋</div><h1 class="mode-title">KISS MARRY KILL</h1><p class="mode-sub">The classic choice game — who do you pick?</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns picking, then compare</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Pick at the same time, then reveal</div></div></div></div>
+<div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
+<div class="phase" id="phPacks"><h2 class="pack-title">PICK A CATEGORY</h2><p class="pack-sub">Who are you choosing between?</p><div class="pack-grid" id="packGrid"></div></div>
+<div class="phase" id="phSettings"><h2 class="setup-title">READY TO PLAY</h2><p class="setup-sub">Each round: assign Kiss, Marry, or Kill to 3 options</p><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
+<div class="phase" id="phGame"><div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">Round 1 of 10</span></div><div class="match-bar" id="matchBar"><div class="match-chip"><div class="m-label">Matches</div><div class="m-val" id="matchCount">0</div></div></div><div style="text-align:center"><span class="turn-badge p1" id="turnBadge">PLAYER 1</span></div><div class="kmk-card"><h3>CHOOSE WISELY</h3><div id="optionsList"></div></div><div class="game-btns"><button class="btn btn-primary" id="lockBtn" onclick="lockIn()" disabled style="width:100%">LOCK IN</button></div></div>
+<div class="phase" id="phResult"><div class="result-card reveal-anim"><h3>ROUND RESULTS</h3><div id="resultList"></div><div class="match-msg" id="matchMsg"></div></div><div class="game-btns"><button class="btn btn-primary" onclick="nextRound()" style="width:100%">NEXT ROUND</button></div></div>
+<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">💋</div><h2 class="end-title">GAME OVER!</h2><p class="end-sub" id="endSub">You matched on 5 of 10 rounds!</p><div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">CHANGE PACK</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+<div class="cover-screen" id="coverScreen" style="display:none"><h2 id="coverTitle">PASS THE PHONE</h2><p id="coverSub">Don't peek at their choices!</p><button class="btn btn-primary" onclick="dismissCover()" style="width:200px">I'M READY</button></div>
+</main>
 <script>
-const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-
-const sets={
-    celebs:[
-        ["Brad Pitt","Ryan Gosling","Leonardo DiCaprio"],
-        ["Beyoncé","Rihanna","Taylor Swift"],
-        ["Chris Hemsworth","Chris Evans","Chris Pratt"],
-        ["Zendaya","Sydney Sweeney","Florence Pugh"],
-        ["Harry Styles","Bad Bunny","The Weeknd"]
-    ],
-    fictional:[
-        ["Iron Man","Captain America","Thor"],
-        ["Hermione","Katniss","Black Widow"],
-        ["Jack Sparrow","James Bond","Indiana Jones"],
-        ["Elsa","Moana","Rapunzel"],
-        ["The Joker","Thanos","Darth Vader"]
-    ],
-    random:[
-        ["Your ex","Your boss","A stranger"],
-        ["Rich but boring","Poor but exciting","Average everything"],
-        ["Morning person","Night owl","No sleep needed"],
-        ["Always cold","Always hot","Always sweaty"],
-        ["No music ever","No movies ever","No games ever"]
-    ],
-    food:[
-        ["Pizza","Sushi","Tacos"],
-        ["Chocolate","Ice cream","Cake"],
-        ["Burgers","Hot dogs","Sandwiches"],
-        ["Coffee","Tea","Energy drinks"],
-        ["Pasta","Rice","Bread"]
-    ]
-};
-
-let category='';
-let deck=[];
-let round=0;
-const totalRounds=5;
-let currentPlayer=1;
-let choices={1:{},2:{}};
-let currentOptions=[];
-let matches=0;
-
-function shuffle(arr){
-    for(let i=arr.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [arr[i],arr[j]]=[arr[j],arr[i]];
-    }
-    return arr;
-}
-
-function showPhase(id){
-    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
-function selectCategory(cat){
-    category=cat;
-    deck=shuffle([...sets[cat]]);
-    round=0;
-    matches=0;
-    currentPlayer=1;
-    startRound();
-}
-
-function startRound(){
-    if(round>=totalRounds){
-        endGame();
-        return;
-    }
-    currentOptions=deck[round];
-    choices={1:{},2:{}};
-    currentPlayer=1;
-    renderOptions();
-    updateProgress();
-    updatePlayerBadge();
-    showPhase('playPhase');
-}
-
-function renderOptions(){
-    const list=document.getElementById('optionsList');
-    list.innerHTML=currentOptions.map((opt,i)=>`
-        <div class="option-item" data-index="${i}">
-            <div class="option-name">${opt}</div>
-            <div class="choice-btns">
-                <button class="choice-btn kiss" onclick="choose(${i},'kiss')">💋</button>
-                <button class="choice-btn marry" onclick="choose(${i},'marry')">💍</button>
-                <button class="choice-btn kill" onclick="choose(${i},'kill')">💀</button>
-            </div>
-        </div>
-    `).join('');
-    document.getElementById('submitBtn').disabled=true;
-}
-
-function choose(index,type){
-    const playerChoices=choices[currentPlayer];
-    
-    // Remove this type from other options
-    for(let i=0;i<3;i++){
-        if(playerChoices[i]===type)delete playerChoices[i];
-    }
-    playerChoices[index]=type;
-    
-    // Update UI
-    document.querySelectorAll('.option-item').forEach((item,i)=>{
-        item.querySelectorAll('.choice-btn').forEach(btn=>{
-            btn.classList.remove('selected');
-        });
-        if(playerChoices[i]){
-            item.querySelector(`.${playerChoices[i]}`).classList.add('selected');
-        }
-    });
-    
-    // Check if all chosen
-    const hasKiss=Object.values(playerChoices).includes('kiss');
-    const hasMarry=Object.values(playerChoices).includes('marry');
-    const hasKill=Object.values(playerChoices).includes('kill');
-    document.getElementById('submitBtn').disabled=!(hasKiss&&hasMarry&&hasKill);
-}
-
-function submitChoices(){
-    if(currentPlayer===1){
-        currentPlayer=2;
-        renderOptions();
-        updatePlayerBadge();
-    }else{
-        showResults();
-    }
-}
-
-function updatePlayerBadge(){
-    const badge=document.getElementById('playerBadge');
-    badge.textContent=`PLAYER ${currentPlayer}`;
-    badge.className=`player-badge p${currentPlayer}`;
-}
-
-function updateProgress(){
-    const pct=(round/totalRounds)*100;
-    document.getElementById('progressFill').style.width=pct+'%';
-    document.getElementById('currentNum').textContent=round+1;
-}
-
-function showResults(){
-    const list=document.getElementById('resultList');
-    let allMatch=true;
-    
-    list.innerHTML=currentOptions.map((opt,i)=>{
-        const p1=choices[1][i]||'';
-        const p2=choices[2][i]||'';
-        const match=p1===p2;
-        if(!match)allMatch=false;
-        return `
-            <div class="result-item">
-                <div class="result-name">${opt}</div>
-                <div class="result-choices">
-                    <span class="result-badge ${p1}">P1: ${p1.toUpperCase()}</span>
-                    <span class="result-badge ${p2}">P2: ${p2.toUpperCase()}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    if(allMatch)matches++;
-    document.getElementById('matchIndicator').textContent=allMatch?'Perfect match! 💕':'Different choices!';
-    document.getElementById('matchIndicator').className='match-indicator'+(allMatch?' match':'');
-    
-    showPhase('resultPhase');
-}
-
-function nextRound(){
-    round++;
-    startRound();
-}
-
-function endGame(){
-    document.getElementById('endSub').textContent=`You agreed on ${matches}/${totalRounds} rounds!`;
-    showPhase('endPhase');
-}
-
-function resetGame(){
-    category='';
-    round=0;
-    matches=0;
-    showPhase('categoryPhase');
-}
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={mode:null,couch:false,code:null,name:null,pack:null,items:[],round:0,total:0,players:['Player 1','Player 2'],currentPlayer:0,choices:{0:{},1:{}},currentOptions:[],matches:0};
+const PACKS=[{id:'celebrities',name:'Celebrities',icon:'⭐'},{id:'fictional',name:'Fictional',icon:'🎬'},{id:'fast_food',name:'Fast Food',icon:'🍔'}];
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online'){sk.connect();show('phLobby');}else showPacks();}
+function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
+function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=kmk&pack=${G.pack}&intensity=clean`);const data=await res.json();G.items=data.items||[];G.total=Math.floor(G.items.length/3);if(G.total<1){err('settingsErr','Not enough items');return;}G.round=0;G.matches=0;startRound();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code});}}
+function startRound(){if(G.round>=G.total){endGame();return;}const base=G.round*3;G.currentOptions=[G.items[base],G.items[base+1],G.items[base+2]];G.choices={0:{},1:{}};G.currentPlayer=0;document.getElementById('qCounter').textContent='Round '+(G.round+1)+' of '+G.total;document.getElementById('matchCount').textContent=G.matches;renderTurn();show('phGame');}
+function renderTurn(){const badge=document.getElementById('turnBadge');badge.textContent=G.players[G.currentPlayer];badge.className='turn-badge p'+(G.currentPlayer+1);renderOptions();document.getElementById('lockBtn').disabled=true;}
+function renderOptions(){const list=document.getElementById('optionsList');list.innerHTML=G.currentOptions.map((opt,i)=>`<div class="option-row" data-idx="${i}"><div class="option-name">${esc(opt)}</div><div class="choice-btns"><button class="choice-btn kiss${G.choices[G.currentPlayer][i]==='kiss'?' sel':''}" onclick="choose(${i},'kiss')">💋</button><button class="choice-btn marry${G.choices[G.currentPlayer][i]==='marry'?' sel':''}" onclick="choose(${i},'marry')">💍</button><button class="choice-btn kill${G.choices[G.currentPlayer][i]==='kill'?' sel':''}" onclick="choose(${i},'kill')">💀</button></div></div>`).join('');}
+function choose(idx,type){const pc=G.choices[G.currentPlayer];for(let i=0;i<3;i++){if(pc[i]===type)delete pc[i];}pc[idx]=type;renderOptions();const has=t=>Object.values(pc).includes(t);document.getElementById('lockBtn').disabled=!(has('kiss')&&has('marry')&&has('kill'));}
+function lockIn(){if(G.couch){if(G.currentPlayer===0){G.currentPlayer=1;showCover(G.players[1]+"'S TURN","Don't peek at their choices!");}else{showResult();}}else{sk.emit('act-submit',{code:G.code,choices:G.choices[0]});}}
+function showCover(title,sub){document.getElementById('coverTitle').textContent=title;document.getElementById('coverSub').textContent=sub;document.getElementById('coverScreen').style.display='flex';}
+function dismissCover(){document.getElementById('coverScreen').style.display='none';renderTurn();show('phGame');}
+function showResult(){const list=document.getElementById('resultList');let allMatch=true;list.innerHTML=G.currentOptions.map((opt,i)=>{const p1c=G.choices[0][i]||'';const p2c=G.choices[1][i]||'';if(p1c!==p2c)allMatch=false;return`<div class="result-row"><div class="result-name">${esc(opt)}</div><div class="result-badges"><span class="r-badge ${p1c}">${esc(G.players[0])}: ${p1c.toUpperCase()}</span><span class="r-badge ${p2c}">${esc(G.players[1])}: ${p2c.toUpperCase()}</span></div></div>`;}).join('');if(allMatch)G.matches++;const msg=document.getElementById('matchMsg');msg.textContent=allMatch?'Perfect match! You think alike!':'Different choices — time to debate!';msg.className='match-msg '+(allMatch?'yes':'no');show('phResult');}
+function nextRound(){G.round++;startRound();}
+function endGame(){document.getElementById('endSub').textContent='You matched on '+G.matches+' of '+G.total+' rounds!';show('phEnd');}
+function backToPacks(){G.round=0;G.items=[];G.pack=null;G.matches=0;showPacks();}
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.emit('act-create',{playerName:n,game:'kmk'});showPacks();}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.emit('act-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+sk.on('act-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('act-joined',d=>{G.code=d.code;G.players=d.players||[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('act-player-joined',d=>{G.players=d.players;renderPlayers();});
+sk.on('act-round',d=>{G.round=d.index||0;G.total=d.total||10;G.currentOptions=d.options||[];G.players=d.players||G.players;G.choices={0:{},1:{}};G.currentPlayer=0;document.getElementById('qCounter').textContent='Round '+(G.round+1)+' of '+G.total;renderTurn();show('phGame');});
+sk.on('act-reveal',d=>{G.choices={0:d.choices1||{},1:d.choices2||{}};showResult();});
+sk.on('act-end',d=>{G.matches=d.matches||G.matches;endGame();});
+sk.on('act-error',d=>err('lobbyErr',d.message));
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
 <script src="/header.js"></script>
-<script src="/js/engagement.js" defer></script>
 </body>
 </html>

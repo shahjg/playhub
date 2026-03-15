@@ -2,248 +2,151 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Story Builder – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Story Builder - create wild stories together!">
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Story Builder – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
-            --p1:#f472b6;--p2:#60a5fa;
-            --text-dark:#1a1a2e;--text-muted:#6b7280;
-        }
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#d4944a;--warm2:#b07830;--warmL:#f0d8b8;--warmLL:#fef6e8;--rose:#d4a060;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
-        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
-
-        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
-
-        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
-        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
-        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
-        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
-        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
-        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
-
-        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
-        .game-container{width:100%;max-width:500px;display:flex;flex-direction:column;gap:16px}
-
-        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:24px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
-
-        .phase{display:none}
-        .phase.active{display:block}
-
-        .phase-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;text-align:center;margin-bottom:20px;color:var(--accent-dark)}
-
-        .progress-bar{height:6px;background:#eee;border-radius:3px;margin-bottom:16px;overflow:hidden}
-        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width 0.3s}
-        .progress-text{text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:20px}
-
-        .turn-card{text-align:center}
-        .turn-label{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;margin-bottom:12px}
-        .turn-label.p1{color:var(--p1)}
-        .turn-label.p2{color:var(--p2)}
-        .prompt-text{font-size:1rem;color:var(--text-muted);margin-bottom:20px;font-style:italic}
-
-        .story-display{background:#fdf2f8;border:2px solid #fce7f3;border-radius:14px;padding:16px;margin-bottom:20px;max-height:200px;overflow-y:auto}
-        .story-text{font-size:0.95rem;line-height:1.7;color:var(--text-dark)}
-        .story-text span.p1{color:var(--p1);font-weight:600}
-        .story-text span.p2{color:var(--p2);font-weight:600}
-
-        .input-area{margin-bottom:16px}
-        .story-input{width:100%;padding:14px;border:2px solid #eee;border-radius:12px;font-size:1rem;font-family:'Inter',sans-serif;resize:none;height:80px}
-        .story-input:focus{outline:none;border-color:var(--accent)}
-        .char-count{text-align:right;font-size:0.75rem;color:var(--text-muted);margin-top:4px}
-
-        .end-card{text-align:center;padding:20px}
-        .end-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:16px;color:var(--accent-dark)}
-        .final-story{background:#fdf2f8;border:2px solid var(--accent);border-radius:14px;padding:20px;margin-bottom:20px;max-height:300px;overflow-y:auto;text-align:left}
-        .final-story p{font-size:0.95rem;line-height:1.8}
-
-        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
-        .btn-primary:hover{transform:translateY(-2px)}
-        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-
-        .actions{display:flex;gap:10px;justify-content:center}
-        .start-options{display:flex;flex-direction:column;gap:12px}
-        .start-btn{padding:16px;border-radius:14px;border:2px solid #fce7f3;background:#fdf2f8;cursor:pointer;transition:all 0.2s;text-align:left}
-        .start-btn:hover{border-color:var(--accent);transform:translateY(-2px)}
-        .start-btn h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;margin-bottom:4px}
-        .start-btn p{font-size:0.8rem;color:var(--text-muted)}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,148,74,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(212,148,74,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
+        .pack-grid::-webkit-scrollbar{width:3px}.pack-grid::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(212,148,74,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
+        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:420px;margin-bottom:12px}
+        .back-to-packs{font-size:.7rem;font-weight:700;color:var(--dim);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}.back-to-packs:hover{color:var(--warm)}
+        .q-counter{font-size:.75rem;font-weight:700;color:var(--dim);letter-spacing:1px}
+        .timer-display{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--warm);text-align:center;margin-bottom:8px;letter-spacing:4px}
+        .timer-display.danger{color:var(--red);animation:tmrPulse .5s ease infinite}
+        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        .turn-badge{display:inline-block;padding:6px 18px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:12px}
+        .turn-badge.p1{background:var(--warmLL);color:var(--warm2);border:1px solid var(--warm)}
+        .turn-badge.p2{background:#e8f0fe;color:#3060a0;border:1px solid #90b0d8}
+        .story-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:24px;margin-bottom:16px;max-height:200px;overflow-y:auto}
+        .story-card::-webkit-scrollbar{width:3px}.story-card::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .story-line{font-size:.9rem;line-height:1.6;margin-bottom:4px}
+        .story-line .author{font-size:.65rem;font-weight:700;letter-spacing:1px;margin-right:4px}
+        .story-line .author.p1{color:var(--warm)}
+        .story-line .author.p2{color:#3060a0}
+        .story-line .author.prompt{color:var(--dim)}
+        .input-area{width:100%;max-width:420px;margin-bottom:12px}
+        .story-input{width:100%;padding:14px 18px;font-size:.95rem;font-family:'Inter',sans-serif;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);outline:none;transition:.3s;resize:none;height:80px;box-shadow:var(--shadow)}.story-input:focus{border-color:var(--warm)}
+        .story-input::placeholder{color:#c4b0a5}
+        .char-info{display:flex;justify-content:space-between;margin-top:4px;font-size:.7rem;color:var(--dim)}
+        .game-btns{display:flex;gap:10px;width:100%;max-width:420px}
+        .btn-wild{background:var(--gold);color:#fff;box-shadow:0 4px 16px rgba(232,168,56,0.25);flex:0 0 auto;padding:14px 18px}
+        .btn-submit{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(212,148,74,0.25)}
+        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+        .cover-screen h2{font-size:2rem;letter-spacing:4px;color:var(--warm2);margin-bottom:8px}
+        .cover-screen p{color:var(--dim);font-size:.85rem;margin-bottom:24px}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:420px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .final-story{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;max-height:300px;overflow-y:auto;text-align:left}
+        .final-story::-webkit-scrollbar{width:3px}.final-story::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .final-line{font-size:.9rem;line-height:1.7;margin-bottom:6px}
+        .final-line .fname{font-weight:700;font-size:.7rem;letter-spacing:1px}
+        .final-line .fname.p1{color:var(--warm)}
+        .final-line .fname.p2{color:#3060a0}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .btn-copy{background:var(--card);border:2px solid var(--border)!important;color:var(--text)}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+        @keyframes revealLine{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .reveal-anim{animation:revealLine .4s ease-out}
     </style>
 </head>
 <body>
-    <div id="site-header"></div>
-    <main>
-        <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">📖</div>
-                <h1 class="hero-title">STORY BUILDER</h1>
-                <p class="hero-sub">Create wild stories together!</p>
-            </div>
-        </section>
-
-        <div class="game-wrapper">
-            <div class="game-container">
-                <div class="game-board">
-                    <div class="phase active" id="startPhase">
-                        <div class="phase-title">CHOOSE A STARTER</div>
-                        <div class="start-options">
-                            <div class="start-btn" onclick="startStory('Once upon a time, in a land far away,')">
-                                <h3>🏰 Fantasy</h3>
-                                <p>Once upon a time, in a land far away...</p>
-                            </div>
-                            <div class="start-btn" onclick="startStory('It was a dark and stormy night when')">
-                                <h3>🌙 Mystery</h3>
-                                <p>It was a dark and stormy night when...</p>
-                            </div>
-                            <div class="start-btn" onclick="startStory('The year is 3000, and humanity has')">
-                                <h3>🚀 Sci-Fi</h3>
-                                <p>The year is 3000, and humanity has...</p>
-                            </div>
-                            <div class="start-btn" onclick="startStory('Two best friends decided to')">
-                                <h3>👯 Adventure</h3>
-                                <p>Two best friends decided to...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="playPhase">
-                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-                        <div class="progress-text">Round <span id="currentNum">1</span> of 8</div>
-                        
-                        <div class="turn-card">
-                            <div class="turn-label p1" id="turnLabel">PLAYER 1'S TURN</div>
-                            <div class="prompt-text">Add to the story (1-3 sentences)</div>
-                            
-                            <div class="story-display">
-                                <div class="story-text" id="storyText"></div>
-                            </div>
-                            
-                            <div class="input-area">
-                                <textarea class="story-input" id="storyInput" placeholder="Continue the story..." maxlength="200"></textarea>
-                                <div class="char-count"><span id="charCount">0</span>/200</div>
-                            </div>
-                            
-                            <div class="actions">
-                                <button class="btn btn-primary" id="submitBtn" onclick="submitPart()" disabled>Add to Story</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="phase" id="endPhase">
-                        <div class="end-card">
-                            <div class="end-title">YOUR STORY IS COMPLETE!</div>
-                            <div class="final-story">
-                                <p id="finalStory"></p>
-                            </div>
-                            <div class="actions">
-                                <button class="btn btn-primary" onclick="resetGame()">New Story</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">STORY BUILDER</span><div class="hdr-right"></div></nav></header>
+<main>
+<div class="phase on" id="phMode"><div class="mode-icon">📖</div><h1 class="mode-title">STORY BUILDER</h1><p class="mode-sub">Build wild stories together, one sentence at a time!</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Pass the phone — take turns writing</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Play on separate devices</div></div></div></div>
+<div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
+<div class="phase" id="phPacks"><h2 class="pack-title">PICK A GENRE</h2><p class="pack-sub">What kind of story are you telling?</p><div class="pack-grid" id="packGrid"></div></div>
+<div class="phase" id="phSettings"><h2 class="setup-title">GAME SETTINGS</h2><p class="setup-sub">Each player gets 45 seconds per sentence</p><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
+<div class="phase" id="phGame"><div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">Sentence 1 of 10</span></div><div style="text-align:center"><span class="turn-badge p1" id="turnBadge">PLAYER 1'S TURN</span></div><div class="timer-display" id="timerDisplay">45</div><div class="story-card" id="storyCard"></div><div class="input-area"><textarea class="story-input" id="storyInput" placeholder="Add your sentence..." maxlength="200"></textarea><div class="char-info"><span id="charCount">0/200</span><span>One sentence!</span></div></div><div class="game-btns"><button class="btn btn-wild" onclick="wildCard()">🌀 WILD</button><button class="btn btn-submit" onclick="submitSentence()" id="submitBtn" disabled>ADD SENTENCE</button></div></div>
+<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">📖</div><h2 class="end-title">YOUR STORY</h2><p class="end-sub" id="endSub">A masterpiece by two brilliant minds</p><div class="final-story" id="finalStory"></div><div class="end-btns"><button class="btn btn-copy" onclick="copyStory()">COPY STORY</button><button class="btn btn-primary" onclick="shareStory()">SHARE</button></div><div style="height:10px"></div><div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">NEW STORY</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+<div class="cover-screen" id="coverScreen" style="display:none"><h2 id="coverTitle">PASS THE PHONE</h2><p id="coverSub">Hand it to the next player</p><button class="btn btn-primary" onclick="dismissCover()" style="width:200px">I'M READY</button></div>
+</main>
 <script>
-const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-
-let story=[];
-let current=1;
-let round=0;
-const totalRounds=8;
-
-function showPhase(id){
-    document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
-function startStory(starter){
-    story=[{player:0,text:starter}];
-    current=1;
-    round=0;
-    renderStory();
-    updateTurn();
-    updateProgress();
-    showPhase('playPhase');
-}
-
-function renderStory(){
-    const el=document.getElementById('storyText');
-    el.innerHTML=story.map(s=>{
-        if(s.player===0)return s.text;
-        return `<span class="p${s.player}">${s.text}</span>`;
-    }).join(' ');
-    el.scrollTop=el.scrollHeight;
-}
-
-function updateTurn(){
-    const label=document.getElementById('turnLabel');
-    label.textContent=`PLAYER ${current}'S TURN`;
-    label.className=`turn-label p${current}`;
-}
-
-function updateProgress(){
-    const pct=(round/totalRounds)*100;
-    document.getElementById('progressFill').style.width=pct+'%';
-    document.getElementById('currentNum').textContent=round+1;
-}
-
-function submitPart(){
-    const input=document.getElementById('storyInput');
-    const text=input.value.trim();
-    if(!text)return;
-    
-    story.push({player:current,text});
-    input.value='';
-    document.getElementById('charCount').textContent='0';
-    document.getElementById('submitBtn').disabled=true;
-    
-    round++;
-    if(round>=totalRounds){
-        endStory();
-        return;
-    }
-    
-    current=current===1?2:1;
-    renderStory();
-    updateTurn();
-    updateProgress();
-}
-
-function endStory(){
-    const finalText=story.map(s=>s.text).join(' ');
-    document.getElementById('finalStory').textContent=finalText;
-    showPhase('endPhase');
-}
-
-function resetGame(){
-    story=[];
-    current=1;
-    round=0;
-    showPhase('startPhase');
-}
-
-document.getElementById('storyInput').addEventListener('input',function(){
-    const len=this.value.length;
-    document.getElementById('charCount').textContent=len;
-    document.getElementById('submitBtn').disabled=len===0;
-});
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={mode:null,couch:false,code:null,name:null,pack:null,items:[],idx:0,total:10,story:[],players:['Player 1','Player 2'],currentPlayer:0,ti:null,timeLeft:45,wildUsed:false};
+const PACKS=[{id:'romance',name:'Romance',icon:'💕'},{id:'horror',name:'Horror',icon:'👻'},{id:'comedy',name:'Comedy',icon:'😂'},{id:'scifi',name:'Sci-Fi',icon:'🚀'},{id:'mystery',name:'Mystery',icon:'🔍'},{id:'absurd',name:'Absurd',icon:'🤪'}];
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online'){sk.connect();show('phLobby');}else showPacks();}
+function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
+function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=story-builder&pack=${G.pack}&intensity=clean`);const data=await res.json();G.items=data.items||[];G.total=Math.min(G.items.length,10);G.idx=0;G.story=[];G.currentPlayer=0;G.wildUsed=false;if(!G.items.length){err('settingsErr','No prompts found');return;}startTurn();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code});}}
+function startTurn(){if(G.idx>=G.total){endGame();return;}document.getElementById('qCounter').textContent='Sentence '+(G.idx+1)+' of '+G.total;const pName=G.players[G.currentPlayer];const badge=document.getElementById('turnBadge');badge.textContent=pName+"'S TURN";badge.className='turn-badge p'+(G.currentPlayer+1);renderStoryCard();document.getElementById('storyInput').value='';document.getElementById('charCount').textContent='0/200';document.getElementById('submitBtn').disabled=true;G.timeLeft=45;document.getElementById('timerDisplay').textContent='45';document.getElementById('timerDisplay').classList.remove('danger');if(G.ti)clearInterval(G.ti);G.ti=setInterval(()=>{G.timeLeft--;document.getElementById('timerDisplay').textContent=Math.max(0,G.timeLeft);if(G.timeLeft<=10)document.getElementById('timerDisplay').classList.add('danger');if(G.timeLeft<=0){clearInterval(G.ti);autoSubmit();}},1000);show('phGame');}
+function renderStoryCard(){const card=document.getElementById('storyCard');if(G.story.length===0&&G.items[0]){card.innerHTML='<div class="story-line"><span class="author prompt">PROMPT:</span> '+esc(G.items[G.idx])+'</div>';}else{let html='';if(G.items[0])html+='<div class="story-line"><span class="author prompt">PROMPT:</span> '+esc(G.items[0])+'</div>';G.story.forEach((s,i)=>{html+='<div class="story-line'+(i===G.story.length-1?' reveal-anim':'')+'"><span class="author p'+(s.pi+1)+'">'+esc(s.name)+':</span> '+esc(s.text)+'</div>';});card.innerHTML=html;}card.scrollTop=card.scrollHeight;}
+function autoSubmit(){const input=document.getElementById('storyInput');const text=input.value.trim();if(text){doSubmit(text);}else{doSubmit('...');}}
+function submitSentence(){const text=document.getElementById('storyInput').value.trim();if(!text)return;if(G.ti)clearInterval(G.ti);doSubmit(text);}
+function doSubmit(text){G.story.push({name:G.players[G.currentPlayer],pi:G.currentPlayer,text:text});G.idx++;G.currentPlayer=G.currentPlayer===0?1:0;if(G.idx>=G.total){endGame();return;}if(G.couch){showCover(G.players[G.currentPlayer]+"'S TURN","Pass the phone — don't peek!");}else{startTurn();}}
+function showCover(title,sub){document.getElementById('coverTitle').textContent=title;document.getElementById('coverSub').textContent=sub;document.getElementById('coverScreen').style.display='flex';}
+function dismissCover(){document.getElementById('coverScreen').style.display='none';startTurn();}
+async function wildCard(){if(G.wildUsed)return;G.wildUsed=true;try{const res=await fetch(`${BK}/api/story-wildcards`);const data=await res.json();const twist=data.wildcard||data.item||'Suddenly, a portal opens and everything changes!';const input=document.getElementById('storyInput');input.value=twist;input.dispatchEvent(new Event('input'));}catch(e){const twists=['Suddenly, aliens landed in the middle of the scene!','Out of nowhere, a talking cat appeared with a warning!','The ground shook and everything turned upside down!','A mysterious stranger walked in and changed everything!'];const input=document.getElementById('storyInput');input.value=twists[Math.floor(Math.random()*twists.length)];input.dispatchEvent(new Event('input'));}}
+function endGame(){if(G.ti)clearInterval(G.ti);const names=[...new Set(G.story.map(s=>s.name))];document.getElementById('endSub').textContent='A masterpiece by '+names.join(' & ');let html='';if(G.items[0])html+='<div class="final-line"><em>'+esc(G.items[0])+'</em></div>';G.story.forEach(s=>{html+='<div class="final-line"><span class="fname p'+(s.pi+1)+'">'+esc(s.name)+':</span> '+esc(s.text)+'</div>';});document.getElementById('finalStory').innerHTML=html;show('phEnd');}
+function copyStory(){let text='';if(G.items[0])text+=G.items[0]+'\n';G.story.forEach(s=>{text+=s.name+': '+s.text+'\n';});navigator.clipboard.writeText(text).then(()=>{const btn=document.querySelector('.btn-copy');btn.textContent='COPIED!';setTimeout(()=>btn.textContent='COPY STORY',2000);});}
+function shareStory(){let text='Our Story Builder creation!\n\n';if(G.items[0])text+=G.items[0]+'\n';G.story.forEach(s=>{text+=s.name+': '+s.text+'\n';});text+='\nMade on TheGaming.co';if(navigator.share){navigator.share({title:'Our Story',text:text});}else{copyStory();}}
+function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.story=[];G.pack=null;G.wildUsed=false;showPacks();}
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.emit('act-create',{playerName:n,game:'story-builder'});showPacks();}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.emit('act-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+sk.on('act-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('act-joined',d=>{G.code=d.code;G.players=d.players||[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('act-player-joined',d=>{G.players=d.players;renderPlayers();});
+sk.on('act-round',d=>{G.idx=d.index||0;G.total=d.total||10;G.players=d.players||G.players;G.items=d.items||G.items;if(d.item&&!G.items[0])G.items[0]=d.item;startTurn();});
+sk.on('act-reveal',d=>{if(d.story)G.story=d.story;if(d.sentence)G.story.push(d.sentence);renderStoryCard();});
+sk.on('act-end',d=>{if(d.story)G.story=d.story;endGame();});
+sk.on('act-error',d=>err('lobbyErr',d.message));
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+document.getElementById('storyInput').addEventListener('input',function(){const len=this.value.length;document.getElementById('charCount').textContent=len+'/200';document.getElementById('submitBtn').disabled=len===0;});
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
 <script src="/header.js"></script>
-<script src="/js/engagement.js" defer></script>
 </body>
 </html>

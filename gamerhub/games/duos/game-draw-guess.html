@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Draw & Guess – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#886098;--warm2:#6a4878;--warmL:#c8b0d8;--warmLL:#f8f0ff;--rose:#a078b0;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(136,96,152,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(136,96,152,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
+        .pack-grid::-webkit-scrollbar{width:3px}.pack-grid::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(136,96,152,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
+        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:420px;margin-bottom:8px}
+        .back-to-packs{font-size:.7rem;font-weight:700;color:var(--dim);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}.back-to-packs:hover{color:var(--warm)}
+        .q-counter{font-size:.75rem;font-weight:700;color:var(--dim);letter-spacing:1px}
+        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:8px}
+        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
+        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
+        .timer-display{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--warm);text-align:center;margin-bottom:8px;letter-spacing:4px}
+        .timer-display.danger{color:var(--red);animation:tmrPulse .5s ease infinite}
+        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        .word-card{width:100%;max-width:420px;background:var(--card);border-radius:18px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:16px;text-align:center;margin-bottom:10px}
+        .word-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,5vw,2rem);letter-spacing:3px;color:var(--warm2);line-height:1.2}
+        .word-sub{font-size:.72rem;color:var(--dim);margin-top:4px;letter-spacing:1px}
+        .canvas-wrap{width:100%;max-width:420px;aspect-ratio:4/3;background:var(--card);border-radius:18px;border:2px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;position:relative;margin-bottom:8px;touch-action:none}
+        canvas{width:100%;height:100%;display:block;cursor:crosshair}
+        .draw-tools{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;max-width:420px;margin-bottom:10px}
+        .color-btn{width:32px;height:32px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:.2s;box-shadow:var(--shadow)}.color-btn.sel{border-color:var(--warm);transform:scale(1.15)}
+        .size-btn{border-radius:10px;border:2px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;width:36px;height:36px;transition:.2s}.size-btn.sel{border-color:var(--warm);background:var(--warmLL)}
+        .size-dot{border-radius:50%;background:var(--text)}
+        .clear-btn{padding:8px 14px;border-radius:10px;border:2px solid var(--red);background:var(--card);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:1px;cursor:pointer;transition:.2s}.clear-btn:hover{background:#ffeaea}
+        .guess-section{width:100%;max-width:420px}
+        .guess-row{display:flex;gap:8px;margin-bottom:8px}
+        .guess-input{flex:1;padding:12px 16px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);outline:none;transition:.3s}.guess-input:focus{border-color:var(--warm)}
+        .guess-input::placeholder{color:#c4b0a5}
+        .guess-log{max-height:120px;overflow-y:auto;width:100%;padding:4px 0}
+        .guess-log::-webkit-scrollbar{width:3px}.guess-log::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .guess-item{padding:6px 12px;border-radius:8px;margin-bottom:4px;font-size:.82rem;background:var(--bg2);border:1px solid var(--border)}
+        .guess-item.correct{background:#e8f5e9;border-color:var(--green);color:var(--green);font-weight:700}
+        .role-badge{display:inline-block;padding:4px 12px;border-radius:8px;font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+        .role-drawer{background:var(--warmLL);color:var(--warm);border:1px solid var(--warm)}
+        .role-guesser{background:#e8f5e9;color:var(--green);border:1px solid var(--green)}
+        .correct-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(76,175,80,0.9);z-index:10;animation:fadeUp .3s ease-out}
+        .correct-banner span{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#fff;letter-spacing:4px}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-scores{margin-bottom:20px}
+        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--warm);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;cursor:pointer}
+        .cover-screen h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;margin-bottom:8px}
+        .cover-screen p{font-size:.85rem;opacity:.8}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">DRAW & GUESS</span><div class="hdr-right"></div></nav></header>
+<main>
+<div class="phase on" id="phMode"><div class="mode-icon">🎨</div><h1 class="mode-title">DRAW & GUESS</h1><p class="mode-sub">One draws, one guesses — can you read their art?</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Drawer faces away, guesser watches and types</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Draw and guess on separate devices</div></div></div></div>
+<div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
+<div class="phase" id="phPacks"><h2 class="pack-title">PICK A CATEGORY</h2><p class="pack-sub">What are you drawing?</p><div class="pack-grid" id="packGrid"></div></div>
+<div class="phase" id="phSettings"><h2 class="setup-title">GAME SETTINGS</h2><p class="setup-sub">Get ready to draw</p><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
+<div class="phase" id="phGame">
+    <div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">1 of 10</span></div>
+    <div class="score-bar" id="scoreBar"></div>
+    <div class="timer-display" id="timerDisplay">60</div>
+    <div id="roleBadge"></div>
+    <div class="word-card" id="wordCard"><div class="word-text" id="wordText">WORD</div><div class="word-sub" id="wordSub">Draw this!</div></div>
+    <div class="canvas-wrap" id="canvasWrap"><canvas id="drawCanvas"></canvas></div>
+    <div class="draw-tools" id="drawTools">
+        <button class="color-btn sel" data-c="#3e2c23" style="background:#3e2c23" onclick="pickColor(this)"></button>
+        <button class="color-btn" data-c="#e05050" style="background:#e05050" onclick="pickColor(this)"></button>
+        <button class="color-btn" data-c="#4caf50" style="background:#4caf50" onclick="pickColor(this)"></button>
+        <button class="color-btn" data-c="#2196f3" style="background:#2196f3" onclick="pickColor(this)"></button>
+        <button class="color-btn" data-c="#e8a838" style="background:#e8a838" onclick="pickColor(this)"></button>
+        <button class="color-btn" data-c="#886098" style="background:#886098" onclick="pickColor(this)"></button>
+        <div style="width:8px"></div>
+        <button class="size-btn sel" data-s="3" onclick="pickSize(this)"><div class="size-dot" style="width:4px;height:4px"></div></button>
+        <button class="size-btn" data-s="8" onclick="pickSize(this)"><div class="size-dot" style="width:8px;height:8px"></div></button>
+        <button class="size-btn" data-s="16" onclick="pickSize(this)"><div class="size-dot" style="width:14px;height:14px"></div></button>
+        <div style="width:8px"></div>
+        <button class="clear-btn" onclick="clearCanvas()">CLEAR</button>
+    </div>
+    <div class="guess-section" id="guessSection">
+        <div class="guess-row"><input class="guess-input" id="guessInput" placeholder="Type your guess..." maxlength="60" autocomplete="off"><button class="btn btn-primary" onclick="submitGuess()" style="flex:0 0 80px;padding:12px">GUESS</button></div>
+        <div class="guess-log" id="guessLog"></div>
+    </div>
+    <div class="error-msg" id="gameErr"></div>
+</div>
+<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">🎨</div><h2 class="end-title">GAME OVER!</h2><p class="end-sub" id="endSub"></p><div class="end-scores" id="endScores"></div><div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">CHANGE PACK</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+</main>
+<div class="cover-screen" id="coverScreen" style="display:none" onclick="dismissCover()"><h2 id="coverTitle">PASS THE PHONE</h2><p id="coverSub">Tap to continue</p></div>
+<script>
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={mode:null,couch:false,code:null,name:null,pack:null,items:[],idx:0,total:0,scores:{},players:[],ti:null,timeLeft:60,drawer:0,isDrawer:false,drawColor:'#3e2c23',drawSize:3,guesses:[]};
+const PACKS=[{id:'movies',name:'Movies',icon:'🎬'},{id:'tv_shows',name:'TV Shows',icon:'📺'},{id:'animals',name:'Animals',icon:'🐾'},{id:'celebrities',name:'Celebrities',icon:'⭐'},{id:'video_games',name:'Video Games',icon:'🎮'},{id:'sports',name:'Sports',icon:'⚽'},{id:'food',name:'Food',icon:'🍕'},{id:'actions',name:'Actions',icon:'🏃'},{id:'tiktok_trends',name:'TikTok',icon:'📱'},{id:'disney',name:'Disney',icon:'🏰'},{id:'pop_culture',name:'Pop Culture',icon:'🔥'},{id:'south_asian',name:'South Asian',icon:'🇵🇰'},{id:'anime',name:'Anime',icon:'⚡'}];
+
+// Canvas state
+let cvs,ctx,drawing=false,lastX=0,lastY=0,drawBuffer=[];
+
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online')show('phLobby');else showPacks();}
+function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
+function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+
+function initCanvas(){
+    cvs=document.getElementById('drawCanvas');
+    const wrap=document.getElementById('canvasWrap');
+    const rect=wrap.getBoundingClientRect();
+    cvs.width=rect.width*2;cvs.height=rect.height*2;
+    ctx=cvs.getContext('2d');
+    ctx.scale(2,2);
+    ctx.lineCap='round';ctx.lineJoin='round';
+    // Touch events
+    cvs.addEventListener('pointerdown',onDown,{passive:false});
+    cvs.addEventListener('pointermove',onMove,{passive:false});
+    cvs.addEventListener('pointerup',onUp);
+    cvs.addEventListener('pointerleave',onUp);
+    cvs.addEventListener('pointercancel',onUp);
+}
+
+function getPos(e){
+    const rect=cvs.getBoundingClientRect();
+    return{x:(e.clientX-rect.left),y:(e.clientY-rect.top)};
+}
+
+function onDown(e){
+    if(!G.isDrawer)return;
+    e.preventDefault();
+    cvs.setPointerCapture(e.pointerId);
+    drawing=true;
+    const p=getPos(e);
+    lastX=p.x;lastY=p.y;
+    ctx.beginPath();ctx.moveTo(p.x,p.y);
+    drawBuffer=[];
+    drawBuffer.push({x:p.x,y:p.y,c:G.drawColor,s:G.drawSize,n:true});
+}
+
+function onMove(e){
+    if(!drawing||!G.isDrawer)return;
+    e.preventDefault();
+    const p=getPos(e);
+    ctx.strokeStyle=G.drawColor;
+    ctx.lineWidth=G.drawSize;
+    ctx.beginPath();
+    ctx.moveTo(lastX,lastY);
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+    lastX=p.x;lastY=p.y;
+    drawBuffer.push({x:p.x,y:p.y,c:G.drawColor,s:G.drawSize});
+    // Batch send drawing data online
+    if(!G.couch&&drawBuffer.length>=5){flushDraw();}
+}
+
+function onUp(e){
+    if(!drawing)return;
+    drawing=false;
+    if(!G.couch)flushDraw();
+}
+
+function flushDraw(){
+    if(!drawBuffer.length)return;
+    sk.emit('act-draw',{code:G.code,strokes:drawBuffer});
+    drawBuffer=[];
+}
+
+function drawRemote(strokes){
+    if(!ctx)return;
+    strokes.forEach(s=>{
+        ctx.strokeStyle=s.c;ctx.lineWidth=s.s;
+        if(s.n){ctx.beginPath();ctx.moveTo(s.x,s.y);}
+        else{ctx.lineTo(s.x,s.y);ctx.stroke();}
+    });
+}
+
+function pickColor(el){document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.drawColor=el.dataset.c;}
+function pickSize(el){document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.drawSize=parseInt(el.dataset.s);}
+
+function clearCanvas(){
+    if(!ctx)return;
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    if(!G.couch)sk.emit('act-draw',{code:G.code,clear:true});
+}
+
+async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=draw-guess&pack=${G.pack}&intensity=clean`);const data=await res.json();G.items=data.items;G.total=G.items.length;G.idx=0;G.drawer=0;G.scores={'Player 1':0,'Player 2':0};G.players=['Player 1','Player 2'];if(!G.items.length){err('settingsErr','No words found');return;}startRound();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code});}}
+
+function startRound(){
+    if(G.idx>=G.items.length){endGame();return;}
+    G.guesses=[];
+    const drawerIdx=G.drawer%2;
+    const drawerName=G.players[drawerIdx];
+    const guesserName=G.players[(drawerIdx+1)%2];
+
+    if(G.couch){
+        G.isDrawer=true; // in couch mode, device is always the drawer's view
+        document.getElementById('roleBadge').innerHTML=`<span class="role-badge role-drawer">DRAWER: ${esc(drawerName)}</span>`;
+        document.getElementById('wordText').textContent=G.items[G.idx];
+        document.getElementById('wordSub').textContent='Draw this — guesser watches!';
+        document.getElementById('wordCard').style.display='';
+        document.getElementById('drawTools').style.display='';
+        document.getElementById('guessSection').style.display='';
+        document.getElementById('canvasWrap').style.display='';
+    } else {
+        const amDrawer=(G.players[drawerIdx]===G.name);
+        G.isDrawer=amDrawer;
+        if(amDrawer){
+            document.getElementById('roleBadge').innerHTML='<span class="role-badge role-drawer">YOU ARE DRAWING</span>';
+            document.getElementById('wordText').textContent=G.items[G.idx];
+            document.getElementById('wordSub').textContent='Draw this!';
+            document.getElementById('wordCard').style.display='';
+            document.getElementById('drawTools').style.display='';
+            document.getElementById('guessSection').style.display='none';
+            document.getElementById('canvasWrap').style.display='';
+        } else {
+            document.getElementById('roleBadge').innerHTML='<span class="role-badge role-guesser">YOU ARE GUESSING</span>';
+            document.getElementById('wordText').textContent='???';
+            document.getElementById('wordSub').textContent='Watch the drawing and guess!';
+            document.getElementById('wordCard').style.display='';
+            document.getElementById('drawTools').style.display='none';
+            document.getElementById('guessSection').style.display='';
+            document.getElementById('canvasWrap').style.display='';
+        }
+    }
+
+    document.getElementById('qCounter').textContent=(G.idx+1)+' of '+G.total;
+    document.getElementById('guessLog').innerHTML='';
+    renderScores();
+
+    // Init canvas
+    show('phGame');
+    setTimeout(()=>{initCanvas();},50);
+
+    // Timer
+    G.timeLeft=60;
+    document.getElementById('timerDisplay').textContent=G.timeLeft;
+    document.getElementById('timerDisplay').classList.remove('danger');
+    if(G.ti)clearInterval(G.ti);
+    G.ti=setInterval(()=>{
+        G.timeLeft--;
+        document.getElementById('timerDisplay').textContent=Math.max(0,G.timeLeft);
+        if(G.timeLeft<=10)document.getElementById('timerDisplay').classList.add('danger');
+        if(G.timeLeft<=0){clearInterval(G.ti);roundTimeout();}
+    },1000);
+}
+
+function submitGuess(){
+    const input=document.getElementById('guessInput');
+    const guess=input.value.trim();
+    if(!guess)return;
+    input.value='';
+
+    if(G.couch){
+        const correct=guess.toLowerCase()===G.items[G.idx].toLowerCase();
+        addGuessToLog(guess,correct);
+        if(correct){
+            clearInterval(G.ti);
+            const drawerIdx=G.drawer%2;
+            G.scores[G.players[drawerIdx]]=(G.scores[G.players[drawerIdx]]||0)+1;
+            G.scores[G.players[(drawerIdx+1)%2]]=(G.scores[G.players[(drawerIdx+1)%2]]||0)+1;
+            renderScores();
+            showCorrectBanner(()=>{
+                G.drawer++;G.idx++;
+                if(G.idx<G.items.length)startRound();else endGame();
+            });
+        }
+    } else {
+        sk.emit('act-guess',{code:G.code,guess:guess});
+    }
+}
+
+function addGuessToLog(guess,correct){
+    const log=document.getElementById('guessLog');
+    const div=document.createElement('div');
+    div.className='guess-item'+(correct?' correct':'');
+    div.textContent=correct?guess+' - CORRECT!':guess;
+    log.prepend(div);
+}
+
+function showCorrectBanner(cb){
+    const wrap=document.getElementById('canvasWrap');
+    const banner=document.createElement('div');
+    banner.className='correct-banner';
+    banner.innerHTML='<span>CORRECT!</span>';
+    wrap.appendChild(banner);
+    setTimeout(()=>{banner.remove();cb();},1500);
+}
+
+function roundTimeout(){
+    if(G.couch){
+        G.drawer++;G.idx++;
+        if(G.idx<G.items.length){
+            showCover('TIME IS UP!','Tap for next round',()=>startRound());
+        }else endGame();
+    } else {
+        // server handles timeout
+    }
+}
+
+function renderScores(){document.getElementById('scoreBar').innerHTML=G.players.map(n=>`<div class="score-chip"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0}</div></div>`).join('');}
+
+function endGame(){
+    if(G.ti)clearInterval(G.ti);
+    const sorted=Object.entries(G.scores).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('endSub').textContent=sorted[0][1]===sorted[1]?.[1]?'It\'s a tie!':sorted[0][0]+' wins with '+sorted[0][1]+' points!';
+    document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s}</span></div>`).join('');
+    show('phEnd');
+}
+
+function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.items=[];G.pack=null;showPacks();}
+
+function showCover(title,sub,cb){const cs=document.getElementById('coverScreen');document.getElementById('coverTitle').textContent=title;document.getElementById('coverSub').textContent=sub;cs.style.display='flex';cs._cb=cb;}
+function dismissCover(){const cs=document.getElementById('coverScreen');cs.style.display='none';if(cs._cb)cs._cb();}
+
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('act-create',{game:'draw-guess',playerName:n});}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('act-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+
+sk.on('act-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('act-joined',d=>{G.code=d.code;G.players=d.players;G.scores=d.scores||{};document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('act-player-joined',d=>{G.players=d.players;renderPlayers();});
+sk.on('act-round',d=>{G.idx=d.index;G.total=d.total;G.scores=d.scores;G.players=d.players;G.drawer=d.drawer||0;if(d.item)G.items[G.idx]=d.item;startRound();});
+sk.on('act-draw',d=>{
+    if(d.clear){if(ctx)ctx.clearRect(0,0,cvs.width,cvs.height);return;}
+    if(d.strokes)drawRemote(d.strokes);
+});
+sk.on('act-guess',d=>{
+    addGuessToLog(d.guess,d.correct);
+    if(d.correct){
+        clearInterval(G.ti);
+        G.scores=d.scores||G.scores;
+        renderScores();
+        showCorrectBanner(()=>{});
+    }
+});
+sk.on('act-score-update',d=>{G.scores=d.scores;renderScores();});
+sk.on('act-end',d=>{G.scores=d.scores;endGame();});
+sk.on('act-error',d=>err('lobbyErr',d.message));
+
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
+document.getElementById('guessInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')submitGuess();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>
