@@ -116,12 +116,47 @@ function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector
 function rhymeCheck(a,b){
     a=a.toLowerCase().trim();b=b.toLowerCase().trim();
     if(a===b)return false;
-    if(a.length<2||b.length<2)return false;
-    const la=a.length,lb=b.length;
-    for(let len=Math.min(la,lb,4);len>=2;len--){
+    if(a.length<1||b.length<1)return false;
+    // 1. Direct spelling match (last 2-4 chars)
+    for(let len=Math.min(a.length,b.length,4);len>=2;len--){
         if(a.slice(-len)===b.slice(-len))return true;
     }
+    // 2. Phonetic rime matching — convert endings to phonetic keys
+    const rimeA=getRime(a),rimeB=getRime(b);
+    if(rimeA&&rimeB&&rimeA===rimeB)return true;
     return false;
+}
+function getRime(w){
+    // Map common English spelling patterns to phonetic rime units
+    const rules=[
+        // Long vowel patterns
+        [/(?:igh|ie|ye|y|uy)$/,'AY'],[/(?:igh|ie|ye|y|uy)t$/,'AYT'],[/(?:igh|ie|ye|y|uy)d$/,'AYD'],
+        [/(?:igh|ie|ye|y|uy)n$/,'AYN'],[/(?:igh|ie|ye|y|uy)m$/,'AYM'],[/(?:igh|ie|ye|y|uy)k$/,'AYK'],
+        [/(?:igh|ie|ye|y|uy)s$/,'AYS'],[/(?:igh|ie|ye|y|uy)z$/,'AYZ'],[/(?:igh|ie|ye|y|uy)l$/,'AYL'],
+        [/(?:igh|ie|ye|y|uy)r$/,'AYR'],[/(?:igh|ie|ye|y|uy)v$/,'AYV'],
+        [/(?:ay|ey|eigh|ai|a_e)$/,'AE'],[/(?:ee|ea|ie|ey|e)d$/,'EED'],[/(?:ee|ea|ie)$/,'EE'],
+        [/(?:oo|ew|ue|ou)$/,'OO'],[/(?:ow|ou)$/,'OW'],[/(?:ow|ou)n$/,'OWN'],
+        [/(?:oa|ow|o_e|oe)$/,'OH'],[/(?:oa|ow|o_e|oe)t$/,'OHT'],
+        // Short vowel + consonant
+        [/(?:at|at)$/,'AT'],[/(?:an|an)$/,'AN'],[/(?:am|am)$/,'AM'],
+        [/(?:in|in)$/,'IN'],[/(?:it|it)$/,'IT'],[/(?:ig|ig)$/,'IG'],
+        [/(?:ot|ot)$/,'OT'],[/(?:op|op)$/,'OP'],[/(?:og|og)$/,'OG'],
+        [/(?:ut|ut)$/,'UT'],[/(?:un|un)$/,'UN'],[/(?:ug|ug)$/,'UG'],
+        [/(?:ack|ak)$/,'AK'],[/(?:ick|ik)$/,'IK'],[/(?:ock|ok)$/,'OK'],
+        [/(?:uck|uk)$/,'UK'],[/(?:eck|ek)$/,'EK'],
+        // Common endings
+        [/(?:tion|sion)$/,'SHUN'],[/(?:ous|us)$/,'US'],[/(?:ful)$/,'FUL'],
+        [/(?:ness)$/,'NES'],[/(?:ment)$/,'MENT'],[/(?:ble)$/,'BUL'],
+        [/(?:dle)$/,'DUL'],[/(?:tle)$/,'TUL'],[/(?:ple)$/,'PUL'],
+        [/(?:ight|ite)$/,'AYT'],[/(?:ine|ign)$/,'AYN'],
+        [/(?:ound|owned)$/,'OWND'],[/(?:own|oun)$/,'OWN'],
+        [/(?:all|awl)$/,'AWL'],[/(?:aw|au)$/,'AW'],
+        [/(?:ear|eer|ere)$/,'EER'],[/(?:air|are|ear)$/,'AIR'],
+        [/(?:ore|oar|our)$/,'OR'],[/(?:ire|yre)$/,'AYR'],
+        [/(?:ure|oor)$/,'OOR'],
+    ];
+    for(const [rx,key] of rules){if(rx.test(w))return key;}
+    return null;
 }
 
 async function startGame(){

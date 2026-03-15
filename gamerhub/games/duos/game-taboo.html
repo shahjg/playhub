@@ -153,8 +153,7 @@ function startRound(){
         document.getElementById('wordSub').textContent='Describe without forbidden words!';
         document.getElementById('forbiddenList').innerHTML=forbidden.map(w=>`<span class="forbidden-word">${esc(w)}</span>`).join('');
         document.getElementById('wordCard').style.display='';
-        document.getElementById('guessArea').innerHTML=`<input class="guess-input" id="guessInput" placeholder="${esc(gues)} — type your guess..." autocomplete="off"><div class="game-btns"><button class="btn btn-skip" onclick="skipWord()">SKIP (-1)</button><button class="btn btn-correct" onclick="checkGuess()">SUBMIT GUESS</button></div>`;
-        document.getElementById('guessInput').addEventListener('keypress',e=>{if(e.key==='Enter')checkGuess();});
+        document.getElementById('guessArea').innerHTML=`<p style="color:var(--dim);font-size:.85rem;text-align:center;margin-bottom:12px">${esc(gues)} guesses out loud!</p><div class="game-btns"><button class="btn btn-skip" onclick="skipWord()">SKIP (-1)</button><button class="btn btn-correct" onclick="couchCorrect()">CORRECT! (+1)</button></div>`;
     }else if(isMyTurnToDescribe){
         badge.textContent='YOU DESCRIBE';badge.className='role-badge role-describer';
         document.getElementById('wordText').textContent=word.toUpperCase();
@@ -205,6 +204,13 @@ function checkGuess(){
     }else{
         inp.value='';err('gameErr','Wrong! Try again.');
     }
+}
+
+function couchCorrect(){
+    if(G.ti)clearInterval(G.ti);
+    const desc=getDescriber();
+    G.scores[desc]=(G.scores[desc]||0)+1;
+    showRoundResult('✅',getGuesser()+' got it! +1 for '+desc+'.');
 }
 
 function skipWord(){
