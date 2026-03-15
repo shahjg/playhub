@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dots & Boxes – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--accent:#688848;--accent2:#4a6830;--accentL:#c0d8a8;--accentLL:#eef6e4;--rose:#88a868;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1);--p1:#d08040;--p2:#4888a8}
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(104,136,72,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--accent)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--accent)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--accent2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--accent);background:var(--accentLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--accent2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--accent)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--accent);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(104,136,72,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--accent2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--accent);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--accent);color:var(--accent);background:var(--accentLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:2px solid var(--border);box-shadow:var(--shadow);text-align:center;transition:.3s}
+        .score-chip.active{border-color:var(--accent);transform:scale(1.05)}
+        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem}
+        .timer-select{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:320px}
+        .timer-opt{flex:1;padding:14px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--dim);transition:.2s}.timer-opt.sel{border-color:var(--accent);background:var(--accentLL);color:var(--accent2)}
+        .turn-banner{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;text-align:center;margin-bottom:10px;padding:8px 16px;border-radius:12px;transition:.3s}
+        .turn-banner.p1{color:var(--p1);background:rgba(208,128,64,0.1)}.turn-banner.p2{color:var(--p2);background:rgba(72,136,168,0.1)}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--accent2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-scores{margin-bottom:20px}
+        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .end-score-row.winner{background:var(--accentLL);border-color:var(--accent)}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+
+        /* Dots & Boxes grid */
+        .db-board{position:relative;margin:0 auto 16px;touch-action:none}
+        .db-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--accent2);z-index:3;transform:translate(-50%,-50%)}
+        .db-line{position:absolute;border-radius:4px;cursor:pointer;z-index:2;transition:background .2s,transform .15s}
+        .db-line.h{height:6px;transform:translateY(-50%)}.db-line.v{width:6px;transform:translateX(-50%)}
+        .db-line.empty{background:rgba(62,44,35,0.08)}.db-line.empty:hover{background:rgba(62,44,35,0.2);transform:translateY(-50%) scaleY(1.4)}.db-line.v.empty:hover{transform:translateX(-50%) scaleX(1.4)}
+        .db-line.p1{background:var(--p1)}.db-line.p2{background:var(--p2)}
+        .db-box{position:absolute;z-index:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#fff;letter-spacing:1px;transition:background .3s}
+        .db-box.p1{background:rgba(208,128,64,0.25)}.db-box.p2{background:rgba(72,136,168,0.25)}
+        @keyframes boxPop{0%{transform:scale(0)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+        .db-box.just{animation:boxPop .3s ease-out}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">DOTS & BOXES</span><div class="hdr-right"></div></nav></header>
+<main>
+<div class="phase on" id="phMode"><div class="mode-icon">📦</div><h1 class="mode-title">DOTS & BOXES</h1><p class="mode-sub">Draw lines, complete boxes, score points!</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns on one screen</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Play on separate devices</div></div></div></div>
+<div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
+<div class="phase" id="phSettings"><h2 class="setup-title">GAME SETTINGS</h2><div class="section-label" style="margin-top:8px">Grid Size</div><div class="timer-select"><div class="timer-opt sel" data-v="4" onclick="pickSize(this)">4x4</div><div class="timer-opt" data-v="6" onclick="pickSize(this)">6x6</div></div><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
+<div class="phase" id="phGame"><div class="turn-banner" id="turnBanner">PLAYER 1'S TURN</div><div class="score-bar" id="scoreBar"></div><div class="db-board" id="dbBoard"></div></div>
+<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">📦</div><h2 class="end-title" id="endTitle">GAME OVER!</h2><p class="end-sub" id="endSub"></p><div class="end-scores" id="endScores"></div><div class="end-btns"><button class="btn btn-primary" onclick="rematch()">REMATCH</button><button class="btn btn-secondary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+</main>
+<script>
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={mode:null,couch:false,code:null,name:null,players:[],myIdx:0,gridSize:4,turn:0,scores:[0,0],hLines:null,vLines:null,boxes:null};
+const COLORS=['p1','p2'];
+
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online')show('phLobby');else{G.players=['Player 1','Player 2'];show('phSettings');}}
+function pickSize(el){document.querySelectorAll('.timer-opt').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.gridSize=parseInt(el.dataset.v);}
+
+function startGame(){G.turn=0;G.scores=[0,0];const n=G.gridSize;G.hLines=Array.from({length:n+1},()=>Array(n).fill(-1));G.vLines=Array.from({length:n},()=>Array(n+1).fill(-1));G.boxes=Array.from({length:n},()=>Array(n).fill(-1));if(!G.couch)sk.emit('battle-start',{code:G.code,settings:{gridSize:G.gridSize}});renderGame();show('phGame');}
+
+function renderGame(){renderScores();renderTurn();renderBoard();}
+
+function renderScores(){document.getElementById('scoreBar').innerHTML=G.players.map((n,i)=>`<div class="score-chip${G.turn===i?' active':''}" style="border-color:${i===0?'var(--p1)':'var(--p2)'}"><div class="s-name">${esc(n)}</div><div class="s-pts" style="color:${i===0?'var(--p1)':'var(--p2)'}">${G.scores[i]}</div></div>`).join('');}
+
+function renderTurn(){const b=document.getElementById('turnBanner');b.textContent=G.players[G.turn].toUpperCase()+"'S TURN";b.className='turn-banner '+COLORS[G.turn];}
+
+function renderBoard(){const board=document.getElementById('dbBoard');const n=G.gridSize;const gap=Math.min(60,Math.floor((window.innerWidth-80)/(n)));const dotR=6;const totalW=n*gap+dotR*2;const totalH=n*gap+dotR*2;board.style.width=totalW+'px';board.style.height=totalH+'px';board.innerHTML='';
+
+for(let r=0;r<=n;r++)for(let c=0;c<=n;c++){const dot=document.createElement('div');dot.className='db-dot';dot.style.left=(c*gap+dotR)+'px';dot.style.top=(r*gap+dotR)+'px';board.appendChild(dot);}
+
+for(let r=0;r<=n;r++)for(let c=0;c<n;c++){const line=document.createElement('div');line.className='db-line h';const owner=G.hLines[r][c];line.classList.add(owner>=0?COLORS[owner]:'empty');line.style.left=(c*gap+dotR)+'px';line.style.top=(r*gap+dotR)+'px';line.style.width=gap+'px';if(owner<0)line.onclick=()=>placeLine('h',r,c);board.appendChild(line);}
+
+for(let r=0;r<n;r++)for(let c=0;c<=n;c++){const line=document.createElement('div');line.className='db-line v';const owner=G.vLines[r][c];line.classList.add(owner>=0?COLORS[owner]:'empty');line.style.left=(c*gap+dotR)+'px';line.style.top=(r*gap+dotR)+'px';line.style.height=gap+'px';if(owner<0)line.onclick=()=>placeLine('v',r,c);board.appendChild(line);}
+
+for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(G.boxes[r][c]>=0){const box=document.createElement('div');box.className='db-box '+COLORS[G.boxes[r][c]];box.style.left=(c*gap+dotR+3)+'px';box.style.top=(r*gap+dotR+3)+'px';box.style.width=(gap-6)+'px';box.style.height=(gap-6)+'px';box.textContent=G.players[G.boxes[r][c]].charAt(0);board.appendChild(box);}}}
+
+function placeLine(type,r,c){if(!G.couch&&G.turn!==G.myIdx)return;if(type==='h'&&G.hLines[r][c]>=0)return;if(type==='v'&&G.vLines[r][c]>=0)return;
+applyMove(type,r,c,G.turn);
+if(!G.couch){const idx=type==='h'?r*G.gridSize+c:(G.gridSize+1)*G.gridSize+r*(G.gridSize+1)+c;sk.emit('battle-move',{code:G.code,data:{type,r,c,idx}});}}
+
+function applyMove(type,r,c,player){if(type==='h')G.hLines[r][c]=player;else G.vLines[r][c]=player;
+let scored=0;const n=G.gridSize;
+if(type==='h'){if(r>0&&checkBox(r-1,c)){G.boxes[r-1][c]=player;scored++;}if(r<n&&checkBox(r,c)){G.boxes[r][c]=player;scored++;}}
+if(type==='v'){if(c>0&&checkBox(r,c-1)){G.boxes[r][c-1]=player;scored++;}if(c<n&&checkBox(r,c)){G.boxes[r][c]=player;scored++;}}
+G.scores[player]+=scored;if(scored===0)G.turn=1-G.turn;
+
+const totalBoxes=n*n;const filled=G.scores[0]+G.scores[1];if(filled>=totalBoxes){endGame();return;}renderGame();}
+
+function checkBox(r,c){const n=G.gridSize;if(r<0||r>=n||c<0||c>=n)return false;if(G.boxes[r][c]>=0)return false;return G.hLines[r][c]>=0&&G.hLines[r+1][c]>=0&&G.vLines[r][c]>=0&&G.vLines[r][c+1]>=0;}
+
+function endGame(){const winner=G.scores[0]>G.scores[1]?0:(G.scores[1]>G.scores[0]?1:-1);document.getElementById('endTitle').textContent=winner<0?'TIE GAME!':'GAME OVER!';document.getElementById('endSub').textContent=winner<0?'It\'s a draw!':G.players[winner]+' wins with '+G.scores[winner]+' boxes!';document.getElementById('endScores').innerHTML=G.players.map((n,i)=>`<div class="end-score-row${i===winner?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:${i===0?'var(--p1)':'var(--p2)'}">${G.scores[i]} boxes</span></div>`).join('');show('phEnd');}
+
+function rematch(){if(G.couch){startGame();}else{sk.emit('battle-rematch',{code:G.code});}}
+
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('battle-create',{game:'dots-boxes',playerName:n});}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('battle-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+
+sk.on('battle-update',d=>{G.code=d.code;G.players=d.players||[];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();if(d.state==='playing'){G.myIdx=G.players.indexOf(G.name);if(d.hLines)G.hLines=d.hLines;if(d.vLines)G.vLines=d.vLines;if(d.boxes)G.boxes=d.boxes;if(d.scores)G.scores=d.scores;if(d.turn!==undefined)G.turn=d.turn;renderGame();show('phGame');}else show('phSettings');});
+sk.on('battle-started',d=>{G.myIdx=G.players.indexOf(G.name);startGame();});
+sk.on('battle-move',d=>{if(d.data)applyMove(d.data.type,d.data.r,d.data.c,d.data.player);});
+
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

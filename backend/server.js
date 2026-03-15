@@ -10,6 +10,7 @@ const partyGames = require('./party-games');
 const missingSquadGames = require('./missing-squad-games');
 const { initDuoHandlers, getQuestions, PACK_CATALOG } = require('./duo-games');
 const { initActCreateHandlers, getActItems, ACT_PACK_CATALOG, STORY_WILDCARDS } = require('./duo-act-create');
+const { initBattleHandlers, getBattleItems } = require('./duo-battles');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -403,6 +404,14 @@ app.get('/api/act-packs', (req, res) => {
 // Story wildcards API
 app.get('/api/story-wildcards', (req, res) => {
   res.json({ wildcards: STORY_WILDCARDS });
+});
+
+// Battle items API (quiz, hangman, taboo, scramble, typerace, wordle, rhyme)
+app.get('/api/battle-items', (req, res) => {
+  const { game, pack, intensity } = req.query;
+  if (!game) return res.status(400).json({ error: 'Missing game parameter' });
+  const items = getBattleItems(game, pack || 'general', intensity || 'clean');
+  res.json({ items });
 });
 
 // ============================================
@@ -1933,6 +1942,7 @@ io.on('connection', (socket) => {
   additionalSquadGames.registerAdditionalSquadGameHandlers(io, socket, rooms, players);
   initDuoHandlers(io, socket);
   initActCreateHandlers(io, socket);
+  initBattleHandlers(io, socket);
   
   // CREATE ROOM (initial creation only)
   socket.on('create-room', rateLimitedHandler((data) => {

@@ -2,703 +2,401 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Connect Four – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Classic Connect Four for 2 players or vs AI. Drop discs and connect four to win!">
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tic Tac Toe – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
-            --p1:#ef4444;--p2:#facc15;
-            --pink:#ff6b9d;--blue:#4facfe;--purple:#a855f7;
-            --gold:#ffd700;--text-dark:#1a1a2e;--text-muted:#6b7280;
-        }
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#c06848;--warm2:#a04030;--warmL:#e8c0a8;--warmLL:#fef0e7;--rose:#d08060;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
-        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
-        a{color:inherit;text-decoration:none}
-
-        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
-
-        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
-        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
-        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
-        .hero-icon{width:60px;height:60px;margin:0 auto 16px;animation:iconFloat 3s ease-in-out infinite}
-        @keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
-        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px}
-        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
-
-        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
-        .game-container{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
-
-        .mode-selection{background:#fff;border-radius:20px;padding:32px 24px;box-shadow:0 8px 30px rgba(244,114,182,0.1);text-align:center}
-        .mode-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:8px;color:var(--text-dark)}
-        .mode-subtitle{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
-        .mode-buttons{display:flex;flex-direction:column;gap:12px}
-        .mode-btn{padding:16px 24px;border-radius:14px;border:2px solid rgba(244,114,182,0.15);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between}
-        .mode-btn:hover{border-color:var(--accent);background:#fdf2f8;transform:translateY(-2px)}
-        .mode-btn-icon{font-size:1.5rem}
-        .mode-btn-text{text-align:left;flex:1;margin:0 12px}
-        .mode-btn-label{display:block;font-size:1.1rem;color:var(--text-dark);margin-bottom:2px}
-        .mode-btn-desc{display:block;font-size:0.75rem;color:var(--text-muted);font-weight:500}
-
-        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px}
-        .score-card.active{border-color:var(--accent);box-shadow:0 4px 20px rgba(244,114,182,0.2)}
-        .score-disc{width:24px;height:24px;border-radius:50%;flex-shrink:0}
-        .score-disc.red{background:linear-gradient(135deg,#ef4444,#dc2626)}
-        .score-disc.yellow{background:linear-gradient(135deg,#facc15,#eab308)}
-        .score-info{text-align:left}
-        .score-label{font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)}
-        .score-value{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text-dark)}
-
-        .turn-indicator{text-align:center;padding:8px;font-size:0.85rem;font-weight:600;color:var(--text-muted)}
-        .turn-indicator span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px}
-        .turn-indicator.p1 span{color:var(--p1)}
-        .turn-indicator.p2 span{color:#ca8a04}
-
-        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:16px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
-        .board-wrapper{background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;padding:10px;display:inline-block;margin:0 auto}
-        .board-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-        .cell{width:40px;height:40px;background:#e0f2fe;border-radius:50%;cursor:pointer;transition:all 0.2s;position:relative}
-        .cell:hover:not(.taken){background:#bae6fd}
-        .cell.red{background:linear-gradient(135deg,#ef4444,#dc2626);cursor:default}
-        .cell.yellow{background:linear-gradient(135deg,#facc15,#eab308);cursor:default}
-        .cell.winner::after{content:'';position:absolute;inset:-3px;border:3px solid #fff;border-radius:50%;animation:winRing 0.5s ease}
-        @keyframes winRing{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
-
-        .game-status{text-align:center;padding:16px;min-height:60px}
-        .status-text{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text-dark)}
-        .status-text.win{color:var(--accent-dark)}
-
-        .actions{display:flex;gap:10px;justify-content:center}
-        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
-        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(244,114,182,0.4)}
-        .btn-secondary{background:#fff;color:var(--text-dark);border:2px solid rgba(244,114,182,0.2)}
-        .btn-secondary:hover{border-color:var(--accent)}
-
-        .hidden{display:none!important}
-
-        @media(max-width:400px){
-            .cell{width:34px;height:34px}
-            .board-grid{gap:4px}
-            .board-wrapper{padding:8px}
-        }
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(192,104,72,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(192,104,72,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .option-select{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:320px;flex-wrap:wrap;justify-content:center}
+        .option-btn{flex:1;min-width:60px;padding:14px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--dim);transition:.2s}.option-btn.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center;transition:.3s}
+        .score-chip.active{border-color:var(--warm);box-shadow:0 4px 16px rgba(192,104,72,0.15)}
+        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
+        .round-info{text-align:center;font-size:.8rem;color:var(--dim);margin-bottom:12px;letter-spacing:1px}
+        .round-info span{font-family:'Bebas Neue',sans-serif;color:var(--warm)}
+        .turn-indicator{text-align:center;font-size:.9rem;font-weight:600;color:var(--dim);margin-bottom:16px;min-height:28px}
+        .turn-indicator span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--warm)}
+        .board-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:24px;margin-bottom:20px;display:flex;justify-content:center}
+        .ttt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:280px}
+        .ttt-cell{aspect-ratio:1;border-radius:16px;border:2px solid var(--border);background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,10vw,3.5rem);color:var(--warm2);transition:.2s;user-select:none}
+        .ttt-cell:hover:not(.taken){background:var(--warmLL);border-color:rgba(192,104,72,0.2)}
+        .ttt-cell.taken{cursor:default}
+        .ttt-cell.x-mark{color:var(--warm)}
+        .ttt-cell.o-mark{color:var(--gold)}
+        .ttt-cell.winner{background:var(--warmLL);border-color:var(--warm);animation:winPop .4s ease}
+        @keyframes winPop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+        @keyframes placeMark{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+        .ttt-cell .mark{display:inline-block;animation:placeMark .3s ease-out}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-scores{margin-bottom:20px}
+        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
     </style>
 </head>
 <body>
-    <div id="site-header"></div>
-    <main>
-        <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">
-                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="8" y="16" width="48" height="40" rx="6" fill="#3b82f6"/>
-                        <circle cx="20" cy="28" r="6" fill="#e0f2fe"/>
-                        <circle cx="32" cy="28" r="6" fill="#ef4444"/>
-                        <circle cx="44" cy="28" r="6" fill="#e0f2fe"/>
-                        <circle cx="20" cy="44" r="6" fill="#facc15"/>
-                        <circle cx="32" cy="44" r="6" fill="#ef4444"/>
-                        <circle cx="44" cy="44" r="6" fill="#facc15"/>
-                    </svg>
-                </div>
-                <h1 class="hero-title">CONNECT FOUR</h1>
-                <p class="hero-sub">Drop discs and connect four in a row to win!</p>
-            </div>
-        </section>
-
-        <div class="game-wrapper">
-            <div class="game-container">
-                <div class="mode-selection" id="modeSelection">
-                    <div class="mode-title">Choose Game Mode</div>
-                    <div class="mode-subtitle">Play with a friend or challenge the AI</div>
-                    <div class="mode-buttons">
-                        <button class="mode-btn" onclick="startGame('player')">
-                            <span class="mode-btn-icon">👥</span>
-                            <div class="mode-btn-text">
-                                <span class="mode-btn-label">vs Player</span>
-                                <span class="mode-btn-desc">Play with a friend locally</span>
-                            </div>
-                            <span style="font-size:1.2rem">→</span>
-                        </button>
-                        <button class="mode-btn" onclick="startGame('ai')">
-                            <span class="mode-btn-icon">🤖</span>
-                            <div class="mode-btn-text">
-                                <span class="mode-btn-label">vs AI</span>
-                                <span class="mode-btn-desc">Challenge the computer</span>
-                            </div>
-                            <span style="font-size:1.2rem">→</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="gameArea" class="hidden">
-                    <div class="score-bar">
-                        <div class="score-card" id="cardRed">
-                            <div class="score-disc red"></div>
-                            <div class="score-info">
-                                <div class="score-label" id="labelRed">Red</div>
-                                <div class="score-value" id="scoreRed">0</div>
-                            </div>
-                        </div>
-                        <div class="score-card" id="cardYellow">
-                            <div class="score-disc yellow"></div>
-                            <div class="score-info">
-                                <div class="score-label" id="labelYellow">Yellow</div>
-                                <div class="score-value" id="scoreYellow">0</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="turn-indicator p1" id="turnIndicator"><span>RED</span>'s turn</div>
-
-                    <div class="game-board">
-                        <div class="board-wrapper">
-                            <div class="board-grid" id="board"></div>
-                        </div>
-                    </div>
-
-                    <div class="game-status">
-                        <div class="status-text" id="statusText"></div>
-                    </div>
-
-                    <div class="actions">
-                        <button class="btn btn-primary" onclick="resetGame()">New Game</button>
-                        <button class="btn btn-secondary" onclick="changeMode()">Change Mode</button>
-                    </div>
-                </div>
-            </div>
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">TIC TAC TOE</span><div class="hdr-right"></div></nav></header>
+<main>
+<!-- MODE SELECT -->
+<div class="phase on" id="phMode">
+    <div class="mode-icon">❌</div>
+    <h1 class="mode-title">TIC TAC TOE</h1>
+    <p class="mode-sub">Classic X's and O's — three in a row wins!</p>
+    <div class="mode-cards">
+        <div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns tapping on the same screen</div></div>
+        <div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Play on separate devices</div></div>
+        <div class="mode-card" onclick="pickMode('ai')"><div class="mode-card-icon">🤖</div><div class="mode-card-title">VS AI</div><div class="mode-card-desc">Challenge the computer</div></div>
+    </div>
+</div>
+<!-- ONLINE LOBBY -->
+<div class="phase" id="phLobby">
+    <div class="mode-icon">📱</div>
+    <h2 class="setup-title">ONLINE MODE</h2>
+    <p class="lobby-sub">Play on separate devices</p>
+    <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off">
+    <div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div>
+    <div class="or-line">OR JOIN</div>
+    <div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div>
+    <div class="error-msg" id="lobbyErr"></div>
+</div>
+<!-- AI DIFFICULTY -->
+<div class="phase" id="phAI">
+    <div class="mode-icon">🤖</div>
+    <h2 class="setup-title">AI DIFFICULTY</h2>
+    <p class="setup-sub">How smart should the computer be?</p>
+    <div class="option-select" id="diffSelect">
+        <div class="option-btn" data-v="easy" onclick="pickDiff(this)">EASY</div>
+        <div class="option-btn sel" data-v="medium" onclick="pickDiff(this)">MEDIUM</div>
+        <div class="option-btn" data-v="hard" onclick="pickDiff(this)">HARD</div>
+        <div class="option-btn" data-v="unbeatable" onclick="pickDiff(this)">UNBEATABLE</div>
+    </div>
+    <div class="section-label">BEST OF</div>
+    <div class="option-select" id="boSelectAI">
+        <div class="option-btn sel" data-v="3" onclick="pickBO(this)">3</div>
+        <div class="option-btn" data-v="5" onclick="pickBO(this)">5</div>
+        <div class="option-btn" data-v="7" onclick="pickBO(this)">7</div>
+    </div>
+    <button class="btn btn-primary" onclick="startAI()" style="width:100%;max-width:320px">START</button>
+</div>
+<!-- SETTINGS / WAITING ROOM -->
+<div class="phase" id="phSettings">
+    <h2 class="setup-title">GAME SETTINGS</h2>
+    <div class="section-label">BEST OF</div>
+    <div class="option-select" id="boSelect">
+        <div class="option-btn sel" data-v="3" onclick="pickBO(this)">3</div>
+        <div class="option-btn" data-v="5" onclick="pickBO(this)">5</div>
+        <div class="option-btn" data-v="7" onclick="pickBO(this)">7</div>
+    </div>
+    <div id="onlineSettings" style="display:none">
+        <div class="setup-code" id="setupCode">------</div>
+        <div class="setup-copy" onclick="copyCode()">Tap to copy</div>
+        <div class="players-box" id="playersBox"></div>
+    </div>
+    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button>
+    <div class="error-msg" id="settingsErr"></div>
+</div>
+<!-- GAME -->
+<div class="phase" id="phGame">
+    <div class="score-bar" id="scoreBar"></div>
+    <div class="round-info">Round <span id="roundNum">1</span> of <span id="roundTotal">3</span> &bull; Best of <span id="boLabel">3</span></div>
+    <div class="turn-indicator" id="turnInd"></div>
+    <div class="board-card"><div class="ttt-grid" id="grid"></div></div>
+</div>
+<!-- END -->
+<div class="phase" id="phEnd">
+    <div class="end-card">
+        <div class="end-icon" id="endIcon">🏆</div>
+        <h2 class="end-title" id="endTitle">WINNER!</h2>
+        <p class="end-sub" id="endSub"></p>
+        <div class="end-scores" id="endScores"></div>
+        <div class="end-btns">
+            <button class="btn btn-secondary" onclick="rematch()">REMATCH</button>
+            <button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button>
         </div>
-    </main>
-
+    </div>
+</div>
+</main>
 <script>
-const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-window.supabaseClient=supabaseClient;
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+let G={mode:null,code:null,name:null,myMark:null,diff:'medium',bo:3,board:Array(9).fill(''),turn:'X',round:1,scores:{},players:[],gameOver:false,matchOver:false,winsNeeded:2};
 
-const ROWS=6,COLS=7;
-let board=[];
-let current='red';
-let gameActive=true;
-let scores={red:0,yellow:0};
-let gameMode='player';
-let isAiThinking=false;
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
 
-function createBoard(){
-    return Array(ROWS).fill(null).map(()=>Array(COLS).fill(null));
+// MODE
+function pickMode(m){
+    G.mode=m;
+    if(m==='online'){show('phLobby');}
+    else if(m==='ai'){show('phAI');}
+    else{G.players=['Player 1','Player 2'];G.scores={'Player 1':0,'Player 2':0};show('phSettings');}
+}
+function pickDiff(el){document.querySelectorAll('#diffSelect .option-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.diff=el.dataset.v;}
+function pickBO(el){const parent=el.parentElement;parent.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.bo=parseInt(el.dataset.v);G.winsNeeded=Math.ceil(G.bo/2);}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+
+// ONLINE
+function createRoom(){
+    const n=document.getElementById('nameInput').value.trim();
+    if(!n)return err('lobbyErr','Enter your name');
+    G.name=n;sk.connect();
+    sk.emit('battle-create',{playerName:n,game:'tictactoe'});
+}
+function joinRoom(){
+    const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();
+    if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');
+    G.name=n;sk.connect();
+    sk.emit('battle-join',{code:c,playerName:n});
+}
+function renderPlayers(){
+    const box=document.getElementById('playersBox');
+    box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');
+    if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';
+    document.getElementById('startBtn').disabled=G.players.length<2;
+    document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';
 }
 
-function startGame(mode){
-    gameMode=mode;
-    current='red';
-    gameActive=true;
-    isAiThinking=false;
-    
-    document.getElementById('modeSelection').classList.add('hidden');
-    document.getElementById('gameArea').classList.remove('hidden');
-    
-    if(mode==='ai'){
-        document.getElementById('labelRed').textContent='You';
-        document.getElementById('labelYellow').textContent='AI';
-    }else{
-        document.getElementById('labelRed').textContent='Red';
-        document.getElementById('labelYellow').textContent='Yellow';
-    }
-    
-    init();
+// SOCKET EVENTS
+sk.on('battle-update',d=>{
+    if(d.code)G.code=d.code;
+    if(d.players)G.players=d.players;
+    if(d.scores)G.scores=d.scores;
+    if(d.board)G.board=d.board;
+    if(d.turn)G.turn=d.turn;
+    if(d.round)G.round=d.round;
+    if(d.myMark)G.myMark=d.myMark;
+    document.getElementById('onlineSettings').style.display='';
+    document.getElementById('setupCode').textContent=G.code||'------';
+    renderPlayers();
+    if(!document.getElementById('phSettings').classList.contains('on')&&!document.getElementById('phGame').classList.contains('on'))
+        show('phSettings');
+    if(d.board)renderBoard();
+});
+sk.on('battle-started',d=>{
+    if(d.players)G.players=d.players;
+    if(d.scores)G.scores=d.scores;
+    if(d.board)G.board=d.board;
+    if(d.turn)G.turn=d.turn;
+    if(d.round)G.round=d.round;
+    if(d.myMark)G.myMark=d.myMark;
+    if(d.bo)G.bo=d.bo;
+    G.winsNeeded=Math.ceil(G.bo/2);
+    G.gameOver=false;G.matchOver=false;
+    startRound();
+});
+sk.on('battle-player-joined',d=>{if(d.players)G.players=d.players;renderPlayers();});
+sk.on('battle-player-left',d=>{if(d.players)G.players=d.players;renderPlayers();});
+sk.on('battle-error',d=>err('lobbyErr',d.message||'Error'));
+
+// START
+function startAI(){G.players=['You','AI'];G.scores={'You':0,'AI':0};G.myMark='X';G.gameOver=false;G.matchOver=false;G.round=1;startRound();}
+function startGame(){
+    if(G.mode==='online'){sk.emit('battle-start',{code:G.code,bo:G.bo});return;}
+    G.scores={};G.players.forEach(p=>G.scores[p]=0);G.round=1;G.gameOver=false;G.matchOver=false;G.myMark='X';startRound();
+}
+function startRound(){
+    G.board=Array(9).fill('');G.turn='X';G.gameOver=false;
+    document.getElementById('roundNum').textContent=G.round;
+    document.getElementById('roundTotal').textContent=G.bo;
+    document.getElementById('boLabel').textContent=G.bo;
+    renderScores();renderBoard();updateTurn();show('phGame');
+    if(G.mode==='ai'&&G.turn!==G.myMark)setTimeout(aiMove,500);
 }
 
-function changeMode(){
-    document.getElementById('modeSelection').classList.remove('hidden');
-    document.getElementById('gameArea').classList.add('hidden');
-    scores={red:0,yellow:0};
-    updateScores();
+// RENDER
+function renderScores(){
+    document.getElementById('scoreBar').innerHTML=G.players.map((n,i)=>{
+        const mark=i===0?'X':'O';
+        const active=(G.turn===mark&&!G.gameOver)?' active':'';
+        return `<div class="score-chip${active}"><div class="s-name">${esc(n)} (${mark})</div><div class="s-pts">${G.scores[n]||0}</div></div>`;
+    }).join('');
 }
-
-function init(){
-    board=createBoard();
-    const boardEl=document.getElementById('board');
-    boardEl.innerHTML='';
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            const cell=document.createElement('div');
-            cell.className='cell';
-            cell.dataset.r=r;
-            cell.dataset.c=c;
-            cell.addEventListener('click',()=>play(c));
-            boardEl.appendChild(cell);
+function renderBoard(){
+    const grid=document.getElementById('grid');
+    grid.innerHTML='';
+    for(let i=0;i<9;i++){
+        const cell=document.createElement('div');
+        cell.className='ttt-cell';
+        if(G.board[i]){
+            cell.classList.add('taken',G.board[i]==='X'?'x-mark':'o-mark');
+            cell.innerHTML=`<span class="mark">${G.board[i]}</span>`;
         }
+        cell.addEventListener('click',()=>cellClick(i));
+        grid.appendChild(cell);
     }
-    updateTurn();
-    document.getElementById('statusText').textContent='';
+    renderScores();
+}
+function updateTurn(){
+    const ind=document.getElementById('turnInd');
+    if(G.gameOver){ind.innerHTML='';return;}
+    const idx=G.turn==='X'?0:1;
+    const name=G.players[idx]||G.turn;
+    ind.innerHTML=`<span>${esc(name)}</span>'s turn (${G.turn})`;
 }
 
-function play(col){
-    if(!gameActive||isAiThinking)return;
-    if(gameMode==='ai'&&current==='yellow')return;
-    
-    makeMove(col,current);
-    
-    if(gameActive&&gameMode==='ai'&&current==='yellow'){
-        isAiThinking=true;
-        setTimeout(()=>{
-            aiMove();
-            isAiThinking=false;
-        },600);
+// CLICK
+function cellClick(i){
+    if(G.gameOver||G.board[i])return;
+    if(G.mode==='online'){
+        if(G.turn!==G.myMark)return;
+        sk.emit('battle-move',{code:G.code,cell:i});
+        return;
     }
+    if(G.mode==='ai'&&G.turn!==G.myMark)return;
+    placeMark(i);
 }
-
-function makeMove(col,player){
-    let row=-1;
-    for(let r=ROWS-1;r>=0;r--){
-        if(!board[r][col]){row=r;break;}
-    }
-    if(row===-1)return false;
-
-    board[row][col]=player;
-    const cell=document.querySelector(`[data-r="${row}"][data-c="${col}"]`);
-    cell.classList.add(player,'taken');
-
-    const winCells=checkWin(row,col);
-    if(winCells){
-        gameActive=false;
-        winCells.forEach(([r,c])=>document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('winner'));
-        scores[player]++;
-        updateScores();
-        
-        if(gameMode==='ai'){
-            showStatus(player==='red'?'You win!':'AI wins!','win');
-        }else{
-            showStatus(`${player.toUpperCase()} wins!`,'win');
-        }
-        document.getElementById('turnIndicator').style.opacity='0';
-    }else if(board[0].every(c=>c)){
-        gameActive=false;
-        showStatus("It's a draw!",'');
-        document.getElementById('turnIndicator').style.opacity='0';
+function placeMark(i){
+    if(G.board[i]||G.gameOver)return;
+    G.board[i]=G.turn;
+    renderBoard();
+    const win=checkWin(G.board,G.turn);
+    const draw=!win&&G.board.every(c=>c);
+    if(win){
+        G.gameOver=true;
+        highlightWin(win);
+        const idx=G.turn==='X'?0:1;
+        const winner=G.players[idx];
+        G.scores[winner]=(G.scores[winner]||0)+1;
+        renderScores();
+        document.getElementById('turnInd').innerHTML=`<span>${esc(winner)}</span> wins this round!`;
+        if(G.scores[winner]>=G.winsNeeded){G.matchOver=true;setTimeout(()=>showEnd(winner),1200);}
+        else setTimeout(()=>{G.round++;startRound();},1500);
+    }else if(draw){
+        G.gameOver=true;
+        document.getElementById('turnInd').innerHTML='Draw!';
+        setTimeout(()=>{G.round++;startRound();},1500);
     }else{
-        current=current==='red'?'yellow':'red';
+        G.turn=G.turn==='X'?'O':'X';
         updateTurn();
-    }
-    
-    return true;
-}
-
-function aiMove(){
-    const col=getBestMove();
-    if(col!==-1)makeMove(col,'yellow');
-}
-
-function getBestMove(){
-    // Priority 1: Win immediately if possible
-    for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
-            board[r][c]='yellow';
-            if(checkWinOnBoard(board,r,c,'yellow')){
-                board[r][c]=null;
-                return c;
-            }
-            board[r][c]=null;
-        }
-    }
-    
-    // Priority 2: Block opponent's immediate win
-    for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
-            board[r][c]='red';
-            if(checkWinOnBoard(board,r,c,'red')){
-                board[r][c]=null;
-                return c;
-            }
-            board[r][c]=null;
-        }
-    }
-    
-    // Priority 3: Block opponent's 3-in-a-row threats (this is the key fix!)
-    for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
-            if(blocksThreat(board,r,c,'red')){
-                return c;
-            }
-        }
-    }
-    
-    // Priority 4: Create our own 3-in-a-row threats
-    for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
-            if(createsThreat(board,r,c,'yellow')){
-                return c;
-            }
-        }
-    }
-    
-    // Priority 5: Use minimax for strategic play
-    let bestCol=-1;
-    let bestScore=-Infinity;
-    
-    for(let c=0;c<COLS;c++){
-        let r=getLowestRow(board,c);
-        if(r!==-1){
-            board[r][c]='yellow';
-            let score=evaluateMove(board,r,c);
-            
-            // Center preference
-            if(c===3)score+=8;
-            else if(c===2||c===4)score+=4;
-            else if(c===1||c===5)score+=2;
-            
-            board[r][c]=null;
-            
-            if(score>bestScore){
-                bestScore=score;
-                bestCol=c;
-            }
-        }
-    }
-    
-    return bestCol!==-1?bestCol:3;
-}
-
-function blocksThreat(testBoard,row,col,player){
-    // Check if placing a piece here blocks opponent's threat
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        // Check all windows of 4 that include this position
-        for(let start=-3;start<=0;start++){
-            let playerCount=0;
-            let emptyCount=0;
-            let positions=[];
-            
-            for(let i=0;i<4;i++){
-                const r=row+dr*(start+i);
-                const c=col+dc*(start+i);
-                if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                    positions.push([r,c]);
-                    if(testBoard[r][c]===player)playerCount++;
-                    else if(!testBoard[r][c])emptyCount++;
-                }
-            }
-            
-            // If opponent has 2-3 pieces and this blocks them
-            if(positions.length===4&&playerCount>=2&&emptyCount>=1){
-                const[targetR,targetC]=positions.find(([r,c])=>r===row&&c===col)||[];
-                if(targetR===row&&targetC===col)return true;
-            }
-        }
-    }
-    return false;
-}
-
-function createsThreat(testBoard,row,col,player){
-    // Check if placing here creates a winning threat
-    testBoard[row][col]=player;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let count=1;
-        
-        // Count in positive direction
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        
-        // Count in negative direction
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&testBoard[r][c]===player)count++;
-            else break;
-        }
-        
-        if(count>=3){
-            testBoard[row][col]=null;
-            return true;
-        }
-    }
-    
-    testBoard[row][col]=null;
-    return false;
-}
-
-function evaluateMove(testBoard,row,col){
-    let score=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    testBoard[row][col]='yellow';
-    
-    for(const[dr,dc]of directions){
-        let yellowCount=1;
-        let redCount=0;
-        let empty=0;
-        
-        // Check window of 4
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]==='yellow')yellowCount++;
-                else if(testBoard[r][c]==='red')redCount++;
-                else empty++;
-            }
-        }
-        
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                if(testBoard[r][c]==='yellow')yellowCount++;
-                else if(testBoard[r][c]==='red')redCount++;
-                else empty++;
-            }
-        }
-        
-        if(yellowCount===3)score+=50;
-        else if(yellowCount===2&&empty>0)score+=10;
-        
-        if(redCount===3)score-=40;
-        else if(redCount===2)score-=5;
-    }
-    
-    testBoard[row][col]=null;
-    return score;
-}
-
-
-function minimax(testBoard,depth,isMaximizing,alpha,beta){
-    // Check terminal states
-    const yellowWin=checkBoardWinner(testBoard,'yellow');
-    const redWin=checkBoardWinner(testBoard,'red');
-    
-    if(yellowWin)return 10000;
-    if(redWin)return -10000;
-    if(isBoardFull(testBoard))return 0;
-    if(depth===0)return evaluateBoard(testBoard);
-    
-    if(isMaximizing){
-        let maxScore=-Infinity;
-        for(let c=0;c<COLS;c++){
-            let r=getLowestRow(testBoard,c);
-            if(r!==-1){
-                testBoard[r][c]='yellow';
-                let score=minimax(testBoard,depth-1,false,alpha,beta);
-                testBoard[r][c]=null;
-                maxScore=Math.max(maxScore,score);
-                alpha=Math.max(alpha,score);
-                if(beta<=alpha)break; // Alpha-beta pruning
-            }
-        }
-        return maxScore;
-    }else{
-        let minScore=Infinity;
-        for(let c=0;c<COLS;c++){
-            let r=getLowestRow(testBoard,c);
-            if(r!==-1){
-                testBoard[r][c]='red';
-                let score=minimax(testBoard,depth-1,true,alpha,beta);
-                testBoard[r][c]=null;
-                minScore=Math.min(minScore,score);
-                beta=Math.min(beta,score);
-                if(beta<=alpha)break; // Alpha-beta pruning
-            }
-        }
-        return minScore;
+        if(G.mode==='ai'&&G.turn!==G.myMark)setTimeout(aiMove,400);
     }
 }
 
-function isCriticalBlock(testBoard,row,col){
-    // Check if opponent has 3-in-a-row patterns that need blocking
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    
-    for(const[dr,dc]of directions){
-        let redCount=0;
-        let emptyCount=0;
-        const positions=[];
-        
-        // Check 4 positions in this direction
-        for(let i=-3;i<=3;i++){
-            const r=row+dr*i;
-            const c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS){
-                positions.push([r,c,testBoard[r][c]]);
-            }
-        }
-        
-        // Look for patterns like: red-red-red-empty or red-red-empty-red
-        for(let start=0;start<positions.length-3;start++){
-            redCount=0;
-            emptyCount=0;
-            let hasTargetEmpty=false;
-            
-            for(let i=0;i<4;i++){
-                const[r,c,val]=positions[start+i];
-                if(val==='red')redCount++;
-                else if(!val){
-                    emptyCount++;
-                    if(r===row&&c===col)hasTargetEmpty=true;
-                }
-            }
-            
-            if(redCount===3&&emptyCount===1&&hasTargetEmpty)return true;
-        }
-    }
-    return false;
-}
-
-function evaluateBoard(testBoard){
-    let score=0;
-    
-    // Evaluate all positions
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            if(testBoard[r][c]==='yellow'){
-                score+=evaluatePosition(testBoard,r,c,'yellow');
-            }else if(testBoard[r][c]==='red'){
-                score-=evaluatePosition(testBoard,r,c,'red');
-            }
-        }
-    }
-    
-    return score;
-}
-
-function checkBoardWinner(testBoard,player){
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            if(testBoard[r][c]===player){
-                if(checkWinOnBoard(testBoard,r,c,player))return true;
-            }
-        }
-    }
-    return false;
-}
-
-function isBoardFull(testBoard){
-    return testBoard[0].every(cell=>cell!==null);
-}
-
-function getLowestRow(testBoard,col){
-    for(let r=ROWS-1;r>=0;r--){
-        if(!testBoard[r][col])return r;
-    }
-    return -1;
-}
-
-function evaluatePosition(testBoard,row,col,player){
-    let score=0;
-    const directions=[[0,1],[1,0],[1,1],[1,-1]]; // horizontal, vertical, diagonal, anti-diagonal
-    
-    for(const[dr,dc]of directions){
-        let count=1; // Count this piece
-        let openEnds=0;
-        
-        // Check positive direction
-        let blocked=false;
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r<0||r>=ROWS||c<0||c>=COLS||testBoard[r][c]===(player==='yellow'?'red':'yellow')){
-                blocked=true;
-                break;
-            }
-            if(testBoard[r][c]===player)count++;
-            else break;
-        }
-        if(!blocked)openEnds++;
-        
-        // Check negative direction
-        blocked=false;
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r<0||r>=ROWS||c<0||c>=COLS||testBoard[r][c]===(player==='yellow'?'red':'yellow')){
-                blocked=true;
-                break;
-            }
-            if(testBoard[r][c]===player)count++;
-            else break;
-        }
-        if(!blocked)openEnds++;
-        
-        // Score based on count and open ends
-        if(count>=4)score+=10000;
-        else if(count===3&&openEnds===2)score+=100; // Strong threat
-        else if(count===3&&openEnds===1)score+=50;  // Weak threat
-        else if(count===2&&openEnds===2)score+=10;
-        else if(count===2&&openEnds===1)score+=3;
-    }
-    
-    // Center column bonus
-    if(col===3)score+=3;
-    else if(col===2||col===4)score+=2;
-    
-    return score;
-}
-
-
-function checkWin(row,col){
-    const directions=[[0,1],[1,0],[1,1],[1,-1]];
-    for(const[dr,dc]of directions){
-        let cells=[[row,col]];
-        for(let i=1;i<4;i++){
-            const r=row+dr*i,c=col+dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===current)cells.push([r,c]);
-            else break;
-        }
-        for(let i=1;i<4;i++){
-            const r=row-dr*i,c=col-dc*i;
-            if(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===current)cells.push([r,c]);
-            else break;
-        }
-        if(cells.length>=4)return cells;
-    }
+// WIN CHECK
+function checkWin(b,m){
+    const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for(const l of lines){if(b[l[0]]===m&&b[l[1]]===m&&b[l[2]]===m)return l;}
     return null;
 }
+function highlightWin(cells){
+    const grid=document.getElementById('grid');
+    cells.forEach(i=>grid.children[i].classList.add('winner'));
+}
 
-function updateTurn(){
-    const el=document.getElementById('turnIndicator');
-    if(gameMode==='ai'){
-        el.innerHTML=current==='red'?`<span>Your</span> turn`:`<span>AI</span> thinking...`;
-    }else{
-        el.innerHTML=`<span>${current.toUpperCase()}</span>'s turn`;
+// AI
+function aiMove(){
+    if(G.gameOver)return;
+    let move;
+    if(G.diff==='easy')move=aiEasy();
+    else if(G.diff==='medium')move=aiMedium();
+    else move=aiMinimax();
+    if(move!==undefined)placeMark(move);
+}
+function aiEasy(){
+    const empty=G.board.map((v,i)=>v?-1:i).filter(i=>i>=0);
+    return empty[Math.floor(Math.random()*empty.length)];
+}
+function aiMedium(){
+    const me=G.turn,opp=me==='X'?'O':'X';
+    // Win if possible
+    for(let i=0;i<9;i++){if(!G.board[i]){G.board[i]=me;if(checkWin(G.board,me)){G.board[i]='';return i;}G.board[i]='';}}
+    // Block
+    for(let i=0;i<9;i++){if(!G.board[i]){G.board[i]=opp;if(checkWin(G.board,opp)){G.board[i]='';return i;}G.board[i]='';}}
+    return aiEasy();
+}
+function aiMinimax(){
+    const me=G.turn,opp=me==='X'?'O':'X';
+    let bestScore=-Infinity,bestMove=0;
+    for(let i=0;i<9;i++){
+        if(!G.board[i]){
+            G.board[i]=me;
+            let score=minimax(G.board,0,false,me,opp,-Infinity,Infinity);
+            G.board[i]='';
+            if(score>bestScore){bestScore=score;bestMove=i;}
+        }
     }
-    el.className=`turn-indicator p${current==='red'?'1':'2'}`;
-    el.style.opacity='1';
-    document.getElementById('cardRed').classList.toggle('active',current==='red');
-    document.getElementById('cardYellow').classList.toggle('active',current==='yellow');
+    return bestMove;
+}
+function minimax(b,depth,isMax,me,opp,alpha,beta){
+    if(checkWin(b,me))return 10-depth;
+    if(checkWin(b,opp))return depth-10;
+    if(b.every(c=>c))return 0;
+    if(isMax){
+        let best=-Infinity;
+        for(let i=0;i<9;i++){if(!b[i]){b[i]=me;best=Math.max(best,minimax(b,depth+1,false,me,opp,alpha,beta));b[i]='';alpha=Math.max(alpha,best);if(beta<=alpha)break;}}
+        return best;
+    }else{
+        let best=Infinity;
+        for(let i=0;i<9;i++){if(!b[i]){b[i]=opp;best=Math.min(best,minimax(b,depth+1,true,me,opp,alpha,beta));b[i]='';beta=Math.min(beta,best);if(beta<=alpha)break;}}
+        return best;
+    }
 }
 
-function showStatus(msg,type){
-    const el=document.getElementById('statusText');
-    el.textContent=msg;
-    el.className='status-text'+(type?' '+type:'');
+// END
+function showEnd(winner){
+    document.getElementById('endIcon').textContent=winner?'🏆':'🤝';
+    document.getElementById('endTitle').textContent=winner?esc(winner)+' WINS!':'DRAW!';
+    document.getElementById('endSub').textContent=`Final Score: ${G.players.map(p=>(G.scores[p]||0)).join(' - ')}`;
+    const sorted=G.players.map(p=>[p,G.scores[p]||0]).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s}</span></div>`).join('');
+    show('phEnd');
+}
+function rematch(){
+    if(G.mode==='online'){sk.emit('battle-rematch',{code:G.code});return;}
+    G.scores={};G.players.forEach(p=>G.scores[p]=0);G.round=1;G.matchOver=false;startRound();
 }
 
-function updateScores(){
-    document.getElementById('scoreRed').textContent=scores.red;
-    document.getElementById('scoreYellow').textContent=scores.yellow;
-}
-
-function resetGame(){
-    current='red';
-    gameActive=true;
-    isAiThinking=false;
-    document.getElementById('cardRed').classList.remove('active');
-    document.getElementById('cardYellow').classList.remove('active');
-    init();
-}
+// KEYBOARD
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
 <script src="/header.js"></script>
-<script src="/js/engagement.js" defer></script>
 </body>
 </html>

@@ -2,425 +2,342 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Reaction Race – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Test your reflexes against a friend or AI! Tap when you see green to win.">
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reaction Race – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
-            --p1:#f472b6;--p2:#60a5fa;--green:#22c55e;
-            --text-dark:#1a1a2e;--text-muted:#6b7280;
-        }
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#c89040;--warm2:#a07028;--warmL:#e8d0a0;--warmLL:#fef6e7;--rose:#d0a050;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
-        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
-
-        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
-
-        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
-        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
-        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
-        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
-        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
-        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
-
-        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
-        .game-container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
-
-        .mode-selection{background:#fff;border-radius:20px;padding:32px 24px;box-shadow:0 8px 30px rgba(244,114,182,0.1);text-align:center}
-        .mode-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;margin-bottom:8px;color:var(--text-dark)}
-        .mode-subtitle{font-size:0.9rem;color:var(--text-muted);margin-bottom:24px}
-        .mode-buttons{display:flex;flex-direction:column;gap:12px}
-        .mode-btn{padding:16px 24px;border-radius:14px;border:2px solid rgba(244,114,182,0.15);background:#fff;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:space-between}
-        .mode-btn:hover{border-color:var(--accent);background:#fdf2f8;transform:translateY(-2px)}
-        .mode-btn-icon{font-size:1.5rem}
-        .mode-btn-text{text-align:left;flex:1;margin:0 12px}
-        .mode-btn-label{display:block;font-size:1.1rem;color:var(--text-dark);margin-bottom:2px}
-        .mode-btn-desc{display:block;font-size:0.75rem;color:var(--text-muted);font-weight:500}
-
-        .score-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
-        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08)}
-        .score-card.p1 .score-label{color:var(--p1)}
-        .score-card.p2 .score-label{color:var(--p2)}
-        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
-        .score-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text-dark)}
-        .vs-badge{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--text-muted);letter-spacing:2px}
-
-        .round-info{text-align:center;padding:8px;font-size:0.85rem;color:var(--text-muted)}
-        .round-info span{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--accent)}
-
-        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:16px;box-shadow:0 8px 30px rgba(244,114,182,0.1);overflow:hidden}
-
-        .race-arena{display:flex;height:300px;border-radius:12px;overflow:hidden;gap:4px}
-        .player-zone{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;transition:background 0.1s;-webkit-user-select:none;user-select:none}
-        .player-zone.p1{background:var(--p1)}
-        .player-zone.p2{background:var(--p2)}
-        .player-zone.waiting{background:#fca5a5}
-        .player-zone.ready{background:#fde047}
-        .player-zone.go{background:var(--green)}
-        .player-zone.win{background:var(--green)}
-        .player-zone.lose{background:#ef4444}
-        .zone-label{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:2px;margin-bottom:8px;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
-        .zone-status{font-size:0.85rem;color:rgba(255,255,255,0.9);font-weight:600}
-        .zone-time{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#fff;margin-top:8px}
-
-        .game-status{text-align:center;padding:16px;min-height:60px}
-        .status-text{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text-dark)}
-
-        .match-result{text-align:center;padding:24px}
-        .match-title{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:3px;margin-bottom:8px}
-        .match-title.p1{color:var(--p1)}
-        .match-title.p2{color:var(--p2)}
-        .match-sub{font-size:0.9rem;color:var(--text-muted);margin-bottom:20px}
-
-        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
-
-        .actions{display:flex;gap:10px;justify-content:center}
-        .hidden{display:none!important}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,144,64,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(200,144,64,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
+        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
+        .score-chip .s-total{font-size:.65rem;color:var(--dim);margin-top:2px}
+        .round-info{text-align:center;font-size:.8rem;color:var(--dim);margin-bottom:16px;letter-spacing:1px}
+        .round-info span{font-family:'Bebas Neue',sans-serif;color:var(--warm)}
+        .tap-zone{width:100%;max-width:420px;height:280px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;transition:background .15s,transform .1s;margin-bottom:20px;border:2px solid transparent}
+        .tap-zone:active{transform:scale(0.98)}
+        .tap-zone.waiting{background:var(--red);border-color:rgba(0,0,0,0.1)}
+        .tap-zone.go{background:var(--green);border-color:rgba(0,0,0,0.1)}
+        .tap-zone.result-good{background:#e8f5e9;border-color:var(--green)}
+        .tap-zone.result-bad{background:#fce4ec;border-color:var(--red)}
+        .tap-zone.idle{background:var(--card);border-color:var(--border);box-shadow:var(--shadow-lg)}
+        .tap-icon{font-size:3rem;margin-bottom:12px}
+        .tap-main{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.15)}
+        .tap-zone.idle .tap-main,.tap-zone.result-good .tap-main,.tap-zone.result-bad .tap-main{color:var(--text);text-shadow:none}
+        .tap-sub{font-size:.85rem;color:rgba(255,255,255,0.85);margin-top:4px}
+        .tap-zone.idle .tap-sub,.tap-zone.result-good .tap-sub,.tap-zone.result-bad .tap-sub{color:var(--dim)}
+        .tap-time{font-family:'Bebas Neue',sans-serif;font-size:4rem;letter-spacing:2px;color:var(--warm);margin-top:8px;opacity:0;transform:scale(0.5);transition:all .3s ease}
+        .tap-time.show{opacity:1;transform:scale(1)}
+        .tap-zone.result-bad .tap-time{color:var(--red)}
+        .couch-turn{text-align:center;font-size:.85rem;color:var(--dim);margin-bottom:12px;font-weight:600}
+        .couch-turn span{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--warm);letter-spacing:2px}
+        .round-result{background:var(--card);border-radius:18px;border:1px solid var(--border);box-shadow:var(--shadow);padding:16px 20px;margin-bottom:16px;width:100%;max-width:420px;display:flex;justify-content:space-between;align-items:center;font-size:.85rem}
+        .round-result .rr-name{font-weight:700;color:var(--text)}.round-result .rr-time{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--warm);letter-spacing:1px}
+        .round-result .rr-winner{color:var(--green);font-weight:700;font-size:.7rem;letter-spacing:1px;text-transform:uppercase}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-scores{margin-bottom:20px}
+        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
     </style>
 </head>
 <body>
-    <div id="site-header"></div>
-    <main>
-        <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">⚡</div>
-                <h1 class="hero-title">REACTION RACE</h1>
-                <p class="hero-sub">Tap your zone when it turns green – fastest wins!</p>
-            </div>
-        </section>
-
-        <div class="game-wrapper">
-            <div class="game-container">
-                <div class="mode-selection" id="modeSelection">
-                    <div class="mode-title">Choose Game Mode</div>
-                    <div class="mode-subtitle">Test your reflexes against a friend or AI</div>
-                    <div class="mode-buttons">
-                        <button class="mode-btn" onclick="startGame('player')">
-                            <span class="mode-btn-icon">👥</span>
-                            <div class="mode-btn-text">
-                                <span class="mode-btn-label">vs Player</span>
-                                <span class="mode-btn-desc">Play with a friend locally</span>
-                            </div>
-                            <span style="font-size:1.2rem">→</span>
-                        </button>
-                        <button class="mode-btn" onclick="startGame('ai')">
-                            <span class="mode-btn-icon">🤖</span>
-                            <div class="mode-btn-text">
-                                <span class="mode-btn-label">vs AI</span>
-                                <span class="mode-btn-desc">Challenge the computer</span>
-                            </div>
-                            <span style="font-size:1.2rem">→</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="gameArea" class="hidden">
-                    <div class="score-bar">
-                        <div class="score-card p1">
-                            <div class="score-label" id="label1">Player 1</div>
-                            <div class="score-value" id="score1">0</div>
-                        </div>
-                        <div class="vs-badge">VS</div>
-                        <div class="score-card p2">
-                            <div class="score-label" id="label2">Player 2</div>
-                            <div class="score-value" id="score2">0</div>
-                        </div>
-                    </div>
-
-                    <div class="round-info">Round <span id="roundNum">1</span> of 5</div>
-
-                    <div class="game-board" id="gameArea2">
-                        <div class="race-arena" id="arena">
-                            <div class="player-zone p1" id="zone1" onclick="tap(1)">
-                                <div class="zone-label" id="zoneLabel1">P1</div>
-                                <div class="zone-status" id="status1">Tap to start</div>
-                                <div class="zone-time hidden" id="time1"></div>
-                            </div>
-                            <div class="player-zone p2" id="zone2" onclick="tap(2)">
-                                <div class="zone-label" id="zoneLabel2">P2</div>
-                                <div class="zone-status" id="status2">Tap to start</div>
-                                <div class="zone-time hidden" id="time2"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="game-status">
-                        <div class="status-text" id="statusText">Tap to begin</div>
-                    </div>
-
-                    <div class="match-result hidden" id="matchResult">
-                        <div class="match-title" id="matchTitle"></div>
-                        <div class="match-sub" id="matchSub"></div>
-                        <div class="actions">
-                            <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
-                            <button class="btn btn-primary" onclick="changeMode()">Change Mode</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">REACTION RACE</span><div class="hdr-right"></div></nav></header>
+<main>
+<div class="phase on" id="phMode">
+    <div class="mode-icon">⚡</div>
+    <h1 class="mode-title">REACTION RACE</h1>
+    <p class="mode-sub">Wait for green, then tap as fast as you can!</p>
+    <div class="mode-cards">
+        <div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns, compare reaction times</div></div>
+        <div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Both tap on separate devices, server compares</div></div>
+    </div>
+</div>
+<div class="phase" id="phLobby">
+    <div class="mode-icon">📱</div>
+    <h2 class="setup-title">ONLINE MODE</h2>
+    <p class="lobby-sub">Play on separate devices</p>
+    <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off">
+    <div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div>
+    <div class="or-line">OR JOIN</div>
+    <div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div>
+    <div class="error-msg" id="lobbyErr"></div>
+</div>
+<div class="phase" id="phSettings">
+    <h2 class="setup-title">GAME SETTINGS</h2>
+    <p class="setup-sub">Best of 5 rounds — lowest total time wins</p>
+    <div id="onlineSettings" style="display:none">
+        <div class="setup-code" id="setupCode">------</div>
+        <div class="setup-copy" onclick="copyCode()">Tap to copy</div>
+        <div class="players-box" id="playersBox"></div>
+    </div>
+    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button>
+    <div class="error-msg" id="settingsErr"></div>
+</div>
+<div class="phase" id="phGame">
+    <div class="score-bar" id="scoreBar"></div>
+    <div class="round-info">Round <span id="roundNum">1</span> of <span id="roundTotal">5</span></div>
+    <div class="couch-turn" id="couchTurn" style="display:none"></div>
+    <div class="tap-zone idle" id="tapZone" onclick="handleTap()">
+        <div class="tap-icon" id="tapIcon">⚡</div>
+        <div class="tap-main" id="tapMain">TAP TO START</div>
+        <div class="tap-sub" id="tapSub">Get ready to test your reflexes</div>
+        <div class="tap-time" id="tapTime"></div>
+    </div>
+    <div id="roundResults"></div>
+</div>
+<div class="phase" id="phEnd">
+    <div class="end-card">
+        <div class="end-icon" id="endIcon">🏆</div>
+        <h2 class="end-title" id="endTitle">WINNER!</h2>
+        <p class="end-sub" id="endSub"></p>
+        <div class="end-scores" id="endScores"></div>
+        <div class="end-btns">
+            <button class="btn btn-secondary" onclick="rematch()">REMATCH</button>
+            <button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button>
         </div>
-    </main>
-
+    </div>
+</div>
+</main>
 <script>
-const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+const TOTAL_ROUNDS=5;
+let G={mode:null,code:null,name:null,round:1,scores:{},totals:{},players:[],state:'idle',goTime:null,timeout:null,couchPlayer:0,couchTimes:[null,null],roundHistory:[]};
 
-let state='idle';
-let scores={p1:0,p2:0};
-let round=1;
-let ready={p1:false,p2:false};
-let times={p1:null,p2:null};
-let goTime=null;
-let timeout=null;
-let gameMode='player';
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
 
-function startGame(mode){
-    gameMode=mode;
-    document.getElementById('modeSelection').classList.add('hidden');
-    document.getElementById('gameArea').classList.remove('hidden');
-    
-    if(mode==='ai'){
-        document.getElementById('label1').textContent='You';
-        document.getElementById('label2').textContent='AI';
-        document.getElementById('zoneLabel1').textContent='YOU';
-        document.getElementById('zoneLabel2').textContent='AI';
-        document.getElementById('status1').textContent='Tap to start';
-        document.getElementById('status2').textContent='Ready';
-        document.getElementById('statusText').textContent='Tap to begin';
+function pickMode(m){G.mode=m;if(m==='online')show('phLobby');else{G.players=['Player 1','Player 2'];G.scores={'Player 1':0,'Player 2':0};G.totals={'Player 1':0,'Player 2':0};show('phSettings');}}
+
+// ONLINE
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('battle-create',{playerName:n,game:'reaction'});}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('battle-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+
+sk.on('battle-update',d=>{if(d.code)G.code=d.code;if(d.players)G.players=d.players;if(d.scores)G.scores=d.scores;document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=G.code||'------';renderPlayers();if(!document.getElementById('phSettings').classList.contains('on')&&!document.getElementById('phGame').classList.contains('on'))show('phSettings');});
+sk.on('battle-started',d=>{if(d.players)G.players=d.players;if(d.scores)G.scores=d.scores;G.totals={};G.players.forEach(p=>G.totals[p]=0);G.round=1;G.roundHistory=[];startRound();});
+sk.on('battle-reveal',d=>{
+    // Server sends times for both
+    if(d.times)showOnlineResult(d.times,d.scores,d.round);
+});
+sk.on('battle-player-joined',d=>{if(d.players)G.players=d.players;renderPlayers();});
+sk.on('battle-player-left',d=>{if(d.players)G.players=d.players;renderPlayers();});
+sk.on('battle-error',d=>err('lobbyErr',d.message||'Error'));
+
+function startGame(){
+    if(G.mode==='online'){sk.emit('battle-start',{code:G.code});return;}
+    G.scores={};G.totals={};G.players.forEach(p=>{G.scores[p]=0;G.totals[p]=0;});
+    G.round=1;G.roundHistory=[];startRound();
+}
+function startRound(){
+    document.getElementById('roundNum').textContent=G.round;
+    document.getElementById('roundTotal').textContent=TOTAL_ROUNDS;
+    renderScores();renderHistory();
+    if(G.mode==='couch'){G.couchPlayer=0;G.couchTimes=[null,null];showCouchReady();}
+    else showOnlineReady();
+    show('phGame');
+}
+function renderScores(){
+    document.getElementById('scoreBar').innerHTML=G.players.map(n=>`<div class="score-chip"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0}</div><div class="s-total">Total: ${G.totals[n]||0}ms</div></div>`).join('');
+}
+function renderHistory(){
+    document.getElementById('roundResults').innerHTML=G.roundHistory.map((r,i)=>{
+        const winner=r.winner?`<span class="rr-winner">${esc(r.winner)}</span>`:'<span class="rr-winner">Tie</span>';
+        return `<div class="round-result"><span class="rr-name">R${i+1}</span><span class="rr-time">${r.t1}ms vs ${r.t2}ms</span>${winner}</div>`;
+    }).join('');
+}
+
+// TAP ZONE
+const zone=document.getElementById('tapZone');
+const tapMain=document.getElementById('tapMain');
+const tapSub=document.getElementById('tapSub');
+const tapIcon=document.getElementById('tapIcon');
+const tapTime=document.getElementById('tapTime');
+
+function setZone(cls,icon,main,sub,time){
+    zone.className='tap-zone '+cls;tapIcon.textContent=icon;tapMain.textContent=main;tapSub.textContent=sub;
+    tapTime.textContent=time||'';tapTime.classList.toggle('show',!!time);
+}
+
+// COUCH MODE
+function showCouchReady(){
+    const name=G.players[G.couchPlayer];
+    document.getElementById('couchTurn').style.display='block';
+    document.getElementById('couchTurn').innerHTML=`<span>${esc(name)}</span>'s turn`;
+    G.state='idle';
+    setZone('idle','👆','TAP TO START',esc(name)+', get ready!','');
+}
+function handleTap(){
+    if(G.mode==='couch')handleCouchTap();
+    else handleOnlineTap();
+}
+function handleCouchTap(){
+    if(G.state==='idle'){
+        G.state='waiting';
+        setZone('waiting','🔴','WAIT...','Don\'t tap yet!','');
+        const delay=1000+Math.random()*4000;
+        G.timeout=setTimeout(()=>{G.state='go';G.goTime=Date.now();setZone('go','🟢','TAP NOW!','Go go go!','');},delay);
+    }else if(G.state==='waiting'){
+        // Too early
+        clearTimeout(G.timeout);G.state='result';
+        G.couchTimes[G.couchPlayer]=-1;
+        setZone('result-bad','❌','TOO EARLY!','Jumped the gun','');
+        setTimeout(()=>couchNext(),1500);
+    }else if(G.state==='go'){
+        const time=Date.now()-G.goTime;G.state='result';
+        G.couchTimes[G.couchPlayer]=time;
+        setZone('result-good','⚡','',time+'ms','');
+        tapTime.textContent=time+'ms';tapTime.classList.add('show');
+        tapMain.textContent=time+'ms';
+        setTimeout(()=>couchNext(),1500);
+    }
+}
+function couchNext(){
+    if(G.couchPlayer===0){G.couchPlayer=1;showCouchReady();}
+    else{couchResolve();}
+}
+function couchResolve(){
+    document.getElementById('couchTurn').style.display='none';
+    const t1=G.couchTimes[0],t2=G.couchTimes[1];
+    let winner=null;
+    const t1Valid=t1>0,t2Valid=t2>0;
+    if(t1Valid&&t2Valid){
+        if(t1<t2)winner=G.players[0];else if(t2<t1)winner=G.players[1];
+        G.totals[G.players[0]]+=t1;G.totals[G.players[1]]+=t2;
+    }else if(t1Valid){
+        winner=G.players[0];G.totals[G.players[0]]+=t1;G.totals[G.players[1]]+=9999;
+    }else if(t2Valid){
+        winner=G.players[1];G.totals[G.players[0]]+=9999;G.totals[G.players[1]]+=t2;
     }else{
-        document.getElementById('label1').textContent='Player 1';
-        document.getElementById('label2').textContent='Player 2';
-        document.getElementById('zoneLabel1').textContent='P1';
-        document.getElementById('zoneLabel2').textContent='P2';
-        document.getElementById('status1').textContent='Tap to start';
-        document.getElementById('status2').textContent='Tap to start';
-        document.getElementById('statusText').textContent='Both players tap to begin';
+        G.totals[G.players[0]]+=9999;G.totals[G.players[1]]+=9999;
+    }
+    if(winner)G.scores[winner]=(G.scores[winner]||0)+1;
+    G.roundHistory.push({t1:t1Valid?t1:'EARLY',t2:t2Valid?t2:'EARLY',winner});
+    renderScores();renderHistory();
+
+    const msg=winner?esc(winner)+' wins this round!':'Both too early!';
+    setZone('idle','⚡',msg,`${t1Valid?t1+'ms':'EARLY'} vs ${t2Valid?t2+'ms':'EARLY'}`,'');
+
+    if(G.round>=TOTAL_ROUNDS){
+        setTimeout(()=>{
+            const w=G.totals[G.players[0]]<=G.totals[G.players[1]]?G.players[0]:G.players[1];
+            showEnd(w);
+        },2000);
+    }else{
+        setTimeout(()=>{G.round++;startRound();},2500);
     }
 }
 
-function changeMode(){
-    document.getElementById('modeSelection').classList.remove('hidden');
-    document.getElementById('gameArea').classList.add('hidden');
-    scores={p1:0,p2:0};
-    round=1;
-    resetRound();
-    updateScores();
+// ONLINE MODE
+function showOnlineReady(){
+    document.getElementById('couchTurn').style.display='none';
+    G.state='idle';
+    setZone('idle','👆','TAP TO START','Waiting for green...','');
 }
-
-function tap(player){
-    const zone=document.getElementById(`zone${player}`);
-    const status=document.getElementById(`status${player}`);
-    const timeEl=document.getElementById(`time${player}`);
-    const key=`p${player}`;
-
-    if(state==='idle'){
-        if(gameMode==='ai'&&player===2)return; // Don't allow clicking AI zone
-        
-        ready[key]=true;
-        zone.classList.remove('p1','p2');
-        zone.classList.add('waiting');
-        status.textContent='Waiting...';
-        
-        if(gameMode==='ai'){
-            ready.p2=true;
-            document.getElementById('zone2').classList.remove('p2');
-            document.getElementById('zone2').classList.add('waiting');
-            document.getElementById('status2').textContent='Waiting...';
-        }
-        
-        if(ready.p1&&ready.p2){
-            state='waiting';
-            document.getElementById('statusText').textContent='Wait for GREEN...';
-            const delay=2000+Math.random()*3000;
-            timeout=setTimeout(goGreen,delay);
-        }
-    }else if(state==='waiting'){
-        if(gameMode==='ai'&&player===2)return;
-        
-        // Too early!
-        clearTimeout(timeout);
-        const other=player===1?2:1;
-        scores[`p${other}`]++;
-        updateScores();
-        zone.classList.add('lose');
-        document.getElementById(`zone${other}`).classList.add('win');
-        status.textContent='Too early!';
-        document.getElementById(`status${other}`).textContent='Wins!';
-        
-        if(gameMode==='ai'){
-            document.getElementById('statusText').textContent=player===1?'AI wins (You jumped early)':'You win (AI jumped early)';
-        }else{
-            document.getElementById('statusText').textContent=`Player ${other} wins (P${player} jumped early)`;
-        }
-        
-        state='result';
-        setTimeout(nextRound,2000);
-    }else if(state==='go'&&!times[key]){
-        if(gameMode==='ai'&&player===2)return;
-        
-        times[key]=Date.now()-goTime;
-        timeEl.textContent=times[key]+'ms';
-        timeEl.classList.remove('hidden');
-        status.textContent='';
-        
-        if(gameMode==='ai'&&!times.p2){
-            // AI responds with realistic delay
-            setTimeout(aiReact,getAiDelay());
-        }else if(times.p1&&times.p2){
-            endRound();
-        }
+function handleOnlineTap(){
+    if(G.state==='idle'){
+        G.state='waiting';
+        setZone('waiting','🔴','WAIT...','Don\'t tap yet!','');
+        const delay=1000+Math.random()*4000;
+        G.timeout=setTimeout(()=>{G.state='go';G.goTime=Date.now();setZone('go','🟢','TAP NOW!','Go go go!','');},delay);
+    }else if(G.state==='waiting'){
+        clearTimeout(G.timeout);G.state='done';
+        setZone('result-bad','❌','TOO EARLY!','','');
+        sk.emit('battle-submit',{code:G.code,answer:-1});
+    }else if(G.state==='go'){
+        const time=Date.now()-G.goTime;G.state='done';
+        setZone('result-good','⚡','',time+'ms','');
+        tapMain.textContent=time+'ms';
+        sk.emit('battle-submit',{code:G.code,answer:time});
     }
 }
-
-function getAiDelay(){
-    // AI reaction time: 150-350ms (human-like but slightly faster)
-    return 150+Math.random()*200;
-}
-
-function aiReact(){
-    if(times.p2)return; // Already reacted
-    
-    times.p2=Date.now()-goTime;
-    const timeEl=document.getElementById('time2');
-    timeEl.textContent=times.p2+'ms';
-    timeEl.classList.remove('hidden');
-    document.getElementById('status2').textContent='';
-    
-    if(times.p1&&times.p2){
-        endRound();
-    }
-}
-
-function goGreen(){
-    state='go';
-    goTime=Date.now();
-    document.querySelectorAll('.player-zone').forEach(z=>{
-        z.classList.remove('waiting','ready');
-        z.classList.add('go');
+function showOnlineResult(times,scores,round){
+    if(scores)G.scores=scores;
+    // Update totals from times
+    G.players.forEach(p=>{
+        const t=times[p];
+        if(!G.totals[p])G.totals[p]=0;
+        G.totals[p]+=(t>0?t:9999);
     });
-    document.getElementById('status1').textContent='TAP NOW!';
-    document.getElementById('status2').textContent='TAP NOW!';
-    document.getElementById('statusText').textContent='GO! GO! GO!';
-}
+    const t1=times[G.players[0]],t2=times[G.players[1]];
+    const t1Valid=t1>0,t2Valid=t2>0;
+    let winner=null;
+    if(t1Valid&&t2Valid){if(t1<t2)winner=G.players[0];else if(t2<t1)winner=G.players[1];}
+    else if(t1Valid)winner=G.players[0];
+    else if(t2Valid)winner=G.players[1];
+    G.roundHistory.push({t1:t1Valid?t1:'EARLY',t2:t2Valid?t2:'EARLY',winner});
+    renderScores();renderHistory();
+    G.round=round||G.round;
 
-function endRound(){
-    state='result';
-    const z1=document.getElementById('zone1');
-    const z2=document.getElementById('zone2');
-    z1.classList.remove('go');
-    z2.classList.remove('go');
-    
-    if(times.p1<times.p2){
-        scores.p1++;
-        z1.classList.add('win');
-        z2.classList.add('lose');
-        if(gameMode==='ai'){
-            document.getElementById('statusText').textContent=`You win! (${times.p1}ms vs ${times.p2}ms)`;
-        }else{
-            document.getElementById('statusText').textContent=`Player 1 wins! (${times.p1}ms vs ${times.p2}ms)`;
-        }
-    }else if(times.p2<times.p1){
-        scores.p2++;
-        z1.classList.add('lose');
-        z2.classList.add('win');
-        if(gameMode==='ai'){
-            document.getElementById('statusText').textContent=`AI wins! (${times.p2}ms vs ${times.p1}ms)`;
-        }else{
-            document.getElementById('statusText').textContent=`Player 2 wins! (${times.p2}ms vs ${times.p1}ms)`;
-        }
+    if(G.round>=TOTAL_ROUNDS){
+        setTimeout(()=>{
+            const w=G.totals[G.players[0]]<=G.totals[G.players[1]]?G.players[0]:G.players[1];
+            showEnd(w);
+        },2000);
     }else{
-        document.getElementById('statusText').textContent="It's a tie!";
+        setTimeout(()=>{G.round++;startRound();},2500);
     }
-    updateScores();
-    setTimeout(nextRound,2500);
 }
 
-function nextRound(){
-    if(scores.p1>=3||scores.p2>=3){
-        showMatchResult();
-        return;
-    }
-    round++;
-    document.getElementById('roundNum').textContent=round;
-    resetRound();
+function showEnd(winner){
+    document.getElementById('endIcon').textContent='🏆';
+    document.getElementById('endTitle').textContent=esc(winner)+' WINS!';
+    document.getElementById('endSub').textContent=`${G.players.map(p=>esc(p)+': '+(G.scores[p]||0)+' rounds, '+(G.totals[p]||0)+'ms total').join(' | ')}`;
+    const sorted=G.players.map(p=>[p,G.scores[p]||0,G.totals[p]||0]).sort((a,b)=>b[1]-a[1]||a[2]-b[2]);
+    document.getElementById('endScores').innerHTML=sorted.map(([n,s,t],i)=>`<div class="end-score-row${i===0?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.1rem;color:var(--warm)">${s} wins &bull; ${t}ms</span></div>`).join('');
+    show('phEnd');
 }
+function rematch(){if(G.mode==='online'){sk.emit('battle-rematch',{code:G.code});return;}G.scores={};G.totals={};G.players.forEach(p=>{G.scores[p]=0;G.totals[p]=0;});G.round=1;G.roundHistory=[];startRound();}
 
-function resetRound(){
-    state='idle';
-    ready={p1:false,p2:false};
-    times={p1:null,p2:null};
-    
-    const z1=document.getElementById('zone1');
-    const z2=document.getElementById('zone2');
-    z1.className='player-zone p1';
-    z2.className='player-zone p2';
-    
-    if(gameMode==='ai'){
-        document.getElementById('status1').textContent='Tap to start';
-        document.getElementById('status2').textContent='Ready';
-        document.getElementById('statusText').textContent='Tap to begin';
-    }else{
-        document.getElementById('status1').textContent='Tap to start';
-        document.getElementById('status2').textContent='Tap to start';
-        document.getElementById('statusText').textContent='Both players tap to begin';
-    }
-    
-    document.getElementById('time1').classList.add('hidden');
-    document.getElementById('time2').classList.add('hidden');
-}
-
-function showMatchResult(){
-    document.getElementById('gameArea2').classList.add('hidden');
-    const result=document.getElementById('matchResult');
-    result.classList.remove('hidden');
-    
-    const title=document.getElementById('matchTitle');
-    if(scores.p1>scores.p2){
-        if(gameMode==='ai'){
-            title.textContent='YOU WIN!';
-        }else{
-            title.textContent='PLAYER 1 WINS!';
-        }
-        title.className='match-title p1';
-    }else{
-        if(gameMode==='ai'){
-            title.textContent='AI WINS!';
-        }else{
-            title.textContent='PLAYER 2 WINS!';
-        }
-        title.className='match-title p2';
-    }
-    document.getElementById('matchSub').textContent=`Final Score: ${scores.p1} - ${scores.p2}`;
-}
-
-function updateScores(){
-    document.getElementById('score1').textContent=scores.p1;
-    document.getElementById('score2').textContent=scores.p2;
-}
-
-function resetGame(){
-    scores={p1:0,p2:0};
-    round=1;
-    updateScores();
-    document.getElementById('roundNum').textContent='1';
-    document.getElementById('matchResult').classList.add('hidden');
-    document.getElementById('gameArea2').classList.remove('hidden');
-    resetRound();
-}
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
 <script src="/header.js"></script>
-<script src="/js/engagement.js" defer></script>
 </body>
 </html>

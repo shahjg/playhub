@@ -2,241 +2,300 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Memory Match – 2 Player Game | TheGaming.co</title>
-    <meta name="description" content="Find matching pairs! Take turns flipping cards.">
-    <meta name="theme-color" content="#0a0a0f">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Match – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --accent:#f472b6;--accent-dark:#db2777;--accent-light:#fce7f3;
-            --p1:#f472b6;--p2:#60a5fa;
-            --text-dark:#1a1a2e;--text-muted:#6b7280;
-        }
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#988858;--warm2:#786838;--warmL:#c8b888;--warmLL:#fef8e8;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e3828;--dim:#988e78;--border:rgba(62,56,40,0.08);--shadow:0 2px 16px rgba(62,56,40,0.06);--shadow-lg:0 8px 32px rgba(62,56,40,0.1)}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#fce7f3 0%,#fbcfe8 50%,#fdf2f8 100%);color:var(--text-dark);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
-        h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(152,136,88,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#c4b8a0}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),#b0a068);color:#fff;box-shadow:0 4px 16px rgba(152,136,88,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .pack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:320px;margin-bottom:16px}
+        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(152,136,88,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
+        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .timer-select{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:320px}
+        .timer-opt{flex:1;padding:14px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--dim);transition:.2s}.timer-opt.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:12px;width:100%}
+        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:2px solid var(--border);box-shadow:var(--shadow);text-align:center;transition:.3s;flex:1;max-width:160px}
+        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
+        .score-chip.active{border-color:var(--warm);background:var(--warmLL)}
+        .turn-banner{text-align:center;margin-bottom:8px}
+        .turn-banner span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:var(--warm2)}
 
-        main{flex:1;display:flex;flex-direction:column;padding-top:60px}
+        /* Cards */
+        .card-grid{display:grid;gap:8px;width:100%;max-width:420px;margin-bottom:16px}
+        .card-grid.g4{grid-template-columns:repeat(4,1fr)}
+        .card-grid.g6{grid-template-columns:repeat(6,1fr)}
+        .mem-card{aspect-ratio:1;border-radius:14px;cursor:pointer;perspective:600px;-webkit-user-select:none;user-select:none}
+        .mem-card-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+        .mem-card.flipped .mem-card-inner{transform:rotateY(180deg)}
+        .mem-card-front,.mem-card-back{position:absolute;inset:0;border-radius:14px;display:flex;align-items:center;justify-content:center;backface-visibility:hidden}
+        .mem-card-front{background:linear-gradient(135deg,var(--warm),#b0a068);box-shadow:var(--shadow)}
+        .mem-card-front::after{content:'?';font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:rgba(255,255,255,0.5)}
+        .mem-card-back{background:var(--card);border:2px solid var(--border);box-shadow:var(--shadow);transform:rotateY(180deg);font-size:clamp(1.2rem,4vw,2rem)}
+        .mem-card.matched .mem-card-front{opacity:0}
+        .mem-card.matched .mem-card-back{border-color:var(--green);background:#f0faf0}
+        .mem-card.matched.p0 .mem-card-back{border-color:var(--warm);background:var(--warmLL)}
+        .mem-card.matched.p1 .mem-card-back{border-color:#6088b8;background:#e8f0ff}
+        .mem-card.locked{pointer-events:none}
 
-        .game-hero{background:radial-gradient(circle at 10% 0%,#9d174d 0%,#831843 50%,#500724 100%);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
-        .game-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(244,114,182,0.3) 0%,transparent 55%)}
-        .hero-content{position:relative;z-index:1;max-width:600px;margin:0 auto}
-        .hero-icon{font-size:50px;margin-bottom:16px;animation:iconFloat 3s ease-in-out infinite}
-        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        .hero-title{font-size:clamp(2.5rem,8vw,4rem);line-height:0.95;margin-bottom:8px;background:linear-gradient(135deg,#fff,var(--accent-light),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
-        .hero-sub{font-size:0.9rem;color:rgba(255,255,255,0.7)}
-
-        .game-wrapper{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 16px 50px}
-        .game-container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
-
-        .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .score-card{background:#fff;border:2px solid rgba(244,114,182,0.15);border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 12px rgba(244,114,182,0.08);transition:all 0.3s}
-        .score-card.active{border-color:var(--accent);box-shadow:0 4px 20px rgba(244,114,182,0.2)}
-        .score-card.p1 .score-label{color:var(--p1)}
-        .score-card.p2 .score-label{color:var(--p2)}
-        .score-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px}
-        .score-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--text-dark)}
-
-        .turn-indicator{text-align:center;padding:8px;font-size:0.85rem;font-weight:600;color:var(--text-muted)}
-        .turn-indicator span{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px}
-        .turn-indicator.p1 span{color:var(--p1)}
-        .turn-indicator.p2 span{color:var(--p2)}
-
-        .game-board{background:#fff;border-radius:20px;border:2px solid rgba(244,114,182,0.15);padding:16px;box-shadow:0 8px 30px rgba(244,114,182,0.1)}
-        .card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:320px;margin:0 auto}
-        .card{aspect-ratio:1;background:linear-gradient(135deg,var(--accent),var(--accent-dark));border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all 0.3s;transform-style:preserve-3d;-webkit-user-select:none;user-select:none}
-        .card:hover:not(.flipped):not(.matched){transform:scale(1.05)}
-        .card.flipped{background:#fff;border:2px solid #eee}
-        .card.matched{cursor:default}
-        .card.matched.p1{background:var(--accent-light);border:2px solid var(--p1)}
-        .card.matched.p2{background:#dbeafe;border:2px solid var(--p2)}
-        .card:not(.flipped):not(.matched) .card-face{display:none}
-
-        .game-status{text-align:center;padding:16px;min-height:60px}
-        .status-text{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text-dark)}
-        .status-text.win{color:var(--accent-dark)}
-
-        .btn{padding:12px 24px;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
-        .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 15px rgba(244,114,182,0.3)}
-        .btn-primary:hover{transform:translateY(-2px)}
-
-        .actions{display:flex;gap:10px;justify-content:center}
-
-        @media(max-width:360px){
-            .card-grid{gap:6px}
-            .card{font-size:1.5rem;border-radius:8px}
-        }
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-scores{margin-bottom:20px}
+        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+        @media(max-width:360px){.card-grid{gap:5px}.mem-card-front::after{font-size:1.3rem}}
     </style>
 </head>
 <body>
-    <div id="site-header"></div>
-    <main>
-        <section class="game-hero">
-            <div class="hero-content">
-                <div class="hero-icon">🎴</div>
-                <h1 class="hero-title">MEMORY MATCH</h1>
-                <p class="hero-sub">Find matching pairs – most matches wins!</p>
-            </div>
-        </section>
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">MEMORY MATCH</span><div class="hdr-right"></div></nav></header>
+<main>
 
-        <div class="game-wrapper">
-            <div class="game-container">
-                <div class="score-bar">
-                    <div class="score-card p1" id="card1">
-                        <div class="score-label">Player 1</div>
-                        <div class="score-value" id="score1">0</div>
-                    </div>
-                    <div class="score-card p2" id="card2">
-                        <div class="score-label">Player 2</div>
-                        <div class="score-value" id="score2">0</div>
-                    </div>
-                </div>
+<!-- MODE -->
+<div class="phase on" id="phMode">
+    <div class="mode-icon">🃏</div>
+    <h1 class="mode-title">MEMORY MATCH</h1>
+    <p class="mode-sub">Find matching pairs — most matches wins!</p>
+    <div class="mode-cards">
+        <div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Shared screen, take turns tapping</div></div>
+        <div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Server tracks state, play remotely</div></div>
+    </div>
+</div>
 
-                <div class="turn-indicator p1" id="turnIndicator"><span>PLAYER 1</span>'s turn</div>
+<!-- LOBBY -->
+<div class="phase" id="phLobby">
+    <div class="mode-icon">📱</div>
+    <h2 class="setup-title">ONLINE MODE</h2>
+    <p class="lobby-sub">Play on separate devices</p>
+    <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off">
+    <div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div>
+    <div class="or-line">OR JOIN</div>
+    <div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div>
+    <div class="error-msg" id="lobbyErr"></div>
+</div>
 
-                <div class="game-board">
-                    <div class="card-grid" id="grid"></div>
-                </div>
+<!-- PACKS -->
+<div class="phase" id="phPacks">
+    <h2 class="pack-title">THEME</h2>
+    <p class="pack-sub">What appears on the cards?</p>
+    <div class="pack-grid" id="packGrid"></div>
+</div>
 
-                <div class="game-status">
-                    <div class="status-text" id="statusText"></div>
-                </div>
+<!-- SETTINGS -->
+<div class="phase" id="phSettings">
+    <h2 class="setup-title">GAME SETTINGS</h2>
+    <div class="section-label" style="margin-top:8px">Grid Size</div>
+    <div class="timer-select">
+        <div class="timer-opt sel" data-v="4" onclick="pickGrid(this)">4x4</div>
+        <div class="timer-opt" data-v="6" onclick="pickGrid(this)">6x6</div>
+    </div>
+    <div id="onlineSettings" style="display:none">
+        <div class="setup-code" id="setupCode">------</div>
+        <div class="setup-copy" onclick="copyCode()">Tap to copy</div>
+        <div class="players-box" id="playersBox"></div>
+    </div>
+    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button>
+    <div class="error-msg" id="settingsErr"></div>
+</div>
 
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="resetGame()">New Game</button>
-                </div>
-            </div>
+<!-- GAME -->
+<div class="phase" id="phGame">
+    <div class="score-bar" id="scoreBar"></div>
+    <div class="turn-banner" id="turnBanner"><span>YOUR TURN</span></div>
+    <div class="card-grid g4" id="cardGrid"></div>
+</div>
+
+<!-- END -->
+<div class="phase" id="phEnd">
+    <div class="end-card">
+        <div class="end-icon" id="endIcon">🎉</div>
+        <h2 class="end-title" id="endTitle">GAME OVER</h2>
+        <p class="end-sub" id="endSub"></p>
+        <div class="end-scores" id="endScores"></div>
+        <div class="end-btns">
+            <button class="btn btn-secondary" onclick="rematch()">REMATCH</button>
+            <button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button>
         </div>
-    </main>
+    </div>
+</div>
 
+</main>
 <script>
-const SUPABASE_URL='https://tvvivtmzofsyehatzlvl.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+const THEME_PACKS=[
+    {id:'emojis',name:'Emojis',icon:'😀',items:['😀','😎','🥳','🤯','😍','🤔','🥶','👻','💀','🤖','👽','🦄','🌈','🔥','⭐','💎','🎯','🎪']},
+    {id:'animals',name:'Animals',icon:'🐾',items:['🐶','🐱','🐼','🦊','🐨','🦁','🐸','🐙','🦋','🐢','🐧','🦜','🐳','🦈','🦀','🐝','🐞','🦩']},
+    {id:'food',name:'Food',icon:'🍕',items:['🍕','🍔','🌮','🍣','🍩','🍦','🎂','🍿','🥑','🍇','🍉','🍒','🥐','🧁','🍪','🌶️','🥨','🍰']},
+    {id:'flags',name:'Flags',icon:'🏁',items:['🇺🇸','🇬🇧','🇯🇵','🇫🇷','🇩🇪','🇧🇷','🇮🇳','🇰🇷','🇨🇦','🇦🇺','🇮🇹','🇪🇸','🇲🇽','🇹🇷','🇿🇦','🇳🇬','🇸🇦','🇵🇰']}
+];
+let G={mode:null,couch:false,code:null,name:null,pack:'emojis',gridSize:4,players:[],scores:{},current:0,cards:[],flipped:[],matched:0,totalPairs:0,locked:false};
 
-const emojis=['🎮','🎯','🎪','🎨','🎭','🎬','🎤','🎧'];
-let cards=[];
-let flipped=[];
-let matched=0;
-let current=1;
-let scores={1:0,2:0};
-let locked=false;
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online')show('phLobby');else showPacks();}
+function showPacks(){document.getElementById('packGrid').innerHTML=THEME_PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
+function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function pickGrid(el){document.querySelectorAll('.timer-select .timer-opt').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.gridSize=parseInt(el.dataset.v);}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 
-function shuffle(arr){
-    for(let i=arr.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [arr[i],arr[j]]=[arr[j],arr[i]];
+/* LOBBY */
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;if(G.couch){showPacks();}else{sk.connect();sk.emit('battle-create',{game:'memorymatch',playerName:n});}}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('battle-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+/* START */
+function startGame(){
+    if(!G.pack)return;
+    if(G.couch){
+        G.players=['Player 1','Player 2'];G.scores={'Player 1':0,'Player 2':0};G.current=0;
+        buildBoard();
+    }else{
+        sk.emit('battle-start',{code:G.code,pack:G.pack,gridSize:G.gridSize});
     }
-    return arr;
 }
-
-function init(){
-    cards=shuffle([...emojis,...emojis]);
-    matched=0;
-    flipped=[];
-    locked=false;
-    
-    const grid=document.getElementById('grid');
+function buildBoard(){
+    const pack=THEME_PACKS.find(p=>p.id===G.pack)||THEME_PACKS[0];
+    const numPairs=G.gridSize===6?18:8;
+    G.totalPairs=numPairs;G.matched=0;G.flipped=[];G.locked=false;
+    const pool=shuffle([...pack.items]).slice(0,numPairs);
+    G.cards=shuffle([...pool,...pool]);
+    const grid=document.getElementById('cardGrid');
+    grid.className='card-grid g'+G.gridSize;
     grid.innerHTML='';
-    cards.forEach((emoji,i)=>{
+    G.cards.forEach((emoji,i)=>{
         const card=document.createElement('div');
-        card.className='card';
+        card.className='mem-card';
         card.dataset.i=i;
-        card.innerHTML=`<span class="card-face">${emoji}</span>`;
-        card.addEventListener('click',()=>flip(i));
+        card.innerHTML=`<div class="mem-card-inner"><div class="mem-card-front"></div><div class="mem-card-back">${emoji}</div></div>`;
+        card.addEventListener('click',()=>flipCard(i));
         grid.appendChild(card);
     });
-    
-    updateTurn();
-    document.getElementById('statusText').textContent='';
+    renderScores();updateTurn();
+    show('phGame');
 }
 
-function flip(i){
-    if(locked)return;
-    const card=document.querySelector(`[data-i="${i}"]`);
-    if(card.classList.contains('flipped')||card.classList.contains('matched'))return;
-    
+/* FLIP */
+function flipCard(i){
+    if(G.locked)return;
+    const card=document.querySelector(`.mem-card[data-i="${i}"]`);
+    if(!card||card.classList.contains('flipped')||card.classList.contains('matched'))return;
     card.classList.add('flipped');
-    flipped.push(i);
-    
-    if(flipped.length===2){
-        locked=true;
-        const[a,b]=flipped;
-        
-        if(cards[a]===cards[b]){
+    G.flipped.push(i);
+    if(!G.couch){sk.emit('battle-move',{code:G.code,card:i});}
+    if(G.flipped.length===2){
+        G.locked=true;
+        const[a,b]=G.flipped;
+        if(G.cards[a]===G.cards[b]){
             setTimeout(()=>{
-                document.querySelector(`[data-i="${a}"]`).classList.add('matched',`p${current}`);
-                document.querySelector(`[data-i="${b}"]`).classList.add('matched',`p${current}`);
-                scores[current]++;
-                updateScores();
-                matched+=2;
-                flipped=[];
-                locked=false;
-                
-                if(matched===16){
-                    endGame();
-                }
+                const ca=document.querySelector(`.mem-card[data-i="${a}"]`);
+                const cb=document.querySelector(`.mem-card[data-i="${b}"]`);
+                ca.classList.add('matched','p'+G.current);
+                cb.classList.add('matched','p'+G.current);
+                G.scores[G.players[G.current]]=(G.scores[G.players[G.current]]||0)+1;
+                G.matched++;
+                renderScores();
+                G.flipped=[];G.locked=false;
+                if(G.matched>=G.totalPairs)endGame();
             },500);
         }else{
             setTimeout(()=>{
-                document.querySelector(`[data-i="${a}"]`).classList.remove('flipped');
-                document.querySelector(`[data-i="${b}"]`).classList.remove('flipped');
-                flipped=[];
-                current=current===1?2:1;
-                updateTurn();
-                locked=false;
-            },1000);
+                document.querySelector(`.mem-card[data-i="${a}"]`).classList.remove('flipped');
+                document.querySelector(`.mem-card[data-i="${b}"]`).classList.remove('flipped');
+                G.flipped=[];
+                G.current=(G.current+1)%2;
+                renderScores();updateTurn();
+                G.locked=false;
+            },900);
         }
     }
 }
 
+/* SCORES & TURN */
+function renderScores(){
+    document.getElementById('scoreBar').innerHTML=G.players.map((n,i)=>`<div class="score-chip${i===G.current?' active':''}"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0}</div></div>`).join('');
+}
 function updateTurn(){
-    const el=document.getElementById('turnIndicator');
-    el.innerHTML=`<span>PLAYER ${current}</span>'s turn`;
-    el.className=`turn-indicator p${current}`;
-    document.getElementById('card1').classList.toggle('active',current===1);
-    document.getElementById('card2').classList.toggle('active',current===2);
+    document.getElementById('turnBanner').innerHTML=`<span>${esc(G.players[G.current]).toUpperCase()}'S TURN</span>`;
 }
 
-function updateScores(){
-    document.getElementById('score1').textContent=scores[1];
-    document.getElementById('score2').textContent=scores[2];
-}
-
+/* END */
 function endGame(){
-    const el=document.getElementById('statusText');
-    document.getElementById('turnIndicator').style.opacity='0';
-    
-    if(scores[1]>scores[2]){
-        el.textContent='PLAYER 1 WINS!';
-        el.className='status-text win';
-    }else if(scores[2]>scores[1]){
-        el.textContent='PLAYER 2 WINS!';
-        el.className='status-text win';
-    }else{
-        el.textContent="IT'S A TIE!";
-        el.className='status-text';
-    }
+    const sorted=Object.entries(G.scores).sort((a,b)=>b[1]-a[1]);
+    const tie=sorted.length>1&&sorted[0][1]===sorted[1][1];
+    document.getElementById('endIcon').textContent=tie?'🤝':'🎉';
+    document.getElementById('endTitle').textContent=tie?'TIE GAME!':'GAME OVER';
+    document.getElementById('endSub').textContent=tie?'Both players tied!':sorted[0][0]+' wins with '+sorted[0][1]+' pairs!';
+    document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0&&!tie?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s} pairs</span></div>`).join('');
+    show('phEnd');
+}
+function rematch(){
+    if(G.couch){G.scores={};G.players.forEach(p=>G.scores[p]=0);G.current=0;buildBoard();}
+    else{sk.emit('battle-rematch',{code:G.code});}
 }
 
-function resetGame(){
-    scores={1:0,2:0};
-    current=1;
-    updateScores();
-    document.getElementById('turnIndicator').style.opacity='1';
-    init();
-}
+/* SOCKETS */
+sk.on('battle-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();showPacks();});
+sk.on('battle-joined',d=>{G.code=d.code;G.players=d.players||[];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('battle-update',d=>{
+    if(d.players){G.players=d.players;renderPlayers();}
+    if(d.card!==undefined){flipCard(d.card);}
+    if(d.scores){G.scores=d.scores;renderScores();}
+    if(d.current!==undefined){G.current=d.current;renderScores();updateTurn();}
+});
+sk.on('battle-started',d=>{G.players=d.players||G.players;G.scores={};G.players.forEach(p=>G.scores[p]=0);G.current=0;if(d.cards)G.cards=d.cards;buildBoard();});
+sk.on('battle-error',d=>err('lobbyErr',d.message));
 
-init();
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
 <script src="/header.js"></script>
-<script src="/js/engagement.js" defer></script>
 </body>
 </html>

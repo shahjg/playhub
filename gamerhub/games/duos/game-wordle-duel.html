@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wordle Duel – TheGaming.co</title>
+    <meta name="theme-color" content="#fef7ed">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#688850;--warm2:#4e6e38;--warmL:#a8c890;--warmLL:#f0f8e8;--green:#4caf50;--yellow:#e8b830;--grey:#888;--red:#e05050;--text:#2e3e28;--dim:#788870;--border:rgba(46,62,40,0.08);--shadow:0 2px 16px rgba(46,62,40,0.06);--shadow-lg:0 8px 32px rgba(46,62,40,0.1)}
+        html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
+        h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(104,136,80,0.07),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
+        .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
+        .hdr-right{min-width:40px}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:600px;margin:0 auto;width:100%}
+        .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .mode-icon{font-size:3.5rem;margin-bottom:12px}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
+        .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+        .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
+        .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
+        .name-input::placeholder,.code-input::placeholder{color:#a0b8a0}
+        .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
+        .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
+        .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),#80a060);color:#fff;box-shadow:0 4px 16px rgba(104,136,80,0.25)}
+        .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
+        .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
+        .join-row{display:flex;gap:8px;width:100%;max-width:320px}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .timer-select{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:320px}
+        .timer-opt{flex:1;padding:14px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--dim);transition:.2s}.timer-opt.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
+        .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
+        .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+
+        /* Wordle board */
+        .board-area{width:100%;display:flex;flex-direction:column;align-items:center}
+        .player-label{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--warm2);margin-bottom:6px;text-align:center}
+        .wordle-board{display:grid;grid-template-rows:repeat(6,1fr);gap:5px;margin-bottom:16px}
+        .wordle-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+        .wordle-tile{width:48px;height:48px;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;color:var(--text);background:var(--card);transition:transform .3s,background .3s,border-color .3s}
+        .wordle-tile.filled{border-color:var(--dim);animation:tilePop .1s ease}
+        .wordle-tile.green{background:var(--green);border-color:var(--green);color:#fff}
+        .wordle-tile.yellow{background:var(--yellow);border-color:var(--yellow);color:#fff}
+        .wordle-tile.grey{background:#aaa;border-color:#aaa;color:#fff}
+        .wordle-tile.flip{animation:tileFlip .5s ease}
+        @keyframes tilePop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+        @keyframes tileFlip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+        .keyboard{display:flex;flex-direction:column;gap:5px;align-items:center;margin-bottom:16px;width:100%;max-width:480px}
+        .kb-row{display:flex;gap:4px;justify-content:center}
+        .kb-key{min-width:30px;height:44px;padding:0 8px;border-radius:8px;border:2px solid var(--border);background:var(--card);font-family:'Bebas Neue',sans-serif;font-size:.95rem;cursor:pointer;transition:.2s;color:var(--text);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+        .kb-key:hover{border-color:var(--warm);background:var(--warmLL)}
+        .kb-key.wide{min-width:52px;font-size:.75rem;letter-spacing:1px}
+        .kb-key.green{background:var(--green);border-color:var(--green);color:#fff}
+        .kb-key.yellow{background:var(--yellow);border-color:var(--yellow);color:#fff}
+        .kb-key.grey{background:#bbb;border-color:#bbb;color:#fff}
+
+        /* Dual board view */
+        .dual-boards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;width:100%;margin-bottom:16px}
+        .dual-boards .board-col{text-align:center}
+        .dual-boards .wordle-tile{width:36px;height:36px;font-size:1.2rem}
+        .status-msg{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);text-align:center;margin-bottom:12px;min-height:30px}
+
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:480px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
+        .end-scores{margin-bottom:20px}
+        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
+        .end-btns{display:flex;gap:10px;width:100%}
+        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+        @media(max-width:420px){.wordle-tile{width:42px;height:42px;font-size:1.4rem}.dual-boards .wordle-tile{width:28px;height:28px;font-size:1rem}}
+    </style>
+</head>
+<body>
+<div class="bg"></div>
+<header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">WORDLE DUEL</span><div class="hdr-right"></div></nav></header>
+<main>
+
+<!-- MODE -->
+<div class="phase on" id="phMode">
+    <div class="mode-icon">🟩</div>
+    <h1 class="mode-title">WORDLE DUEL</h1>
+    <p class="mode-sub">Race to guess the same 5-letter word — fewest guesses wins!</p>
+    <div class="mode-cards">
+        <div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns guessing on the same screen</div></div>
+        <div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Both guess simultaneously from separate phones</div></div>
+    </div>
+</div>
+
+<!-- LOBBY -->
+<div class="phase" id="phLobby">
+    <div class="mode-icon">📱</div>
+    <h2 class="setup-title">ONLINE MODE</h2>
+    <p class="lobby-sub">Play on separate devices</p>
+    <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off">
+    <div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div>
+    <div class="or-line">OR JOIN</div>
+    <div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div>
+    <div class="error-msg" id="lobbyErr"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="phase" id="phSettings">
+    <h2 class="setup-title">GAME SETTINGS</h2>
+    <div class="section-label" style="margin-top:8px">Word Mode</div>
+    <div class="timer-select">
+        <div class="timer-opt sel" data-v="random" onclick="pickWordMode(this)">RANDOM</div>
+        <div class="timer-opt" data-v="daily" onclick="pickWordMode(this)">DAILY</div>
+    </div>
+    <div id="onlineSettings" style="display:none">
+        <div class="setup-code" id="setupCode">------</div>
+        <div class="setup-copy" onclick="copyCode()">Tap to copy</div>
+        <div class="players-box" id="playersBox"></div>
+    </div>
+    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button>
+    <div class="error-msg" id="settingsErr"></div>
+</div>
+
+<!-- GAME -->
+<div class="phase" id="phGame">
+    <div class="status-msg" id="statusMsg"></div>
+    <div class="player-label" id="playerLabel">YOUR BOARD</div>
+    <div class="board-area">
+        <div class="wordle-board" id="board"></div>
+    </div>
+    <div class="keyboard" id="kbArea"></div>
+    <div class="error-msg" id="gameErr"></div>
+</div>
+
+<!-- COUCH PASS -->
+<div class="phase" id="phPass">
+    <div style="text-align:center;padding:40px 20px">
+        <div class="mode-icon">🔒</div>
+        <h2 style="font-size:2rem;color:var(--warm2);margin-bottom:8px">PASS THE DEVICE</h2>
+        <p style="color:var(--dim);margin-bottom:24px" id="passMsg">Hand it to the next player — don't peek!</p>
+        <button class="btn btn-primary" onclick="continueCouch()" style="width:200px">I'M READY</button>
+    </div>
+</div>
+
+<!-- END -->
+<div class="phase" id="phEnd">
+    <div class="end-card">
+        <div class="end-icon" id="endIcon">🎉</div>
+        <h2 class="end-title" id="endTitle">GAME OVER</h2>
+        <p class="end-sub" id="endSub"></p>
+        <div class="dual-boards" id="endBoards" style="margin-bottom:16px"></div>
+        <div class="end-scores" id="endScores"></div>
+        <div class="end-btns">
+            <button class="btn btn-secondary" onclick="rematch()">REMATCH</button>
+            <button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button>
+        </div>
+    </div>
+</div>
+
+</main>
+<script>
+const BK='https://web-production-519c7.up.railway.app';
+const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
+const KB_ROWS=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','DEL']];
+const FALLBACK=['CRANE','SLATE','STARE','TRACE','CRATE','PLANT','GRIND','BLAZE','FLAME','QUEST','CHARM','DRIFT','GLEAM','HOVER','JOUST','KNELT','LUNAR','MIRTH','NERVE','OAKEN','PLUMB','QUIRK','RAVEN','STOMP','TWIRL','ULTRA','VIVID','WHISK','YACHT','ZEBRA'];
+
+let G={mode:null,couch:false,code:null,name:null,wordMode:'random',players:[],word:'',boards:[[],[]],currentPlayer:0,currentRow:[0,0],currentGuess:['',''],keyColors:[{},{}],done:[false,false],won:[false,false]};
+
+function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online')show('phLobby');else show('phSettings');}
+function pickWordMode(el){document.querySelectorAll('.timer-select .timer-opt').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.wordMode=el.dataset.v;}
+function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
+function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+
+/* LOBBY */
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;if(G.couch){show('phSettings');}else{sk.connect();sk.emit('battle-create',{game:'wordle',playerName:n});}}
+function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('battle-join',{code:c,playerName:n});}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+
+/* START */
+async function startGame(){
+    try{
+        const pack=G.wordMode==='daily'?'daily':'common';
+        const res=await fetch(`${BK}/api/battle-items?game=wordle&pack=${pack}`);
+        const data=await res.json();
+        G.word=((data.items&&data.items[0])||FALLBACK[Math.floor(Math.random()*FALLBACK.length)]).toUpperCase();
+    }catch(e){
+        G.word=FALLBACK[Math.floor(Math.random()*FALLBACK.length)];
+    }
+    if(G.couch){
+        G.players=['Player 1','Player 2'];
+        resetBoards();
+        G.currentPlayer=0;
+        showPlayerBoard();
+    }else{
+        sk.emit('battle-start',{code:G.code,wordMode:G.wordMode,word:G.word});
+    }
+}
+function resetBoards(){
+    G.boards=[[],[]];G.currentRow=[0,0];G.currentGuess=['',''];G.keyColors=[{},{}];G.done=[false,false];G.won=[false,false];
+}
+
+/* RENDER BOARD */
+function renderBoard(pi){
+    const board=document.getElementById('board');
+    board.innerHTML='';
+    for(let r=0;r<6;r++){
+        const row=document.createElement('div');row.className='wordle-row';
+        for(let c=0;c<5;c++){
+            const tile=document.createElement('div');tile.className='wordle-tile';
+            if(G.boards[pi][r]){
+                const entry=G.boards[pi][r];
+                tile.textContent=entry.letters[c];
+                tile.classList.add(entry.colors[c]);
+            }else if(r===G.currentRow[pi]){
+                tile.textContent=(G.currentGuess[pi]||'')[c]||'';
+                if(tile.textContent)tile.classList.add('filled');
+            }
+            board.appendChild(tile);
+        }
+    }
+}
+function renderKeyboard(pi){
+    const area=document.getElementById('kbArea');area.innerHTML='';
+    KB_ROWS.forEach(row=>{
+        const rowEl=document.createElement('div');rowEl.className='kb-row';
+        row.forEach(key=>{
+            const k=document.createElement('button');
+            k.className='kb-key'+(key.length>1?' wide':'');
+            const color=G.keyColors[pi][key];
+            if(color)k.classList.add(color);
+            k.textContent=key;
+            k.onclick=()=>handleKey(key);
+            rowEl.appendChild(k);
+        });
+        area.appendChild(rowEl);
+    });
+}
+function showPlayerBoard(){
+    const pi=G.currentPlayer;
+    document.getElementById('playerLabel').textContent=G.players[pi].toUpperCase()+"'S BOARD";
+    document.getElementById('statusMsg').textContent=G.done[pi]?(G.won[pi]?'SOLVED!':'NO MORE GUESSES'):'Guess the 5-letter word';
+    renderBoard(pi);renderKeyboard(pi);
+    show('phGame');
+}
+
+/* INPUT */
+function handleKey(key){
+    const pi=G.couch?G.currentPlayer:getMyIndex();
+    if(pi<0||G.done[pi])return;
+    if(key==='DEL'){
+        G.currentGuess[pi]=G.currentGuess[pi].slice(0,-1);
+        renderBoard(pi);return;
+    }
+    if(key==='ENTER'){
+        submitGuess(pi);return;
+    }
+    if(G.currentGuess[pi].length>=5)return;
+    G.currentGuess[pi]+=key;
+    renderBoard(pi);
+}
+function getMyIndex(){return G.players.indexOf(G.name);}
+
+function submitGuess(pi){
+    const guess=G.currentGuess[pi];
+    if(guess.length!==5)return err('gameErr','Enter 5 letters');
+    const colors=scoreGuess(guess,G.word);
+    G.boards[pi].push({letters:guess,colors:colors});
+    for(let i=0;i<5;i++){
+        const L=guess[i];const c=colors[i];
+        const prev=G.keyColors[pi][L];
+        if(c==='green')G.keyColors[pi][L]='green';
+        else if(c==='yellow'&&prev!=='green')G.keyColors[pi][L]='yellow';
+        else if(c==='grey'&&!prev)G.keyColors[pi][L]='grey';
+    }
+    G.currentGuess[pi]='';
+    G.currentRow[pi]++;
+    if(guess===G.word){G.done[pi]=true;G.won[pi]=true;}
+    else if(G.currentRow[pi]>=6){G.done[pi]=true;G.won[pi]=false;}
+
+    if(!G.couch){
+        sk.emit('battle-submit',{code:G.code,guess:guess});
+        renderBoard(pi);renderKeyboard(pi);
+        document.getElementById('statusMsg').textContent=G.done[pi]?(G.won[pi]?'SOLVED! Waiting for opponent...':'Failed! Waiting for opponent...'):'Guess the 5-letter word';
+        if(G.done[0]&&G.done[1])setTimeout(()=>showEndScreen(),500);
+        return;
+    }
+    renderBoard(pi);
+    if(G.done[0]&&G.done[1]){setTimeout(()=>showEndScreen(),600);return;}
+    if(G.done[pi]){
+        if(!G.done[(pi+1)%2]){
+            G.currentPlayer=(pi+1)%2;
+            document.getElementById('passMsg').textContent=`Hand it to ${G.players[G.currentPlayer]} — don't peek!`;
+            show('phPass');
+        }else{setTimeout(()=>showEndScreen(),600);}
+    }else{
+        G.currentPlayer=(pi+1)%2;
+        document.getElementById('passMsg').textContent=`Hand it to ${G.players[G.currentPlayer]} — don't peek!`;
+        show('phPass');
+    }
+}
+function continueCouch(){showPlayerBoard();}
+
+function scoreGuess(guess,answer){
+    const colors=Array(5).fill('grey');
+    const ansArr=[...answer];const used=Array(5).fill(false);
+    for(let i=0;i<5;i++){if(guess[i]===ansArr[i]){colors[i]='green';used[i]=true;}}
+    for(let i=0;i<5;i++){
+        if(colors[i]==='green')continue;
+        for(let j=0;j<5;j++){
+            if(!used[j]&&guess[i]===ansArr[j]){colors[i]='yellow';used[j]=true;break;}
+        }
+    }
+    return colors;
+}
+
+/* END */
+function showEndScreen(){
+    const p1g=G.won[0]?G.currentRow[0]:7;
+    const p2g=G.won[1]?G.currentRow[1]:7;
+    let winnerText='';let icon='🎉';
+    if(p1g<p2g)winnerText=G.players[0]+' wins in '+p1g+' guesses!';
+    else if(p2g<p1g)winnerText=G.players[1]+' wins in '+p2g+' guesses!';
+    else{winnerText="It's a tie!";icon='🤝';}
+    document.getElementById('endIcon').textContent=icon;
+    document.getElementById('endTitle').textContent=p1g===p2g?'TIE GAME!':'WINNER!';
+    document.getElementById('endSub').textContent=winnerText+' The word was '+G.word+'.';
+    const db=document.getElementById('endBoards');
+    db.innerHTML='';
+    [0,1].forEach(pi=>{
+        const col=document.createElement('div');col.className='board-col';
+        col.innerHTML=`<div class="player-label">${esc(G.players[pi])}</div>`;
+        const brd=document.createElement('div');brd.className='wordle-board';
+        for(let r=0;r<6;r++){
+            const row=document.createElement('div');row.className='wordle-row';
+            for(let c=0;c<5;c++){
+                const tile=document.createElement('div');tile.className='wordle-tile';
+                if(G.boards[pi][r]){tile.textContent=G.boards[pi][r].letters[c];tile.classList.add(G.boards[pi][r].colors[c]);}
+                row.appendChild(tile);
+            }
+            brd.appendChild(row);
+        }
+        col.appendChild(brd);db.appendChild(col);
+    });
+    document.getElementById('endScores').innerHTML=[0,1].map(pi=>{
+        const g=G.won[pi]?G.currentRow[pi]:'X';
+        const myG=pi===0?p1g:p2g;
+        const bestG=Math.min(p1g,p2g);
+        const isWinner=myG===bestG&&p1g!==p2g;
+        return `<div class="end-score-row${isWinner?' winner':''}"><span>${esc(G.players[pi])}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${g}/6</span></div>`;
+    }).join('');
+    show('phEnd');
+}
+function rematch(){
+    if(G.couch){resetBoards();G.currentPlayer=0;startGame();}
+    else{sk.emit('battle-rematch',{code:G.code});}
+}
+
+/* SOCKETS */
+sk.on('battle-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('battle-joined',d=>{G.code=d.code;G.players=d.players||[];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
+sk.on('battle-update',d=>{
+    if(d.players){G.players=d.players;renderPlayers();}
+    if(d.opponentDone!==undefined){
+        const oi=getMyIndex()===0?1:0;
+        G.done[oi]=d.opponentDone;G.won[oi]=d.opponentWon||false;
+        if(d.opponentBoard)G.boards[oi]=d.opponentBoard;
+        if(d.opponentRow!==undefined)G.currentRow[oi]=d.opponentRow;
+        if(G.done[0]&&G.done[1])setTimeout(()=>showEndScreen(),500);
+    }
+});
+sk.on('battle-started',d=>{
+    G.players=d.players||G.players;
+    if(d.word)G.word=d.word.toUpperCase();
+    resetBoards();
+    const pi=getMyIndex();G.currentPlayer=pi>=0?pi:0;
+    showPlayerBoard();
+});
+sk.on('battle-error',d=>err('lobbyErr',d.message));
+
+/* Physical keyboard */
+document.addEventListener('keydown',e=>{
+    if(!document.getElementById('phGame').classList.contains('on'))return;
+    if(e.key==='Enter')handleKey('ENTER');
+    else if(e.key==='Backspace')handleKey('DEL');
+    else if(/^[a-zA-Z]$/.test(e.key))handleKey(e.key.toUpperCase());
+});
+document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
+document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
+</script>
+<script src="/header.js"></script>
+</body>
+</html>
