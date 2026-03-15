@@ -122,9 +122,13 @@ try{const res=await fetch(`${BK}/api/battle-items?game=quiz&pack=${G.pack}&count
 function showQuestion(){if(G.idx>=G.items.length||G.idx>=G.qCount){endGame();return;}
 const q=G.items[G.idx];G.answered=false;
 document.getElementById('qCounter').textContent=(G.idx+1)+' / '+G.qCount;
-document.getElementById('qText').textContent=q.question||q.text||q;
+document.getElementById('qText').textContent=q.q||q.question||q.text||q;
 document.getElementById('qCategory').textContent=q.category||G.pack;
-const opts=q.options||['A','B','C','D'];
+const opts=q.opts||q.options||['A','B','C','D'];
+// Find the correct answer index from the answer text
+const ansText=q.a||q.answer||'';
+G.correctIdx=opts.findIndex(o=>o===ansText);
+if(G.correctIdx<0)G.correctIdx=0;
 document.getElementById('optionsGrid').innerHTML=opts.map((o,i)=>`<div class="option-btn" onclick="answer(${i})">${esc(o)}</div>`).join('');
 document.getElementById('resultBanner').style.display='none';
 renderScores();renderStreak();startTimer();show('phGame');}
@@ -133,14 +137,14 @@ function startTimer(){G.timeLeft=15;if(G.ti)clearInterval(G.ti);const bar=docume
 G.ti=setInterval(()=>{G.timeLeft-=0.1;const pct=Math.max(0,(G.timeLeft/15)*100);bar.style.width=pct+'%';if(G.timeLeft<=5)bar.classList.add('danger');if(G.timeLeft<=0){clearInterval(G.ti);timeUp();}},100);}
 
 function timeUp(){if(G.answered)return;G.answered=true;
-const q=G.items[G.idx];const correct=q.answer||q.correct||0;
+const correct=G.correctIdx;
 document.querySelectorAll('.option-btn').forEach((b,i)=>{b.classList.add('disabled');if(i===correct)b.classList.add('correct');});
 const player=G.couch?G.turn:G.myIdx;G.streaks[player]=0;
 document.getElementById('resultBanner').style.display='flex';document.getElementById('resultBanner').className='result-banner wrong';document.getElementById('resultBanner').textContent="TIME'S UP!";
 setTimeout(()=>nextQuestion(),2000);}
 
 function answer(idx){if(G.answered)return;G.answered=true;if(G.ti)clearInterval(G.ti);
-const q=G.items[G.idx];const correct=q.answer||q.correct||0;const isCorrect=(idx===correct);const player=G.couch?G.turn:G.myIdx;
+const correct=G.correctIdx;const isCorrect=(idx===correct);const player=G.couch?G.turn:G.myIdx;
 document.querySelectorAll('.option-btn').forEach((b,i)=>{b.classList.add('disabled');if(i===correct)b.classList.add('correct');if(i===idx&&!isCorrect)b.classList.add('wrong');});
 
 if(isCorrect){G.streaks[player]++;const mult=G.streaks[player]>=3?2:1;G.scores[player]+=mult;document.getElementById('resultBanner').className='result-banner correct';document.getElementById('resultBanner').textContent=mult>1?'CORRECT! 2x STREAK BONUS!':'CORRECT!';}else{G.streaks[player]=0;document.getElementById('resultBanner').className='result-banner wrong';document.getElementById('resultBanner').textContent='WRONG!';}
