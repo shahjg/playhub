@@ -625,6 +625,11 @@
         .lb-login-subtext { font-size: 0.85rem; color: var(--text-muted); }
         .lb-login-subtext a { color: var(--amber); font-weight: 600; text-decoration: underline; }
 
+        .mode-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .mode-btn { padding: 12px 24px; border-radius: 12px; border: 2px solid rgba(0,217,165,0.3); background: white; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
+        .mode-btn:hover { border-color: var(--teal); color: var(--teal); }
+        .mode-btn.active { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); border-color: var(--teal); color: white; box-shadow: 0 4px 15px rgba(0,217,165,0.3); }
+
         footer { background: #000; position: relative; overflow: hidden; margin-top: auto; }
         .footer-border { height: 3px; background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink)); background-size: 300% 100%; animation: gradientSlide 6s linear infinite; }
         @keyframes gradientSlide { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
@@ -693,6 +698,12 @@
     <div class="game-wrapper">
         <div class="game-container">
 
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="classic">Classic</button>
+                <button class="mode-btn" data-mode="sound">Sound Mode</button>
+                <button class="mode-btn" data-mode="speed">Speed Mode</button>
+            </div>
+
             <div class="stats-bar">
                 <div class="stat-card">
                     <div class="stat-label">Current Level</div>
@@ -731,9 +742,15 @@
                 <div class="result-score" id="result-score">Level 1</div>
                 <div class="result-label">Your Score</div>
                 <div class="result-rating" id="result-rating">Good!</div>
+                <div class="memory-score" style="margin-top: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Memory Score</div>
+                    <div id="memory-score-value" style="font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--teal); letter-spacing: 2px;"></div>
+                </div>
+                <div id="result-note" style="display: none; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); font-style: italic;"></div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
+                    <a href="/games/duos/game-memory-match.html" class="btn btn-secondary" style="text-decoration:none;">Challenge a Friend</a>
                 </div>
             </div>
 
@@ -799,13 +816,13 @@
                 <h5>COMPANY</h5>
                 <ul>
                     <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/contact">Contact</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">© 2026 TheGaming.co — Free party games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
@@ -817,6 +834,35 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Auth
+
+    // Mode selector
+    let currentMode = 'classic';
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode;
+        });
+    });
+
+    // Sound Mode - Web Audio API
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const toneFreqs = [261.63, 329.63, 392.00, 523.25, 587.33, 659.25, 783.99, 880.00, 987.77];
+    function playTone(index) {
+        if (currentMode !== 'sound') return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = toneFreqs[index % toneFreqs.length];
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
 
     // Game
     let gameState = 'idle';
@@ -883,15 +929,17 @@
             c.classList.add('dim');
             c.classList.remove('clickable');
         });
-        
+
         let i = 0;
+        const seqInterval = currentMode === 'speed' ? Math.max(150, 600 - level * 30) : 600;
         const interval = setInterval(() => {
             if (i > 0) {
                 cells[sequence[i - 1]].classList.remove('active');
             }
-            
+
             if (i < sequence.length) {
                 cells[sequence[i]].classList.add('active');
+                playTone(sequence[i]);
                 i++;
             } else {
                 clearInterval(interval);
@@ -904,7 +952,7 @@
                     playerIndex = 0;
                 }, 300);
             }
-        }, 600);
+        }, seqInterval);
     }
 
     function handleCellClick(index) {
@@ -915,6 +963,7 @@
         if (index === sequence[playerIndex]) {
             // Correct
             cell.classList.add('active');
+            playTone(index);
             setTimeout(() => cell.classList.remove('active'), 200);
             
             playerIndex++;
@@ -971,6 +1020,16 @@
 
         resultRating.textContent = rating;
         resultRating.className = 'result-rating ' + ratingClass;
+        document.getElementById('memory-score-value').textContent = Math.round(finalScore * 10);
+
+        const resultNote = document.getElementById('result-note');
+        if (currentMode !== 'classic') {
+            resultNote.style.display = 'block';
+            resultNote.textContent = 'Sound/Speed mode \u2014 just for fun, no leaderboard';
+        } else {
+            resultNote.style.display = 'none';
+        }
+
         resultPanel.classList.add('show');
         checkAuthForSave();
     }
@@ -981,6 +1040,11 @@
     });
 
     async function checkAuthForSave() {
+        if (currentMode !== 'classic') {
+            saveBtn.style.display = 'none';
+            return;
+        }
+        saveBtn.style.display = '';
         const { data } = await supabaseClient.auth.getSession();
         currentUser = data.session?.user;
         if (currentUser) {

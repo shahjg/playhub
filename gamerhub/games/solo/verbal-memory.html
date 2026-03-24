@@ -268,7 +268,7 @@
 
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 12px;
         }
 
@@ -658,6 +658,11 @@
         .footer-legal a { color: rgba(255, 255, 255, 0.4); font-size: 0.8rem; }
         .footer-legal a:hover { color: white; }
 
+        .mode-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .mode-btn { padding: 10px 20px; border-radius: 12px; border: 2px solid rgba(16,185,129,0.3); background: white; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
+        .mode-btn:hover { border-color: var(--emerald); color: var(--emerald); }
+        .mode-btn.active { background: linear-gradient(135deg, var(--emerald), var(--emerald-dark)); border-color: var(--emerald); color: white; box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+
         @media (max-width: 700px) {
             header { height: 56px; padding: 0 14px; }
             .header-logo { font-size: 1.4rem; }
@@ -703,6 +708,14 @@
     <div class="game-wrapper">
         <div class="game-container">
 
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="all">All Words</button>
+                <button class="mode-btn" data-mode="animals">&#x1F43E; Animals</button>
+                <button class="mode-btn" data-mode="foods">&#x1F355; Foods</button>
+                <button class="mode-btn" data-mode="places">&#x1F30D; Places</button>
+                <button class="mode-btn" data-mode="speed">&#x26A1; Speed</button>
+            </div>
+
             <div class="stats-bar">
                 <div class="stat-card">
                     <div class="stat-label">Score</div>
@@ -715,6 +728,10 @@
                 <div class="stat-card">
                     <div class="stat-label">Words Seen</div>
                     <div class="stat-value" id="stat-words">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Best Streak</div>
+                    <div class="stat-value" id="stat-streak">0</div>
                 </div>
             </div>
 
@@ -741,9 +758,15 @@
                 <div class="result-score" id="result-score">0</div>
                 <div class="result-label">Words Correct</div>
                 <div class="result-rating" id="result-rating">Good!</div>
+                <div class="memory-score" style="margin-top: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Memory Score</div>
+                    <div id="memory-score-value" style="font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--emerald); letter-spacing: 2px;"></div>
+                </div>
+                <div class="result-note" id="result-note" style="display: none; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-muted); font-style: italic;"></div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
+                    <a href="/games/duos/game-memory-match.html" class="btn btn-secondary" style="text-decoration:none;">Challenge a Friend</a>
                 </div>
             </div>
 
@@ -809,13 +832,13 @@
                 <h5>COMPANY</h5>
                 <ul>
                     <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/contact">Contact</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">© 2026 TheGaming.co — Free party games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
@@ -829,6 +852,38 @@
     // Word list
     const WORDS = ['apple','banana','cherry','dragon','eagle','flower','garden','hammer','island','jungle','kettle','lemon','mountain','needle','orange','pencil','quarter','river','sunset','tiger','umbrella','village','window','yellow','zebra','anchor','bridge','candle','desert','engine','forest','guitar','harbor','insect','jacket','kitten','laptop','marble','nation','ocean','planet','rabbit','silver','temple','useful','velvet','wallet','yogurt','zipper','basket','castle','dinner','eleven','family','gentle','honest','ignore','joyful','knight','listen','middle','narrow','object','people','quaint','reason','simple','travel','unique','vision','wonder','action','beauty','circle','damage','effort','frozen','global','hidden','impact','jungle','kernel','leader','manner','normal','origin','prison','rescue','stream','threat','unlock','valley','wealth','yellow','admire','bother','create','defend','energy','flight','growth','health','inject','junior','keeper','launch','master','nature','output','permit','quoter','return','search','toward','update','verify','wander','extend','yellow','zodiac'];
     
+    // Category word lists
+    const CATEGORY_WORDS = {
+        animals: ['dog','cat','elephant','tiger','lion','bear','wolf','fox','eagle','hawk','dolphin','whale','shark','snake','rabbit','deer','horse','cow','pig','chicken','penguin','parrot','owl','turtle','frog','butterfly','bee','ant','spider','octopus','crab','lobster','salmon','trout','robin','sparrow','crow','swan','duck','goose','mouse','rat','squirrel','bat','monkey','gorilla','panda','koala','kangaroo','zebra'],
+        foods: ['pizza','burger','sushi','pasta','rice','bread','cheese','butter','milk','egg','chicken','steak','salmon','shrimp','lobster','apple','banana','orange','grape','strawberry','blueberry','mango','pineapple','watermelon','lemon','tomato','potato','carrot','broccoli','spinach','onion','garlic','pepper','mushroom','corn','beans','chocolate','cookie','cake','pie','donut','pancake','waffle','cereal','yogurt','honey','sugar','salt','vinegar','mustard'],
+        places: ['paris','london','tokyo','rome','berlin','madrid','moscow','beijing','sydney','cairo','mumbai','dubai','bangkok','istanbul','athens','vienna','prague','lisbon','amsterdam','brussels','stockholm','oslo','helsinki','warsaw','budapest','bucharest','sofia','dublin','edinburgh','venice','florence','barcelona','seville','porto','zurich','geneva','monaco','bruges','luxembourg','reykjavik','havana','lima','bogota','santiago','nairobi','marrakech','cape','hawaii','alaska']
+    };
+    let currentCategory = 'all';
+    const catBtns = document.querySelectorAll('.mode-btn');
+    catBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            catBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCategory = btn.dataset.mode;
+        });
+    });
+
+    // Speed mode
+    let speedTimer = null;
+    let speedDelay = 3000;
+    function startSpeedTimer() {
+        clearTimeout(speedTimer);
+        if (currentCategory !== 'speed') return;
+        speedDelay = Math.max(1000, 3000 - Math.floor(totalWords / 5) * 100);
+        speedTimer = setTimeout(() => {
+            lives--;
+            updateLives();
+            if (lives <= 0) { clearTimeout(speedTimer); endGame(); }
+            else showNextWord();
+        }, speedDelay);
+    }
+
     // Auth (same pattern)
 
     // Game
@@ -841,6 +896,8 @@
     let totalWords = 0;
     let bestScore = null;
     let currentUser = null;
+    let currentStreak = 0;
+    let bestStreak = 0;
 
     const gameBoard = document.getElementById('game-board');
     const boardContent = document.getElementById('board-content');
@@ -874,15 +931,22 @@
         score = 0;
         lives = 3;
         seenWords = new Set();
-        availableWords = [...WORDS];
+        if (currentCategory === 'all' || currentCategory === 'speed') {
+            availableWords = [...WORDS];
+        } else {
+            availableWords = [...CATEGORY_WORDS[currentCategory]];
+        }
         totalWords = 0;
+        currentStreak = 0;
+        bestStreak = 0;
+        document.getElementById('stat-streak').textContent = 0;
         resultPanel.classList.remove('show');
         updateStats();
         updateLives();
-        
+
         gameBoard.className = 'game-board state-playing';
         boardContent.style.display = 'none';
-        
+
         showNextWord();
     }
 
@@ -895,7 +959,11 @@
             currentWord = seenArray[Math.floor(Math.random() * seenArray.length)];
         } else {
             if (availableWords.length === 0) {
-                availableWords = [...WORDS];
+                if (currentCategory === 'all' || currentCategory === 'speed') {
+                    availableWords = [...WORDS];
+                } else {
+                    availableWords = [...CATEGORY_WORDS[currentCategory]];
+                }
             }
             const idx = Math.floor(Math.random() * availableWords.length);
             currentWord = availableWords.splice(idx, 1)[0];
@@ -904,28 +972,37 @@
         currentWordEl.textContent = currentWord;
         totalWords++;
         statWords.textContent = totalWords;
+        startSpeedTimer();
     }
 
     function handleAnswer(answer) {
         if (gameState !== 'playing') return;
-        
+        clearTimeout(speedTimer);
+
         const isSeen = seenWords.has(currentWord);
         const isCorrect = (answer === 'seen' && isSeen) || (answer === 'new' && !isSeen);
-        
+
         const btn = answer === 'seen' ? seenBtn : newBtn;
-        
+
         if (isCorrect) {
             score++;
+            currentStreak++;
+            if (currentStreak > bestStreak) {
+                bestStreak = currentStreak;
+                document.getElementById('stat-streak').textContent = bestStreak;
+            }
             updateStats();
             btn.classList.add('correct');
             setTimeout(() => btn.classList.remove('correct'), 300);
         } else {
+            currentStreak = 0;
             lives--;
             updateLives();
             btn.classList.add('wrong');
             setTimeout(() => btn.classList.remove('wrong'), 400);
-            
+
             if (lives <= 0) {
+                clearTimeout(speedTimer);
                 endGame();
                 return;
             }
@@ -979,6 +1056,18 @@
 
         resultRating.textContent = rating;
         resultRating.className = 'result-rating ' + ratingClass;
+        document.getElementById('memory-score-value').textContent = Math.round(score * 1.5);
+
+        const resultNote = document.getElementById('result-note');
+        if (currentCategory !== 'all') {
+            resultNote.style.display = 'block';
+            resultNote.textContent = 'Leaderboard saving is only available in "All Words" mode.';
+            saveBtn.style.display = 'none';
+        } else {
+            resultNote.style.display = 'none';
+            saveBtn.style.display = '';
+        }
+
         resultPanel.classList.add('show');
         checkAuthForSave();
     }

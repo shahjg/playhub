@@ -815,6 +815,7 @@
             <div class="mode-selector">
                 <button class="mode-btn active" data-mode="official">Official<small>Leaderboard</small></button>
                 <button class="mode-btn" data-mode="practice">Practice<small>Pick Start Level</small></button>
+                <button class="mode-btn" data-mode="backwards">Backwards<small>Reverse It</small></button>
             </div>
 
             <div class="practice-options" id="practice-options">
@@ -846,6 +847,11 @@
                 </div>
             </div>
 
+            <div id="pb-history" style="background: white; border: 2px solid rgba(0,217,165,0.15); border-radius: 16px; padding: 16px; text-align: center; display: none;">
+                <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px;">Personal Best History</div>
+                <div id="pb-bars" style="display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 60px;"></div>
+            </div>
+
             <div class="game-board state-idle" id="game-board">
                 <div class="board-content" id="board-content">
                     <h2 class="board-title" id="board-title">CLICK TO START</h2>
@@ -868,10 +874,15 @@
                 <div class="result-score" id="result-score">3 Digits</div>
                 <div class="result-label">Your Score</div>
                 <div class="result-rating" id="result-rating">Good!</div>
-                <div class="result-note" id="result-note" style="display: none;">Practice mode — score not saved to leaderboard</div>
+                <div class="memory-score" style="margin-top: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Memory Score</div>
+                    <div id="memory-score-value" style="font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--teal); letter-spacing: 2px;"></div>
+                </div>
+                <div class="result-note" id="result-note" style="display: none;">Non-official mode — score not saved to leaderboard</div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
+                    <a href="/games/duos/game-memory-match.html" class="btn btn-secondary" style="text-decoration:none;">Challenge a Friend</a>
                 </div>
             </div>
 
@@ -937,13 +948,13 @@
                 <h5>COMPANY</h5>
                 <ul>
                     <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/contact">Contact</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">© 2026 TheGaming.co — Free party games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
@@ -1088,8 +1099,9 @@
 
     function checkAnswer() {
         const answer = numberInput.value.trim();
-        
-        if (answer === currentNumber) {
+        const expected = currentMode === 'backwards' ? currentNumber.split('').reverse().join('') : currentNumber;
+
+        if (answer === expected) {
             // Correct!
             level++;
             updateStats();
@@ -1106,18 +1118,37 @@
         if (bestLevel) statBest.textContent = bestLevel + ' digits';
     }
 
+    function savePBHistory(score) {
+        let history = JSON.parse(localStorage.getItem('number-memory-pb-history') || '[]');
+        history.push({ score, date: new Date().toISOString().slice(0,10) });
+        if (history.length > 10) history = history.slice(-10);
+        localStorage.setItem('number-memory-pb-history', JSON.stringify(history));
+        showPBChart();
+    }
+
+    function showPBChart() {
+        const history = JSON.parse(localStorage.getItem('number-memory-pb-history') || '[]');
+        if (history.length < 2) return;
+        document.getElementById('pb-history').style.display = 'block';
+        const max = Math.max(...history.map(h => h.score));
+        document.getElementById('pb-bars').innerHTML = history.map(h =>
+            `<div style="width: 20px; height: ${Math.max(4, (h.score/max)*50)}px; background: linear-gradient(to top, var(--teal), var(--teal-dark)); border-radius: 3px;" title="Level ${h.score}"></div>`
+        ).join('');
+    }
+
     function endGame() {
         if (timerInterval) clearInterval(timerInterval);
-        
+
         gameState = 'result';
         finalScore = level - 1;
-        
+
         modeBtns.forEach(b => b.style.pointerEvents = 'auto');
         practiceOptions.style.pointerEvents = 'auto';
-        
+
         if (!bestLevel || finalScore > bestLevel) {
             bestLevel = finalScore;
             statBest.textContent = bestLevel + ' digits';
+            savePBHistory(finalScore);
         }
         
         gameBoard.className = 'game-board state-idle';
@@ -1144,6 +1175,9 @@
         resultRating.textContent = rating;
         resultRating.className = 'result-rating ' + ratingClass;
         
+        // Memory score
+        document.getElementById('memory-score-value').textContent = Math.round(finalScore * 11);
+
         // Show/hide based on mode
         if (currentMode === 'official') {
             resultNote.style.display = 'none';
@@ -1160,7 +1194,7 @@
         resultPanel.classList.remove('show');
         boardTitle.textContent = 'CLICK TO START';
         boardSubtitle.textContent = 'Memorize the number, then type it back';
-        level = currentMode === 'official' ? 3 : parseInt(practiceLevel.value);
+        level = currentMode === 'practice' ? parseInt(practiceLevel.value) : 3;
         updateStats();
         gameState = 'idle';
         saveBtn.style.display = 'inline-block';
@@ -1298,6 +1332,7 @@
     (async function init() {
         const { data } = await supabaseClient.auth.getSession();
         updateLeaderboardVisibility(!!data.session?.user);
+        showPBChart();
     })();
 </script>
 

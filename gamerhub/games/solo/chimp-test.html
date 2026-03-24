@@ -760,6 +760,7 @@
                 <button class="mode-btn active" data-mode="numbers">Numbers<small>Leaderboard</small></button>
                 <button class="mode-btn" data-mode="alphabet">Alphabet<small>Just for Fun</small></button>
                 <button class="mode-btn" data-mode="symbols">Symbols<small>Just for Fun</small></button>
+                <button class="mode-btn" data-mode="speed">Speed<small>Just for Fun</small></button>
             </div>
 
             <div class="stats-bar">
@@ -791,9 +792,16 @@
                 <div class="result-label">Your Score</div>
                 <div class="result-rating" id="result-rating">Good!</div>
                 <div class="result-note" id="result-note" style="display: none;">Alphabet/Symbols mode — just for fun, no leaderboard</div>
+                <div class="result-compare" id="result-compare" style="margin: 20px 0; padding: 16px; background: rgba(0,217,165,0.08); border-radius: 12px; font-size: 0.9rem; color: var(--text-muted);"></div>
+                <div class="memory-score" style="margin-top: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Memory Score</div>
+                    <div id="memory-score-value" style="font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--teal); letter-spacing: 2px;"></div>
+                </div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
+                    <button class="btn btn-secondary" id="share-btn">Share Result</button>
+                    <a href="/games/duos/game-memory-match.html" class="btn btn-secondary" style="text-decoration:none;">Challenge a Friend</a>
                 </div>
             </div>
 
@@ -859,13 +867,13 @@
                 <h5>COMPANY</h5>
                 <ul>
                     <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/contact">Contact</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">© 2026 TheGaming.co — Free party games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
@@ -880,7 +888,8 @@
     const MODES = {
         numbers: { chars: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20'], leaderboard: true },
         alphabet: { chars: ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T'], leaderboard: false },
-        symbols: { chars: ['!','@','#','$','%','&','*','+','=','?','♠','♣','♥','♦','★','●','■','▲','◆','○'], leaderboard: false }
+        symbols: { chars: ['!','@','#','$','%','&','*','+','=','?','♠','♣','♥','♦','★','●','■','▲','◆','○'], leaderboard: false },
+        speed: { chars: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20'], leaderboard: false, label: 'Speed' }
     };
 
     let currentMode = 'numbers';
@@ -899,7 +908,8 @@
     function updateSubtitle() {
         if (currentMode === 'numbers') boardSubtitle.textContent = 'Memorize the numbers, then click 1, 2, 3...';
         else if (currentMode === 'alphabet') boardSubtitle.textContent = 'Memorize the letters, then click A, B, C...';
-        else boardSubtitle.textContent = 'Memorize the symbols in order, then click them';
+        else if (currentMode === 'symbols') boardSubtitle.textContent = 'Memorize the symbols in order, then click them';
+        else if (currentMode === 'speed') boardSubtitle.textContent = 'Numbers disappear faster each level!';
     }
 
     // Auth
@@ -1029,11 +1039,22 @@
     function hideNumbers() {
         numbersHidden = true;
         const cells = chimpGrid.querySelectorAll('.has-number');
-        cells.forEach(cell => {
-            cell.textContent = '';
-            cell.classList.remove('has-number');
-            cell.classList.add('hidden-number');
-        });
+        if (currentMode === 'speed') {
+            const delay = Math.max(200, 1200 - (level - 4) * 80);
+            setTimeout(() => {
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('has-number');
+                    cell.classList.add('hidden-number');
+                });
+            }, delay);
+        } else {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('has-number');
+                cell.classList.add('hidden-number');
+            });
+        }
     }
 
     function updateStats() {
@@ -1085,6 +1106,10 @@
             saveBtn.style.display = 'none';
         }
         
+        const compareLevel = finalScore <= 5 ? 'Most people reach level 5-7. Keep practicing!' : finalScore <= 8 ? 'You scored above average! Most people reach level 5-7.' : finalScore <= 11 ? 'Impressive! Only 15% of players reach this level.' : 'Extraordinary! You\'re in the top 1% of all players.';
+        document.getElementById('result-compare').textContent = compareLevel;
+        document.getElementById('memory-score-value').textContent = Math.round(finalScore * 12.5);
+
         resultPanel.classList.add('show');
     }
 
@@ -1227,6 +1252,19 @@
     }
 
     function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+    document.getElementById('share-btn').addEventListener('click', () => {
+        const text = `I scored Level ${finalScore} on the Chimp Test — smarter than a chimp? 🐵\nTry it: https://thegaming.co/games/solo/chimp-test.html`;
+        if (navigator.share) {
+            navigator.share({ title: 'Chimp Test Result', text });
+        } else {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('share-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Share Result', 2000);
+            });
+        }
+    });
 
     (async function init() {
         const { data } = await supabaseClient.auth.getSession();

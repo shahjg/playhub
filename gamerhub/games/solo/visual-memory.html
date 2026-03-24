@@ -38,6 +38,8 @@
             --dark: #0a0a0f;
             --text-dark: #1a1a2e;
             --text-muted: #6b7280;
+            --teal: #00d9a5;
+            --teal-dark: #00b386;
         }
 
         body {
@@ -646,6 +648,16 @@
             .lb-tab { flex: 1; text-align: center; }
             .footer-links { grid-template-columns: 1fr; gap: 30px; }
         }
+
+        .difficulty-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .diff-btn { padding: 12px 24px; border-radius: 12px; border: 2px solid rgba(0,217,165,0.3); background: white; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
+        .diff-btn:hover { border-color: var(--teal); color: var(--teal); }
+        .diff-btn.active { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); border-color: var(--teal); color: white; box-shadow: 0 4px 15px rgba(0,217,165,0.3); }
+
+        .mode-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .mode-btn { padding: 12px 24px; border-radius: 12px; border: 2px solid rgba(0,217,165,0.3); background: white; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
+        .mode-btn:hover { border-color: var(--teal); color: var(--teal); }
+        .mode-btn.active { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); border-color: var(--teal); color: white; box-shadow: 0 4px 15px rgba(0,217,165,0.3); }
     </style>
 </head>
 <body>
@@ -671,6 +683,17 @@
 
     <div class="game-wrapper">
         <div class="game-container">
+
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="classic">Classic</button>
+                <button class="mode-btn" data-mode="timeattack">Time Attack</button>
+            </div>
+
+            <div class="difficulty-selector">
+                <button class="diff-btn" data-diff="easy">Easy (3×3)</button>
+                <button class="diff-btn active" data-diff="medium">Medium</button>
+                <button class="diff-btn" data-diff="hard">Hard</button>
+            </div>
 
             <div class="stats-bar">
                 <div class="stat-card">
@@ -700,9 +723,14 @@
                 <div class="result-score" id="result-score">Level 1</div>
                 <div class="result-label">Your Score</div>
                 <div class="result-rating" id="result-rating">Good!</div>
+                <div class="memory-score" style="margin-top: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;">Memory Score</div>
+                    <div id="memory-score-value" style="font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--teal); letter-spacing: 2px;"></div>
+                </div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
+                    <a href="/games/duos/game-memory-match.html" class="btn btn-secondary" style="text-decoration:none;">Challenge a Friend</a>
                 </div>
             </div>
 
@@ -768,13 +796,13 @@
                 <h5>COMPANY</h5>
                 <ul>
                     <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/contact">Contact</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">© 2026 TheGaming.co — Free party games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
@@ -786,6 +814,32 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Auth (same pattern)
+
+    // Difficulty & Mode
+    let difficulty = 'medium';
+    let gameMode = 'classic';
+    let timeAttackStart = null;
+    let timeAttackTimer = null;
+
+    const diffBtns = document.querySelectorAll('.diff-btn');
+    diffBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            diffBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            difficulty = btn.dataset.diff;
+        });
+    });
+
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            gameMode = btn.dataset.mode;
+        });
+    });
 
     // Game
     let gameState = 'idle';
@@ -822,7 +876,13 @@
     });
 
     function getGridConfig(level) {
-        // Grid grows with level
+        if (difficulty === 'easy') {
+            return { size: 3, tiles: Math.min(level + 1, 7) };
+        } else if (difficulty === 'hard') {
+            const size = level <= 4 ? 4 : level <= 8 ? 5 : 6;
+            return { size: size, tiles: Math.min(level + 3, size * size - 2) };
+        }
+        // Medium (default) — grows from 3x3 to 5x5
         if (level <= 3) return { size: 3, tiles: level + 2 };
         if (level <= 6) return { size: 4, tiles: level + 2 };
         if (level <= 10) return { size: 5, tiles: level + 2 };
@@ -833,7 +893,17 @@
         gameState = 'playing';
         level = 1;
         lives = 3;
+        if (timeAttackTimer) { clearInterval(timeAttackTimer); timeAttackTimer = null; }
         resultPanel.classList.remove('show');
+
+        if (gameMode === 'timeattack') {
+            lives = 999;
+            statLives.textContent = '∞';
+            timeAttackStart = null;
+            updateStats();
+            startTimeAttackLevel();
+            return;
+        }
         updateStats();
         startLevel();
     }
@@ -900,21 +970,82 @@
         });
     }
 
+    function startTimeAttackLevel() {
+        gridSize = 5;
+        tilesNeeded = 20;
+        litTiles = [];
+        foundTiles = [];
+
+        gameBoard.className = 'game-board state-playing';
+        boardContent.style.display = 'none';
+        levelIndicator.style.display = 'block';
+        levelIndicator.textContent = 'TIME ATTACK';
+
+        visualGrid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+        visualGrid.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+        visualGrid.innerHTML = '';
+
+        const totalCells = gridSize * gridSize;
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'visual-cell';
+            cell.dataset.index = i;
+            visualGrid.appendChild(cell);
+        }
+
+        const indices = [];
+        while (indices.length < tilesNeeded) {
+            const idx = Math.floor(Math.random() * totalCells);
+            if (!indices.includes(idx)) indices.push(idx);
+        }
+        litTiles = indices;
+
+        // Show tiles then start timer
+        isShowingTiles = true;
+        const cells = visualGrid.querySelectorAll('.visual-cell');
+        litTiles.forEach(idx => { cells[idx].classList.add('lit'); });
+
+        setTimeout(() => {
+            cells.forEach(cell => cell.classList.remove('lit'));
+            enableClicking();
+            isShowingTiles = false;
+            timeAttackStart = Date.now();
+            timeAttackTimer = setInterval(() => {
+                const elapsed = ((Date.now() - timeAttackStart) / 1000).toFixed(1);
+                statLevel.textContent = elapsed + 's';
+            }, 100);
+        }, 3000);
+    }
+
     function handleCellClick(e) {
         if (isShowingTiles || gameState !== 'playing') return;
-        
+
         const cell = e.currentTarget;
         const idx = parseInt(cell.dataset.index);
-        
+
         if (foundTiles.includes(idx)) return; // Already clicked
-        
+
         if (litTiles.includes(idx)) {
             // Correct
             cell.classList.remove('clickable');
             cell.classList.add('correct');
             foundTiles.push(idx);
-            
+
             if (foundTiles.length >= litTiles.length) {
+                if (gameMode === 'timeattack') {
+                    // Time attack complete
+                    if (timeAttackTimer) { clearInterval(timeAttackTimer); timeAttackTimer = null; }
+                    finalScore = parseFloat(((Date.now() - timeAttackStart) / 1000).toFixed(1));
+                    gameState = 'result';
+                    gameBoard.className = 'game-board state-idle';
+                    boardContent.style.display = 'block';
+                    levelIndicator.style.display = 'none';
+                    visualGrid.innerHTML = '';
+                    boardTitle.textContent = finalScore + 's';
+                    boardSubtitle.textContent = 'Click to play again';
+                    showTimeAttackResult();
+                    return;
+                }
                 // Level complete
                 level++;
                 updateStats();
@@ -923,9 +1054,11 @@
         } else {
             // Wrong
             cell.classList.add('wrong');
-            lives--;
-            updateStats();
-            
+            if (gameMode !== 'timeattack') {
+                lives--;
+                updateStats();
+            }
+
             if (lives <= 0) {
                 setTimeout(endGame, 500);
             } else {
@@ -973,6 +1106,24 @@
 
         resultRating.textContent = rating;
         resultRating.className = 'result-rating ' + ratingClass;
+        document.getElementById('memory-score-value').textContent = Math.round(finalScore * 10);
+        resultPanel.classList.add('show');
+        checkAuthForSave();
+    }
+
+    function showTimeAttackResult() {
+        resultScore.textContent = finalScore + 's';
+
+        let rating, ratingClass;
+        if (finalScore <= 5) { rating = 'LEGENDARY'; ratingClass = 'rating-legendary'; }
+        else if (finalScore <= 10) { rating = 'EXCELLENT'; ratingClass = 'rating-excellent'; }
+        else if (finalScore <= 20) { rating = 'GOOD'; ratingClass = 'rating-good'; }
+        else if (finalScore <= 35) { rating = 'AVERAGE'; ratingClass = 'rating-average'; }
+        else { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+
+        resultRating.textContent = rating;
+        resultRating.className = 'result-rating ' + ratingClass;
+        document.getElementById('memory-score-value').textContent = Math.round((100 / finalScore) * 100);
         resultPanel.classList.add('show');
         checkAuthForSave();
     }
