@@ -70,42 +70,44 @@
             flex-direction: column;
         }
 
-        /* Loading Screen */
-        .loading-screen {
-            position: fixed;
-            inset: 0;
-            background: var(--dark);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
+        /* Quit Button (during gameplay) */
+        .quit-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            z-index: 20;
+            display: none;
+            transition: all 0.2s;
         }
-        .loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        .loading-title {
+        .quit-btn:hover { background: rgba(255,58,58,0.15); border-color: var(--accent); color: var(--accent); }
+
+        /* Hit Quality Indicator */
+        .hit-quality {
+            position: absolute;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 3rem;
-            letter-spacing: 6px;
-            color: var(--accent);
-            text-shadow: 0 0 40px var(--accent-glow);
-            animation: loadPulse 1.5s ease-in-out infinite;
+            font-size: 1rem;
+            pointer-events: none;
+            z-index: 10;
+            animation: qualityUp 0.5s ease forwards;
         }
-        .loading-bar {
-            width: 120px; height: 3px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 2px;
-            margin-top: 20px;
-            overflow: hidden;
+        .hit-quality.perfect { color: var(--gold); text-shadow: 0 0 8px rgba(255,215,0,0.5); }
+        .hit-quality.great { color: var(--accent-light); }
+        .hit-quality.good { color: var(--text-muted); }
+        @keyframes qualityUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
         }
-        .loading-bar-fill {
-            height: 100%;
-            background: var(--accent);
-            border-radius: 2px;
-            animation: loadFill 1.2s ease forwards;
-        }
-        @keyframes loadPulse { 0%,100%{opacity:1}50%{opacity:0.6} }
-        @keyframes loadFill { 0%{width:0}100%{width:100%} }
 
         /* Competitive Badge */
         .comp-toggle {
@@ -409,8 +411,8 @@
         }
 
         .board-subtitle {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.55);
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.4);
             line-height: 1.5;
             font-weight: 500;
         }
@@ -451,8 +453,8 @@
         .target {
             position: absolute;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, var(--orange-vibrant), var(--orange), var(--orange-dark));
-            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.3);
+            background: radial-gradient(circle, #fff 12%, var(--accent-light) 13%, var(--accent-light) 28%, var(--accent) 29%, var(--accent) 55%, var(--accent-dark) 56%, var(--accent-dark) 100%);
+            box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(255, 58, 58, 0.2);
             cursor: none;
             transform: scale(0);
             animation: targetPop 0.15s ease forwards;
@@ -462,23 +464,8 @@
             z-index: 2;
         }
 
-        .target::before {
-            content: '';
-            width: 33%;
-            height: 33%;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .target::after {
-            content: '';
-            position: absolute;
-            width: 13%;
-            height: 13%;
-            border-radius: 50%;
-            background: var(--orange-dark);
-        }
+        .target::before { display: none; }
+        .target::after { display: none; }
 
         /* tracking mode target */
         .target.tracking-target {
@@ -873,12 +860,6 @@
 
 <div id="site-header"></div>
 
-<!-- Loading Screen -->
-<div class="loading-screen" id="loading-screen">
-    <div class="loading-title">AIM TRAINER</div>
-    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-</div>
-
 <!-- Custom Crosshair -->
 <div class="custom-crosshair" id="custom-crosshair"><div class="crosshair-dot"></div></div>
 
@@ -965,6 +946,7 @@
             <!-- Game Board -->
             <div class="game-board state-idle no-hud" id="game-board">
                 <div class="comp-badge" id="comp-badge">COMPETITIVE</div>
+                <button class="quit-btn" id="quit-btn">End Game</button>
                 <div class="board-content" id="board-content">
                     <h2 class="board-title" id="board-title">CLICK TO START</h2>
                     <p class="board-subtitle" id="board-subtitle">Hit 30 targets as fast as you can</p>
@@ -1072,9 +1054,6 @@
 </footer>
 
 <script>
-    // ── Loading Screen ──
-    setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 1400);
-
     // ── Competitive Mode ──
     let isCompetitive = false;
     function toggleCompetitive() {
@@ -1308,6 +1287,7 @@
         missClicks = 0;
         combo = 0;
         bestStreak = 0;
+        totalAccuracyBonus = 0;
         reactionTimes = [];
         resultPanel.classList.remove('show');
 
@@ -1320,6 +1300,7 @@
         gameBoard.classList.add('state-playing');
         boardContent.style.display = 'none';
         timerBar.style.width = '0%';
+        document.getElementById('quit-btn').style.display = 'block';
 
         liveHud.classList.add('show');
         hudAcc.textContent = '100%';
@@ -1348,7 +1329,7 @@
             const size = 4 + Math.random() * 5;
             p.style.width = size + 'px';
             p.style.height = size + 'px';
-            p.style.background = `hsl(${20 + Math.random() * 20}, 100%, ${55 + Math.random() * 20}%)`;
+            p.style.background = `hsl(${0 + Math.random() * 15}, 100%, ${55 + Math.random() * 25}%)`;
             p.style.left = x + 'px';
             p.style.top = y + 'px';
             const tx = Math.cos(angle) * dist;
@@ -1484,6 +1465,51 @@
         lastTargetTime = performance.now();
     }
 
+    // ── Quit Button ──
+    document.getElementById('quit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (gameState !== 'playing') return;
+        // End tracking mode cleanly
+        if (config.mode === 'tracking') {
+            if (trackingAnimFrame) cancelAnimationFrame(trackingAnimFrame);
+            gameBoard.removeEventListener('mousedown', trackMouseDown);
+            gameBoard.removeEventListener('mouseup', trackMouseUp);
+            gameBoard.removeEventListener('touchstart', trackTouchStart);
+            gameBoard.removeEventListener('touchend', trackTouchEnd);
+            currentScore = Math.round(trackingTimeOnTarget);
+        }
+        endGame();
+    });
+
+    // ── Hit Quality ──
+    function getHitQuality(e, target) {
+        const rect = target.getBoundingClientRect();
+        const targetCX = rect.left + rect.width / 2;
+        const targetCY = rect.top + rect.height / 2;
+        const clickX = e.clientX || (e.touches && e.touches[0]?.clientX) || targetCX;
+        const clickY = e.clientY || (e.touches && e.touches[0]?.clientY) || targetCY;
+        const dx = clickX - targetCX;
+        const dy = clickY - targetCY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius = rect.width / 2;
+        const ratio = dist / radius; // 0 = dead center, 1 = edge
+        if (ratio <= 0.25) return { label: 'PERFECT', cls: 'perfect', bonus: 1.5 };
+        if (ratio <= 0.55) return { label: 'GREAT', cls: 'great', bonus: 1.2 };
+        return { label: 'OK', cls: 'good', bonus: 1.0 };
+    }
+
+    function showHitQuality(label, cls, x, y) {
+        const el = document.createElement('div');
+        el.className = 'hit-quality ' + cls;
+        el.textContent = label;
+        el.style.left = (x + 15) + 'px';
+        el.style.top = (y - 30) + 'px';
+        gameBoard.appendChild(el);
+        setTimeout(() => el.remove(), 550);
+    }
+
+    let totalAccuracyBonus = 0;
+
     function hitTarget(e) {
         e.stopPropagation();
         if (gameState !== 'playing') return;
@@ -1493,12 +1519,17 @@
         if (target._moveInterval) clearInterval(target._moveInterval);
         if (target._fadeTimeout) clearTimeout(target._fadeTimeout);
 
+        // Hit quality based on distance from center
+        const quality = getHitQuality(e, target);
+        totalAccuracyBonus += quality.bonus;
+
         // particles at target center
         const rect = target.getBoundingClientRect();
         const boardRect = gameBoard.getBoundingClientRect();
         const cx = rect.left - boardRect.left + rect.width / 2;
         const cy = rect.top - boardRect.top + rect.height / 2;
         spawnParticles(cx, cy);
+        showHitQuality(quality.label, quality.cls, cx, cy);
 
         target.classList.add('hit');
 
@@ -1662,10 +1693,17 @@
         const totalTime = performance.now() - startTime;
 
         if (config.mode === 'speed') {
-            currentScore = Math.round(targetsHit / (totalTime / 60000));
+            // Factor in hit quality: avgBonus ranges from 1.0 to 1.5
+            const avgBonus = targetsHit > 0 ? totalAccuracyBonus / targetsHit : 1;
+            const rawTPM = Math.round(targetsHit / (totalTime / 60000));
+            currentScore = Math.round(rawTPM * avgBonus);
         } else if (config.mode === 'precision') {
             const total = targetsHit + missClicks;
-            currentScore = total > 0 ? Math.round((targetsHit / total) * 100) : 0;
+            const baseAcc = total > 0 ? (targetsHit / total) : 0;
+            // Weighted by hit quality
+            const avgBonus = targetsHit > 0 ? totalAccuracyBonus / targetsHit : 1;
+            currentScore = Math.round(baseAcc * avgBonus * 100);
+            if (currentScore > 100) currentScore = 100;
         }
 
         const existing = gameBoard.querySelector('.target');
@@ -1681,6 +1719,8 @@
     function endGameCommon() {
         gameState = 'result';
         document.querySelectorAll('.sel-btn, .target-btn').forEach(b => b.style.pointerEvents = 'auto');
+        document.getElementById('quit-btn').style.display = 'none';
+        document.getElementById('comp-badge').style.display = 'none';
 
         gameBoard.classList.remove('state-playing');
         gameBoard.classList.add('state-idle', 'no-hud');
@@ -1746,6 +1786,8 @@
         const elapsed = (performance.now() - startTime) / 60000;
         const tpm = elapsed > 0 ? Math.round(targetsHit / elapsed) : 0;
 
+        const avgPrecision = targetsHit > 0 ? totalAccuracyBonus / targetsHit : 1;
+        const precisionLabel = avgPrecision >= 1.4 ? 'Perfect' : avgPrecision >= 1.15 ? 'Great' : 'OK';
         document.getElementById('rs-accuracy').textContent = (config.mode === 'tracking' ? Math.round((trackingTimeOnTarget / TRACKING_DURATION) * 100) : accPct) + '%';
         document.getElementById('rs-streak').textContent = bestStreak;
         document.getElementById('rs-avg-rt').textContent = config.mode === 'tracking' ? '--' : avgRT + 'ms';
