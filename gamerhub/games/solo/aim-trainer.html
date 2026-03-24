@@ -35,10 +35,15 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --orange: #ff6b35;
-            --orange-dark: #e55a2b;
-            --orange-light: #fff0eb;
-            --orange-vibrant: #ff8c5a;
+            --accent: #ff3a3a;
+            --accent-dark: #d62828;
+            --accent-light: #ff6b6b;
+            --accent-glow: rgba(255, 58, 58, 0.4);
+            --accent-subtle: rgba(255, 58, 58, 0.08);
+            --orange: #ff3a3a;
+            --orange-dark: #d62828;
+            --orange-light: #1a0808;
+            --orange-vibrant: #ff6b6b;
             --red: #ff4757;
             --red-dark: #e84155;
             --red-light: #ffe5e8;
@@ -46,21 +51,118 @@
             --pink: #ff6b9d;
             --blue: #4facfe;
             --purple: #a855f7;
-            --dark: #0a0a0f;
-            --board-bg: #0d1117;
-            --text-dark: #1a1a2e;
-            --text-muted: #6b7280;
+            --dark: #090710;
+            --surface: #111018;
+            --surface-2: #18161f;
+            --board-bg: #0d0b14;
+            --text-dark: #e8e6f0;
+            --text-muted: #8a8696;
+            --border: rgba(255, 58, 58, 0.12);
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #fff5f0 0%, #ffe8e0 50%, #fff0eb 100%);
+            background: var(--dark);
             color: var(--text-dark);
             overflow-x: hidden;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loading-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            letter-spacing: 6px;
+            color: var(--accent);
+            text-shadow: 0 0 40px var(--accent-glow);
+            animation: loadPulse 1.5s ease-in-out infinite;
+        }
+        .loading-bar {
+            width: 120px; height: 3px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            animation: loadFill 1.2s ease forwards;
+        }
+        @keyframes loadPulse { 0%,100%{opacity:1}50%{opacity:0.6} }
+        @keyframes loadFill { 0%{width:0}100%{width:100%} }
+
+        /* Competitive Badge */
+        .comp-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 20px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .comp-toggle:hover { border-color: var(--accent); }
+        .comp-toggle.active {
+            border-color: var(--accent);
+            background: rgba(255,58,58,0.06);
+            box-shadow: 0 0 20px rgba(255,58,58,0.1);
+        }
+        .comp-toggle-switch {
+            width: 42px; height: 22px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 11px;
+            position: relative;
+            transition: background 0.25s;
+        }
+        .comp-toggle.active .comp-toggle-switch { background: var(--accent); }
+        .comp-toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: transform 0.25s;
+        }
+        .comp-toggle.active .comp-toggle-switch::after { transform: translateX(20px); }
+        .comp-label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .comp-toggle.active .comp-label { color: var(--accent); }
+        .comp-badge {
+            position: absolute;
+            top: 12px; left: 12px;
+            padding: 4px 10px;
+            background: var(--accent);
+            color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 0 15px var(--accent-glow);
+            animation: compBadgePulse 2s ease infinite;
+        }
+        @keyframes compBadgePulse { 0%,100%{box-shadow:0 0 15px var(--accent-glow)}50%{box-shadow:0 0 25px var(--accent-glow)} }
 
         h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
         a { color: inherit; text-decoration: none; }
@@ -69,7 +171,7 @@
 
         /* ── Hero ── */
         .game-hero {
-            background: radial-gradient(circle at 10% 0%, #4a2010 0%, #2e1508 50%, #1a0c04 100%);
+            background: radial-gradient(circle at 10% 0%, #1a0a0a 0%, #120808 50%, var(--dark) 100%);
             padding: 60px 20px;
             text-align: center;
             position: relative;
@@ -81,9 +183,9 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background:
-                radial-gradient(circle at 30% 20%, rgba(255, 107, 53, 0.25) 0%, transparent 55%),
-                radial-gradient(circle at 75% 75%, rgba(229, 90, 43, 0.18) 0%, transparent 55%),
-                radial-gradient(circle at 50% 50%, rgba(255, 140, 90, 0.12) 0%, transparent 70%);
+                radial-gradient(circle at 30% 20%, rgba(255, 58, 58, 0.2) 0%, transparent 55%),
+                radial-gradient(circle at 75% 75%, rgba(214, 40, 40, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 50% 50%, rgba(255, 107, 107, 0.08) 0%, transparent 70%);
         }
 
         .game-hero-content { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
@@ -107,7 +209,7 @@
             font-size: clamp(3rem, 8vw, 4.5rem);
             line-height: 0.95;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #ffffff 0%, var(--orange-light) 50%, var(--orange) 100%);
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent-light) 50%, var(--accent) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -160,8 +262,8 @@
         .sel-btn {
             padding: 10px 20px;
             border-radius: 12px;
-            border: 2px solid rgba(255, 107, 53, 0.25);
-            background: white;
+            border: 2px solid var(--border);
+            background: var(--surface);
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1rem;
             letter-spacing: 1px;
@@ -170,13 +272,13 @@
             transition: all 0.2s ease;
         }
 
-        .sel-btn:hover { border-color: var(--orange); color: var(--orange); }
+        .sel-btn:hover { border-color: var(--accent); color: var(--accent); }
 
         .sel-btn.active {
-            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
-            border-color: var(--orange);
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-color: var(--accent);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 4px 15px var(--accent-glow);
         }
 
         /* Target Count Selector */
@@ -189,8 +291,8 @@
         .target-btn {
             padding: 12px 24px;
             border-radius: 12px;
-            border: 2px solid rgba(255, 107, 53, 0.3);
-            background: white;
+            border: 2px solid var(--border);
+            background: var(--surface);
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.1rem;
             letter-spacing: 1px;
@@ -199,13 +301,13 @@
             transition: all 0.2s ease;
         }
 
-        .target-btn:hover { border-color: var(--orange); color: var(--orange); }
+        .target-btn:hover { border-color: var(--accent); color: var(--accent); }
 
         .target-btn.active {
-            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
-            border-color: var(--orange);
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-color: var(--accent);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 4px 15px var(--accent-glow);
         }
 
         /* ── Live Stats HUD ── */
@@ -214,9 +316,9 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             padding: 10px 14px;
-            background: rgba(13, 17, 23, 0.95);
+            background: var(--surface);
             border-radius: 14px 14px 0 0;
-            border: 2px solid rgba(255, 107, 53, 0.3);
+            border: 2px solid rgba(255, 58, 58, 0.25);
             border-bottom: none;
         }
 
@@ -233,7 +335,7 @@
         .hud-value {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.3rem;
-            color: var(--orange);
+            color: var(--accent);
             letter-spacing: 1px;
         }
 
@@ -243,7 +345,7 @@
             height: 450px;
             background: var(--board-bg);
             border-radius: 0 0 24px 24px;
-            border: 3px solid rgba(255, 107, 53, 0.2);
+            border: 3px solid rgba(255, 58, 58, 0.15);
             border-top: none;
             display: flex;
             flex-direction: column;
@@ -271,7 +373,7 @@
 
         .game-board.no-hud {
             border-radius: 24px;
-            border-top: 3px solid rgba(255, 107, 53, 0.2);
+            border-top: 3px solid rgba(255, 58, 58, 0.15);
         }
 
         .game-board.state-idle {
@@ -280,13 +382,14 @@
 
         .game-board.state-idle:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-            border-color: rgba(255, 107, 53, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 58, 58, 0.08);
+            border-color: rgba(255, 58, 58, 0.4);
         }
 
         .game-board.state-playing {
-            border-color: var(--orange);
+            border-color: var(--accent);
             border-width: 4px;
+            box-shadow: 0 0 30px rgba(255, 58, 58, 0.1);
         }
 
         .board-content {
@@ -325,7 +428,7 @@
         .custom-crosshair::after {
             content: '';
             position: absolute;
-            background: rgba(255, 107, 53, 0.9);
+            background: rgba(255, 58, 58, 0.9);
         }
         .custom-crosshair::before {
             left: 50%; top: 0; width: 2px; height: 100%;
@@ -470,14 +573,14 @@
 
         /* ── Result Panel (Post-Game Breakdown) ── */
         .result-panel {
-            background: white;
-            border: 2px solid rgba(255, 107, 53, 0.2);
+            background: var(--surface);
+            border: 2px solid var(--border);
             border-radius: 20px;
             padding: 36px 30px;
             text-align: center;
             display: none;
             animation: slideUp 0.4s ease;
-            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.12);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
 
         @keyframes slideUp {
@@ -491,10 +594,10 @@
             font-family: 'Bebas Neue', sans-serif;
             font-size: 5rem;
             letter-spacing: 2px;
-            color: var(--orange);
+            color: var(--accent);
             margin-bottom: 4px;
             line-height: 1;
-            text-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+            text-shadow: 0 4px 20px var(--accent-glow);
         }
 
         .result-score-label {
@@ -529,15 +632,15 @@
             margin-bottom: 20px;
         }
         .result-stat-item {
-            background: rgba(255, 107, 53, 0.05);
-            border: 1px solid rgba(255, 107, 53, 0.12);
+            background: var(--accent-subtle);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 12px 8px;
         }
         .result-stat-num {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.6rem;
-            color: var(--orange);
+            color: var(--accent);
             letter-spacing: 1px;
         }
         .result-stat-label {
@@ -594,33 +697,33 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             color: white;
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--accent-glow); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-secondary {
-            background: white;
+            background: var(--surface-2);
             color: var(--text-dark);
-            border: 2px solid rgba(255, 107, 53, 0.3);
+            border: 2px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: var(--orange-light);
-            border-color: var(--orange);
+            background: var(--accent-subtle);
+            border-color: var(--accent);
             transform: translateY(-2px);
         }
 
         /* ── Leaderboard ── */
         .leaderboard-section {
-            background: white;
-            border: 2px solid rgba(255, 107, 53, 0.2);
+            background: var(--surface);
+            border: 2px solid var(--border);
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.12);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
 
         .lb-header {
@@ -629,7 +732,7 @@
             justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid rgba(255, 107, 53, 0.15);
+            border-bottom: 2px solid var(--border);
             flex-wrap: wrap;
             gap: 12px;
         }
@@ -639,7 +742,7 @@
         .lb-tabs {
             display: flex;
             gap: 8px;
-            background: rgba(255, 107, 53, 0.08);
+            background: rgba(255, 58, 58, 0.06);
             padding: 4px;
             border-radius: 12px;
         }
@@ -658,8 +761,8 @@
             border: none;
         }
 
-        .lb-tab:hover { color: var(--orange); }
-        .lb-tab.active { background: white; color: var(--orange); box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15); }
+        .lb-tab:hover { color: var(--accent); }
+        .lb-tab.active { background: var(--surface-2); color: var(--accent); box-shadow: 0 2px 8px rgba(255, 58, 58, 0.15); }
 
         .lb-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -668,13 +771,13 @@
             align-items: center;
             gap: 15px;
             padding: 14px 16px;
-            background: rgba(255, 107, 53, 0.05);
+            background: var(--accent-subtle);
             border-radius: 12px;
             transition: all 0.2s ease;
             border: 1px solid transparent;
         }
 
-        .lb-row:hover { background: rgba(255, 107, 53, 0.1); transform: translateX(4px); border-color: rgba(255, 107, 53, 0.2); }
+        .lb-row:hover { background: rgba(255, 58, 58, 0.12); transform: translateX(4px); border-color: var(--border); }
 
         .lb-row.top-1 { background: linear-gradient(90deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%); border: 2px solid rgba(255, 215, 0, 0.4); box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2); }
         .lb-row.top-2 { background: linear-gradient(90deg, rgba(192, 192, 192, 0.12) 0%, rgba(192, 192, 192, 0.04) 100%); border: 2px solid rgba(192, 192, 192, 0.3); }
@@ -686,10 +789,10 @@
         .lb-row.top-3 .lb-rank { color: #cd7f32; }
 
         .lb-name { flex: 1; font-weight: 600; font-size: 0.95rem; color: var(--text-dark); }
-        .lb-score { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--orange); letter-spacing: 1px; }
+        .lb-score { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--accent); letter-spacing: 1px; }
         .lb-empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.9rem; }
 
-        .global-preview { margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(255, 107, 53, 0.1); }
+        .global-preview { margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--border); }
         .global-preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .global-preview-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 1.5px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
         .global-preview-title svg { width: 20px; height: 20px; color: var(--gold); }
@@ -702,8 +805,8 @@
             gap: 10px;
             width: 100%;
             padding: 14px 24px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
-            border: 2px solid rgba(255, 215, 0, 0.3);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 215, 0, 0.02) 100%);
+            border: 2px solid rgba(255, 215, 0, 0.2);
             border-radius: 12px;
             color: var(--text-dark);
             font-weight: 700;
@@ -722,7 +825,7 @@
         .lb-login-desc { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 320px; margin: 0 auto 20px; }
         .lb-login-btn { display: inline-block; margin-bottom: 15px; }
         .lb-login-subtext { font-size: 0.85rem; color: var(--text-muted); }
-        .lb-login-subtext a { color: var(--orange); font-weight: 600; text-decoration: underline; }
+        .lb-login-subtext a { color: var(--accent); font-weight: 600; text-decoration: underline; }
 
         /* ── Footer ── */
         footer { background: #000; position: relative; overflow: hidden; margin-top: auto; }
@@ -734,7 +837,7 @@
         .footer-column h5 { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 2px; margin-bottom: 16px; color: rgba(255, 255, 255, 0.9); }
         .footer-column ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
         .footer-column a { color: rgba(255, 255, 255, 0.5); font-size: 0.9rem; transition: color 0.2s ease; }
-        .footer-column a:hover { color: var(--orange); }
+        .footer-column a:hover { color: var(--accent); }
         .footer-bottom { padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: center; }
         .footer-copyright { font-size: 0.85rem; color: rgba(255, 255, 255, 0.4); margin-bottom: 16px; }
         .footer-legal { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
@@ -770,6 +873,12 @@
 
 <div id="site-header"></div>
 
+<!-- Loading Screen -->
+<div class="loading-screen" id="loading-screen">
+    <div class="loading-title">AIM TRAINER</div>
+    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+</div>
+
 <!-- Custom Crosshair -->
 <div class="custom-crosshair" id="custom-crosshair"><div class="crosshair-dot"></div></div>
 
@@ -778,14 +887,14 @@
         <div class="game-hero-content">
             <div class="game-icon">
                 <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="32" cy="32" r="28" fill="none" stroke="#ff6b35" stroke-width="3"/>
-                    <circle cx="32" cy="32" r="20" fill="none" stroke="#ff6b35" stroke-width="2.5"/>
-                    <circle cx="32" cy="32" r="12" fill="none" stroke="#ff6b35" stroke-width="2"/>
-                    <circle cx="32" cy="32" r="4" fill="#ff6b35"/>
-                    <line x1="32" y1="0" x2="32" y2="10" stroke="#ff8c5a" stroke-width="2"/>
-                    <line x1="32" y1="54" x2="32" y2="64" stroke="#ff8c5a" stroke-width="2"/>
-                    <line x1="0" y1="32" x2="10" y2="32" stroke="#ff8c5a" stroke-width="2"/>
-                    <line x1="54" y1="32" x2="64" y2="32" stroke="#ff8c5a" stroke-width="2"/>
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="#ff3a3a" stroke-width="3"/>
+                    <circle cx="32" cy="32" r="20" fill="none" stroke="#ff3a3a" stroke-width="2.5"/>
+                    <circle cx="32" cy="32" r="12" fill="none" stroke="#ff3a3a" stroke-width="2"/>
+                    <circle cx="32" cy="32" r="4" fill="#ff3a3a"/>
+                    <line x1="32" y1="0" x2="32" y2="10" stroke="#ff6b6b" stroke-width="2"/>
+                    <line x1="32" y1="54" x2="32" y2="64" stroke="#ff6b6b" stroke-width="2"/>
+                    <line x1="0" y1="32" x2="10" y2="32" stroke="#ff6b6b" stroke-width="2"/>
+                    <line x1="54" y1="32" x2="64" y2="32" stroke="#ff6b6b" stroke-width="2"/>
                 </svg>
             </div>
             <h1 class="game-hero-title">AIM TRAINER</h1>
@@ -795,6 +904,12 @@
 
     <div class="game-wrapper">
         <div class="game-container">
+
+            <!-- Competitive Toggle -->
+            <div class="comp-toggle" id="comp-toggle" onclick="toggleCompetitive()">
+                <div class="comp-toggle-switch"></div>
+                <span class="comp-label">Competitive Mode</span>
+            </div>
 
             <!-- Mode Selector -->
             <div class="selector-section">
@@ -849,6 +964,7 @@
 
             <!-- Game Board -->
             <div class="game-board state-idle no-hud" id="game-board">
+                <div class="comp-badge" id="comp-badge">COMPETITIVE</div>
                 <div class="board-content" id="board-content">
                     <h2 class="board-title" id="board-title">CLICK TO START</h2>
                     <p class="board-subtitle" id="board-subtitle">Hit 30 targets as fast as you can</p>
@@ -885,6 +1001,7 @@
                     <h3 class="lb-title">Leaderboard</h3>
                     <div class="lb-tabs" id="lb-tabs">
                         <button class="lb-tab active" id="tab-today">Today</button>
+                        <button class="lb-tab" id="tab-week">This Week</button>
                         <button class="lb-tab" id="tab-personal">My Best</button>
                         <button class="lb-tab" id="tab-friends">Friends</button>
                     </div>
@@ -955,6 +1072,36 @@
 </footer>
 
 <script>
+    // ── Loading Screen ──
+    setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 1400);
+
+    // ── Competitive Mode ──
+    let isCompetitive = false;
+    function toggleCompetitive() {
+        isCompetitive = !isCompetitive;
+        const toggle = document.getElementById('comp-toggle');
+        toggle.classList.toggle('active', isCompetitive);
+        // Lock settings in competitive mode
+        const selectors = document.querySelectorAll('.selector-section');
+        selectors.forEach(s => {
+            s.style.opacity = isCompetitive ? '0.5' : '1';
+            s.style.pointerEvents = isCompetitive ? 'none' : 'auto';
+        });
+        document.getElementById('target-count-section').style.opacity = isCompetitive ? '0.5' : '1';
+        document.getElementById('target-count-section').style.pointerEvents = isCompetitive ? 'none' : 'auto';
+        if (isCompetitive) {
+            // Lock to competitive settings: Speed mode, Default preset, Medium difficulty, 30 targets
+            document.querySelectorAll('#mode-selector .sel-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('#mode-selector .sel-btn[data-mode="speed"]').classList.add('active');
+            document.querySelectorAll('#preset-selector .sel-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('#preset-selector .sel-btn[data-preset="default"]').classList.add('active');
+            document.querySelectorAll('#difficulty-selector .sel-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('#difficulty-selector .sel-btn[data-diff="medium"]').classList.add('active');
+            document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.target-btn[data-count="30"]').classList.add('active');
+        }
+    }
+
     // ── Supabase ──
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
@@ -1166,6 +1313,8 @@
 
         // disable selectors
         document.querySelectorAll('.sel-btn, .target-btn').forEach(b => b.style.pointerEvents = 'none');
+        // Show competitive badge
+        document.getElementById('comp-badge').style.display = isCompetitive ? 'block' : 'none';
 
         gameBoard.classList.remove('state-idle', 'no-hud');
         gameBoard.classList.add('state-playing');
@@ -1680,6 +1829,7 @@
     // ── Leaderboard (VERBATIM) ──
     let currentLeaderboardType = 'today';
     const tabToday = document.getElementById('tab-today');
+    const tabWeek = document.getElementById('tab-week');
     const tabPersonal = document.getElementById('tab-personal');
     const tabFriends = document.getElementById('tab-friends');
     const lbTabs = document.getElementById('lb-tabs');
@@ -1704,9 +1854,14 @@
         }
     }
 
-    tabToday.addEventListener('click', () => { currentLeaderboardType = 'today'; tabToday.classList.add('active'); tabPersonal.classList.remove('active'); tabFriends.classList.remove('active'); fetchLeaderboard(); });
-    tabPersonal.addEventListener('click', () => { currentLeaderboardType = 'personal'; tabPersonal.classList.add('active'); tabToday.classList.remove('active'); tabFriends.classList.remove('active'); fetchLeaderboard(); });
-    tabFriends.addEventListener('click', () => { currentLeaderboardType = 'friends'; tabFriends.classList.add('active'); tabToday.classList.remove('active'); tabPersonal.classList.remove('active'); fetchLeaderboard(); });
+    function setActiveTab(activeTab) {
+        [tabToday, tabWeek, tabPersonal, tabFriends].forEach(t => t.classList.remove('active'));
+        activeTab.classList.add('active');
+    }
+    tabToday.addEventListener('click', () => { currentLeaderboardType = 'today'; setActiveTab(tabToday); fetchLeaderboard(); });
+    tabWeek.addEventListener('click', () => { currentLeaderboardType = 'week'; setActiveTab(tabWeek); fetchLeaderboard(); });
+    tabPersonal.addEventListener('click', () => { currentLeaderboardType = 'personal'; setActiveTab(tabPersonal); fetchLeaderboard(); });
+    tabFriends.addEventListener('click', () => { currentLeaderboardType = 'friends'; setActiveTab(tabFriends); fetchLeaderboard(); });
 
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) updateLeaderboardVisibility(true);
@@ -1758,6 +1913,27 @@
             });
             return;
         }
+        // Weekly leaderboard
+        if (currentLeaderboardType === 'week') {
+            const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - (weekAgo.getDay() || 7) + 1); weekAgo.setHours(0,0,0,0); // Monday
+            const { data, error } = await supabaseClient.from('solo_scores').select('score, created_at, user_id').eq('game_id', gameId).gte('created_at', weekAgo.toISOString()).order('score', { ascending: false }).limit(10);
+            if (error || !data?.length) { lbList.innerHTML = '<div class="lb-empty">No scores this week yet</div>'; return; }
+            const userIds = data.map(e => e.user_id);
+            const { data: profiles } = await supabaseClient.from('profiles').select('id, display_name, gamer_tag').in('id', userIds);
+            const profileMap = {}; profiles?.forEach(p => profileMap[p.id] = p);
+            lbList.innerHTML = '';
+            data.forEach((entry, i) => {
+                const profile = profileMap[entry.user_id];
+                const name = profile?.display_name || profile?.gamer_tag || 'Anonymous';
+                const topClass = i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : '';
+                const row = document.createElement('div');
+                row.className = `lb-row ${topClass}`;
+                row.innerHTML = `<div class="lb-rank">${i + 1}</div><div class="lb-name">${escapeHtml(name)}</div><div class="lb-score">${entry.score} TPM</div>`;
+                lbList.appendChild(row);
+            });
+            return;
+        }
+
         const today = new Date(); today.setHours(0,0,0,0);
         const { data, error } = await supabaseClient.from('solo_scores').select('score, created_at, user_id').eq('game_id', gameId).gte('created_at', today.toISOString()).order('score', { ascending: false }).limit(10);
         if (error || !data?.length) { lbList.innerHTML = '<div class="lb-empty">No scores today yet. Be the first!</div>'; return; }
