@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -141,6 +141,13 @@
             text-align: center;
         }
 
+        .selector-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .operation-selector {
             display: flex;
             justify-content: center;
@@ -178,6 +185,46 @@
             pointer-events: none;
         }
 
+        .pill-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pill-btn:hover { border-color: var(--red); color: var(--red); }
+
+        .pill-btn.active {
+            background: linear-gradient(135deg, var(--red), var(--red-dark));
+            border-color: var(--red);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .pill-btn.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .op-btn.mixed-btn {
+            width: auto;
+            padding: 0 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Stats bar top-level */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -214,6 +261,95 @@
             letter-spacing: 1px;
             color: var(--red);
         }
+
+        /* In-game stats HUD */
+        .stats-hud {
+            display: none;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .stats-hud.visible { display: flex; }
+
+        .hud-item {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .hud-item span {
+            color: var(--red-vibrant);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+        }
+
+        /* Streak counter */
+        .streak-counter {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--gold);
+            opacity: 0;
+            transition: all 0.25s ease;
+            z-index: 5;
+            text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .streak-counter.visible { opacity: 1; }
+
+        .streak-multiplier {
+            font-size: 0.75rem;
+            display: block;
+            text-align: center;
+            color: #ffed4a;
+            letter-spacing: 1px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Correct answer overlay */
+        .correct-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: var(--green);
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        .correct-overlay.flash { opacity: 1; }
+
+        /* Wrong answer overlay */
+        .wrong-overlay {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ff4757;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .wrong-overlay.flash { opacity: 1; }
 
         .game-board {
             width: 100%;
@@ -288,6 +424,7 @@
             letter-spacing: 2px;
         }
 
+        .timer-display.hidden { display: none; }
         .timer-display.warning { color: var(--gold); animation: timerPulse 0.5s ease infinite; }
         .timer-display.danger { color: #ff4757; animation: timerPulse 0.3s ease infinite; }
 
@@ -304,7 +441,7 @@
         }
 
         .answer-input {
-            width: 200px;
+            width: 220px;
             padding: 14px 20px;
             border-radius: 12px;
             border: 3px solid rgba(239, 68, 68, 0.5);
@@ -329,6 +466,7 @@
 
         .answer-input.wrong {
             border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.15);
             animation: wrongShake 0.4s ease;
         }
 
@@ -356,6 +494,7 @@
             font-size: 1.4rem;
         }
 
+        /* Result panel */
         .result-panel {
             background: white;
             border: 2px solid rgba(239, 68, 68, 0.2);
@@ -379,14 +518,14 @@
             font-size: 5rem;
             letter-spacing: 2px;
             color: var(--red);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             line-height: 1;
         }
 
         .result-label {
             font-size: 1rem;
             color: var(--text-muted);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -395,7 +534,7 @@
         .result-rating {
             font-size: 1.3rem;
             font-weight: 700;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding: 12px 24px;
             border-radius: 50px;
             display: inline-block;
@@ -406,6 +545,61 @@
         .rating-good { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; }
         .rating-average { background: rgba(107, 114, 128, 0.15); color: var(--text-dark); border: 2px solid rgba(107, 114, 128, 0.3); }
         .rating-slow { background: var(--red-light); color: var(--red-dark); border: 2px solid var(--red); }
+
+        .result-pb {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .result-pb.new-pb {
+            background: linear-gradient(135deg, var(--gold), #ffed4a);
+            color: #1a1a2e;
+            animation: pbPulse 1s ease infinite;
+        }
+
+        .result-pb.no-pb {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--text-muted);
+        }
+
+        @keyframes pbPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .result-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .result-stat-cell {
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 12px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .result-stat-cell .rs-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .result-stat-cell .rs-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--red);
+            letter-spacing: 1px;
+        }
 
         .result-note {
             font-size: 0.85rem;
@@ -448,6 +642,7 @@
 
         .btn-secondary:hover { background: var(--red-light); border-color: var(--red); transform: translateY(-2px); }
 
+        /* Leaderboard section */
         .leaderboard-section {
             background: white;
             border: 2px solid rgba(239, 68, 68, 0.2);
@@ -581,7 +776,10 @@
             .problem-display { font-size: 2.5rem; }
             .answer-input { width: 160px; font-size: 1.5rem; }
             .op-btn { width: 50px; height: 50px; font-size: 1.5rem; }
+            .op-btn.mixed-btn { width: auto; padding: 0 12px; }
+            .pill-btn { padding: 8px 14px; font-size: 0.75rem; }
             .result-score { font-size: 3.5rem; }
+            .result-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .result-actions { flex-direction: column; width: 100%; }
             .btn { width: 100%; }
             .leaderboard-section { padding: 20px; }
@@ -589,6 +787,9 @@
             .lb-tabs { width: 100%; }
             .lb-tab { flex: 1; text-align: center; }
             .footer-links { grid-template-columns: 1fr; gap: 30px; }
+            .hud-item { font-size: 0.7rem; }
+            .hud-item span { font-size: 0.95rem; }
+            .stats-hud { gap: 10px; }
         }
     </style>
 </head>
@@ -607,23 +808,48 @@
                 </svg>
             </div>
             <h1 class="game-hero-title">MATH SPEED</h1>
-            <p class="game-hero-desc">Solve math problems as fast as you can. 60 seconds on the clock!</p>
+            <p class="game-hero-desc">Solve math problems as fast as you can. Multiple modes and difficulty levels!</p>
         </div>
     </section>
 
     <div class="game-wrapper">
         <div class="game-container">
 
+            <!-- Mode selector -->
             <div class="config-section">
-                <div class="config-label">Select Operations</div>
-                <div class="operation-selector" id="operation-selector">
-                    <button class="op-btn active" data-op="+" title="Addition">+</button>
-                    <button class="op-btn active" data-op="-" title="Subtraction">−</button>
-                    <button class="op-btn active" data-op="*" title="Multiplication">×</button>
-                    <button class="op-btn active" data-op="/" title="Division">÷</button>
+                <div class="config-label">Game Mode</div>
+                <div class="selector-row" id="mode-selector">
+                    <button class="pill-btn active" data-mode="speed">Speed</button>
+                    <button class="pill-btn" data-mode="accuracy">Accuracy</button>
+                    <button class="pill-btn" data-mode="survival">Survival</button>
+                    <button class="pill-btn" data-mode="marathon">Marathon</button>
                 </div>
             </div>
 
+            <!-- Difficulty selector -->
+            <div class="config-section">
+                <div class="config-label">Difficulty</div>
+                <div class="selector-row" id="difficulty-selector">
+                    <button class="pill-btn" data-diff="easy">Easy</button>
+                    <button class="pill-btn active" data-diff="medium">Medium</button>
+                    <button class="pill-btn" data-diff="hard">Hard</button>
+                    <button class="pill-btn" data-diff="nightmare">Nightmare</button>
+                </div>
+            </div>
+
+            <!-- Operation selector -->
+            <div class="config-section">
+                <div class="config-label">Operations</div>
+                <div class="operation-selector" id="operation-selector">
+                    <button class="op-btn active" data-op="+" title="Addition">+</button>
+                    <button class="op-btn active" data-op="-" title="Subtraction">&#8722;</button>
+                    <button class="op-btn active" data-op="*" title="Multiplication">&#215;</button>
+                    <button class="op-btn active" data-op="/" title="Division">&#247;</button>
+                    <button class="op-btn mixed-btn active" data-op="mixed" title="Mixed">Mixed</button>
+                </div>
+            </div>
+
+            <!-- Stats bar -->
             <div class="stats-bar">
                 <div class="stat-card">
                     <div class="stat-label">Score</div>
@@ -631,7 +857,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Best</div>
-                    <div class="stat-value" id="stat-best">—</div>
+                    <div class="stat-value" id="stat-best">&mdash;</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Time</div>
@@ -639,30 +865,51 @@
                 </div>
             </div>
 
+            <!-- Game board -->
             <div class="game-board state-idle" id="game-board">
                 <div class="board-content" id="board-content">
                     <h2 class="board-title" id="board-title">CLICK TO START</h2>
                     <p class="board-subtitle" id="board-subtitle">Solve as many as you can in 60 seconds</p>
                 </div>
+                <div class="streak-counter" id="streak-counter"></div>
+                <div class="correct-overlay" id="correct-overlay">&#10003;</div>
+                <div class="wrong-overlay" id="wrong-overlay"></div>
                 <div class="math-display" id="math-display">
+                    <div class="stats-hud" id="stats-hud">
+                        <div class="hud-item">Correct: <span id="hud-correct">0</span></div>
+                        <div class="hud-item">Wrong: <span id="hud-wrong">0</span></div>
+                        <div class="hud-item">Streak: <span id="hud-streak">0</span></div>
+                        <div class="hud-item">Acc: <span id="hud-accuracy">100%</span></div>
+                    </div>
                     <div class="timer-display" id="timer-display">60</div>
                     <div class="problem-display" id="problem-display">12 + 8 = ?</div>
-                    <input type="text" class="answer-input" id="answer-input" placeholder="?" inputmode="numeric" autocomplete="off">
+                    <input type="text" class="answer-input" id="answer-input" placeholder="?" autocomplete="off">
                     <div class="score-display">Correct: <span id="correct-count">0</span></div>
                 </div>
             </div>
 
+            <!-- Result panel (enhanced post-game) -->
             <div class="result-panel" id="result-panel">
                 <div class="result-score" id="result-score">0</div>
-                <div class="result-label">Problems Solved</div>
+                <div class="result-label" id="result-label">Problems Solved</div>
                 <div class="result-rating" id="result-rating">Good!</div>
-                <div class="result-note" id="result-note" style="display: none;">Mixed operations mode — score not saved to leaderboard</div>
+                <div class="result-pb" id="result-pb" style="display:none;"></div>
+                <div class="result-stats-grid" id="result-stats-grid">
+                    <div class="result-stat-cell"><div class="rs-label">Correct</div><div class="rs-value" id="rs-correct">0</div></div>
+                    <div class="result-stat-cell"><div class="rs-label">Wrong</div><div class="rs-value" id="rs-wrong">0</div></div>
+                    <div class="result-stat-cell"><div class="rs-label">Accuracy</div><div class="rs-value" id="rs-accuracy">0%</div></div>
+                    <div class="result-stat-cell"><div class="rs-label">Best Streak</div><div class="rs-value" id="rs-streak">0</div></div>
+                    <div class="result-stat-cell"><div class="rs-label">Avg Time</div><div class="rs-value" id="rs-avgtime">0s</div></div>
+                    <div class="result-stat-cell"><div class="rs-label">Total Time</div><div class="rs-value" id="rs-totaltime">0s</div></div>
+                </div>
+                <div class="result-note" id="result-note" style="display: none;">Mixed operations mode &mdash; score not saved to leaderboard</div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
                 </div>
             </div>
 
+            <!-- Leaderboard section -->
             <div class="leaderboard-section">
                 <div class="lb-header">
                     <h3 class="lb-title">Leaderboard</h3>
@@ -671,15 +918,15 @@
                         <button class="lb-tab" id="tab-personal">My Best</button>
                     </div>
                 </div>
-                
+
                 <div class="lb-login-gate" id="lb-login-gate" style="display: none;">
-                    <div class="lb-login-icon">🔒</div>
+                    <div class="lb-login-icon">&#128274;</div>
                     <h4 class="lb-login-title">See How You Stack Up</h4>
                     <p class="lb-login-desc">Log in to view leaderboards, save your scores, and compete worldwide.</p>
-                    <a href="/login.html" class="btn btn-primary lb-login-btn">Log In — It's Free</a>
+                    <a href="/login.html" class="btn btn-primary lb-login-btn">Log In &mdash; It's Free</a>
                     <p class="lb-login-subtext">Don't have an account? <a href="/login.html">Sign up</a></p>
                 </div>
-                
+
                 <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
 
                 <div class="global-preview" id="global-preview">
@@ -705,33 +952,13 @@
     <div class="footer-border"></div>
     <div class="footer-main">
         <div class="footer-links">
-            <div class="footer-column">
-                <h5>GAMES</h5>
-                <ul>
-                    <li><a href="../../index.html">Solo</a></li>
-                    <li><a href="/duos.html">Duos</a></li>
-                    <li><a href="/squad-games.html">Squad</a></li>
-                    <li><a href="/party-games.html">Party</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h5>COMMUNITY</h5>
-                <ul>
-                    <li><a href="../../leaderboards.html">Leaderboards</a></li>
-                    <li><a href="/supporters.html">Hall of Champions</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h5>COMPANY</h5>
-                <ul>
-                    <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
-                </ul>
-            </div>
+            <div class="footer-column"><h5>GAMES</h5><ul><li><a href="/solo">Solo</a></li><li><a href="/duos">Duos</a></li><li><a href="/squad-games">Squad</a></li><li><a href="/party-games">Party</a></li></ul></div>
+            <div class="footer-column"><h5>COMMUNITY</h5><ul><li><a href="/leaderboards">Leaderboards</a></li><li><a href="/supporters">Supporters</a></li></ul></div>
+            <div class="footer-column"><h5>COMPANY</h5><ul><li><a href="/about">About</a></li><li><a href="/contact">Contact</a></li></ul></div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">&copy; 2026 TheGaming.co &mdash; Free games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
@@ -742,55 +969,28 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = supabaseClient;
 
-    // Operation config
-    const opBtns = document.querySelectorAll('.op-btn');
+    // ========== DIFFICULTY CONFIG ==========
+    const DIFFICULTIES = {
+        easy:      { label: 'Easy',      maxNum: 10,  ops: ['+','-'],             decimals: false, multiStep: false, fractions: false, negatives: false },
+        medium:    { label: 'Medium',    maxNum: 20,  ops: ['+','-','*','/'],     decimals: false, multiStep: false, fractions: false, negatives: false },
+        hard:      { label: 'Hard',      maxNum: 50,  ops: ['+','-','*','/'],     decimals: true,  multiStep: false, fractions: false, negatives: false },
+        nightmare: { label: 'Nightmare', maxNum: 100, ops: ['+','-','*','/'],     decimals: true,  multiStep: true,  fractions: true,  negatives: true }
+    };
+
+    // ========== MODE CONFIG ==========
+    const MODES = {
+        speed:    { label: 'Speed',    desc: '60 seconds, solve as many as possible' },
+        accuracy: { label: 'Accuracy', desc: '20 questions, score = accuracy %' },
+        survival: { label: 'Survival', desc: 'One wrong answer ends the game' },
+        marathon:  { label: 'Marathon',  desc: 'Endless, difficulty increases every 10' }
+    };
+
+    let currentMode = 'speed';
+    let currentDifficulty = 'medium';
     let selectedOps = ['+', '-', '*', '/'];
-    
-    function getGameId() {
-        if (selectedOps.length === 1) {
-            const opMap = { '+': 'add', '-': 'sub', '*': 'mul', '/': 'div' };
-            return 'math-speed-' + opMap[selectedOps[0]];
-        }
-        return 'math-speed-mixed';
-    }
+    let isMixed = true;
 
-    function updateOpSelection() {
-        selectedOps = [];
-        opBtns.forEach(btn => {
-            if (btn.classList.contains('active')) {
-                selectedOps.push(btn.dataset.op);
-            }
-        });
-        
-        if (selectedOps.length === 0) {
-            opBtns[0].classList.add('active');
-            selectedOps = ['+'];
-        }
-        
-        const gameId = getGameId();
-        document.getElementById('view-full-btn').href = '../../leaderboards.html?game=' + gameId;
-        
-        fetchLeaderboard();
-        fetchGlobalTop3();
-    }
-
-    opBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (gameState === 'playing') return;
-            btn.classList.toggle('active');
-            updateOpSelection();
-        });
-    });
-
-    // Game
-    let gameState = 'idle';
-    let score = 0;
-    let timeLeft = 60;
-    let timerInterval = null;
-    let currentAnswer = 0;
-    let bestScore = null;
-    let currentUser = null;
-
+    // ========== DOM REFS ==========
     const gameBoard = document.getElementById('game-board');
     const boardContent = document.getElementById('board-content');
     const boardTitle = document.getElementById('board-title');
@@ -802,153 +1002,670 @@
     const correctCount = document.getElementById('correct-count');
     const resultPanel = document.getElementById('result-panel');
     const resultScore = document.getElementById('result-score');
+    const resultLabel = document.getElementById('result-label');
     const resultRating = document.getElementById('result-rating');
+    const resultPb = document.getElementById('result-pb');
     const resultNote = document.getElementById('result-note');
     const saveBtn = document.getElementById('save-btn');
     const retryBtn = document.getElementById('retry-btn');
     const statScore = document.getElementById('stat-score');
     const statBest = document.getElementById('stat-best');
     const statTime = document.getElementById('stat-time');
+    const streakCounter = document.getElementById('streak-counter');
+    const correctOverlay = document.getElementById('correct-overlay');
+    const wrongOverlay = document.getElementById('wrong-overlay');
+    const statsHud = document.getElementById('stats-hud');
+    const opBtns = document.querySelectorAll('.op-btn:not(.mixed-btn)');
+    const mixedBtn = document.querySelector('.mixed-btn');
 
+    // ========== GAME STATE ==========
+    let gameState = 'idle';
+    let score = 0;
+    let correctAnswers = 0;
+    let wrongAnswers = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let timeLeft = 60;
+    let timerInterval = null;
+    let currentAnswer = null; // can be number or string for fractions
+    let bestScore = null;
+    let currentUser = null;
+    let questionsAnswered = 0;
+    let totalQuestions = 20; // for accuracy mode
+    let gameStartTime = 0;
+    let problemStartTime = 0;
+    let problemTimes = [];
+    let marathonDifficultyIndex = 0;
+    const difficultyOrder = ['easy', 'medium', 'hard', 'nightmare'];
+
+    // ========== MODE SELECTOR ==========
+    const modeBtns = document.querySelectorAll('#mode-selector .pill-btn');
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode;
+            updateBoardSubtitle();
+        });
+    });
+
+    function updateBoardSubtitle() {
+        if (gameState !== 'idle') return;
+        const mode = MODES[currentMode];
+        boardSubtitle.textContent = mode.desc;
+        if (currentMode === 'speed') {
+            statTime.textContent = '60s';
+        } else {
+            statTime.textContent = '--';
+        }
+    }
+
+    // ========== DIFFICULTY SELECTOR ==========
+    const diffBtns = document.querySelectorAll('#difficulty-selector .pill-btn');
+    diffBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            diffBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentDifficulty = btn.dataset.diff;
+            updateOpSelection();
+        });
+    });
+
+    // ========== OPERATION SELECTOR ==========
+    function syncMixedBtn() {
+        const allActive = Array.from(opBtns).every(b => b.classList.contains('active'));
+        if (allActive) {
+            mixedBtn.classList.add('active');
+            isMixed = true;
+        } else {
+            mixedBtn.classList.remove('active');
+            isMixed = false;
+        }
+    }
+
+    opBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            btn.classList.toggle('active');
+            syncMixedBtn();
+            updateOpSelection();
+        });
+    });
+
+    mixedBtn.addEventListener('click', () => {
+        if (gameState === 'playing') return;
+        const allActive = Array.from(opBtns).every(b => b.classList.contains('active'));
+        if (allActive) {
+            // Deselect all, select only +
+            opBtns.forEach(b => b.classList.remove('active'));
+            opBtns[0].classList.add('active');
+        } else {
+            opBtns.forEach(b => b.classList.add('active'));
+        }
+        syncMixedBtn();
+        updateOpSelection();
+    });
+
+    function getGameId() {
+        if (selectedOps.length === 1) {
+            const opMap = { '+': 'add', '-': 'sub', '*': 'mul', '/': 'div' };
+            return 'math-speed-' + currentDifficulty + '-' + opMap[selectedOps[0]];
+        }
+        return 'math-speed-mixed';
+    }
+
+    function updateOpSelection() {
+        selectedOps = [];
+        opBtns.forEach(btn => {
+            if (btn.classList.contains('active')) {
+                selectedOps.push(btn.dataset.op);
+            }
+        });
+
+        if (selectedOps.length === 0) {
+            opBtns[0].classList.add('active');
+            selectedOps = ['+'];
+            syncMixedBtn();
+        }
+
+        const gameId = getGameId();
+        document.getElementById('view-full-btn').href = '../../leaderboards.html?game=' + gameId;
+
+        fetchLeaderboard();
+        fetchGlobalTop3();
+    }
+
+    // ========== PROBLEM GENERATION ==========
+    function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function gcd(a, b) {
+        a = Math.abs(a); b = Math.abs(b);
+        while (b) { [a, b] = [b, a % b]; }
+        return a;
+    }
+
+    function simplifyFraction(num, den) {
+        if (den < 0) { num = -num; den = -den; }
+        const g = gcd(num, den);
+        return [num / g, den / g];
+    }
+
+    function generateProblem() {
+        let effectiveDifficulty = currentDifficulty;
+
+        // Marathon mode: override difficulty based on progress
+        if (currentMode === 'marathon') {
+            effectiveDifficulty = difficultyOrder[Math.min(marathonDifficultyIndex, difficultyOrder.length - 1)];
+        }
+
+        const diff = DIFFICULTIES[effectiveDifficulty];
+        const availableOps = selectedOps.filter(op => diff.ops.includes(op));
+        const ops = availableOps.length > 0 ? availableOps : ['+'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+
+        let a, b, c, answer, display;
+        let answerIsString = false;
+
+        // Fraction problems (nightmare only, 20% chance)
+        if (diff.fractions && Math.random() < 0.2) {
+            return generateFractionProblem();
+        }
+
+        // Multi-step problems (nightmare only, 30% chance)
+        if (diff.multiStep && Math.random() < 0.3) {
+            return generateMultiStepProblem(diff);
+        }
+
+        // Standard single-operation problem
+        switch (op) {
+            case '+':
+                a = randInt(1, diff.maxNum);
+                b = randInt(1, diff.maxNum);
+                if (diff.decimals && Math.random() < 0.3) {
+                    a = parseFloat((a + Math.random()).toFixed(1));
+                }
+                answer = parseFloat((a + b).toFixed(1));
+                display = a + ' + ' + b + ' = ?';
+                break;
+            case '-':
+                a = randInt(1, diff.maxNum);
+                b = randInt(1, diff.maxNum);
+                if (!diff.negatives && b > a) { [a, b] = [b, a]; }
+                if (diff.decimals && Math.random() < 0.3) {
+                    a = parseFloat((a + Math.random()).toFixed(1));
+                }
+                answer = parseFloat((a - b).toFixed(1));
+                display = a + ' \u2212 ' + b + ' = ?';
+                break;
+            case '*':
+                if (effectiveDifficulty === 'easy') {
+                    a = randInt(1, 10); b = randInt(1, 10);
+                } else if (effectiveDifficulty === 'medium') {
+                    a = randInt(1, 12); b = randInt(1, 12);
+                } else {
+                    a = randInt(2, Math.min(diff.maxNum, 25));
+                    b = randInt(2, 12);
+                }
+                if (diff.decimals && Math.random() < 0.25) {
+                    a = parseFloat((randInt(1, 15) + 0.5).toFixed(1));
+                    b = randInt(2, 8);
+                }
+                answer = parseFloat((a * b).toFixed(1));
+                display = a + ' \u00d7 ' + b + ' = ?';
+                break;
+            case '/':
+                if (effectiveDifficulty === 'hard' && Math.random() < 0.3) {
+                    // Division that produces 1 decimal
+                    b = randInt(2, 10);
+                    const intPart = randInt(1, 10);
+                    const decPart = randInt(1, 9);
+                    answer = parseFloat((intPart + decPart / 10).toFixed(1));
+                    a = parseFloat((b * answer).toFixed(1));
+                } else {
+                    // Integer result division
+                    b = randInt(1, Math.min(diff.maxNum, 12));
+                    answer = randInt(1, Math.min(diff.maxNum, 12));
+                    a = b * answer;
+                }
+                display = a + ' \u00f7 ' + b + ' = ?';
+                break;
+        }
+
+        currentAnswer = answer;
+        problemDisplay.textContent = display;
+        problemStartTime = Date.now();
+    }
+
+    function generateFractionProblem() {
+        const denoms = [2, 3, 4, 5, 6, 8];
+        const d1 = denoms[randInt(0, denoms.length - 1)];
+        const d2 = denoms[randInt(0, denoms.length - 1)];
+        const n1 = randInt(1, d1 - 1);
+        const n2 = randInt(1, d2 - 1);
+
+        // Common denominator
+        const lcd = (d1 * d2) / gcd(d1, d2);
+        const newN1 = n1 * (lcd / d1);
+        const newN2 = n2 * (lcd / d2);
+
+        const op = Math.random() < 0.5 ? '+' : '-';
+        let resultNum;
+        if (op === '+') {
+            resultNum = newN1 + newN2;
+        } else {
+            resultNum = newN1 - newN2;
+            if (resultNum < 0) {
+                // Swap to avoid negative
+                resultNum = newN2 - newN1;
+                const display = n2 + '/' + d2 + ' \u2212 ' + n1 + '/' + d1 + ' = ?';
+                const [sn, sd] = simplifyFraction(resultNum, lcd);
+                if (sd === 1) {
+                    currentAnswer = sn;
+                } else {
+                    currentAnswer = sn + '/' + sd;
+                }
+                problemDisplay.textContent = display;
+                problemStartTime = Date.now();
+                return;
+            }
+        }
+
+        const [sn, sd] = simplifyFraction(resultNum, lcd);
+        if (sd === 1) {
+            currentAnswer = sn;
+        } else {
+            currentAnswer = sn + '/' + sd;
+        }
+
+        const opSymbol = op === '+' ? '+' : '\u2212';
+        problemDisplay.textContent = n1 + '/' + d1 + ' ' + opSymbol + ' ' + n2 + '/' + d2 + ' = ?';
+        problemStartTime = Date.now();
+    }
+
+    function generateMultiStepProblem(diff) {
+        const ops = ['+', '-', '*'];
+        const op1 = ops[randInt(0, ops.length - 1)];
+        const op2 = ops[randInt(0, ops.length - 1)];
+
+        let a = randInt(2, 15);
+        let b = randInt(2, 15);
+        let c = randInt(2, 10);
+
+        // (a op1 b) op2 c
+        let step1;
+        if (op1 === '+') step1 = a + b;
+        else if (op1 === '-') { if (b > a) [a, b] = [b, a]; step1 = a - b; }
+        else step1 = a * b;
+
+        let answer;
+        if (op2 === '+') answer = step1 + c;
+        else if (op2 === '-') answer = step1 - c;
+        else {
+            c = randInt(2, 5); // Keep multiplication manageable
+            answer = step1 * c;
+        }
+
+        const sym1 = op1 === '+' ? '+' : op1 === '-' ? '\u2212' : '\u00d7';
+        const sym2 = op2 === '+' ? '+' : op2 === '-' ? '\u2212' : '\u00d7';
+
+        problemDisplay.textContent = '(' + a + ' ' + sym1 + ' ' + b + ') ' + sym2 + ' ' + c + ' = ?';
+        currentAnswer = answer;
+        problemStartTime = Date.now();
+    }
+
+    // ========== GAME FLOW ==========
     gameBoard.addEventListener('click', (e) => {
         if (gameState === 'idle') {
             startGame();
         }
     });
 
-    answerInput.addEventListener('input', checkAnswer);
     answerInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            checkAnswer();
+            submitAnswer();
         }
     });
 
-    function generateProblem() {
-        const op = selectedOps[Math.floor(Math.random() * selectedOps.length)];
-        let a, b, answer;
-        
-        switch(op) {
-            case '+':
-                a = Math.floor(Math.random() * 50) + 1;
-                b = Math.floor(Math.random() * 50) + 1;
-                answer = a + b;
-                problemDisplay.textContent = a + ' + ' + b + ' = ?';
-                break;
-            case '-':
-                a = Math.floor(Math.random() * 50) + 10;
-                b = Math.floor(Math.random() * Math.min(a, 30)) + 1;
-                answer = a - b;
-                problemDisplay.textContent = a + ' − ' + b + ' = ?';
-                break;
-            case '*':
-                a = Math.floor(Math.random() * 12) + 1;
-                b = Math.floor(Math.random() * 12) + 1;
-                answer = a * b;
-                problemDisplay.textContent = a + ' × ' + b + ' = ?';
-                break;
-            case '/':
-                b = Math.floor(Math.random() * 11) + 1;
-                answer = Math.floor(Math.random() * 12) + 1;
-                a = b * answer;
-                problemDisplay.textContent = a + ' ÷ ' + b + ' = ?';
-                break;
+    // For speed mode, also check on input for number-only answers
+    answerInput.addEventListener('input', () => {
+        if (currentMode === 'speed') {
+            autoCheckAnswer();
         }
-        
-        currentAnswer = answer;
+    });
+
+    function autoCheckAnswer() {
+        const val = answerInput.value.trim();
+        if (val === '' || val === '-') return;
+
+        // Only auto-submit for numeric answers in speed mode
+        if (typeof currentAnswer === 'number') {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num === currentAnswer) {
+                handleCorrect();
+            }
+        }
+    }
+
+    function submitAnswer() {
+        const val = answerInput.value.trim();
+        if (val === '') return;
+
+        let isCorrect = false;
+
+        if (typeof currentAnswer === 'string') {
+            // Fraction answer: compare as string or evaluate
+            isCorrect = (val === String(currentAnswer));
+            // Also accept decimal equivalent
+            if (!isCorrect && currentAnswer.includes('/')) {
+                const parts = currentAnswer.split('/');
+                const fracVal = parseFloat(parts[0]) / parseFloat(parts[1]);
+                const userNum = parseFloat(val);
+                if (!isNaN(userNum) && Math.abs(userNum - fracVal) < 0.01) {
+                    isCorrect = true;
+                }
+            }
+        } else {
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+                isCorrect = (Math.abs(num - currentAnswer) < 0.01);
+            }
+        }
+
+        if (isCorrect) {
+            handleCorrect();
+        } else {
+            handleWrong();
+        }
+    }
+
+    function handleCorrect() {
+        correctAnswers++;
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+        questionsAnswered++;
+
+        // Record problem time
+        const elapsed = (Date.now() - problemStartTime) / 1000;
+        problemTimes.push(elapsed);
+
+        // Update score based on mode
+        if (currentMode === 'speed' || currentMode === 'survival') {
+            score = correctAnswers;
+        } else if (currentMode === 'marathon') {
+            score = correctAnswers;
+        }
+        // Accuracy mode: score calculated at end
+
+        updateInGameStats();
+        updateStreakDisplay();
+
+        // Visual feedback
+        answerInput.classList.add('correct');
+        correctOverlay.classList.add('flash');
+
+        setTimeout(() => {
+            answerInput.classList.remove('correct');
+            correctOverlay.classList.remove('flash');
+            answerInput.value = '';
+
+            // Marathon: increase difficulty every 10
+            if (currentMode === 'marathon' && correctAnswers % 10 === 0) {
+                marathonDifficultyIndex = Math.min(marathonDifficultyIndex + 1, difficultyOrder.length - 1);
+            }
+
+            // Accuracy: check if 20 questions done
+            if (currentMode === 'accuracy' && questionsAnswered >= totalQuestions) {
+                endGame();
+                return;
+            }
+
+            generateProblem();
+        }, 150);
+    }
+
+    function handleWrong() {
+        wrongAnswers++;
+        streak = 0;
+        questionsAnswered++;
+
+        // Record problem time
+        const elapsed = (Date.now() - problemStartTime) / 1000;
+        problemTimes.push(elapsed);
+
+        // Mode-specific behavior
+        if (currentMode === 'marathon') {
+            score = Math.max(0, correctAnswers - wrongAnswers);
+        }
+
+        updateInGameStats();
+        updateStreakDisplay();
+
+        // Visual feedback
+        answerInput.classList.add('wrong');
+        wrongOverlay.textContent = 'Answer: ' + currentAnswer;
+        wrongOverlay.classList.add('flash');
+
+        setTimeout(() => {
+            answerInput.classList.remove('wrong');
+            wrongOverlay.classList.remove('flash');
+            answerInput.value = '';
+
+            if (currentMode === 'survival') {
+                endGame();
+                return;
+            }
+
+            // Accuracy: check if 20 questions done
+            if (currentMode === 'accuracy' && questionsAnswered >= totalQuestions) {
+                endGame();
+                return;
+            }
+
+            generateProblem();
+        }, 800);
+    }
+
+    function updateStreakDisplay() {
+        if (streak >= 2) {
+            let mult = '';
+            if (streak >= 12) mult = '<span class="streak-multiplier">5x</span>';
+            else if (streak >= 7) mult = '<span class="streak-multiplier">3x</span>';
+            else if (streak >= 3) mult = '<span class="streak-multiplier">2x</span>';
+            streakCounter.innerHTML = '\ud83d\udd25 x' + streak + mult;
+            streakCounter.classList.add('visible');
+        } else {
+            streakCounter.classList.remove('visible');
+        }
+    }
+
+    function updateInGameStats() {
+        document.getElementById('hud-correct').textContent = correctAnswers;
+        document.getElementById('hud-wrong').textContent = wrongAnswers;
+        document.getElementById('hud-streak').textContent = streak;
+        const total = correctAnswers + wrongAnswers;
+        const acc = total > 0 ? Math.round((correctAnswers / total) * 100) : 100;
+        document.getElementById('hud-accuracy').textContent = acc + '%';
+        statScore.textContent = currentMode === 'marathon' ? Math.max(0, correctAnswers - wrongAnswers) : correctAnswers;
+        correctCount.textContent = correctAnswers;
     }
 
     function startGame() {
         gameState = 'playing';
         score = 0;
-        timeLeft = 60;
+        correctAnswers = 0;
+        wrongAnswers = 0;
+        streak = 0;
+        bestStreak = 0;
+        questionsAnswered = 0;
+        problemTimes = [];
+        marathonDifficultyIndex = difficultyOrder.indexOf(currentDifficulty);
+        if (marathonDifficultyIndex < 0) marathonDifficultyIndex = 0;
+        gameStartTime = Date.now();
+
         resultPanel.classList.remove('show');
-        updateStats();
-        
-        opBtns.forEach(btn => btn.classList.add('disabled'));
-        
+        updateInGameStats();
+        updateStreakDisplay();
+
+        // Disable config
+        document.querySelectorAll('.op-btn, .pill-btn').forEach(btn => btn.classList.add('disabled'));
+
         gameBoard.className = 'game-board state-playing';
         boardContent.style.display = 'none';
-        
+        statsHud.classList.add('visible');
+
+        // Timer setup based on mode
+        if (currentMode === 'speed') {
+            timeLeft = 60;
+            timerDisplay.textContent = '60';
+            timerDisplay.classList.remove('hidden', 'warning', 'danger');
+            statTime.textContent = '60s';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                statTime.textContent = timeLeft + 's';
+
+                if (timeLeft <= 10) timerDisplay.classList.add('warning');
+                if (timeLeft <= 5) { timerDisplay.classList.remove('warning'); timerDisplay.classList.add('danger'); }
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        } else {
+            // No timer for accuracy, survival, marathon
+            timerDisplay.classList.add('hidden');
+            statTime.textContent = '--';
+
+            if (currentMode === 'accuracy') {
+                statTime.textContent = '0/' + totalQuestions;
+            }
+        }
+
+        // Set inputmode based on difficulty
+        if (currentDifficulty === 'nightmare') {
+            answerInput.removeAttribute('inputmode');
+        } else if (DIFFICULTIES[currentDifficulty].decimals) {
+            answerInput.setAttribute('inputmode', 'decimal');
+        } else {
+            answerInput.setAttribute('inputmode', 'numeric');
+        }
+
         generateProblem();
         answerInput.value = '';
         answerInput.focus();
-        
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            timerDisplay.textContent = timeLeft;
-            statTime.textContent = timeLeft + 's';
-            
-            if (timeLeft <= 10) {
-                timerDisplay.classList.add('warning');
-            }
-            if (timeLeft <= 5) {
-                timerDisplay.classList.remove('warning');
-                timerDisplay.classList.add('danger');
-            }
-            
-            if (timeLeft <= 0) {
-                endGame();
-            }
-        }, 1000);
-    }
-
-    function checkAnswer() {
-        const userAnswer = parseInt(answerInput.value);
-        
-        if (userAnswer === currentAnswer) {
-            score++;
-            updateStats();
-            answerInput.classList.add('correct');
-            setTimeout(() => {
-                answerInput.classList.remove('correct');
-                answerInput.value = '';
-                generateProblem();
-            }, 150);
-        }
     }
 
     function updateStats() {
         statScore.textContent = score;
-        correctCount.textContent = score;
-        if (bestScore) statBest.textContent = bestScore;
+        correctCount.textContent = correctAnswers;
+        if (bestScore !== null) statBest.textContent = bestScore;
     }
 
     function endGame() {
-        clearInterval(timerInterval);
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
         gameState = 'result';
-        
-        opBtns.forEach(btn => btn.classList.remove('disabled'));
-        
-        if (!bestScore || score > bestScore) {
+
+        const totalGameTime = ((Date.now() - gameStartTime) / 1000).toFixed(1);
+
+        // Calculate final score
+        if (currentMode === 'speed') {
+            score = correctAnswers;
+        } else if (currentMode === 'accuracy') {
+            const total = correctAnswers + wrongAnswers;
+            score = total > 0 ? Math.round((correctAnswers / total) * 100) : 0;
+        } else if (currentMode === 'survival') {
+            score = correctAnswers;
+        } else if (currentMode === 'marathon') {
+            score = Math.max(0, correctAnswers - wrongAnswers);
+        }
+
+        // Re-enable config
+        document.querySelectorAll('.op-btn, .pill-btn').forEach(btn => btn.classList.remove('disabled'));
+        // Restore active states
+        syncMixedBtn();
+
+        // Track personal best
+        const isNewPb = !bestScore || score > bestScore;
+        if (isNewPb) {
             bestScore = score;
             statBest.textContent = bestScore;
         }
-        
-        timerDisplay.classList.remove('warning', 'danger');
-        
+
+        timerDisplay.classList.remove('warning', 'danger', 'hidden');
+        statsHud.classList.remove('visible');
+        streakCounter.classList.remove('visible');
+
         gameBoard.className = 'game-board state-idle';
         boardContent.style.display = 'block';
-        boardTitle.textContent = score + ' SOLVED';
+        boardTitle.textContent = score + (currentMode === 'accuracy' ? '%' : ' SOLVED');
         boardSubtitle.textContent = 'Click to play again';
-        
-        showResult();
+
+        showResult(totalGameTime, isNewPb);
     }
 
-    function showResult() {
-        resultScore.textContent = score;
-        
-        let rating, ratingClass;
-        if (score >= 40) { rating = 'LEGENDARY'; ratingClass = 'rating-legendary'; }
-        else if (score >= 30) { rating = 'EXCELLENT'; ratingClass = 'rating-excellent'; }
-        else if (score >= 20) { rating = 'GOOD'; ratingClass = 'rating-good'; }
-        else if (score >= 10) { rating = 'AVERAGE'; ratingClass = 'rating-average'; }
-        else { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+    function showResult(totalGameTime, isNewPb) {
+        // Score
+        resultScore.textContent = currentMode === 'accuracy' ? score + '%' : score;
 
+        // Label
+        if (currentMode === 'speed') resultLabel.textContent = 'Problems Solved in 60s';
+        else if (currentMode === 'accuracy') resultLabel.textContent = 'Accuracy Score';
+        else if (currentMode === 'survival') resultLabel.textContent = 'Correct in a Row';
+        else resultLabel.textContent = 'Marathon Score';
+
+        // Rating
+        let rating, ratingClass;
+        if (currentMode === 'accuracy') {
+            if (score >= 95) { rating = 'LEGENDARY'; ratingClass = 'rating-legendary'; }
+            else if (score >= 80) { rating = 'EXCELLENT'; ratingClass = 'rating-excellent'; }
+            else if (score >= 60) { rating = 'GOOD'; ratingClass = 'rating-good'; }
+            else if (score >= 40) { rating = 'AVERAGE'; ratingClass = 'rating-average'; }
+            else { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+        } else {
+            if (score >= 40) { rating = 'LEGENDARY'; ratingClass = 'rating-legendary'; }
+            else if (score >= 30) { rating = 'EXCELLENT'; ratingClass = 'rating-excellent'; }
+            else if (score >= 20) { rating = 'GOOD'; ratingClass = 'rating-good'; }
+            else if (score >= 10) { rating = 'AVERAGE'; ratingClass = 'rating-average'; }
+            else { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+        }
         resultRating.textContent = rating;
         resultRating.className = 'result-rating ' + ratingClass;
-        
-        const isPractice = selectedOps.length > 1;
-        if (isPractice) {
+
+        // PB badge
+        if (isNewPb && score > 0) {
+            resultPb.textContent = 'New PB!';
+            resultPb.className = 'result-pb new-pb';
+            resultPb.style.display = 'inline-block';
+        } else if (bestScore !== null && bestScore > score) {
+            resultPb.textContent = (bestScore - score) + ' away from your best';
+            resultPb.className = 'result-pb no-pb';
+            resultPb.style.display = 'inline-block';
+        } else {
+            resultPb.style.display = 'none';
+        }
+
+        // Stats grid
+        const totalAttempts = correctAnswers + wrongAnswers;
+        const accPct = totalAttempts > 0 ? Math.round((correctAnswers / totalAttempts) * 100) : 0;
+        const avgTime = problemTimes.length > 0 ? (problemTimes.reduce((s, t) => s + t, 0) / problemTimes.length).toFixed(1) : '0';
+
+        document.getElementById('rs-correct').textContent = correctAnswers;
+        document.getElementById('rs-wrong').textContent = wrongAnswers;
+        document.getElementById('rs-accuracy').textContent = accPct + '%';
+        document.getElementById('rs-streak').textContent = bestStreak;
+        document.getElementById('rs-avgtime').textContent = avgTime + 's';
+        document.getElementById('rs-totaltime').textContent = totalGameTime + 's';
+
+        // Leaderboard eligibility: single op + specific difficulty only (not mixed, not marathon with shifting difficulty)
+        const canSave = selectedOps.length === 1 && currentMode === 'speed';
+        if (!canSave) {
+            if (selectedOps.length > 1) {
+                resultNote.textContent = 'Mixed operations mode \u2014 score not saved to leaderboard';
+            } else if (currentMode !== 'speed') {
+                resultNote.textContent = MODES[currentMode].label + ' mode \u2014 leaderboard only available for Speed mode';
+            }
             resultNote.style.display = 'block';
             saveBtn.style.display = 'none';
         } else {
@@ -956,7 +1673,12 @@
             saveBtn.style.display = 'inline-block';
             checkAuthForSave();
         }
-        
+
+        // Accuracy mode question counter
+        if (currentMode === 'accuracy') {
+            statTime.textContent = questionsAnswered + '/' + totalQuestions;
+        }
+
         resultPanel.classList.add('show');
     }
 
@@ -965,6 +1687,7 @@
         startGame();
     });
 
+    // ========== AUTH & LEADERBOARD ==========
     async function checkAuthForSave() {
         const { data } = await supabaseClient.auth.getSession();
         currentUser = data.session?.user;
@@ -1040,12 +1763,12 @@
     async function fetchLeaderboard() {
         const gameId = getGameId();
         lbList.innerHTML = '<div class="lb-empty">Loading...</div>';
-        
+
         if (selectedOps.length > 1) {
             lbList.innerHTML = '<div class="lb-empty">Select a single operation to see leaderboards</div>';
             return;
         }
-        
+
         if (currentLeaderboardType === 'personal') {
             const { data: sessionData } = await supabaseClient.auth.getSession();
             const user = sessionData?.session?.user;
@@ -1084,12 +1807,12 @@
     async function fetchGlobalTop3() {
         const gameId = getGameId();
         globalPreviewList.innerHTML = '<div class="lb-empty">Loading...</div>';
-        
+
         if (selectedOps.length > 1) {
             globalPreviewList.innerHTML = '<div class="lb-empty">Select single operation for rankings</div>';
             return;
         }
-        
+
         const { data, error } = await supabaseClient.from('solo_scores').select('score, user_id').eq('game_id', gameId).order('score', { ascending: false }).limit(3);
         if (error || !data?.length) { globalPreviewList.innerHTML = '<div class="lb-empty">No global scores yet</div>'; return; }
         const userIds = data.map(e => e.user_id);
@@ -1113,6 +1836,7 @@
         const { data } = await supabaseClient.auth.getSession();
         updateLeaderboardVisibility(!!data.session?.user);
         updateOpSelection();
+        updateBoardSubtitle();
     })();
 </script>
 
