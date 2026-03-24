@@ -30,7 +30,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -47,6 +47,7 @@
             --blue: #4facfe;
             --purple: #a855f7;
             --dark: #0a0a0f;
+            --board-bg: #0d1117;
             --text-dark: #1a1a2e;
             --text-muted: #6b7280;
         }
@@ -64,164 +65,9 @@
         h1, h2, h3, h4 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
         a { color: inherit; text-decoration: none; }
 
-        header {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 100;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            padding: 0 18px;
-            background: rgba(10, 10, 15, 0.88);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .nav-inner {
-            width: 100%;
-            max-width: 1100px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .nav-left { justify-self: flex-start; }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
-        }
-
-        .back-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; transform: translateX(-2px); }
-        .back-btn svg { width: 16px; height: 16px; }
-
-        .nav-right-wrapper { justify-self: flex-end; display: flex; justify-content: flex-end; }
-
-        .header-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.6rem;
-            letter-spacing: 4px;
-            color: white;
-            position: relative;
-            white-space: nowrap;
-            justify-self: center;
-        }
-
-        .header-logo::after {
-            content: '';
-            position: absolute;
-            bottom: -2px; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple));
-        }
-
-        .header-actions { display: flex; align-items: center; gap: 16px; }
-        .nav-right-logged-out, .nav-right-logged-in { display: none !important; }
-
-        .auth-link {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.75);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            transition: color 0.2s ease;
-            height: 36px;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .auth-link:hover { color: #ffffff; }
-
-        .user-menu-wrapper { position: relative; }
-
-        .user-pill {
-            display: inline-flex;
-            align-items: center;
-            height: 36px;
-            padding: 0 16px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.04);
-            cursor: pointer;
-            transition: background 0.2s ease, transform 0.15s ease;
-            font-family: inherit;
-        }
-
-        .user-pill:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-1px); }
-
-        .user-pill-label {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .user-pill-skeleton {
-            width: 100px;
-            height: 36px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-
-        .user-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 170px;
-            padding: 6px;
-            border-radius: 14px;
-            background: rgba(10, 10, 15, 0.97);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow: 0 18px 55px rgba(0, 0, 0, 0.8);
-            opacity: 0;
-            transform: translateY(-4px);
-            pointer-events: none;
-            transition: opacity 0.15s ease, transform 0.15s ease;
-            backdrop-filter: blur(10px);
-            z-index: 120;
-        }
-
-        .user-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
-
-        .user-menu-item {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
-            border-radius: 9px;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.9);
-            background: none;
-            border: none;
-            text-align: left;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .user-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
-
         main { flex: 1; display: flex; flex-direction: column; padding-top: 60px; }
 
+        /* ── Hero ── */
         .game-hero {
             background: radial-gradient(circle at 10% 0%, #4a2010 0%, #2e1508 50%, #1a0c04 100%);
             padding: 60px 20px;
@@ -275,6 +121,7 @@
             margin-top: 8px;
         }
 
+        /* ── Wrapper / Container ── */
         .game-wrapper {
             flex: 1;
             display: flex;
@@ -288,7 +135,48 @@
             max-width: 700px;
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 20px;
+        }
+
+        /* ── Selector Rows ── */
+        .selector-section { margin-bottom: 4px; }
+        .selector-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .selector-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sel-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 107, 53, 0.25);
+            background: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sel-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+        .sel-btn.active {
+            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+            border-color: var(--orange);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
         }
 
         /* Target Count Selector */
@@ -296,7 +184,6 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
         .target-btn {
@@ -321,77 +208,83 @@
             box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
         }
 
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+        /* ── Live Stats HUD ── */
+        .live-hud {
+            display: none;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(13, 17, 23, 0.95);
+            border-radius: 14px 14px 0 0;
+            border: 2px solid rgba(255, 107, 53, 0.3);
+            border-bottom: none;
         }
 
-        .stat-card {
-            background: white;
-            border: 2px solid rgba(255, 107, 53, 0.15);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            box-shadow: 0 2px 12px rgba(255, 107, 53, 0.08);
-            transition: all 0.3s ease;
-        }
+        .live-hud.show { display: grid; }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.15);
-            border-color: rgba(255, 107, 53, 0.3);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            font-weight: 600;
+        .hud-item { text-align: center; }
+        .hud-label {
+            font-size: 0.6rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.45);
         }
-
-        .stat-value {
+        .hud-value {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-            letter-spacing: 1px;
+            font-size: 1.3rem;
             color: var(--orange);
+            letter-spacing: 1px;
         }
 
+        /* ── Game Board ── */
         .game-board {
             width: 100%;
             height: 450px;
-            background: white;
-            border-radius: 24px;
+            background: var(--board-bg);
+            border-radius: 0 0 24px 24px;
             border: 3px solid rgba(255, 107, 53, 0.2);
+            border-top: none;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            cursor: crosshair;
+            cursor: none;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.12);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        /* subtle grid dots */
+        .game-board::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .game-board.no-hud {
+            border-radius: 24px;
+            border-top: 3px solid rgba(255, 107, 53, 0.2);
         }
 
         .game-board.state-idle {
-            background: linear-gradient(135deg, #ffffff 0%, #fff5f0 100%);
-            border-color: rgba(255, 107, 53, 0.3);
             cursor: pointer;
         }
 
         .game-board.state-idle:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(255, 107, 53, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
             border-color: rgba(255, 107, 53, 0.5);
         }
 
         .game-board.state-playing {
-            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
             border-color: var(--orange);
             border-width: 4px;
         }
@@ -409,35 +302,67 @@
             letter-spacing: 3px;
             line-height: 1;
             margin-bottom: 12px;
-            color: var(--text-dark);
+            color: #fff;
         }
 
         .board-subtitle {
             font-size: 1.2rem;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.55);
             line-height: 1.5;
             font-weight: 500;
         }
 
+        /* ── Crosshair ── */
+        .custom-crosshair {
+            position: fixed;
+            width: 28px;
+            height: 28px;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+        .custom-crosshair::before,
+        .custom-crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 107, 53, 0.9);
+        }
+        .custom-crosshair::before {
+            left: 50%; top: 0; width: 2px; height: 100%;
+            transform: translateX(-50%);
+        }
+        .custom-crosshair::after {
+            top: 50%; left: 0; height: 2px; width: 100%;
+            transform: translateY(-50%);
+        }
+        .crosshair-dot {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 4px; height: 4px;
+            background: var(--orange);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* ── Targets ── */
         .target {
             position: absolute;
-            width: 60px;
-            height: 60px;
             border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, var(--orange-vibrant), var(--orange), var(--orange-dark));
-            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4), inset 0 2px 10px rgba(255, 255, 255, 0.3);
-            cursor: crosshair;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.3);
+            cursor: none;
             transform: scale(0);
             animation: targetPop 0.15s ease forwards;
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 2;
         }
 
         .target::before {
             content: '';
-            width: 20px;
-            height: 20px;
+            width: 33%;
+            height: 33%;
             border-radius: 50%;
             background: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -446,10 +371,22 @@
         .target::after {
             content: '';
             position: absolute;
-            width: 8px;
-            height: 8px;
+            width: 13%;
+            height: 13%;
             border-radius: 50%;
             background: var(--orange-dark);
+        }
+
+        /* tracking mode target */
+        .target.tracking-target {
+            background: radial-gradient(circle at 30% 30%, #00e5ff, #00bcd4, #0097a7);
+            box-shadow: 0 4px 25px rgba(0, 229, 255, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.3);
+            animation: none;
+            transform: scale(1);
+            transition: none;
+        }
+        .target.tracking-target.active-track {
+            box-shadow: 0 4px 30px rgba(0, 229, 255, 0.8), 0 0 40px rgba(0, 229, 255, 0.3);
         }
 
         @keyframes targetPop {
@@ -466,6 +403,60 @@
             100% { transform: scale(0); opacity: 0; }
         }
 
+        /* Nightmare fade */
+        .target.nightmare-fade {
+            animation: targetPop 0.15s ease forwards, nightmareFade 1s 0.15s ease forwards;
+        }
+        @keyframes nightmareFade {
+            0% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+
+        /* ── Particles ── */
+        .hit-particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes particleBurst {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* ── Miss X ── */
+        .miss-x {
+            position: absolute;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--red);
+            pointer-events: none;
+            z-index: 10;
+            animation: missFlash 0.3s ease forwards;
+        }
+        @keyframes missFlash {
+            0% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        /* ── Combo Counter ── */
+        .combo-popup {
+            position: absolute;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            color: var(--gold);
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.6);
+            animation: comboUp 0.6s ease forwards;
+        }
+        @keyframes comboUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-30px) scale(1.3); }
+        }
+
+        /* ── Timer Bar ── */
         .timer-bar {
             position: absolute;
             bottom: 0;
@@ -474,13 +465,15 @@
             background: linear-gradient(90deg, var(--orange), var(--orange-vibrant));
             border-radius: 0 0 20px 20px;
             transition: width 0.1s linear;
+            z-index: 5;
         }
 
+        /* ── Result Panel (Post-Game Breakdown) ── */
         .result-panel {
             background: white;
             border: 2px solid rgba(255, 107, 53, 0.2);
             border-radius: 20px;
-            padding: 30px;
+            padding: 36px 30px;
             text-align: center;
             display: none;
             animation: slideUp 0.4s ease;
@@ -499,24 +492,24 @@
             font-size: 5rem;
             letter-spacing: 2px;
             color: var(--orange);
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             line-height: 1;
             text-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
         }
 
-        .result-label {
-            font-size: 1rem;
+        .result-score-label {
+            font-size: 0.85rem;
             color: var(--text-muted);
-            margin-bottom: 25px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 16px;
         }
 
         .result-rating {
             font-size: 1.3rem;
             font-weight: 700;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding: 12px 24px;
             border-radius: 50px;
             display: inline-block;
@@ -527,6 +520,63 @@
         .rating-good { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; box-shadow: 0 6px 20px rgba(79, 172, 254, 0.3); }
         .rating-average { background: rgba(107, 114, 128, 0.15); color: var(--text-dark); border: 2px solid rgba(107, 114, 128, 0.3); }
         .rating-slow { background: var(--red-light); color: var(--red-dark); border: 2px solid var(--red); }
+
+        /* Stats Grid */
+        .result-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .result-stat-item {
+            background: rgba(255, 107, 53, 0.05);
+            border: 1px solid rgba(255, 107, 53, 0.12);
+            border-radius: 12px;
+            padding: 12px 8px;
+        }
+        .result-stat-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            color: var(--orange);
+            letter-spacing: 1px;
+        }
+        .result-stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        /* PB / Global Compare */
+        .result-compare {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .compare-chip {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .compare-chip.new-pb {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            color: #b8860b;
+        }
+        .compare-chip.not-pb {
+            background: rgba(107, 114, 128, 0.08);
+            border: 1px solid rgba(107, 114, 128, 0.2);
+            color: var(--text-muted);
+        }
+        .compare-chip.vs-global {
+            background: rgba(79, 172, 254, 0.08);
+            border: 1px solid rgba(79, 172, 254, 0.25);
+            color: #2980b9;
+        }
 
         .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
@@ -564,6 +614,7 @@
             transform: translateY(-2px);
         }
 
+        /* ── Leaderboard ── */
         .leaderboard-section {
             background: white;
             border: 2px solid rgba(255, 107, 53, 0.2);
@@ -673,6 +724,7 @@
         .lb-login-subtext { font-size: 0.85rem; color: var(--text-muted); }
         .lb-login-subtext a { color: var(--orange); font-weight: 600; text-decoration: underline; }
 
+        /* ── Footer ── */
         footer { background: #000; position: relative; overflow: hidden; margin-top: auto; }
         .footer-border { height: 3px; background: linear-gradient(90deg, var(--pink), var(--blue), var(--purple), var(--pink)); background-size: 300% 100%; animation: gradientSlide 6s linear infinite; }
         @keyframes gradientSlide { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
@@ -689,23 +741,21 @@
         .footer-legal a { color: rgba(255, 255, 255, 0.4); font-size: 0.8rem; transition: color 0.2s ease; }
         .footer-legal a:hover { color: white; }
 
+        /* ── Responsive ── */
         @media (max-width: 700px) {
-            header { height: 56px; padding: 0 14px; }
-            .header-logo { font-size: 1.4rem; letter-spacing: 3px; }
-            .back-btn { padding: 6px 12px; font-size: 0.75rem; }
             .game-hero { padding: 40px 20px; }
             .game-icon { width: 50px; height: 50px; }
             .game-hero-title { font-size: 2.5rem; }
             .game-wrapper { padding: 30px 16px 40px; }
+            .selector-row { gap: 6px; }
+            .sel-btn { padding: 8px 14px; font-size: 0.85rem; }
             .target-selector { flex-wrap: wrap; }
             .target-btn { padding: 10px 18px; font-size: 1rem; }
-            .stats-bar { grid-template-columns: 1fr; gap: 10px; }
+            .live-hud { grid-template-columns: repeat(2, 1fr); gap: 6px; }
             .game-board { height: 380px; }
             .board-title { font-size: 3rem; }
-            .target { width: 50px; height: 50px; }
-            .target::before { width: 16px; height: 16px; }
-            .target::after { width: 6px; height: 6px; }
             .result-score { font-size: 3.5rem; }
+            .result-stats-grid { grid-template-columns: repeat(2, 1fr); }
             .result-actions { flex-direction: column; width: 100%; }
             .btn { width: 100%; }
             .leaderboard-section { padding: 20px; }
@@ -719,6 +769,9 @@
 <body>
 
 <div id="site-header"></div>
+
+<!-- Custom Crosshair -->
+<div class="custom-crosshair" id="custom-crosshair"><div class="crosshair-dot"></div></div>
 
 <main>
     <section class="game-hero">
@@ -742,29 +795,60 @@
 
     <div class="game-wrapper">
         <div class="game-container">
-            
-            <div class="target-selector">
-                <button class="target-btn" data-count="15">15 Targets</button>
-                <button class="target-btn active" data-count="30">30 Targets</button>
-                <button class="target-btn" data-count="50">50 Targets</button>
-            </div>
 
-            <div class="stats-bar">
-                <div class="stat-card">
-                    <div class="stat-label">Targets Hit</div>
-                    <div class="stat-value" id="stat-hits">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Best Score</div>
-                    <div class="stat-value" id="stat-best">—</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Avg Time</div>
-                    <div class="stat-value" id="stat-avg">—</div>
+            <!-- Mode Selector -->
+            <div class="selector-section">
+                <div class="selector-label">Game Mode</div>
+                <div class="selector-row" id="mode-selector">
+                    <button class="sel-btn active" data-mode="speed">Speed</button>
+                    <button class="sel-btn" data-mode="precision">Precision</button>
+                    <button class="sel-btn" data-mode="tracking">Tracking</button>
                 </div>
             </div>
 
-            <div class="game-board state-idle" id="game-board">
+            <!-- Preset Selector -->
+            <div class="selector-section">
+                <div class="selector-label">FPS Preset</div>
+                <div class="selector-row" id="preset-selector">
+                    <button class="sel-btn active" data-preset="default">Default</button>
+                    <button class="sel-btn" data-preset="valorant">Valorant</button>
+                    <button class="sel-btn" data-preset="cs2">CS2</button>
+                    <button class="sel-btn" data-preset="apex">Apex Legends</button>
+                    <button class="sel-btn" data-preset="cod">COD</button>
+                </div>
+            </div>
+
+            <!-- Difficulty Selector -->
+            <div class="selector-section">
+                <div class="selector-label">Difficulty</div>
+                <div class="selector-row" id="difficulty-selector">
+                    <button class="sel-btn" data-diff="easy">Easy</button>
+                    <button class="sel-btn active" data-diff="medium">Medium</button>
+                    <button class="sel-btn" data-diff="hard">Hard</button>
+                    <button class="sel-btn" data-diff="nightmare">Nightmare</button>
+                </div>
+            </div>
+
+            <!-- Target Count (Speed / Precision only) -->
+            <div class="selector-section" id="target-count-section">
+                <div class="selector-label">Target Count</div>
+                <div class="target-selector" id="target-selector">
+                    <button class="target-btn" data-count="15">15 Targets</button>
+                    <button class="target-btn active" data-count="30">30 Targets</button>
+                    <button class="target-btn" data-count="50">50 Targets</button>
+                </div>
+            </div>
+
+            <!-- Live Stats HUD -->
+            <div class="live-hud" id="live-hud">
+                <div class="hud-item"><div class="hud-label">Accuracy</div><div class="hud-value" id="hud-acc">100%</div></div>
+                <div class="hud-item"><div class="hud-label">Hits</div><div class="hud-value" id="hud-hits">0/0</div></div>
+                <div class="hud-item"><div class="hud-label">TPM</div><div class="hud-value" id="hud-tpm">0</div></div>
+                <div class="hud-item"><div class="hud-label">Combo</div><div class="hud-value" id="hud-combo">x0</div></div>
+            </div>
+
+            <!-- Game Board -->
+            <div class="game-board state-idle no-hud" id="game-board">
                 <div class="board-content" id="board-content">
                     <h2 class="board-title" id="board-title">CLICK TO START</h2>
                     <p class="board-subtitle" id="board-subtitle">Hit 30 targets as fast as you can</p>
@@ -772,16 +856,30 @@
                 <div class="timer-bar" id="timer-bar" style="width: 0%;"></div>
             </div>
 
+            <!-- Result Panel -->
             <div class="result-panel" id="result-panel">
-                <div class="result-score" id="result-score">0 TPM</div>
-                <div class="result-label">Targets Per Minute</div>
+                <div class="result-score" id="result-score">0</div>
+                <div class="result-score-label" id="result-score-label">Targets Per Minute</div>
                 <div class="result-rating" id="result-rating">Good!</div>
+
+                <div class="result-stats-grid" id="result-stats-grid">
+                    <div class="result-stat-item"><div class="result-stat-num" id="rs-accuracy">100%</div><div class="result-stat-label">Accuracy</div></div>
+                    <div class="result-stat-item"><div class="result-stat-num" id="rs-streak">0</div><div class="result-stat-label">Best Streak</div></div>
+                    <div class="result-stat-item"><div class="result-stat-num" id="rs-avg-rt">0ms</div><div class="result-stat-label">Avg Reaction</div></div>
+                    <div class="result-stat-item"><div class="result-stat-num" id="rs-tpm">0</div><div class="result-stat-label">TPM</div></div>
+                    <div class="result-stat-item"><div class="result-stat-num" id="rs-hits">0</div><div class="result-stat-label">Hits</div></div>
+                    <div class="result-stat-item"><div class="result-stat-num" id="rs-misses">0</div><div class="result-stat-label">Misses</div></div>
+                </div>
+
+                <div class="result-compare" id="result-compare"></div>
+
                 <div class="result-actions">
-                    <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                     <button class="btn btn-secondary" id="retry-btn">Try Again</button>
+                    <button class="btn btn-primary" id="save-btn">Save to Leaderboard</button>
                 </div>
             </div>
 
+            <!-- Leaderboard -->
             <div class="leaderboard-section">
                 <div class="lb-header">
                     <h3 class="lb-title">Leaderboard</h3>
@@ -791,7 +889,7 @@
                         <button class="lb-tab" id="tab-friends">Friends</button>
                     </div>
                 </div>
-                
+
                 <div class="lb-login-gate" id="lb-login-gate" style="display: none;">
                     <div class="lb-login-icon">🔒</div>
                     <h4 class="lb-login-title">See How You Stack Up</h4>
@@ -799,7 +897,7 @@
                     <a href="/login.html" class="btn btn-primary lb-login-btn">Log In — It's Free</a>
                     <p class="lb-login-subtext">Don't have an account? <a href="/login.html">Sign up</a></p>
                 </div>
-                
+
                 <div class="lb-list" id="lb-list"><div class="lb-empty">Loading...</div></div>
 
                 <div class="global-preview" id="global-preview">
@@ -845,18 +943,19 @@
                 <h5>COMPANY</h5>
                 <ul>
                     <li><a href="/about.html">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/contact">Contact</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
-            <div class="footer-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <p class="footer-copyright">&copy; 2026 TheGaming.co &mdash; Free party games, forever.</p>
+            <div class="footer-legal"><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
         </div>
     </div>
 </footer>
 
 <script>
+    // ── Supabase ──
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -873,36 +972,82 @@
         } catch (e) {}
     }
 
-    let targetCount = 30;
-    const targetBtns = document.querySelectorAll('.target-btn');
-    const viewFullLink = document.getElementById('view-full-link');
+    // ── Config ──
+    const PRESETS = {
+        default:  { targetSize: 60, speed: 1,   moveTargets: false, spreadPattern: false },
+        valorant: { targetSize: 35, speed: 1.2, moveTargets: false, spreadPattern: false },
+        cs2:      { targetSize: 50, speed: 1,   moveTargets: false, spreadPattern: true },
+        apex:     { targetSize: 70, speed: 0.8, moveTargets: true,  spreadPattern: false },
+        cod:      { targetSize: 55, speed: 1.5, moveTargets: false, spreadPattern: false }
+    };
 
-    function getGameId() { return `aim-trainer-${targetCount}`; }
+    const DIFFICULTIES = {
+        easy:      { sizeMult: 1.3, speedMult: 0.7, fadeOut: false },
+        medium:    { sizeMult: 1,   speedMult: 1,   fadeOut: false },
+        hard:      { sizeMult: 0.7, speedMult: 1.3, fadeOut: false },
+        nightmare: { sizeMult: 0.5, speedMult: 1.6, fadeOut: true }
+    };
 
-    targetBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (gameState === 'playing') return;
-            targetBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            targetCount = parseInt(btn.dataset.count);
-            boardSubtitle.textContent = `Hit ${targetCount} targets as fast as you can`;
-            viewFullLink.href = `../../leaderboards.html?game=${getGameId()}`;
-            updateBestDisplay();
-            fetchLeaderboard();
-            fetchGlobalTop3();
-        });
-    });
+    const config = {
+        mode: 'speed',
+        preset: 'default',
+        difficulty: 'medium',
+        targetCount: 30,
+        // computed
+        targetSize: 60,
+        speed: 1,
+        moveTargets: false,
+        spreadPattern: false,
+        fadeOut: false
+    };
 
+    function computeConfig() {
+        const p = PRESETS[config.preset];
+        const d = DIFFICULTIES[config.difficulty];
+        config.targetSize = Math.round(p.targetSize * d.sizeMult);
+        config.speed = p.speed * d.speedMult;
+        config.moveTargets = p.moveTargets;
+        config.spreadPattern = p.spreadPattern;
+        config.fadeOut = d.fadeOut;
+    }
+    computeConfig();
 
+    // ── State ──
     let gameState = 'idle';
     let targetsHit = 0;
+    let totalClicks = 0;
+    let missClicks = 0;
     let startTime = 0;
     let reactionTimes = [];
     let lastTargetTime = 0;
     let currentScore = 0;
-    let bestScores = { 15: null, 30: null, 50: null };
+    let combo = 0;
+    let bestStreak = 0;
     let currentUser = null;
 
+    // personal bests per mode stored in localStorage
+    let personalBests = JSON.parse(localStorage.getItem('aim-trainer-pbs') || '{}');
+
+    function getPBKey() {
+        return `${config.mode}-${config.preset}-${config.difficulty}-${config.targetCount}`;
+    }
+    function getPB() { return personalBests[getPBKey()] || null; }
+    function setPB(val) {
+        personalBests[getPBKey()] = val;
+        localStorage.setItem('aim-trainer-pbs', JSON.stringify(personalBests));
+    }
+
+    // tracking mode state
+    let trackingRAF = null;
+    let trackingTarget = null;
+    let trackingOnTarget = false;
+    let trackingTimeOnTarget = 0;
+    let trackingLastFrame = 0;
+    let trackingElapsed = 0;
+    const TRACKING_DURATION = 15000;
+    let trackCurve = { cx: 0, cy: 0, angle: 0, radius: 0, angularSpeed: 0, driftX: 0, driftY: 0 };
+
+    // ── DOM refs ──
     const gameBoard = document.getElementById('game-board');
     const boardContent = document.getElementById('board-content');
     const boardTitle = document.getElementById('board-title');
@@ -910,43 +1055,280 @@
     const timerBar = document.getElementById('timer-bar');
     const resultPanel = document.getElementById('result-panel');
     const resultScore = document.getElementById('result-score');
+    const resultScoreLabel = document.getElementById('result-score-label');
     const resultRating = document.getElementById('result-rating');
+    const resultCompare = document.getElementById('result-compare');
     const saveBtn = document.getElementById('save-btn');
     const retryBtn = document.getElementById('retry-btn');
-    const statHits = document.getElementById('stat-hits');
-    const statBest = document.getElementById('stat-best');
-    const statAvg = document.getElementById('stat-avg');
+    const viewFullLink = document.getElementById('view-full-link');
+    const liveHud = document.getElementById('live-hud');
+    const hudAcc = document.getElementById('hud-acc');
+    const hudHits = document.getElementById('hud-hits');
+    const hudTpm = document.getElementById('hud-tpm');
+    const hudCombo = document.getElementById('hud-combo');
+    const crosshair = document.getElementById('custom-crosshair');
+    const targetCountSection = document.getElementById('target-count-section');
 
-    function updateBestDisplay() {
-        statBest.textContent = bestScores[targetCount] ? bestScores[targetCount] + ' TPM' : '—';
+    // ── Crosshair ──
+    let boardHovered = false;
+    gameBoard.addEventListener('mouseenter', () => { boardHovered = true; crosshair.style.display = 'block'; });
+    gameBoard.addEventListener('mouseleave', () => { boardHovered = false; crosshair.style.display = 'none'; });
+    document.addEventListener('mousemove', (e) => {
+        if (!boardHovered) return;
+        crosshair.style.left = (e.clientX - 14) + 'px';
+        crosshair.style.top = (e.clientY - 14) + 'px';
+    });
+
+    // ── Target Count ──
+    const targetBtns = document.querySelectorAll('.target-btn');
+
+    function getGameId() { return `aim-trainer-${config.targetCount}`; }
+
+    targetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            targetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            config.targetCount = parseInt(btn.dataset.count);
+            updateIdleText();
+            viewFullLink.href = `../../leaderboards.html?game=${getGameId()}`;
+            fetchLeaderboard();
+            fetchGlobalTop3();
+        });
+    });
+
+    // ── Selector Wiring ──
+    document.querySelectorAll('#mode-selector .sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            document.querySelectorAll('#mode-selector .sel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            config.mode = btn.dataset.mode;
+            targetCountSection.style.display = config.mode === 'tracking' ? 'none' : '';
+            updateIdleText();
+        });
+    });
+
+    document.querySelectorAll('#preset-selector .sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            document.querySelectorAll('#preset-selector .sel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            config.preset = btn.dataset.preset;
+            computeConfig();
+            updateIdleText();
+        });
+    });
+
+    document.querySelectorAll('#difficulty-selector .sel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (gameState === 'playing') return;
+            document.querySelectorAll('#difficulty-selector .sel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            config.difficulty = btn.dataset.diff;
+            computeConfig();
+            updateIdleText();
+        });
+    });
+
+    function updateIdleText() {
+        if (config.mode === 'speed') {
+            boardSubtitle.textContent = `Hit ${config.targetCount} targets as fast as you can`;
+        } else if (config.mode === 'precision') {
+            boardSubtitle.textContent = `Hit ${config.targetCount} targets. Misclicks lose points!`;
+        } else {
+            boardSubtitle.textContent = 'Track the moving target for 15 seconds';
+        }
     }
 
-    gameBoard.addEventListener('click', (e) => { if (gameState === 'idle') startGame(); });
+    // ── Game Start ──
+    gameBoard.addEventListener('click', (e) => {
+        if (gameState === 'idle') {
+            startGame();
+        } else if (gameState === 'playing' && config.mode !== 'tracking') {
+            // miss click on the board (not on target)
+            if (!e.target.classList.contains('target')) {
+                onMissClick(e);
+            }
+        }
+    });
 
     function startGame() {
+        computeConfig();
         gameState = 'playing';
         targetsHit = 0;
+        totalClicks = 0;
+        missClicks = 0;
+        combo = 0;
+        bestStreak = 0;
         reactionTimes = [];
         resultPanel.classList.remove('show');
-        targetBtns.forEach(b => b.style.pointerEvents = 'none');
-        gameBoard.className = 'game-board state-playing';
+
+        // disable selectors
+        document.querySelectorAll('.sel-btn, .target-btn').forEach(b => b.style.pointerEvents = 'none');
+
+        gameBoard.classList.remove('state-idle', 'no-hud');
+        gameBoard.classList.add('state-playing');
         boardContent.style.display = 'none';
         timerBar.style.width = '0%';
+
+        liveHud.classList.add('show');
+        hudAcc.textContent = '100%';
+        hudHits.textContent = '0/0';
+        hudTpm.textContent = '0';
+        hudCombo.textContent = 'x0';
+
         startTime = performance.now();
         lastTargetTime = startTime;
-        spawnTarget();
+
+        if (config.mode === 'tracking') {
+            startTrackingMode();
+        } else {
+            spawnTarget();
+        }
     }
 
+    // ── Particle Burst ──
+    function spawnParticles(x, y) {
+        const count = 7;
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'hit-particle';
+            const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.5;
+            const dist = 30 + Math.random() * 30;
+            const size = 4 + Math.random() * 5;
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.background = `hsl(${20 + Math.random() * 20}, 100%, ${55 + Math.random() * 20}%)`;
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            const tx = Math.cos(angle) * dist;
+            const ty = Math.sin(angle) * dist;
+            p.style.animation = 'none';
+            p.style.transition = 'all 0.35s ease-out';
+            gameBoard.appendChild(p);
+            requestAnimationFrame(() => {
+                p.style.transform = `translate(${tx}px, ${ty}px) scale(0)`;
+                p.style.opacity = '0';
+            });
+            setTimeout(() => p.remove(), 400);
+        }
+    }
+
+    // ── Miss Click ──
+    function onMissClick(e) {
+        if (config.mode === 'speed') return; // speed mode ignores misclicks
+        missClicks++;
+        totalClicks++;
+        combo = 0;
+        updateHUD();
+
+        const rect = gameBoard.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const miss = document.createElement('div');
+        miss.className = 'miss-x';
+        miss.textContent = 'X';
+        miss.style.left = (x - 10) + 'px';
+        miss.style.top = (y - 14) + 'px';
+        gameBoard.appendChild(miss);
+        setTimeout(() => miss.remove(), 350);
+    }
+
+    // ── Combo Popup ──
+    function showCombo(x, y) {
+        if (combo < 2) return;
+        const el = document.createElement('div');
+        el.className = 'combo-popup';
+        el.textContent = 'x' + combo;
+        el.style.left = (x + 20) + 'px';
+        el.style.top = (y - 20) + 'px';
+        gameBoard.appendChild(el);
+        setTimeout(() => el.remove(), 650);
+    }
+
+    // ── Update HUD ──
+    function updateHUD() {
+        const total = targetsHit + missClicks;
+        const acc = total > 0 ? Math.round((targetsHit / total) * 100) : 100;
+        hudAcc.textContent = acc + '%';
+
+        if (config.mode === 'tracking') {
+            hudHits.textContent = Math.round(trackingTimeOnTarget) + 'ms';
+        } else {
+            const tc = config.mode === 'speed' ? config.targetCount : config.targetCount;
+            hudHits.textContent = targetsHit + '/' + tc;
+        }
+
+        const elapsed = (performance.now() - startTime) / 60000;
+        const tpm = elapsed > 0 ? Math.round(targetsHit / elapsed) : 0;
+        hudTpm.textContent = tpm;
+        hudCombo.textContent = 'x' + combo;
+    }
+
+    // ── Spawn Target (Speed / Precision) ──
     function spawnTarget() {
         const existing = gameBoard.querySelector('.target');
         if (existing) existing.remove();
+
         const target = document.createElement('div');
         target.className = 'target';
-        const padding = 50;
-        const maxX = gameBoard.clientWidth - padding * 2;
-        const maxY = gameBoard.clientHeight - padding * 2;
-        target.style.left = (padding + Math.random() * maxX) + 'px';
-        target.style.top = (padding + Math.random() * maxY) + 'px';
+
+        const sz = config.targetSize;
+        target.style.width = sz + 'px';
+        target.style.height = sz + 'px';
+
+        const padding = 40;
+        const maxX = gameBoard.clientWidth - padding * 2 - sz;
+        const maxY = gameBoard.clientHeight - padding * 2 - sz;
+        let tx = padding + Math.random() * maxX;
+        let ty = padding + Math.random() * maxY;
+
+        // spread pattern: spawn farther from last position
+        if (config.spreadPattern && gameBoard._lastTargetPos) {
+            for (let tries = 0; tries < 5; tries++) {
+                const nx = padding + Math.random() * maxX;
+                const ny = padding + Math.random() * maxY;
+                const dx = nx - gameBoard._lastTargetPos.x;
+                const dy = ny - gameBoard._lastTargetPos.y;
+                if (Math.sqrt(dx * dx + dy * dy) > 150) { tx = nx; ty = ny; break; }
+            }
+        }
+        gameBoard._lastTargetPos = { x: tx, y: ty };
+
+        target.style.left = tx + 'px';
+        target.style.top = ty + 'px';
+
+        if (config.fadeOut) {
+            target.classList.add('nightmare-fade');
+            target._fadeTimeout = setTimeout(() => {
+                if (target.parentNode && gameState === 'playing') {
+                    // treat as miss
+                    missClicks++;
+                    totalClicks++;
+                    combo = 0;
+                    updateHUD();
+                    spawnTarget();
+                }
+            }, 1150);
+        }
+
+        // moving targets (Apex)
+        if (config.moveTargets && config.mode !== 'precision') {
+            let mx = tx, my = ty;
+            let vx = (Math.random() - 0.5) * 3, vy = (Math.random() - 0.5) * 3;
+            target._moveInterval = setInterval(() => {
+                mx += vx;
+                my += vy;
+                if (mx < padding || mx > padding + maxX) vx *= -1;
+                if (my < padding || my > padding + maxY) vy *= -1;
+                mx = Math.max(padding, Math.min(padding + maxX, mx));
+                my = Math.max(padding, Math.min(padding + maxY, my));
+                target.style.left = mx + 'px';
+                target.style.top = my + 'px';
+            }, 16);
+        }
+
         target.addEventListener('click', hitTarget);
         target.addEventListener('touchstart', (e) => { e.preventDefault(); hitTarget(e); });
         gameBoard.appendChild(target);
@@ -957,47 +1339,303 @@
         e.stopPropagation();
         if (gameState !== 'playing') return;
         const target = e.currentTarget;
+
+        // clear move/fade
+        if (target._moveInterval) clearInterval(target._moveInterval);
+        if (target._fadeTimeout) clearTimeout(target._fadeTimeout);
+
+        // particles at target center
+        const rect = target.getBoundingClientRect();
+        const boardRect = gameBoard.getBoundingClientRect();
+        const cx = rect.left - boardRect.left + rect.width / 2;
+        const cy = rect.top - boardRect.top + rect.height / 2;
+        spawnParticles(cx, cy);
+
         target.classList.add('hit');
+
         const now = performance.now();
         reactionTimes.push(now - lastTargetTime);
         targetsHit++;
-        statHits.textContent = targetsHit;
-        timerBar.style.width = ((targetsHit / targetCount) * 100) + '%';
-        if (targetsHit >= targetCount) endGame();
-        else setTimeout(spawnTarget, 150);
+        totalClicks++;
+        combo++;
+        if (combo > bestStreak) bestStreak = combo;
+
+        showCombo(cx, cy);
+        updateHUD();
+
+        timerBar.style.width = ((targetsHit / config.targetCount) * 100) + '%';
+
+        const spawnDelay = Math.max(50, 150 / config.speed);
+
+        if (targetsHit >= config.targetCount) {
+            endGame();
+        } else {
+            setTimeout(spawnTarget, spawnDelay);
+        }
     }
 
-    function endGame() {
-        gameState = 'result';
-        targetBtns.forEach(b => b.style.pointerEvents = 'auto');
-        const totalTime = performance.now() - startTime;
-        currentScore = Math.round((targetsHit / (totalTime / 60000)));
-        const avgTime = Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length);
-        statAvg.textContent = avgTime + 'ms';
-        if (!bestScores[targetCount] || currentScore > bestScores[targetCount]) {
-            bestScores[targetCount] = currentScore;
-            updateBestDisplay();
+    // ── Tracking Mode ──
+    function startTrackingMode() {
+        trackingTimeOnTarget = 0;
+        trackingElapsed = 0;
+        trackingOnTarget = false;
+
+        const sz = config.targetSize;
+        const t = document.createElement('div');
+        t.className = 'target tracking-target';
+        t.style.width = sz + 'px';
+        t.style.height = sz + 'px';
+
+        // start center
+        const bw = gameBoard.clientWidth;
+        const bh = gameBoard.clientHeight;
+        t.style.left = (bw / 2 - sz / 2) + 'px';
+        t.style.top = (bh / 2 - sz / 2) + 'px';
+        gameBoard.appendChild(t);
+        trackingTarget = t;
+
+        // init curve params
+        trackCurve.cx = bw / 2;
+        trackCurve.cy = bh / 2;
+        trackCurve.angle = Math.random() * Math.PI * 2;
+        trackCurve.radius = 80 + Math.random() * 60;
+        trackCurve.angularSpeed = (0.8 + Math.random() * 0.6) * config.speed;
+        trackCurve.driftX = (Math.random() - 0.5) * 0.5 * config.speed;
+        trackCurve.driftY = (Math.random() - 0.5) * 0.5 * config.speed;
+
+        // mouse/touch tracking
+        gameBoard.addEventListener('mousedown', trackMouseDown);
+        gameBoard.addEventListener('mouseup', trackMouseUp);
+        gameBoard.addEventListener('touchstart', trackTouchStart);
+        gameBoard.addEventListener('touchend', trackMouseUp);
+
+        trackingLastFrame = performance.now();
+        trackingRAF = requestAnimationFrame(trackingLoop);
+    }
+
+    function trackMouseDown(e) { trackingOnTarget = isOnTrackingTarget(e.clientX, e.clientY); updateTrackVisual(); }
+    function trackMouseUp() { trackingOnTarget = false; updateTrackVisual(); }
+    function trackTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        trackingOnTarget = isOnTrackingTarget(touch.clientX, touch.clientY);
+        updateTrackVisual();
+    }
+
+    function updateTrackVisual() {
+        if (trackingTarget) {
+            trackingTarget.classList.toggle('active-track', trackingOnTarget);
         }
+    }
+
+    function isOnTrackingTarget(clientX, clientY) {
+        if (!trackingTarget) return false;
+        const rect = trackingTarget.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const r = rect.width / 2;
+        const dx = clientX - cx;
+        const dy = clientY - cy;
+        return (dx * dx + dy * dy) <= r * r;
+    }
+
+    // also track mousemove while holding down
+    gameBoard.addEventListener('mousemove', (e) => {
+        if (gameState === 'playing' && config.mode === 'tracking' && e.buttons === 1) {
+            trackingOnTarget = isOnTrackingTarget(e.clientX, e.clientY);
+            updateTrackVisual();
+        }
+    });
+
+    function trackingLoop(now) {
+        if (gameState !== 'playing' || config.mode !== 'tracking') return;
+        const dt = now - trackingLastFrame;
+        trackingLastFrame = now;
+        trackingElapsed += dt;
+
+        // accumulate time on target
+        if (trackingOnTarget) {
+            trackingTimeOnTarget += dt;
+        }
+
+        // move target in smooth curves
+        const bw = gameBoard.clientWidth;
+        const bh = gameBoard.clientHeight;
+        const sz = config.targetSize;
+        const pad = 40;
+
+        trackCurve.angle += trackCurve.angularSpeed * dt * 0.001;
+        trackCurve.cx += trackCurve.driftX * dt * 0.06;
+        trackCurve.cy += trackCurve.driftY * dt * 0.06;
+
+        // bounce drift
+        if (trackCurve.cx < pad + trackCurve.radius || trackCurve.cx > bw - pad - trackCurve.radius) trackCurve.driftX *= -1;
+        if (trackCurve.cy < pad + trackCurve.radius || trackCurve.cy > bh - pad - trackCurve.radius) trackCurve.driftY *= -1;
+        trackCurve.cx = Math.max(pad + trackCurve.radius, Math.min(bw - pad - trackCurve.radius, trackCurve.cx));
+        trackCurve.cy = Math.max(pad + trackCurve.radius, Math.min(bh - pad - trackCurve.radius, trackCurve.cy));
+
+        const tx = trackCurve.cx + Math.cos(trackCurve.angle) * trackCurve.radius - sz / 2;
+        const ty = trackCurve.cy + Math.sin(trackCurve.angle) * trackCurve.radius - sz / 2;
+        trackingTarget.style.left = tx + 'px';
+        trackingTarget.style.top = ty + 'px';
+
+        // update HUD
+        const pct = Math.min(trackingElapsed / TRACKING_DURATION, 1);
+        timerBar.style.width = (pct * 100) + '%';
+        hudHits.textContent = Math.round(trackingTimeOnTarget) + 'ms';
+        hudAcc.textContent = trackingElapsed > 0 ? Math.round((trackingTimeOnTarget / trackingElapsed) * 100) + '%' : '0%';
+        hudTpm.textContent = '--';
+        hudCombo.textContent = trackingOnTarget ? 'ON' : 'OFF';
+
+        if (trackingElapsed >= TRACKING_DURATION) {
+            endTrackingMode();
+            return;
+        }
+
+        trackingRAF = requestAnimationFrame(trackingLoop);
+    }
+
+    function endTrackingMode() {
+        gameBoard.removeEventListener('mousedown', trackMouseDown);
+        gameBoard.removeEventListener('mouseup', trackMouseUp);
+        gameBoard.removeEventListener('touchstart', trackTouchStart);
+        gameBoard.removeEventListener('touchend', trackMouseUp);
+        if (trackingTarget) trackingTarget.remove();
+        trackingTarget = null;
+        if (trackingRAF) cancelAnimationFrame(trackingRAF);
+
+        currentScore = Math.round(trackingTimeOnTarget);
+        endGameCommon();
+    }
+
+    // ── End Game ──
+    function endGame() {
+        const totalTime = performance.now() - startTime;
+
+        if (config.mode === 'speed') {
+            currentScore = Math.round(targetsHit / (totalTime / 60000));
+        } else if (config.mode === 'precision') {
+            const total = targetsHit + missClicks;
+            currentScore = total > 0 ? Math.round((targetsHit / total) * 100) : 0;
+        }
+
         const existing = gameBoard.querySelector('.target');
-        if (existing) existing.remove();
-        gameBoard.className = 'game-board state-idle';
+        if (existing) {
+            if (existing._moveInterval) clearInterval(existing._moveInterval);
+            if (existing._fadeTimeout) clearTimeout(existing._fadeTimeout);
+            existing.remove();
+        }
+
+        endGameCommon();
+    }
+
+    function endGameCommon() {
+        gameState = 'result';
+        document.querySelectorAll('.sel-btn, .target-btn').forEach(b => b.style.pointerEvents = 'auto');
+
+        gameBoard.classList.remove('state-playing');
+        gameBoard.classList.add('state-idle', 'no-hud');
         boardContent.style.display = 'block';
-        boardTitle.textContent = currentScore + ' TPM';
+        liveHud.classList.remove('show');
+
+        if (config.mode === 'speed') {
+            boardTitle.textContent = currentScore + ' TPM';
+        } else if (config.mode === 'precision') {
+            boardTitle.textContent = currentScore + '%';
+        } else {
+            boardTitle.textContent = currentScore + ' ms';
+        }
         boardSubtitle.textContent = 'Click to play again';
         timerBar.style.width = '100%';
+
         showResult();
     }
 
     function showResult() {
-        resultScore.textContent = currentScore + ' TPM';
+        // Score display
+        if (config.mode === 'speed') {
+            resultScore.textContent = currentScore + ' TPM';
+            resultScoreLabel.textContent = 'Targets Per Minute';
+        } else if (config.mode === 'precision') {
+            resultScore.textContent = currentScore + '%';
+            resultScoreLabel.textContent = 'Accuracy Score';
+        } else {
+            resultScore.textContent = (currentScore / 1000).toFixed(2) + 's';
+            resultScoreLabel.textContent = 'Time On Target (of 15s)';
+        }
+
+        // Rating
         let rating, ratingClass;
-        if (currentScore >= 120) { rating = 'LEGENDARY'; ratingClass = 'rating-legendary'; }
-        else if (currentScore >= 100) { rating = 'EXCELLENT'; ratingClass = 'rating-excellent'; }
-        else if (currentScore >= 80) { rating = 'GOOD'; ratingClass = 'rating-good'; }
-        else if (currentScore >= 60) { rating = 'AVERAGE'; ratingClass = 'rating-average'; }
-        else { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+        if (config.mode === 'speed') {
+            if (currentScore >= 120)      { rating = 'LEGENDARY';       ratingClass = 'rating-legendary'; }
+            else if (currentScore >= 100)  { rating = 'EXCELLENT';       ratingClass = 'rating-excellent'; }
+            else if (currentScore >= 80)   { rating = 'GOOD';            ratingClass = 'rating-good'; }
+            else if (currentScore >= 60)   { rating = 'AVERAGE';         ratingClass = 'rating-average'; }
+            else                           { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+        } else if (config.mode === 'precision') {
+            if (currentScore >= 98)        { rating = 'LEGENDARY';       ratingClass = 'rating-legendary'; }
+            else if (currentScore >= 90)   { rating = 'EXCELLENT';       ratingClass = 'rating-excellent'; }
+            else if (currentScore >= 75)   { rating = 'GOOD';            ratingClass = 'rating-good'; }
+            else if (currentScore >= 55)   { rating = 'AVERAGE';         ratingClass = 'rating-average'; }
+            else                           { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+        } else {
+            // tracking: ms on target out of 15000
+            const pct = currentScore / TRACKING_DURATION * 100;
+            if (pct >= 85)       { rating = 'LEGENDARY';       ratingClass = 'rating-legendary'; }
+            else if (pct >= 70)  { rating = 'EXCELLENT';       ratingClass = 'rating-excellent'; }
+            else if (pct >= 50)  { rating = 'GOOD';            ratingClass = 'rating-good'; }
+            else if (pct >= 30)  { rating = 'AVERAGE';         ratingClass = 'rating-average'; }
+            else                 { rating = 'KEEP PRACTICING'; ratingClass = 'rating-slow'; }
+        }
         resultRating.textContent = rating;
         resultRating.className = 'result-rating ' + ratingClass;
+
+        // Stats Grid
+        const totalAttempts = targetsHit + missClicks;
+        const accPct = totalAttempts > 0 ? Math.round((targetsHit / totalAttempts) * 100) : 100;
+        const avgRT = reactionTimes.length > 0 ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length) : 0;
+        const elapsed = (performance.now() - startTime) / 60000;
+        const tpm = elapsed > 0 ? Math.round(targetsHit / elapsed) : 0;
+
+        document.getElementById('rs-accuracy').textContent = (config.mode === 'tracking' ? Math.round((trackingTimeOnTarget / TRACKING_DURATION) * 100) : accPct) + '%';
+        document.getElementById('rs-streak').textContent = bestStreak;
+        document.getElementById('rs-avg-rt').textContent = config.mode === 'tracking' ? '--' : avgRT + 'ms';
+        document.getElementById('rs-tpm').textContent = config.mode === 'tracking' ? '--' : tpm;
+        document.getElementById('rs-hits').textContent = config.mode === 'tracking' ? Math.round(trackingTimeOnTarget) + 'ms' : targetsHit;
+        document.getElementById('rs-misses').textContent = config.mode === 'tracking' ? Math.round(TRACKING_DURATION - trackingTimeOnTarget) + 'ms' : missClicks;
+
+        // PB comparison
+        const pb = getPB();
+        let isNewPB = false;
+        if (config.mode === 'tracking') {
+            isNewPB = !pb || currentScore > pb;
+        } else if (config.mode === 'precision') {
+            isNewPB = !pb || currentScore > pb;
+        } else {
+            isNewPB = !pb || currentScore > pb;
+        }
+        if (isNewPB) setPB(currentScore);
+
+        let compareHTML = '';
+        if (isNewPB) {
+            compareHTML += '<div class="compare-chip new-pb">New PB!</div>';
+        } else {
+            const diff = (config.mode === 'speed') ? (pb - currentScore) : (pb - currentScore);
+            compareHTML += `<div class="compare-chip not-pb">${Math.abs(diff)} away from your best</div>`;
+        }
+
+        // Global average comparison (speed mode ~80 TPM benchmark)
+        if (config.mode === 'speed') {
+            const globalAvg = 80;
+            const diff = currentScore - globalAvg;
+            if (diff >= 0) {
+                compareHTML += `<div class="compare-chip vs-global">${diff} above average (${globalAvg} TPM)</div>`;
+            } else {
+                compareHTML += `<div class="compare-chip vs-global">${Math.abs(diff)} below average (${globalAvg} TPM)</div>`;
+            }
+        }
+        resultCompare.innerHTML = compareHTML;
+
         resultPanel.classList.add('show');
         checkAuthForSave();
     }
@@ -1005,12 +1643,12 @@
     retryBtn.addEventListener('click', () => {
         resultPanel.classList.remove('show');
         boardTitle.textContent = 'CLICK TO START';
-        boardSubtitle.textContent = `Hit ${targetCount} targets as fast as you can`;
-        statHits.textContent = '0';
+        updateIdleText();
         timerBar.style.width = '0%';
         gameState = 'idle';
     });
 
+    // ── Auth / Save ──
     async function checkAuthForSave() {
         const { data } = await supabaseClient.auth.getSession();
         currentUser = data.session?.user;
@@ -1039,6 +1677,7 @@
         }
     }
 
+    // ── Leaderboard (VERBATIM) ──
     let currentLeaderboardType = 'today';
     const tabToday = document.getElementById('tab-today');
     const tabPersonal = document.getElementById('tab-personal');
