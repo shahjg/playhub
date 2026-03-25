@@ -1957,11 +1957,8 @@ function pickMode(m){
 
 // === PACK BROWSER ===
 async function loadPacks(){
-    try{
-        const res=await fetch(`${BK}/api/duo-packs`);
-        const data=await res.json();
-        G.packs=[...LEGACY_PACKS,...data.packs];
-    }catch(e){G.packs=[...LEGACY_PACKS];}
+    // Only use LEGACY_PACKS — backend universal packs are plain strings, not WYR {a,b} format
+    G.packs=[...LEGACY_PACKS];
     renderFilters();
     renderPacks();
     show('phPacks');
@@ -1987,13 +1984,9 @@ function renderPacks(){
 
 function selectPack(id){
     G.selectedPack=id;
-    const pack=G.packs.find(p=>p.id===id);
-    if(!pack) return;
-    G.intensityLabels=pack.intensityLabels||['Light','Medium','Intense'];
     renderPacks();
-    document.getElementById('intensityPackName').textContent=pack.icon+' '+pack.name;
-    renderIntensity();
-    show('phIntensity');
+    // Skip vibe selector — go straight to game with all questions merged
+    startGame();
 }
 
 function renderIntensity(){
@@ -2013,28 +2006,30 @@ function pickIntensity(s,el){
 
 // === START ===
 async function startGame(){
-    if(!G.selectedPack) return err('intensityErr','Pick a pack first');
+    if(!G.selectedPack) return err('packErr','Pick a pack first');
     G.pack=G.selectedPack;
     if(G.couch){
-        // Check local questions first
-        if(LOCAL_QUESTIONS[G.pack] && LOCAL_QUESTIONS[G.pack][G.spice]){
-            const src=LOCAL_QUESTIONS[G.pack][G.spice];
-            console.log('[load] LOCAL pack='+G.pack+' spice='+G.spice+' questions='+src.length);
-            G.questions=shuffle(src);
+        // Merge all tiers into one pool
+        if(LOCAL_QUESTIONS[G.pack]){
+            const p=LOCAL_QUESTIONS[G.pack];
+            const all=[...(p.clean||[]),...(p.medium||[]),...(p.spicy||[])];
+            console.log('[load] LOCAL pack='+G.pack+' all tiers merged, questions='+all.length);
+            G.questions=shuffle(all);
             G.total=G.questions.length;G.idx=0;G.matches=0;G.totalRounds=0;
             showQ();
             return;
         }
+        // Fallback to backend (for classic/relationship)
         try{
-            const res=await fetch(`${BK}/api/duo-questions?game=${GAME_TYPE}&pack=${G.pack}&spice=${G.spice}`);
+            const res=await fetch(`${BK}/api/duo-questions?game=${GAME_TYPE}&pack=${G.pack}&spice=clean`);
             const data=await res.json();
             G.questions=data.questions;G.total=G.questions.length;G.idx=0;G.matches=0;G.totalRounds=0;
-            if(!G.questions.length){err('intensityErr','No questions found for this combo — try a different intensity');return;}
+            if(!G.questions.length){err('packErr','No questions found for this pack');return;}
             showQ();
-        }catch(e){err('intensityErr','Failed to load questions');}
+        }catch(e){err('packErr','Failed to load questions');}
     } else {
         sk.connect();
-        sk.emit('duo-create',{gameType:GAME_TYPE,playerName:G.name,pack:G.pack,spice:G.spice});
+        sk.emit('duo-create',{gameType:GAME_TYPE,playerName:G.name,pack:G.pack,spice:'clean'});
     }
 }
 

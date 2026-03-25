@@ -1190,13 +1190,8 @@ function renderPacks(){
 
 function selectPack(id){
     G.selectedPack=id;
-    const pack=G.packs.find(p=>p.id===id);
-    if(!pack) return;
-    G.intensityLabels=pack.intensityLabels||['Light','Medium','Intense'];
     renderPacks();
-    document.getElementById('intensityPackName').textContent=pack.icon+' '+pack.name;
-    renderIntensity();
-    show('phIntensity');
+    startGame();
 }
 
 function renderIntensity(){
@@ -1216,28 +1211,28 @@ function pickIntensity(s,el){
 
 // === START ===
 async function startGame(){
-    if(!G.selectedPack) return err('intensityErr','Pick a pack first');
+    if(!G.selectedPack) return err('packErr','Pick a pack first');
     G.pack=G.selectedPack;
     if(G.couch){
-        // Try local questions first
-        const localPack=LOCAL_QUESTIONS[G.pack];
-        if(localPack && localPack[G.spice]){
-            const src=localPack[G.spice];
-            console.log('[load] LOCAL pack='+G.pack+' spice='+G.spice+' questions='+src.length);
+        if(LOCAL_QUESTIONS[G.pack]){
+            const p=LOCAL_QUESTIONS[G.pack];
+            const all=[...(p.clean||[]),...(p.medium||[]),...(p.spicy||[])];
+            const src=all;
+            console.log('[load] LOCAL pack='+G.pack+' all tiers merged questions='+src.length);
             G.questions=shuffle(src);G.total=G.questions.length;G.idx=0;G.matches=0;G.totalRounds=0;
             showQ();
             return;
         }
         try{
-            const res=await fetch(`${BK}/api/duo-questions?game=${GAME_TYPE}&pack=${G.pack}&spice=${G.spice}`);
+            const res=await fetch(`${BK}/api/duo-questions?game=${GAME_TYPE}&pack=${G.pack}&spice=clean`);
             const data=await res.json();
             G.questions=data.questions;G.total=G.questions.length;G.idx=0;G.matches=0;G.totalRounds=0;
-            if(!G.questions.length){err('intensityErr','No questions found for this combo — try a different intensity');return;}
+            if(!G.questions.length){err('packErr','No questions found for this pack');return;}
             showQ();
-        }catch(e){err('intensityErr','Failed to load questions');}
+        }catch(e){err('packErr','Failed to load questions');}
     } else {
         sk.connect();
-        sk.emit('duo-create',{gameType:GAME_TYPE,playerName:G.name,pack:G.pack,spice:G.spice});
+        sk.emit('duo-create',{gameType:GAME_TYPE,playerName:G.name,pack:G.pack,spice:'clean'});
     }
 }
 
