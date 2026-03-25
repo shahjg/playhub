@@ -234,22 +234,35 @@ function initDuoHandlers(io, socket) {
 // ============================================
 
 function getQuestions(gameType, pack, spice) {
-  // Try universal packs first (shared across all game types)
   let questions = [];
+
+  // For WYR, check game-specific packs FIRST (universal packs are plain strings, not {a,b} objects)
+  const bank = QUESTION_BANKS[gameType];
+  if (bank) {
+    const packData = bank[pack];
+    if (packData) {
+      questions = (packData[spice] && packData[spice].length > 0) ? packData[spice] : packData['clean'] || [];
+      if (questions.length > 0) return [...questions].sort(() => Math.random() - 0.5);
+    }
+  }
+
+  // Try universal packs (shared across all game types — plain string format)
   if (UNIVERSAL_PACKS[pack]) {
     const uPack = UNIVERSAL_PACKS[pack];
     questions = uPack[spice] && uPack[spice].length > 0 ? uPack[spice] : uPack['clean'] || [];
     if (questions.length > 0) return [...questions].sort(() => Math.random() - 0.5);
   }
 
-  // Fall back to game-specific packs
-  const bank = QUESTION_BANKS[gameType];
-  if (!bank) return [];
-  const packData = bank[pack] || bank['classic'] || bank[Object.keys(bank)[0]];
-  if (!packData) return [];
-  // FIX: check array length, not just truthiness (empty arrays are truthy)
-  questions = (packData[spice] && packData[spice].length > 0) ? packData[spice] : packData['clean'] || [];
-  return [...questions].sort(() => Math.random() - 0.5);
+  // Final fallback to classic pack for the game type
+  if (bank) {
+    const fallback = bank['classic'] || bank[Object.keys(bank)[0]];
+    if (fallback) {
+      questions = (fallback[spice] && fallback[spice].length > 0) ? fallback[spice] : fallback['clean'] || [];
+      return [...questions].sort(() => Math.random() - 0.5);
+    }
+  }
+
+  return [];
 }
 
 // ============================================
