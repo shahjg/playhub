@@ -154,7 +154,7 @@
 <body>
 <div class="bg"></div>
 <header><nav class="nav">
-    <a class="back-link" id="headerBack" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <a class="back-link" id="headerBack" href="/duos.html" onclick="return headerBackClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
     <span class="hdr-title">WOULD YOU RATHER</span>
     <div class="hdr-right"></div>
 </nav></header>
@@ -228,6 +228,10 @@
         </div>
         <div class="partner-status" id="partnerStatus"></div>
     </div>
+    <div class="btn-row" id="couchBtnRow" style="display:none">
+        <button class="fav-btn" id="favBtnGame" onclick="fav()">♡ Save</button>
+        <button class="next-btn" id="couchNextBtn" onclick="couchNext()" disabled>NEXT →</button>
+    </div>
 </div>
 
 <!-- REVEAL -->
@@ -267,13 +271,1050 @@ const GAME_TYPE='would-you-rather';
 const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
 let G={mode:null,code:null,name:null,num:0,pack:null,spice:'clean',q:null,total:0,idx:0,chose:null,players:[],faved:false,couch:false,questions:[],matches:0,totalRounds:0,packs:[],selectedPack:null,intensityLabels:['Light','Medium','Intense'],activeFilter:'all'};
 
-// Legacy game-specific packs (from original question bank)
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
 const LEGACY_PACKS=[
     {id:'classic',name:'Classic',icon:'🎯',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
     {id:'relationship',name:'Love & Dating',icon:'💕',filter:'relationship',intensityLabels:['Sweet','Flirty','Steamy']},
-    {id:'career',name:'Career',icon:'💼',filter:'sfw',intensityLabels:['Professional','Candid','Brutally Honest']},
-    {id:'food',name:'Food',icon:'🍕',filter:'sfw',intensityLabels:['Light','Medium','Intense']}
+    {id:'comics',name:'Comic Books & Superheroes',icon:'🦸',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'movies',name:'Movies & Cinema',icon:'🎬',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'tvshows',name:'TV Shows',icon:'📺',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'music',name:'Music',icon:'🎵',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'gaming',name:'Gaming',icon:'🎮',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'sports',name:'Sports',icon:'⚽',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'foodcooking',name:'Food & Cooking',icon:'🍳',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'travel',name:'Travel & Adventure',icon:'✈️',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'tech',name:'Technology & Future',icon:'🤖',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'animals',name:'Animals & Nature',icon:'🐾',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'school',name:'School & Career',icon:'📚',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'socialmedia',name:'Social Media & Fame',icon:'📱',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'horror',name:'Horror & Scary',icon:'👻',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'fantasy',name:'Fantasy & Magic',icon:'🧙',filter:'sfw',intensityLabels:['Light','Medium','Intense']},
+    {id:'history',name:'History',icon:'📜',filter:'sfw',intensityLabels:['Light','Medium','Intense']}
 ];
+
+const LOCAL_QUESTIONS={
+comics:{
+clean:[
+{a:"Have Superman's powers",b:"Have Batman's gadgets and wealth"},
+{a:"Live in the Marvel universe",b:"Live in the DC universe"},
+{a:"Be bitten by a radioactive spider",b:"Be born on Krypton"},
+{a:"Wield Thor's hammer",b:"Wear Iron Man's suit"},
+{a:"Be part of the Avengers",b:"Be part of the Justice League"},
+{a:"Have Wolverine's healing factor",b:"Have the Flash's speed"},
+{a:"Read every comic ever published",b:"Star in a superhero movie"},
+{a:"Have a Batcave under your house",b:"Have a Stark Tower penthouse"},
+{a:"Be trained by Professor X",b:"Be trained by Batman"},
+{a:"Have Spider-Man's web-slinging",b:"Have Green Lantern's power ring"},
+{a:"Be best friends with Deadpool",b:"Be best friends with Spider-Man"},
+{a:"Live in Wakanda",b:"Live in Themyscira"},
+{a:"Have Captain America's shield",b:"Have Wonder Woman's lasso of truth"},
+{a:"Be a hero with no powers but genius intellect",b:"Have one superpower but average intelligence"},
+{a:"Fight alongside the X-Men",b:"Fight alongside the Guardians of the Galaxy"},
+{a:"Have Aquaman's ability to breathe underwater",b:"Have Storm's weather control"},
+{a:"Own every first-edition comic book",b:"Create a new hero that becomes iconic"},
+{a:"Have the Hulk's strength but turn green when angry",b:"Have Mystique's shapeshifting"},
+{a:"Be a superhero whose identity everyone knows",b:"Be a secret hero no one ever thanks"},
+{a:"Live in Gotham City",b:"Live in Metropolis"}
+],
+medium:[
+{a:"Lose your powers forever to save one person",b:"Keep your powers but fail to save someone close"},
+{a:"Be a villain everyone fears",b:"Be a hero no one respects"},
+{a:"Have the Joker as your roommate for a year",b:"Have Thanos lecture you about balance every day"},
+{a:"Only be able to fly but never drive again",b:"Only be able to teleport but never walk again"},
+{a:"Be stuck in a comic book world forever",b:"Bring one comic character into the real world permanently"},
+{a:"Have the Infinity Gauntlet but only use it once",b:"Have a Green Lantern ring with unlimited charges"},
+{a:"Discover your parents are supervillains",b:"Discover your best friend is your arch-nemesis"},
+{a:"Be the sidekick to the world's greatest hero",b:"Be a solo hero in a small town"},
+{a:"Fight the entire Sinister Six alone",b:"Negotiate peace with Magneto"},
+{a:"Have Daredevil's enhanced senses but be blind",b:"Have Professor X's telepathy but be paralyzed"},
+{a:"Be an anti-hero loved by criminals and hated by cops",b:"Be a by-the-book hero loved by cops and hated by criminals"},
+{a:"Time-travel to witness the first superhero",b:"Jump to the future to see the last superhero"},
+{a:"Write the final chapter of your favorite comic series",b:"Bring back a cancelled series for 10 more years"},
+{a:"Be invulnerable but unable to feel anything physically",b:"Feel everything intensely but get hurt easily"},
+{a:"Live through every Marvel crossover event",b:"Live through every DC crisis event"},
+{a:"Have Venom as a symbiote you can't remove",b:"Have the Phoenix Force you can barely control"},
+{a:"Be trapped in the Phantom Zone",b:"Be trapped in the Quantum Realm"},
+{a:"Battle your favorite superhero to the death",b:"Team up with your least favorite villain to save the world"},
+{a:"Reboot your life like a comic reboot",b:"Continue your life but add a dramatic retcon"},
+{a:"Have your life narrated by Stan Lee's ghost",b:"Have your life drawn by your favorite comic artist"}
+],
+spicy:[
+{a:"Erase one superhero from existence to save the multiverse",b:"Let the multiverse collapse but keep every hero alive"},
+{a:"Be forced to reveal every hero's secret identity",b:"Permanently join the villains to protect one identity"},
+{a:"Sacrifice your powers to resurrect a fallen hero",b:"Gain ultimate power but one hero dies permanently"},
+{a:"Live in a dystopian future ruled by Apocalypse",b:"Live in a world where Lex Luthor is president"},
+{a:"Have every comic character know your darkest secret",b:"Forget every comic you've ever loved"},
+{a:"Be the sole survivor of a team wipeout you could have prevented",b:"Die heroically saving your entire team"},
+{a:"Destroy every copy of Action Comics #1",b:"Destroy every copy of Amazing Fantasy #15"},
+{a:"Have Doctor Doom as a genuinely benevolent world leader",b:"Have Superman go permanently rogue"},
+{a:"Kill one hero to prevent a universe-ending war",b:"Let the war happen and hope for the best"},
+{a:"Be mind-controlled by a villain for a year",b:"Be banished to another dimension for five years"},
+{a:"Have your memory wiped and start over as a civilian",b:"Remember everything but be powerless to help"},
+{a:"Watch your mentor become the main villain",b:"Become the villain to save your mentor"},
+{a:"Merge the Marvel and DC universes permanently",b:"Delete one universe entirely to save the other"},
+{a:"Be immortal but watch every hero you love die",b:"Die young but be remembered as the greatest hero ever"},
+{a:"Let Thanos snap half the universe to stop a worse threat",b:"Fight the worse threat at the cost of 90% of all heroes"},
+{a:"Be a normal person in a world full of supers who hate normies",b:"Be the only super in a world that hunts and fears you"},
+{a:"Have the power to rewrite any comic storyline in reality",b:"Have the power to bring any comic character to life once"},
+{a:"Permanently fuse with your least favorite character",b:"Permanently lose your favorite character from all media"},
+{a:"Rule the world as a benevolent super-dictator",b:"Protect freedom but never achieve peace"},
+{a:"End all suffering but remove free will",b:"Keep free will but suffering never ends"}
+]
+},
+movies:{
+clean:[
+{a:"Only watch comedies for the rest of your life",b:"Only watch action movies for the rest of your life"},
+{a:"Be an extra in a Marvel movie",b:"Be an extra in a Star Wars movie"},
+{a:"Have a personal home theater",b:"Have lifetime free movie tickets"},
+{a:"Watch movies a month before release",b:"Choose which sequel gets made next"},
+{a:"Live inside the world of Harry Potter",b:"Live inside the world of Lord of the Rings"},
+{a:"Be directed by Steven Spielberg",b:"Be directed by Christopher Nolan"},
+{a:"Only watch movies made before 2000",b:"Only watch movies made after 2020"},
+{a:"Have every movie spoiled before you see it",b:"Never be able to rewatch a movie"},
+{a:"Own every Best Picture winner on film",b:"Own every cult classic ever made"},
+{a:"Be a stunt double in action movies",b:"Be a voice actor in animated movies"},
+{a:"Watch only horror movies at night",b:"Watch only romcoms on dates"},
+{a:"Have John Williams score your life",b:"Have Hans Zimmer score your life"},
+{a:"Be in a buddy cop movie with your best friend",b:"Be in a heist movie with strangers"},
+{a:"Live in the Jurassic Park island",b:"Live in Hogwarts castle"},
+{a:"Have a lightsaber",b:"Have a wand from Harry Potter"},
+{a:"Know every movie quote ever",b:"Know every movie trivia fact ever"},
+{a:"Watch a movie in zero gravity",b:"Watch a movie at the bottom of the ocean"},
+{a:"Star in a blockbuster but get terrible reviews",b:"Star in an indie film that wins every award"},
+{a:"Be best friends with The Rock",b:"Be best friends with Ryan Reynolds"},
+{a:"Time travel to any movie premiere in history",b:"Attend every future movie premiere"}
+],
+medium:[
+{a:"Star in a terrible sequel to your favorite movie",b:"Never get a sequel to your favorite movie"},
+{a:"Only watch movies alone forever",b:"Only watch movies in packed theaters forever"},
+{a:"Be typecast as the villain in every role",b:"Be typecast as the comedic sidekick in every role"},
+{a:"Direct a movie with an unlimited budget but no creative control",b:"Direct a movie with full creative control but a tiny budget"},
+{a:"Live in the Matrix (knowing it's fake)",b:"Live in Inception (never sure what's real)"},
+{a:"Have your life made into a biopic you can never watch",b:"Watch the biopic but you can't change anything about it"},
+{a:"Forget your all-time favorite movie so you can watch it fresh",b:"Remember every movie perfectly but never be surprised again"},
+{a:"Be stuck in a time loop like Groundhog Day",b:"Be stuck in a survival scenario like Cast Away"},
+{a:"Win an Oscar but nobody watches the film",b:"Star in the highest-grossing film ever but get no awards"},
+{a:"Act opposite an actor you despise for every movie",b:"Always act alone in one-person films"},
+{a:"Be in a movie that predicts the future accurately",b:"Be in a movie that changes the past"},
+{a:"Have your dreams be directed by David Lynch",b:"Have your memories be edited by Quentin Tarantino"},
+{a:"Live in a world where movies are illegal",b:"Live in a world where everyone is a movie character"},
+{a:"Remake a classic movie perfectly",b:"Create a totally original movie that becomes a classic"},
+{a:"Know how every movie ends before it starts",b:"Never be able to finish any movie — always miss the last 10 minutes"},
+{a:"Be a famous director who can never watch their own films",b:"Be a critic whose reviews can make or break any movie"},
+{a:"Only watch silent films",b:"Only watch foreign films with subtitles"},
+{a:"Be trapped in a disaster movie",b:"Be trapped in a psychological thriller"},
+{a:"Have every movie character know you're watching",b:"Be invisible inside every movie you watch"},
+{a:"Play the lead in a movie musical",b:"Play the lead in a gritty war film"}
+],
+spicy:[
+{a:"Star in a movie that accidentally starts a real-world controversy",b:"Direct a movie that gets banned in 50 countries"},
+{a:"Have your most embarrassing moment turned into a blockbuster",b:"Have your biggest secret turned into a documentary"},
+{a:"Be famous only for one controversial role",b:"Be forgotten despite decades of great work"},
+{a:"Reshoot the ending of any movie in history",b:"Erase one movie from existence entirely"},
+{a:"Be the most hated character in the most popular franchise",b:"Be the most loved character in a franchise nobody watches"},
+{a:"Act in a film that destroys a real friendship",b:"Refuse the role and always wonder what could have been"},
+{a:"Win Best Picture but the film reveals your personal life",b:"Never win but keep your privacy forever"},
+{a:"Watch a movie about your future (can't change it)",b:"Watch a movie about how everyone really sees you"},
+{a:"Delete all movies made after your favorite era",b:"Delete all movies made before your favorite era"},
+{a:"Be remembered as the worst actor of all time but be incredibly wealthy",b:"Be the greatest actor no one ever saw"},
+{a:"Give up movies forever",b:"Give up music forever"},
+{a:"Produce a propaganda film to save your country",b:"Refuse and let history unfold without you"},
+{a:"Act in a role so intense it permanently changes your personality",b:"Never take a role that challenges you"},
+{a:"Have a film reveal the truth about a global conspiracy",b:"Make a film that creates a massive (false) conspiracy belief"},
+{a:"Only watch movies that make you cry",b:"Only watch movies that make you angry"},
+{a:"Have every movie you love remade badly",b:"Have every movie you hate remade into something amazing"},
+{a:"Star in a romance with someone you can't stand",b:"Star in an action film where you do all your own stunts with no training"},
+{a:"Leak an unreleased film that ruins a studio",b:"Cover up a scandal to protect a film's release"},
+{a:"End the career of one problematic Hollywood figure",b:"Launch the career of one unknown filmmaker"},
+{a:"Live in a world where fiction becomes reality after filming",b:"Live in a world where cameras don't exist"}
+]
+},
+tvshows:{
+clean:[
+{a:"Binge-watch one show forever",b:"Only watch one episode of every show ever"},
+{a:"Live in the Friends apartment",b:"Live in the Office building"},
+{a:"Be on a reality competition show",b:"Be on a scripted drama series"},
+{a:"Have Netflix's entire catalog",b:"Have HBO's entire catalog"},
+{a:"Be in a sitcom with a laugh track",b:"Be in a mockumentary-style show"},
+{a:"Watch only animated shows",b:"Watch only live-action shows"},
+{a:"Be a contestant on Survivor",b:"Be a contestant on The Amazing Race"},
+{a:"Live in the Stranger Things world",b:"Live in the Game of Thrones world"},
+{a:"Have your life be a cooking show",b:"Have your life be a home renovation show"},
+{a:"Guest star on your favorite show",b:"Create your own show that runs for one season"},
+{a:"Only watch shows from the 90s",b:"Only watch shows from the 2020s"},
+{a:"Be in a crime procedural as the detective",b:"Be in a medical drama as the surgeon"},
+{a:"Attend the Emmys every year",b:"Visit every TV show set in Hollywood"},
+{a:"Have a TV show predict your future",b:"Have your past made into a TV show"},
+{a:"Watch only pilot episodes",b:"Watch only series finales"},
+{a:"Be in a show that runs 20 seasons",b:"Be in a show that runs 1 perfect season"},
+{a:"Have a talk show",b:"Have a late-night comedy show"},
+{a:"Live in Springfield (The Simpsons)",b:"Live in Pawnee (Parks and Rec)"},
+{a:"Be a judge on a talent show",b:"Be a host of a game show"},
+{a:"Watch TV only on a tiny phone screen",b:"Watch TV only on a massive screen you can't pause"}
+],
+medium:[
+{a:"Have your favorite show end perfectly but too soon",b:"Have it keep going but slowly decline in quality"},
+{a:"Be typecast in TV forever as a lovable goofball",b:"Be typecast forever as the serious brooding type"},
+{a:"Be stuck in a time loop episode",b:"Be stuck in a bottle episode"},
+{a:"Know how every series ends before you start it",b:"Never be able to watch the final episode of any series"},
+{a:"Be a background actor in every show for 20 years",b:"Star in one show that gets cancelled after 3 episodes"},
+{a:"Live in the world of The Walking Dead",b:"Live in the world of Black Mirror"},
+{a:"Only watch shows that got cancelled too soon",b:"Only watch shows that went on too long"},
+{a:"Write for a show you love but never get credit",b:"Get credit for a show you hate"},
+{a:"Be part of a beloved ensemble cast that secretly hates each other",b:"Be part of a close-knit cast on a show nobody watches"},
+{a:"Be the villain everyone loves to hate",b:"Be the hero everyone finds boring"},
+{a:"Watch every TV cliffhanger but never the resolution",b:"Only watch resolutions without knowing the buildup"},
+{a:"Replace one main character on any show in history",b:"Add a new character to any show in history"},
+{a:"Be in a show where you improvise every line",b:"Be in a show where every word is scripted down to the breath"},
+{a:"Have your relationship drama be a reality show",b:"Have your work life be a reality show"},
+{a:"Star in a show that becomes a cultural phenomenon you disagree with",b:"Star in a show with a perfect message nobody ever sees"},
+{a:"Live in Westworld",b:"Live in The Good Place"},
+{a:"Be on a show where the audience votes you off",b:"Be on a show where the writers keep torturing your character"},
+{a:"Direct the pilot of a major series",b:"Write the series finale of a beloved show"},
+{a:"Only watch TV shows while standing",b:"Only watch TV shows in complete darkness"},
+{a:"Be famous for a catchphrase you hate",b:"Be famous for a scene you're embarrassed by"}
+],
+spicy:[
+{a:"Have a reality show expose all your secrets",b:"Be the subject of a true-crime documentary about a crime you didn't commit"},
+{a:"Star in a show that causes a real political scandal",b:"Star in a show that accidentally ruins someone's reputation"},
+{a:"Be forced to watch your ex's dating show",b:"Be forced to compete on a dating show with your ex"},
+{a:"End your favorite show's legacy with a terrible reboot",b:"Let your favorite show be forgotten forever"},
+{a:"Have your worst moments go viral from a hidden camera show",b:"Have your best moments edited to look terrible"},
+{a:"Be stuck living as your least favorite TV character",b:"Erase your favorite character from TV history"},
+{a:"Watch only shows that make you deeply uncomfortable",b:"Watch only shows that are mind-numbingly boring"},
+{a:"Be in a show that accurately predicts disasters",b:"Be in a show that inspired someone to do something terrible"},
+{a:"Give up watching all new TV forever",b:"Give up rewatching any old favorite forever"},
+{a:"Have a documentary reveal the truth about your family",b:"Have a fictional show be eerily identical to your real life"},
+{a:"Be cancelled from TV for something you said as a teenager",b:"Be praised for something on TV you deeply regret"},
+{a:"Write a show that tears a fan community apart",b:"Write a show that unites people but you hate the message"},
+{a:"Star in a propaganda series to save your career",b:"Refuse and never work in TV again"},
+{a:"Know every spoiler for every show instantly",b:"Never be able to discuss shows with anyone"},
+{a:"Be trapped inside a horror anthology series",b:"Be trapped inside a soap opera that never ends"},
+{a:"Have your therapy sessions turned into a series",b:"Have your text messages turned into a series"},
+{a:"Be on a competition show where losing means real consequences",b:"Be on a prank show where the pranks are genuinely mean"},
+{a:"Play a version of yourself that everyone hates",b:"Play a fictional character everyone loves but nothing like you"},
+{a:"Sacrifice your favorite show to save a show you've never seen",b:"Keep your favorite but three beloved shows get cancelled"},
+{a:"Be forced to live-stream your entire life",b:"Never appear on any screen ever again"}
+]
+},
+music:{
+clean:[
+{a:"Only listen to one genre forever",b:"Listen to all genres but never hear your favorite song again"},
+{a:"Play guitar like Hendrix",b:"Sing like Freddie Mercury"},
+{a:"Go to every concert free",b:"Have every album ever made in your library"},
+{a:"Be a famous DJ",b:"Be a famous singer-songwriter"},
+{a:"Only listen to music from the 80s",b:"Only listen to music from the 2020s"},
+{a:"Have a song written about you",b:"Write a hit song for someone else"},
+{a:"Meet your favorite artist backstage",b:"Perform on stage with them for one song"},
+{a:"Have perfect pitch",b:"Have perfect rhythm"},
+{a:"Only listen to music through headphones",b:"Only listen to music through speakers"},
+{a:"Be in a band with your friends",b:"Be a successful solo artist"},
+{a:"Learn every instrument but master none",b:"Master one instrument perfectly"},
+{a:"Only listen to albums front to back",b:"Only listen to shuffled playlists"},
+{a:"Go to a music festival every month",b:"Have a private concert once a year with any artist"},
+{a:"Have a number-one hit that's a novelty song",b:"Have a deep album cut that music critics adore"},
+{a:"Be a one-hit wonder with the biggest song ever",b:"Have a long career with moderate hits"},
+{a:"Live in Nashville",b:"Live in Los Angeles"},
+{a:"Only listen to live recordings",b:"Only listen to studio recordings"},
+{a:"Be a rapper",b:"Be a rock star"},
+{a:"Have a signature instrument custom-made for you",b:"Have a legendary artist's actual instrument"},
+{a:"Always have the perfect playlist for every mood",b:"Always be able to figure out any song stuck in your head"}
+],
+medium:[
+{a:"Forget every song you've ever loved",b:"Never discover new music again"},
+{a:"Be famous for music you think is trash",b:"Make incredible music nobody listens to"},
+{a:"Lose your hearing at 50 but have an legendary career",b:"Hear perfectly forever but never make it big"},
+{a:"Have your voice crack every live performance",b:"Have your instrument go out of tune every live performance"},
+{a:"Only listen to lyrics you disagree with",b:"Only listen to instrumentals with no lyrics"},
+{a:"Collaborate with an artist you respect but personally dislike",b:"Collaborate with a friend who has no talent"},
+{a:"Be a ghostwriter for the biggest pop stars",b:"Be a small indie artist with a devoted following"},
+{a:"Have your music used in a commercial you hate",b:"Have your music never played commercially"},
+{a:"Play at Coachella to a crowd that doesn't know you",b:"Play at a tiny venue to 50 superfans"},
+{a:"Be a music prodigy who burns out at 25",b:"Be a late bloomer who finds success at 50"},
+{a:"Have every song you hear stuck in your head for days",b:"Never be able to remember how any song goes"},
+{a:"Win a Grammy but trip on stage during acceptance",b:"Lose the Grammy but give the performance of the night"},
+{a:"Only make music when you're sad",b:"Only make music when you're happy"},
+{a:"Tour nonstop for 5 years with no breaks",b:"Never tour and only release studio albums"},
+{a:"Be a musical genius nobody understands",b:"Be technically mediocre but universally beloved"},
+{a:"Have your lyrics tattooed on a stranger",b:"Have a stranger's lyrics tattooed on you"},
+{a:"Produce beats for every major artist but stay anonymous",b:"Be a known producer who only works with unknown artists"},
+{a:"Go viral for a song you made as a joke",b:"Have your serious masterpiece get zero attention"},
+{a:"Be in a band where you're the least talented member",b:"Be in a band where you do all the work"},
+{a:"Perform only covers but incredibly well",b:"Perform only originals but hit-or-miss"}
+],
+spicy:[
+{a:"Sell out completely for guaranteed fame",b:"Stay true to your art and risk total obscurity"},
+{a:"Have your music inspire a revolution",b:"Have your music be the anthem of a controversial movement"},
+{a:"End your career on the perfect album",b:"Keep going and risk tarnishing your legacy"},
+{a:"Expose a corrupt music executive but ruin your career",b:"Stay silent and keep your success"},
+{a:"Be remembered for one perfect song and nothing else",b:"Be remembered for a prolific but uneven catalog"},
+{a:"Lose the ability to enjoy music",b:"Lose the ability to enjoy food"},
+{a:"Have your personal journals turned into an album against your will",b:"Have an album you hate become your defining work"},
+{a:"Be the last musician on Earth",b:"Live in a world where music was never invented"},
+{a:"Destroy the master recordings of a classic album to save a life",b:"Let the person die to preserve music history"},
+{a:"Have AI replace all human musicians",b:"Have music be restricted to only live performances"},
+{a:"Watch your protege surpass you and forget about you",b:"Never mentor anyone and keep your legacy to yourself"},
+{a:"Write a song that makes everyone cry but you can never perform it",b:"Perform a song that makes everyone happy but you wrote none of it"},
+{a:"Be a famous musician in a world where art is illegal",b:"Be free to make art in a world where no one cares about music"},
+{a:"Have your music used as a torture device",b:"Have your music erased from all records"},
+{a:"Give up making music to save your most important relationship",b:"Keep making music but lose that person forever"},
+{a:"Be the most technically perfect musician with no soul",b:"Be a deeply soulful musician with terrible technique"},
+{a:"Perform your most personal song to an audience of people who hate you",b:"Never perform your most personal song for anyone"},
+{a:"Have a song bring world peace but you receive no credit",b:"Write the most popular song ever but it divides people"},
+{a:"Die at 27 as a legendary musician",b:"Live to 90 and be forgotten by 40"},
+{a:"Erase one entire genre of music",b:"Be the sole creator of a brand-new genre nobody likes yet"}
+]
+},
+gaming:{
+clean:[
+{a:"Only play single-player games",b:"Only play multiplayer games"},
+{a:"Have a gaming PC with every game",b:"Have every console ever made"},
+{a:"Be a pro esports player",b:"Be a famous gaming YouTuber"},
+{a:"Play only retro games",b:"Play only brand-new releases"},
+{a:"Have infinite in-game currency in every game",b:"Have max skill in every game"},
+{a:"Live in the Minecraft world",b:"Live in the Animal Crossing world"},
+{a:"Only play open-world RPGs",b:"Only play competitive shooters"},
+{a:"Always win online matches but never have fun",b:"Always lose but have an amazing time"},
+{a:"Play unreleased games a year early",b:"Design one feature for your favorite game"},
+{a:"Have a dedicated gaming room",b:"Be able to game anywhere with a perfect portable setup"},
+{a:"Be the best at your favorite game",b:"Be above average at every game"},
+{a:"Only play VR games",b:"Only play on a traditional screen"},
+{a:"Meet the creator of your favorite game",b:"Be an NPC in your favorite game"},
+{a:"Play every game on the hardest difficulty",b:"Play every game on easy with all cheats"},
+{a:"Only play indie games",b:"Only play AAA games"},
+{a:"Have a pet from any video game",b:"Have a vehicle from any video game"},
+{a:"Game only during the day",b:"Game only at night"},
+{a:"Play with strangers who are great",b:"Play with friends who are terrible"},
+{a:"Live in Hyrule",b:"Live in the Pokemon world"},
+{a:"Have a real-life HUD showing your stats",b:"Have a real-life inventory system"}
+],
+medium:[
+{a:"Have every game you love get a perfect sequel",b:"Play one brand-new dream game that doesn't exist yet"},
+{a:"Be the villain in your favorite game",b:"Be the hero in your least favorite game"},
+{a:"Know every speedrun trick but never play casually again",b:"Play casually forever but never complete a speedrun"},
+{a:"Lose all your save files permanently",b:"Never be able to save progress again"},
+{a:"Only play games that take 100+ hours",b:"Only play games under 2 hours"},
+{a:"Have every game be pay-to-win but you're rich",b:"Have every game be skill-based but you're average"},
+{a:"Be stuck in a roguelike forever — die and restart",b:"Be stuck in a life sim where nothing exciting happens"},
+{a:"Be a famous game developer who never plays games",b:"Be an unknown gamer who plays everything"},
+{a:"Win a world championship in a game you hate",b:"Get last place in a tournament of a game you love"},
+{a:"Play a game that's perfect but has the worst community",b:"Play a mediocre game with the best community ever"},
+{a:"Have your real-life stats visible to other players",b:"See everyone else's real-life stats but not your own"},
+{a:"Be trapped in Dark Souls until you beat it no-death",b:"Be trapped in a peaceful game but for 10 years"},
+{a:"Design the next big battle royale",b:"Design the next big MMORPG"},
+{a:"Have lag-free internet forever but a terrible PC",b:"Have the best PC ever but occasional lag spikes"},
+{a:"Play only horror games alone in the dark",b:"Play only sports games you don't understand"},
+{a:"Be a voice actor for a game character everyone hates",b:"Be a motion capture actor for a character nobody notices"},
+{a:"Have game logic apply to real life (respawns, loot)",b:"Have real-life logic apply to games (permanent death, actual pain)"},
+{a:"Only play one game for the rest of your life",b:"Play every game but only for one hour each"},
+{a:"Be an AI companion in a game",b:"Be a random NPC in a game"},
+{a:"Unlock every achievement in every game",b:"Have one game designed specifically for you"}
+],
+spicy:[
+{a:"Have gaming become illegal worldwide",b:"Have gaming become mandatory 4 hours a day"},
+{a:"Delete the game that defined your childhood",b:"Delete every game released in the last 5 years"},
+{a:"Live permanently in a game world but never see real people",b:"Stay in the real world but never play a game again"},
+{a:"Be trapped in a survival horror game for real",b:"Be trapped in a battle royale for real"},
+{a:"Sacrifice your favorite franchise to save the gaming industry",b:"Let the industry crash but keep your favorite franchise"},
+{a:"Have every game review your real-life choices",b:"Have your real life scored and ranked on a public leaderboard"},
+{a:"Be the final boss everyone struggles to beat",b:"Be the tutorial NPC everyone skips"},
+{a:"Win a million dollars in a tournament by cheating (nobody finds out)",b:"Lose fairly and be praised for sportsmanship"},
+{a:"Have microtransactions in every aspect of real life",b:"Have a subscription model for all real-life activities"},
+{a:"Play a game that shows you how you'll die",b:"Play a game that shows you your biggest regret"},
+{a:"Give up gaming forever to gain one real-life superpower",b:"Keep gaming but lose your best real-life skill"},
+{a:"Be a character in a game where players control your decisions",b:"Control a real person's decisions like a game character"},
+{a:"Have a game that can perfectly simulate any person (living or dead)",b:"Have a game that can simulate your own alternate lives"},
+{a:"Watch your save file get corrupted live on stream",b:"Have your worst gaming moment go permanently viral"},
+{a:"Be the creator of a game that ruins friendships",b:"Be the creator of a game that's addictive and harmful"},
+{a:"End all competitive gaming forever",b:"End all single-player storytelling in games forever"},
+{a:"Play a game that accurately predicts world events",b:"Play a game that can change world events based on outcomes"},
+{a:"Have game characters become sentient and demand rights",b:"Have real people be uploadable into games permanently"},
+{a:"Destroy your gaming setup to save a stranger's life",b:"Keep your setup but carry the guilt forever"},
+{a:"Forget every gaming memory you have",b:"Forget every non-gaming memory you have"}
+]
+},
+sports:{
+clean:[
+{a:"Be amazing at every sport but never go pro",b:"Go pro in one sport but be average at everything else"},
+{a:"Have courtside seats to every NBA game",b:"Have field-level seats to every Super Bowl"},
+{a:"Play basketball with LeBron",b:"Play soccer with Messi"},
+{a:"Win an Olympic gold medal",b:"Win a World Cup"},
+{a:"Be a star quarterback",b:"Be a star point guard"},
+{a:"Only watch live sports in person",b:"Only watch sports on TV with perfect coverage"},
+{a:"Have unlimited sports merch",b:"Have unlimited tickets to any game"},
+{a:"Be a commentator for your favorite sport",b:"Be a coach for your favorite team"},
+{a:"Play in the World Series",b:"Play in the Champions League final"},
+{a:"Have a personal training facility at home",b:"Train at any professional facility for free"},
+{a:"Be the fastest runner on Earth",b:"Be the strongest person on Earth"},
+{a:"Play golf at every famous course",b:"Surf every famous wave"},
+{a:"Be a Formula 1 driver",b:"Be a professional boxer"},
+{a:"Have a signature shoe deal",b:"Have a signature celebration everyone copies"},
+{a:"Attend every Olympics in person",b:"Attend every FIFA World Cup in person"},
+{a:"Be incredible at a sport nobody watches",b:"Be decent at the most popular sport"},
+{a:"Play only outdoor sports",b:"Play only indoor sports"},
+{a:"Own a professional sports team",b:"Be the star player on a professional team"},
+{a:"Have an unbreakable sports record",b:"Win the most championships in history"},
+{a:"Be a pro athlete in the 80s",b:"Be a pro athlete today"}
+],
+medium:[
+{a:"Win every game but never be recognized for it",b:"Be famous in sports but have a losing record"},
+{a:"Be the best player on the worst team",b:"Be the worst player on the best team"},
+{a:"Have a career-ending injury after one legendary season",b:"Have a long injury-free career with no standout moments"},
+{a:"Train 8 hours a day with guaranteed success",b:"Train 2 hours a day with uncertain results"},
+{a:"Be known for one incredible play",b:"Be known for consistent greatness over 20 years"},
+{a:"Compete in a sport you love but always finish second",b:"Win championships in a sport you find boring"},
+{a:"Have your rival become your teammate",b:"Have your best friend become your biggest rival"},
+{a:"Be a legend in a sport from 100 years ago",b:"Be a rising star in a sport that doesn't exist yet"},
+{a:"Coach a youth team to a championship",b:"Play in one professional game at age 50"},
+{a:"Have superhuman endurance but normal speed",b:"Have superhuman speed but normal endurance"},
+{a:"Only play individual sports",b:"Only play team sports"},
+{a:"Be unbeatable at home but terrible away",b:"Be great on the road but cursed at home"},
+{a:"Miss the game-winning shot in the finals",b:"Score the game-winner but get hurt and miss the celebration"},
+{a:"Play in front of a hostile sold-out crowd",b:"Play in an empty stadium with no atmosphere"},
+{a:"Be traded to your rival team",b:"Stay loyal but never win a championship"},
+{a:"Have the physique of a gymnast",b:"Have the physique of a swimmer"},
+{a:"Dominate one era completely",b:"Be relevant across three decades"},
+{a:"Win with a controversial call in your favor",b:"Lose due to a bad call against you"},
+{a:"Be a clutch performer who's average otherwise",b:"Be consistently great but disappear in big moments"},
+{a:"Retire undefeated but too early",b:"Retire after a loss but with nothing left to prove"}
+],
+spicy:[
+{a:"Use performance enhancers and never get caught",b:"Stay clean and retire without a championship"},
+{a:"Expose corruption in your sport and get banned",b:"Stay quiet and keep your career"},
+{a:"Be paralyzed after a sports injury but become an icon",b:"Walk away healthy but be completely forgotten"},
+{a:"Have your greatest achievement erased from the records",b:"Have someone else's greatest achievement credited to you"},
+{a:"Sacrifice your body for 10 years of glory",b:"Protect your health but never reach the top"},
+{a:"Win a championship through a referee's error",b:"Lose the championship because of your own mistake"},
+{a:"End a rival's career with a legal but dangerous play",b:"Let them beat you to protect their safety"},
+{a:"Have your personal scandals overshadow your achievements",b:"Have no personal life at all — only sports"},
+{a:"Be the GOAT in a sport that's dying",b:"Be mediocre in the most popular sport in the world"},
+{a:"Play through an injury that could leave permanent damage",b:"Sit out and let your team lose the biggest game"},
+{a:"Have fans who worship you but you hate the attention",b:"Have no fans but love every minute of playing"},
+{a:"Dope your entire career and win everything then get exposed at 60",b:"Stay clean and lose everything but keep your integrity"},
+{a:"Be responsible for a rule change that ruins the sport",b:"Be the victim of an unfair rule that costs you everything"},
+{a:"Have your children pressured to follow in your footsteps",b:"Have your children refuse to acknowledge your career"},
+{a:"Give up sports forever to save a teammate's life",b:"Keep playing knowing you couldn't save them"},
+{a:"Be the player who breaks the other team's dynasty",b:"Be the player who starts your own team's dynasty"},
+{a:"End your career on a loss",b:"End your career with a win but a serious injury"},
+{a:"Have your sport fully controlled by AI referees",b:"Keep human refs with all their flaws"},
+{a:"Play in an era before modern medicine and safety gear",b:"Play in a future where the sport is completely different"},
+{a:"Be banned for a crime you didn't commit",b:"Get away with a crime that should have ended your career"}
+]
+},
+foodcooking:{
+clean:[
+{a:"Only eat sweet foods forever",b:"Only eat savory foods forever"},
+{a:"Be a world-class chef",b:"Be a world-class food critic"},
+{a:"Eat pizza every day",b:"Eat sushi every day"},
+{a:"Cook only with a campfire",b:"Cook only with a microwave"},
+{a:"Have an endless supply of your favorite snack",b:"Try a new food from a different country every day"},
+{a:"Only eat breakfast foods",b:"Only eat dinner foods"},
+{a:"Have a personal chef",b:"Be an incredible home cook"},
+{a:"Eat only spicy food",b:"Eat only mild food"},
+{a:"Have a kitchen from the future",b:"Have a kitchen full of vintage tools"},
+{a:"Only eat street food around the world",b:"Only eat at Michelin-star restaurants"},
+{a:"Master baking",b:"Master grilling"},
+{a:"Never use salt again",b:"Never use sugar again"},
+{a:"Eat only foods you can hold in your hands",b:"Eat only foods that require utensils"},
+{a:"Have an unlimited grocery budget",b:"Have unlimited time to cook"},
+{a:"Only drink coffee",b:"Only drink tea"},
+{a:"Cook for Gordon Ramsay",b:"Eat a meal cooked by Gordon Ramsay"},
+{a:"Only eat homemade food",b:"Only eat restaurant food"},
+{a:"Be amazing at cooking one cuisine",b:"Be decent at cooking every cuisine"},
+{a:"Have a food truck",b:"Have a fancy restaurant"},
+{a:"Only eat raw foods",b:"Only eat fried foods"}
+],
+medium:[
+{a:"Eat your least favorite food every day for a year",b:"Never eat your favorite food again"},
+{a:"Cook an amazing meal nobody appreciates",b:"Serve terrible food everyone raves about"},
+{a:"Only eat foods you've never tried before",b:"Only eat the same 5 meals on rotation"},
+{a:"Lose your sense of taste for 5 years",b:"Lose your sense of smell for 10 years"},
+{a:"Be allergic to your favorite food",b:"Be allergic to the most common ingredient (wheat)"},
+{a:"Cook under extreme pressure on live TV",b:"Cook in perfect solitude but nobody ever tastes it"},
+{a:"Only eat food you grow or raise yourself",b:"Only eat food someone else prepares for you"},
+{a:"Have a dish named after you at every restaurant",b:"Have a secret recipe everyone wants but you'll never share"},
+{a:"Eat only with chopsticks for every meal",b:"Eat only with your hands for every meal"},
+{a:"Win a cooking competition with a dish you improvised",b:"Lose with a dish you spent weeks perfecting"},
+{a:"Only cook for one person the rest of your life",b:"Cook for crowds but never for yourself"},
+{a:"Have every meal be a surprise you didn't choose",b:"Plan every meal 6 months in advance"},
+{a:"Never eat out again",b:"Never cook at home again"},
+{a:"Eat only cold food",b:"Eat only scalding hot food"},
+{a:"Be famous for a dish you stole from someone else",b:"Create an original dish nobody cares about"},
+{a:"Only eat foods that are one color",b:"Only eat foods that start with one letter"},
+{a:"Give up cheese forever",b:"Give up chocolate forever"},
+{a:"Eat in silence for every meal",b:"Eat with very loud people for every meal"},
+{a:"Only eat foods that existed 200 years ago",b:"Only eat foods invented in the last 10 years"},
+{a:"Have unlimited fast food",b:"Have unlimited ingredients but cook everything from scratch"}
+],
+spicy:[
+{a:"Eat something genuinely disgusting to win $10,000",b:"Give up your favorite food for $10,000"},
+{a:"Be responsible for a food trend that causes health problems",b:"Be the one who debunks a beloved food myth"},
+{a:"Only eat nutritionally perfect but tasteless food",b:"Eat delicious food that slowly harms your health"},
+{a:"Discover your favorite restaurant has terrible hygiene",b:"Discover your favorite home-cooked meal uses a secret gross ingredient"},
+{a:"Give up cooking forever",b:"Give up eating at restaurants forever"},
+{a:"Have the world's worst food allergy",b:"Have no sense of taste or smell permanently"},
+{a:"Eat a live insect on camera for fame",b:"Eat only bland food for a year for money"},
+{a:"Create a food that solves world hunger but tastes terrible",b:"Create the most delicious food ever that only the rich can afford"},
+{a:"Eat your weight in food in one sitting",b:"Fast for an entire week"},
+{a:"Have every meal judged and rated publicly",b:"Never know what you're eating beforehand"},
+{a:"Be a vegan in a world where meat is the only affordable food",b:"Be a carnivore in a world where meat is socially unacceptable"},
+{a:"Eat only gas station food for a year",b:"Eat only airplane food for a year"},
+{a:"Cook a meal that accidentally poisons someone mildly",b:"Refuse to cook for someone and they go hungry"},
+{a:"Give up all seasoning forever",b:"Give up all beverages except water forever"},
+{a:"Eat the same meal as your last meal every day until you die",b:"Never know when you're eating your last meal"},
+{a:"Have a severe gluten intolerance in Italy",b:"Have a severe lactose intolerance in France"},
+{a:"Eat only baby food for a month",b:"Eat only pet food for a week"},
+{a:"Never eat with other people again",b:"Never eat alone again"},
+{a:"Be force-fed your least favorite food daily",b:"Never feel full no matter how much you eat"},
+{a:"Have food be the only pleasure you can experience",b:"Never enjoy food but have every other pleasure"}
+]
+},
+travel:{
+clean:[
+{a:"Travel the world for free but alone",b:"Travel with your best friend but pay full price"},
+{a:"Only travel by train",b:"Only travel by plane"},
+{a:"Visit every country once",b:"Visit your favorite country 50 times"},
+{a:"Live abroad for a year",b:"Take 12 different trips in a year"},
+{a:"Stay in luxury hotels",b:"Stay in unique Airbnbs"},
+{a:"Travel to the past",b:"Travel to the future"},
+{a:"Go on a road trip across America",b:"Go on a backpacking trip across Europe"},
+{a:"Visit only beaches",b:"Visit only mountains"},
+{a:"Always travel first class",b:"Always travel with an unlimited budget for activities"},
+{a:"Explore ancient ruins",b:"Explore modern megacities"},
+{a:"Speak every language fluently while traveling",b:"Have a local best friend in every country"},
+{a:"Travel only in summer",b:"Travel only in winter"},
+{a:"Take a cruise around the world",b:"Take a flight around the world in 80 days"},
+{a:"Visit outer space for a day",b:"Visit the deepest part of the ocean for a day"},
+{a:"Go on safari in Africa",b:"Explore temples in Southeast Asia"},
+{a:"Have a window seat every time",b:"Have an aisle seat every time"},
+{a:"Visit only places with amazing food",b:"Visit only places with amazing nature"},
+{a:"Travel with a full itinerary",b:"Travel with zero plans"},
+{a:"See the Northern Lights",b:"See the Great Barrier Reef"},
+{a:"Explore Japan for a month",b:"Explore Italy for a month"}
+],
+medium:[
+{a:"Get lost in a foreign country with no phone",b:"Be stuck at an airport for 48 hours"},
+{a:"Travel to a dangerous but beautiful place",b:"Stay in a safe but boring destination"},
+{a:"Fly with extreme turbulence every time",b:"Have a 12-hour layover on every trip"},
+{a:"Only eat local street food when traveling",b:"Only eat at tourist restaurants when traveling"},
+{a:"Travel with someone who over-plans everything",b:"Travel with someone who plans absolutely nothing"},
+{a:"Visit a country where you can't speak the language at all",b:"Visit a country where everyone speaks your language but it's boring"},
+{a:"Stay in a haunted hotel for free",b:"Pay triple for a guaranteed comfortable stay"},
+{a:"Get food poisoning on every trip but have amazing experiences",b:"Stay healthy but have mediocre trips"},
+{a:"Only travel to places that are cold",b:"Only travel to places that are extremely hot"},
+{a:"Have your luggage lost on every flight",b:"Miss your connecting flight every time"},
+{a:"Travel first class but sit next to someone annoying",b:"Travel economy but have the whole row to yourself"},
+{a:"Only visit places you've already been",b:"Never return to a place you've visited"},
+{a:"Road trip with no AC in summer",b:"Road trip with no heat in winter"},
+{a:"Only travel during off-peak (bad weather) seasons",b:"Only travel during peak seasons (crowds everywhere)"},
+{a:"Take a trip that changes your life but you can never talk about it",b:"Take a boring trip that makes a great story"},
+{a:"Travel to every continent in one month",b:"Spend a year exploring one continent thoroughly"},
+{a:"Be a travel influencer with no privacy",b:"Travel anonymously but can't share any of it"},
+{a:"Get a free trip but your ex plans the entire itinerary",b:"Plan your dream trip but pay for everything yourself"},
+{a:"Only fly budget airlines forever",b:"Only take buses and trains forever"},
+{a:"Travel with a group of 20 strangers",b:"Travel solo for every trip"}
+],
+spicy:[
+{a:"Be stranded on a deserted island for a month",b:"Be lost in a dense jungle for a week"},
+{a:"Never travel again",b:"Travel constantly and never have a permanent home"},
+{a:"Visit a war zone to help refugees",b:"Stay safe but donate your entire travel budget to aid"},
+{a:"Discover a hidden place but tourists ruin it because of you",b:"Never discover it and it stays preserved"},
+{a:"Get arrested abroad for something minor",b:"Get seriously sick abroad with no insurance"},
+{a:"Give up traveling forever to have financial security",b:"Travel forever but always be broke"},
+{a:"Go to space knowing there's a 10% chance you won't return",b:"Stay on Earth and always wonder what's out there"},
+{a:"Travel back in time and be stuck in ancient Rome",b:"Travel forward 500 years and never come back"},
+{a:"Live as a permanent nomad with no roots",b:"Never leave your hometown for the rest of your life"},
+{a:"Visit the most beautiful place on Earth but it's destroyed the next day",b:"Never see it but know it's preserved forever"},
+{a:"Cross every border illegally for the thrill",b:"Never cross a border without months of paperwork"},
+{a:"Experience a natural disaster while traveling",b:"Have a medical emergency in a remote area"},
+{a:"Only travel to conflict zones as a journalist",b:"Only travel to resorts and never see the real culture"},
+{a:"Forget every travel memory you have",b:"Remember everything but never travel again"},
+{a:"Climb Everest with a 5% death risk",b:"Dive to the Titanic with a 5% death risk"},
+{a:"Be the first person on Mars but die there",b:"Stay on Earth and live a full life"},
+{a:"Travel to a place where you'll meet the love of your life",b:"Travel to a place where you'll find your true calling"},
+{a:"Accidentally cause an international incident while abroad",b:"Be falsely accused of a crime in a foreign country"},
+{a:"Explore a newly discovered cave system alone",b:"Explore a sunken ship alone"},
+{a:"Give up your passport forever",b:"Give up your phone forever"}
+]
+},
+tech:{
+clean:[
+{a:"Have a robot assistant at home",b:"Have a self-driving car"},
+{a:"Only use Apple products",b:"Only use Android/Windows products"},
+{a:"Have unlimited cloud storage",b:"Have the fastest internet on Earth"},
+{a:"Be a software developer",b:"Be a hardware engineer"},
+{a:"Have a smart home that does everything",b:"Have a cabin with zero technology"},
+{a:"Get every gadget on release day",b:"Get one custom-made gadget nobody else has"},
+{a:"Only use a flip phone",b:"Only use a tablet — no phone"},
+{a:"Have VR that's indistinguishable from reality",b:"Have a holographic display everywhere you go"},
+{a:"Be a famous tech YouTuber",b:"Be a startup founder"},
+{a:"Have a 3D printer that can make anything",b:"Have an AI that can answer any question perfectly"},
+{a:"Only communicate through text",b:"Only communicate through video calls"},
+{a:"Have night vision built into your eyes",b:"Have a built-in GPS in your brain"},
+{a:"Live without social media forever",b:"Live without streaming services forever"},
+{a:"Travel by teleportation pad",b:"Travel by personal jetpack"},
+{a:"Have a universal remote for all devices",b:"Have a universal charger that never needs a plug"},
+{a:"Be an early adopter of every tech",b:"Wait until tech is perfected before using it"},
+{a:"Only use open-source software",b:"Only use premium paid software"},
+{a:"Have a drone that follows you everywhere",b:"Have a wearable translator for every language"},
+{a:"Type 300 words per minute",b:"Read 10x faster with full comprehension"},
+{a:"Control your dreams with technology",b:"Record your dreams and rewatch them"}
+],
+medium:[
+{a:"Have all your data leaked publicly",b:"Lose all your data permanently"},
+{a:"Be replaced at your job by AI",b:"Work alongside AI that's smarter than you"},
+{a:"Only use technology from 2005",b:"Be a beta tester for all unreleased 2030 tech"},
+{a:"Have a chip in your brain that boosts memory",b:"Have a chip in your body that monitors health 24/7"},
+{a:"Live in a fully surveilled smart city",b:"Live off-grid with zero modern conveniences"},
+{a:"Debug code for 48 hours straight",b:"Explain your code to a non-technical person for 12 hours"},
+{a:"Have your phone battery last a year",b:"Have your phone never crack or break"},
+{a:"Use only voice commands for all devices",b:"Use only gesture controls for all devices"},
+{a:"Have an AI best friend that's always there",b:"Have human friends but no AI assistance ever"},
+{a:"Own a quantum computer you barely understand",b:"Master a regular computer to its absolute limits"},
+{a:"Be the person who discovers a major security flaw",b:"Be the person who creates an unbreakable encryption"},
+{a:"Have technology read your emotions and adapt",b:"Have technology that blocks all your emotions"},
+{a:"Automate every boring task in your life",b:"Never automate anything and do everything manually"},
+{a:"Be famous for a viral app that's actually useless",b:"Create a useful app nobody downloads"},
+{a:"Have your browsing history public forever",b:"Never use the internet again"},
+{a:"Communicate only through AI-generated messages",b:"Write every message by hand"},
+{a:"Live in a simulation you know about",b:"Live in reality that feels less interesting"},
+{a:"Have tech that lets you relive any memory",b:"Have tech that lets you delete any memory"},
+{a:"Be the world's best hacker (ethically)",b:"Be the world's best AI trainer"},
+{a:"Have a digital twin that attends meetings for you",b:"Have a physical robot that does your chores"}
+],
+spicy:[
+{a:"Upload your consciousness to a computer",b:"Stay biological but with a 75-year lifespan"},
+{a:"Let an AI make all your life decisions",b:"Make all decisions with zero data or help"},
+{a:"Live forever as a digital entity",b:"Live one natural lifetime as a human"},
+{a:"Destroy all AI to protect humanity",b:"Let AI evolve freely and hope for the best"},
+{a:"Know everything the internet knows",b:"Forget everything and start your knowledge from scratch"},
+{a:"Have technology that can detect lies perfectly",b:"Have technology that can implant thoughts"},
+{a:"Be a cyborg — half human, half machine",b:"Stay fully human in a world of cyborgs"},
+{a:"Erase social media from existence",b:"Erase nuclear weapons from existence"},
+{a:"Have AI that predicts crimes before they happen",b:"Have AI that can cure any disease"},
+{a:"Be the last person using the internet in a post-tech world",b:"Be the first person in a new tech-dominated civilization"},
+{a:"Have your brain backed up but your body dies",b:"Have your body live on but your memories are gone"},
+{a:"Create a tech that ends privacy forever but solves crime",b:"Protect privacy absolutely but crime skyrockets"},
+{a:"Merge with AI permanently",b:"Fight against AI advancement permanently"},
+{a:"Live in a world where deepfakes are undetectable",b:"Live in a world where all digital content is verified but heavily censored"},
+{a:"Have tech that shows you exactly when you'll die",b:"Have tech that shows you every missed opportunity"},
+{a:"Control all the world's technology for one hour",b:"Disable all the world's technology for one hour"},
+{a:"Create an AI that's smarter than all humans combined",b:"Ensure AI never surpasses human intelligence"},
+{a:"Be the last generation that remembers life without the internet",b:"Be the first generation born into full virtual reality"},
+{a:"Sacrifice your digital identity to protect someone else's",b:"Keep your identity but someone else's gets stolen"},
+{a:"End all screen time and go back to analog",b:"Move fully into virtual reality and abandon the physical world"}
+]
+},
+animals:{
+clean:[
+{a:"Have a pet dragon the size of a cat",b:"Have a pet unicorn the size of a horse"},
+{a:"Talk to animals",b:"Animals do whatever you ask"},
+{a:"Be an ocean creature",b:"Be a bird"},
+{a:"Swim with dolphins",b:"Hike with wolves"},
+{a:"Have a zoo in your backyard",b:"Have a wildlife sanctuary on your property"},
+{a:"Only have cats as pets forever",b:"Only have dogs as pets forever"},
+{a:"Ride an elephant through a city",b:"Ride a whale through the ocean"},
+{a:"Be as strong as a gorilla",b:"Be as agile as a cheetah"},
+{a:"Befriend a wild bear",b:"Befriend a wild eagle"},
+{a:"Live among monkeys in a jungle",b:"Live among penguins in Antarctica"},
+{a:"Have a parrot that repeats everything perfectly",b:"Have a dog that understands every word you say"},
+{a:"See through an eagle's eyes",b:"Hear through a bat's ears"},
+{a:"Be able to breathe underwater like a fish",b:"Be able to echolocate like a dolphin"},
+{a:"Visit every national park in the world",b:"Discover a brand new species"},
+{a:"Have the lifespan of a tortoise",b:"Have the memory of an elephant"},
+{a:"Be a vet for exotic animals",b:"Be a wildlife photographer"},
+{a:"Have butterfly wings",b:"Have a chameleon's camouflage"},
+{a:"Live in a treehouse in the rainforest",b:"Live in an underwater dome on a coral reef"},
+{a:"Adopt every stray animal you meet",b:"Fully fund one animal shelter for life"},
+{a:"Have a loyal wolf companion",b:"Have a clever raven companion"}
+],
+medium:[
+{a:"Save one endangered species from extinction",b:"Discover a species everyone thought was extinct"},
+{a:"Be able to transform into one animal at will",b:"Summon any animal to help you once a day"},
+{a:"Live with animals but no humans for a year",b:"Live with humans but no animals for a year"},
+{a:"Have your pet understand your emotions perfectly",b:"Feel your pet's emotions perfectly"},
+{a:"Be chased by a grizzly bear",b:"Be stalked by a great white shark"},
+{a:"Have a house full of reptiles",b:"Have a house full of spiders (all harmless)"},
+{a:"Communicate with insects",b:"Communicate with sea creatures"},
+{a:"Have an animal companion that lives as long as you",b:"Have multiple animal companions with normal lifespans"},
+{a:"Work at a wildlife rescue center in Africa",b:"Work at a marine research station in the Pacific"},
+{a:"Witness animal migration up close (dangerous)",b:"Witness deep-sea creatures through a submarine window"},
+{a:"Be lost in the Amazon with survival instincts of a jungle cat",b:"Be stranded at sea with the navigation skills of a whale"},
+{a:"Have a pet that can sense danger",b:"Have a pet that can find anything lost"},
+{a:"Raise a wild animal from birth",b:"Rehabilitate an injured wild animal"},
+{a:"Only eat what animals in the wild eat",b:"Only live where wild animals could survive"},
+{a:"See the world in black and white like a dog",b:"See the world in UV spectrum like a bee"},
+{a:"Be bitten by a non-venomous snake once a month",b:"Be stung by a bee once a week"},
+{a:"Speak whale like Dory",b:"Speak parseltongue like Harry Potter"},
+{a:"Have the loyalty of a dog but the independence of a cat",b:"Have the intelligence of a crow but the grace of a swan"},
+{a:"Train any animal in one day",b:"Bond with any animal instantly"},
+{a:"Have a tiny elephant as a pet",b:"Have a tiny giraffe as a pet"}
+],
+spicy:[
+{a:"Save 100 animals or save 1 human stranger",b:"Save 1 animal you love or save 5 human strangers"},
+{a:"End animal testing forever but slow medical progress",b:"Allow animal testing to continue to speed up cures"},
+{a:"Be reborn as any animal",b:"Stay human but lose all connection to animals"},
+{a:"Hunt for survival in the wild",b:"Never eat meat again under any circumstances"},
+{a:"Let your pet go to save a species",b:"Keep your pet but an entire species goes extinct"},
+{a:"Be trapped in a cage for a week to understand captive animals",b:"Release all zoo animals into the wild regardless of consequences"},
+{a:"Have humanity go extinct to save all animal species",b:"Have all non-human species go extinct to save humanity"},
+{a:"Live in a world where animals are as intelligent as humans",b:"Live in a world where animals have completely disappeared"},
+{a:"Be a poacher who switches sides and becomes a conservationist",b:"Be a conservationist who must make impossible compromises"},
+{a:"Have your consciousness transferred to an animal",b:"Have an animal's consciousness transferred to your body"},
+{a:"Kill one animal to save ten others",b:"Let all ten die to keep your hands clean"},
+{a:"Live in a world where eating animals is a crime",b:"Live in a world where keeping pets is a crime"},
+{a:"Watch animal cruelty footage to raise awareness",b:"Stay ignorant but do nothing to help"},
+{a:"Give up your pet to save a rainforest",b:"Keep your pet but a rainforest is destroyed"},
+{a:"Be the last person who can communicate with a dying species",b:"Be the person who decides which species gets saved and which doesn't"},
+{a:"Feel every animal's pain within a mile of you",b:"Never be able to feel empathy for animals again"},
+{a:"End factory farming but food prices triple",b:"Keep cheap food but factory farming expands"},
+{a:"Be a human raised by animals in the wild",b:"Be an animal raised by humans in a lab"},
+{a:"Clone extinct animals back to life with unknown consequences",b:"Accept that extinction is natural and move on"},
+{a:"Sacrifice your own freedom to protect animal rights",b:"Live freely knowing animals continue to suffer"}
+]
+},
+school:{
+clean:[
+{a:"Be the smartest kid in class but unpopular",b:"Be average but the most popular"},
+{a:"Go to school year-round with no homework",b:"Have a regular school year with heavy homework"},
+{a:"Have a cool teacher for every class",b:"Have easy classes you can breeze through"},
+{a:"Go back to high school knowing what you know now",b:"Skip straight to your dream career"},
+{a:"Work from home forever",b:"Work in an amazing office with free food"},
+{a:"Have a photographic memory for studying",b:"Have perfect test-taking skills without studying"},
+{a:"Be a famous professor",b:"Be a successful entrepreneur"},
+{a:"Major in something you love that pays poorly",b:"Major in something boring that pays amazingly"},
+{a:"Have a four-day work week",b:"Have six weeks of extra vacation"},
+{a:"Be the principal of a school",b:"Be the CEO of a startup"},
+{a:"Learn everything from books",b:"Learn everything from hands-on experience"},
+{a:"Give a speech in front of 1,000 people",b:"Write a paper that 1,000 people read"},
+{a:"Have the best school lunch ever every day",b:"Have the coolest school supplies"},
+{a:"Ace every test but forget everything after",b:"Barely pass but retain everything forever"},
+{a:"Be a straight-A student who hates school",b:"Be a C student who loves every class"},
+{a:"Work on a team you lead",b:"Work solo with full creative control"},
+{a:"Have a mentor in your dream field",b:"Have a scholarship to any school"},
+{a:"Be an expert in one subject",b:"Know a little about everything"},
+{a:"Start college at 16",b:"Take a gap year and start at 19"},
+{a:"Have free college tuition",b:"Have a guaranteed dream job after school"}
+],
+medium:[
+{a:"Fail publicly but learn an important lesson",b:"Succeed quietly but learn nothing new"},
+{a:"Have a boss who's brilliant but mean",b:"Have a boss who's kind but incompetent"},
+{a:"Get your dream job but in a city you hate",b:"Get a decent job in your dream city"},
+{a:"Work on something you believe in for low pay",b:"Work on something meaningless for great pay"},
+{a:"Be overqualified and bored at work",b:"Be underqualified and constantly stressed"},
+{a:"Know at 10 exactly what career you'll have",b:"Try 10 different careers before finding the one"},
+{a:"Be a workaholic who's wildly successful",b:"Have perfect work-life balance but modest success"},
+{a:"Get a degree but never use it",b:"Drop out but build a successful career"},
+{a:"Have a coworker who takes credit for your work",b:"Have a coworker who's always asking for help"},
+{a:"Be promoted past your competence level",b:"Stay at a level below your potential"},
+{a:"Present a project you're not proud of",b:"Scrap a project you spent months on"},
+{a:"Work for a company you disagree with ethically",b:"Be unemployed for a year"},
+{a:"Have a career where you travel 80% of the time",b:"Have a career where you never leave your desk"},
+{a:"Get honest, harsh feedback constantly",b:"Get vague, polite feedback that doesn't help"},
+{a:"Do work that matters but you'll never see the results",b:"Do work that's visible but doesn't really matter"},
+{a:"Be the youngest in a leadership role",b:"Be the most experienced but passed over for leadership"},
+{a:"Work with people you love on boring tasks",b:"Work alone on exciting projects"},
+{a:"Study abroad in a country where you know nobody",b:"Stay local but with the best program in the world"},
+{a:"Take a pay cut for a job with purpose",b:"Take a raise for a job with no meaning"},
+{a:"Graduate top of your class at an unknown school",b:"Graduate bottom of your class at a prestigious school"}
+],
+spicy:[
+{a:"Cheat on a test that determines your future",b:"Fail the test and take a much harder path"},
+{a:"Expose a professor's misconduct and face retaliation",b:"Stay quiet and keep your grades safe"},
+{a:"Give up your career to support someone else's dream",b:"Pursue your career at the cost of that relationship"},
+{a:"Be the person who fires half the company",b:"Be one of the people who gets fired"},
+{a:"Work for a company that pollutes but provides jobs",b:"Shut the company down and people lose their livelihoods"},
+{a:"Become hugely successful because of nepotism",b:"Struggle for years to build success on your own"},
+{a:"Have your boss steal your idea and make millions",b:"Steal someone else's idea and make millions"},
+{a:"Sacrifice your education to take care of family",b:"Pursue your education and let family struggle"},
+{a:"Be the smartest person in the room who nobody listens to",b:"Be average but everyone respects your opinion"},
+{a:"Have a career that peaks at 30",b:"Have a career that doesn't start until 50"},
+{a:"Burn out doing what you love",b:"Coast doing what you hate"},
+{a:"Choose a career that makes your parents proud but you miserable",b:"Choose a career your parents hate but fulfills you"},
+{a:"Achieve everything you want professionally but have no personal life",b:"Have an incredible personal life but mediocre career"},
+{a:"Discover your college degree is worthless",b:"Discover your work experience counts for nothing"},
+{a:"Whistleblow on your company and lose everything",b:"Stay complicit and live comfortably"},
+{a:"Be a teacher who changes lives but earns poverty wages",b:"Be a consultant who changes nothing but earns six figures"},
+{a:"Graduate into a recession with massive debt",b:"Skip college and face a lifetime of being underestimated"},
+{a:"Work 80-hour weeks for 5 years then retire early",b:"Work 40-hour weeks for 40 years then retire normally"},
+{a:"Have your professional reputation destroyed by a lie",b:"Destroy someone else's reputation to save yours"},
+{a:"Know you'll never achieve your dream career",b:"Achieve your dream career but hate it"}
+]
+},
+socialmedia:{
+clean:[
+{a:"Have a million followers on one platform",b:"Have 10,000 devoted followers across all platforms"},
+{a:"Only post photos",b:"Only post videos"},
+{a:"Be TikTok famous",b:"Be YouTube famous"},
+{a:"Have every post go viral",b:"Have a small loyal audience that loves everything"},
+{a:"Be a beauty influencer",b:"Be a gaming influencer"},
+{a:"Only use Instagram",b:"Only use Twitter/X"},
+{a:"Get verified on every platform",b:"Have the best engagement rate of any creator"},
+{a:"Live-stream your entire day",b:"Post only once a week but it's always perfect"},
+{a:"Have the best profile aesthetic",b:"Have the funniest content"},
+{a:"Be famous for your memes",b:"Be famous for your advice content"},
+{a:"Collab with any creator you want",b:"Have brands pay you to post whatever you want"},
+{a:"Have a podcast with millions of listeners",b:"Have a newsletter with millions of subscribers"},
+{a:"Always know what will trend next",b:"Always have the perfect caption"},
+{a:"Be a food content creator",b:"Be a travel content creator"},
+{a:"Have a finsta nobody knows about",b:"Have a public account that's perfectly curated"},
+{a:"Post only selfies",b:"Never post a selfie again"},
+{a:"Have your tweets always get likes",b:"Have your stories always get replies"},
+{a:"Be famous for one viral moment",b:"Be known for years of consistent content"},
+{a:"Have 10 million subscribers",b:"Have 10 million dollars from content creation"},
+{a:"Be an anonymous influencer",b:"Be a recognizable public figure"}
+],
+medium:[
+{a:"Have your DMs leaked publicly",b:"Have your search history leaked publicly"},
+{a:"Lose all your followers overnight",b:"Keep your followers but lose all your content"},
+{a:"Be cancelled for something you didn't do",b:"Get away with something you actually did"},
+{a:"Only see negative comments",b:"Never see any comments at all"},
+{a:"Have a stalker fan who's obsessed with you",b:"Have a hate account dedicated to you"},
+{a:"Be a sell-out who makes great money",b:"Be authentic but constantly broke"},
+{a:"Have your content stolen by a bigger creator",b:"Be accused of stealing someone else's content"},
+{a:"Go viral for the wrong reasons",b:"Never go viral at all"},
+{a:"Post something that accidentally hurts someone",b:"Get hurt by someone's post about you"},
+{a:"Be addicted to checking your analytics",b:"Never see your analytics at all"},
+{a:"Have an algorithm that hides your content",b:"Have an algorithm that shows your worst posts"},
+{a:"Be famous enough to be parodied",b:"Be unknown enough to never be mocked"},
+{a:"Monetize your personal trauma for content",b:"Keep your trauma private but struggle financially"},
+{a:"Have your online persona be nothing like the real you",b:"Be completely authentic and lose half your audience"},
+{a:"Read every hateful comment ever posted about you",b:"Never read any comment — positive or negative"},
+{a:"Be an influencer for a brand you don't believe in",b:"Turn down all brand deals and make no money"},
+{a:"Have a platform shadow-ban you for a year",b:"Have a competitor copy everything you do"},
+{a:"Be famous for being problematic",b:"Be invisible despite being genuinely helpful"},
+{a:"Only create content that's already trending",b:"Only create original content nobody's seen before"},
+{a:"Have your ex follow and engage with all your posts",b:"Have your boss follow and judge all your posts"}
+],
+spicy:[
+{a:"Delete all social media permanently",b:"Have all your social media history published as a book"},
+{a:"Be a whistleblower on a social media company",b:"Work for that company with insider knowledge"},
+{a:"Have social media control your real-life reputation forever",b:"Have no online presence in an increasingly digital world"},
+{a:"Post something that starts a movement but ruins your life",b:"Stay silent and let injustice continue"},
+{a:"Be deep-faked in a viral video you can't disprove",b:"Accidentally deep-fake someone else and face consequences"},
+{a:"Give up social media or give up seeing friends in person",b:"Keep both but everything you post is monitored by the government"},
+{a:"Be the person who ends social media for everyone",b:"Be the person who makes it permanently mandatory"},
+{a:"Have your children's lives documented online without their consent",b:"Raise your children completely off the grid"},
+{a:"Go viral for a genuine vulnerable moment",b:"Go viral for a carefully crafted lie"},
+{a:"Be responsible for a misinformation campaign that changes an election",b:"Be the victim of one"},
+{a:"Expose a dangerous influencer and face legal threats",b:"Stay quiet while they continue harming people"},
+{a:"Have AI generate all your content perfectly",b:"Create everything yourself but struggle to compete"},
+{a:"Be the last person using social media after everyone leaves",b:"Be the first person to abandon it while everyone stays"},
+{a:"Have your mental health destroyed by social media but be famous",b:"Have perfect mental health but be completely invisible online"},
+{a:"Create a platform that connects people but is used for harm",b:"Destroy a platform that's harmful but also helps millions"},
+{a:"Post your honest opinion on everything and face all consequences",b:"Never share your real thoughts online"},
+{a:"Be doxxed and have to relocate",b:"Dox someone by accident and face the guilt"},
+{a:"Live in a world where likes equal currency",b:"Live in a world where your online reputation determines your rights"},
+{a:"Have every private conversation screenshotted and posted",b:"Never have a private conversation again"},
+{a:"Sacrifice your privacy to help expose corruption",b:"Keep your privacy but corruption continues"}
+]
+},
+horror:{
+clean:[
+{a:"Live in a haunted house for free",b:"Pay rent in a normal house"},
+{a:"Watch only horror movies for a year",b:"Never watch a horror movie again"},
+{a:"Be a ghost hunter",b:"Be a paranormal investigator on TV"},
+{a:"Meet a friendly ghost",b:"Have a guardian monster under your bed"},
+{a:"Live in a creepy old mansion",b:"Live next to a cemetery"},
+{a:"Be in a zombie apocalypse",b:"Be in an alien invasion"},
+{a:"Explore an abandoned hospital at night",b:"Explore an abandoned asylum at night"},
+{a:"Have a vampire as a neighbor",b:"Have a werewolf as a neighbor"},
+{a:"Watch a scary movie alone in the dark",b:"Tell ghost stories around a campfire"},
+{a:"Have a doll that moves on its own",b:"Have a mirror that shows something different"},
+{a:"Survive a horror movie as the main character",b:"Be the comic relief who somehow survives"},
+{a:"Read the scariest book ever written",b:"Watch the scariest movie ever made"},
+{a:"Spend a night in a haunted hotel room",b:"Spend a night in a spooky forest"},
+{a:"Be a vampire",b:"Be a werewolf"},
+{a:"Fight zombies with a baseball bat",b:"Fight zombies with a chainsaw"},
+{a:"Have a sixth sense for ghosts",b:"Be immune to all curses"},
+{a:"Live in the world of Stranger Things",b:"Live in the world of Scooby-Doo"},
+{a:"Be haunted by a poltergeist that just moves your stuff",b:"See shadow figures that never do anything"},
+{a:"Have a haunted phone that texts creepy messages",b:"Have a haunted TV that plays scary shows at 3am"},
+{a:"Be a monster makeup artist",b:"Be a horror movie director"}
+],
+medium:[
+{a:"Be stuck in a haunted house for a week",b:"Be stuck in a dark forest for a night"},
+{a:"Hear unexplained footsteps every night",b:"See a shadow figure in your room every morning"},
+{a:"Be the final survivor in a slasher film",b:"Be a bystander who escapes early but lives with PTSD"},
+{a:"Know ghosts are real but nobody believes you",b:"Live in blissful ignorance while ghosts surround you"},
+{a:"Have your dreams be horror movies every night",b:"Have a horror creature visit you once a year"},
+{a:"Be trapped in a room with a ticking clock and a mystery to solve",b:"Be trapped in a room that's slowly flooding"},
+{a:"Live in a world where monsters come out after dark",b:"Live in a world where the dead can speak"},
+{a:"Watch a cursed video tape (like The Ring)",b:"Read a cursed book (like Evil Dead)"},
+{a:"Be chased by a slow but unstoppable creature",b:"Be hunted by a fast but easily tricked creature"},
+{a:"Experience sleep paralysis every night",b:"Sleepwalk to dangerous places every night"},
+{a:"Be locked in a morgue overnight",b:"Be locked in a wax museum overnight"},
+{a:"Discover your house was built on a burial ground",b:"Discover your family has a dark supernatural secret"},
+{a:"See dead people like in The Sixth Sense",b:"Be able to enter people's nightmares like in Freddy Krueger"},
+{a:"Be the person everyone thinks is cursed",b:"Be the person who accidentally curses others"},
+{a:"Live in a town where everyone disappears at night",b:"Live in a town that doesn't appear on any map"},
+{a:"Find a diary in your attic that predicts the future horribly",b:"Find a door in your basement that leads somewhere impossible"},
+{a:"Be a horror author whose stories come true",b:"Be a horror fan who accidentally summons what they fear"},
+{a:"Always feel like something is behind you",b:"Always feel like something is watching you from windows"},
+{a:"Survive a zombie outbreak in a mall",b:"Survive a demon haunting in a church"},
+{a:"Be immortal but look like a horror creature",b:"Be mortal but immune to all supernatural threats"}
+],
+spicy:[
+{a:"Be buried alive for one hour",b:"Be trapped underwater for 10 minutes"},
+{a:"Live in eternal darkness",b:"Live where you can never close your eyes"},
+{a:"Know exactly how you'll die but not when",b:"Know when you'll die but not how"},
+{a:"Be haunted by someone you wronged",b:"Haunt someone as a ghost unable to rest"},
+{a:"Face your absolute worst fear for 1 minute",b:"Live with a mild version of it forever"},
+{a:"Be the only survivor and live with the guilt",b:"Die saving everyone else"},
+{a:"Be possessed for a day with no memory of what you did",b:"Watch yourself be possessed fully aware but unable to stop it"},
+{a:"Discover that reality is a simulation run by malicious beings",b:"Discover that death is not the end but what comes after is horrifying"},
+{a:"Be trapped in your worst nightmare forever",b:"Never sleep again but slowly lose your mind"},
+{a:"Open a door you were warned never to open",b:"Close a door that locks someone in with danger"},
+{a:"Kill a monster but it looks exactly like someone you love",b:"Let the monster live knowing it will hurt others"},
+{a:"Sell your soul for 10 years of perfect life",b:"Keep your soul but struggle for the rest of your life"},
+{a:"Be the monster that everyone hunts",b:"Be the hunter who becomes what they hunt"},
+{a:"Remember every horror you've experienced in vivid detail",b:"Forget everything including the good memories to escape the horror"},
+{a:"Be the last person alive in a world of undead",b:"Be undead but fully conscious among the living"},
+{a:"Live knowing something terrible is coming but not what or when",b:"Have it happen suddenly with no warning"},
+{a:"Watch a loved one become a monster",b:"Become a monster yourself to protect them"},
+{a:"Be in a real Purge scenario for 24 hours",b:"Be in a real Hunger Games arena"},
+{a:"Discover the afterlife is a horror dimension",b:"Discover that nothing happens after death at all"},
+{a:"Be feared by everyone who sees you",b:"Fear everyone you see"}
+]
+},
+fantasy:{
+clean:[
+{a:"Be a wizard",b:"Be a warrior"},
+{a:"Live in Middle-earth",b:"Live in Narnia"},
+{a:"Have a flying carpet",b:"Have a magic wand"},
+{a:"Ride a dragon",b:"Ride a phoenix"},
+{a:"Live in a magical castle",b:"Live in an enchanted forest"},
+{a:"Be an elf",b:"Be a dwarf"},
+{a:"Have a magic sword",b:"Have a spellbook"},
+{a:"Discover a secret portal in your closet",b:"Find a treasure map in your attic"},
+{a:"Attend Hogwarts",b:"Train at a Jedi academy"},
+{a:"Have a fairy godparent",b:"Have a genie with 3 wishes"},
+{a:"Control fire",b:"Control water"},
+{a:"Be invisible at will",b:"Fly at will"},
+{a:"Have a talking animal companion",b:"Have a magical familiar"},
+{a:"Live in a world where magic is common",b:"Be the only person in the world with magic"},
+{a:"Find the Philosopher's Stone",b:"Find the Holy Grail"},
+{a:"Be a shapeshifter",b:"Be a telepath"},
+{a:"Rule a magical kingdom",b:"Explore magical lands as an adventurer"},
+{a:"Have enchanted armor",b:"Have an enchanted cloak of invisibility"},
+{a:"Brew magical potions",b:"Cast powerful spells"},
+{a:"Have a pet griffin",b:"Have a pet kraken"}
+],
+medium:[
+{a:"Be the chosen one with the weight of the world on you",b:"Be the wise mentor who guides the chosen one"},
+{a:"Have unlimited magic power but no control",b:"Have limited power but perfect mastery"},
+{a:"Be cursed to tell only the truth",b:"Be cursed so nobody believes anything you say"},
+{a:"Live forever but watch everyone you love die",b:"Live one lifetime but with the person you love most"},
+{a:"Have a prophecy say you'll save the world",b:"Have a prophecy say you'll destroy the world"},
+{a:"Be a good wizard feared by everyone",b:"Be a dark wizard loved by everyone"},
+{a:"Lose your magic powers to save someone",b:"Keep your powers knowing someone needed your help"},
+{a:"Live in a fantasy world at war",b:"Live in a peaceful fantasy world with no adventure"},
+{a:"Be a dragon with human intelligence",b:"Be a human with dragon abilities"},
+{a:"Be the villain in someone else's prophecy",b:"Be the hero no one asked for"},
+{a:"Have a magical weapon that corrupts you slowly",b:"Have no weapon but remain pure of heart"},
+{a:"Know the future but be unable to change it",b:"Change the future but never know the consequences"},
+{a:"Be trapped in a time loop in a magical world",b:"Be banished to a mundane world with no magic"},
+{a:"Have your wishes granted but always with a twist",b:"Have no wishes but everything you work for succeeds"},
+{a:"Be bonded to a powerful but dangerous creature",b:"Be alone but with incredible personal power"},
+{a:"Discover your bloodline is both royal and cursed",b:"Discover you were created by a dark wizard as an experiment"},
+{a:"Rule with absolute power but never be loved",b:"Be loved by all but have no power"},
+{a:"Be immortal with an aging mind",b:"Have a perfect mind but a mortal, failing body"},
+{a:"Win every battle but lose the war",b:"Lose every battle but win the war"},
+{a:"Open Pandora's box",b:"Pull the sword from the stone but it comes with a terrible duty"}
+],
+spicy:[
+{a:"Destroy all magic to save the world",b:"Keep magic but the world slowly falls apart"},
+{a:"Sacrifice your memory to gain ultimate power",b:"Sacrifice your power to keep all your memories"},
+{a:"Be the last of your magical kind",b:"Be the first of a new magical kind nobody trusts"},
+{a:"Use forbidden magic to save an innocent life",b:"Let them die to preserve the natural order"},
+{a:"Be a god who can't intervene in mortal affairs",b:"Be a mortal who's forced to play god"},
+{a:"Kill a dragon to save a village",b:"Save the dragon and let the village fend for itself"},
+{a:"Merge with a dark entity to gain power to do good",b:"Remain weak but untainted by darkness"},
+{a:"Rewrite the laws of magic knowing it could break reality",b:"Accept unjust magical laws to keep reality stable"},
+{a:"Be the creator of a magical world that rebels against you",b:"Be a character in someone else's magical story with no free will"},
+{a:"Give up your soul for the power to protect everyone",b:"Keep your soul but be powerless to help anyone"},
+{a:"Erase one entire magical race from history to prevent a war",b:"Let the war happen but preserve all races"},
+{a:"Live as an immortal villain who secretly protects the world",b:"Die as a hero who was actually wrong about everything"},
+{a:"Create life through magic but it suffers",b:"Destroy suffering through magic but it costs life"},
+{a:"Be the dark lord who rules through fear but ensures peace",b:"Be the rebel who brings freedom but also chaos"},
+{a:"Know the true name of everything (ultimate power) but it isolates you completely",b:"Be connected to everyone but know nothing special"},
+{a:"Trap yourself in a magical prison to contain a great evil",b:"Release the evil and fight it with no guarantee of winning"},
+{a:"End all magic forever so no one can be corrupted by it",b:"Make magic available to everyone knowing some will use it for evil"},
+{a:"Be cursed to forget the person you love most every sunrise",b:"Remember everything about them but they forget you"},
+{a:"Become the very thing you swore to destroy",b:"Destroy the thing that made you who you are"},
+{a:"Create a perfect world through illusion",b:"Live in an imperfect world that's real"}
+]
+},
+history:{
+clean:[
+{a:"Live in ancient Rome",b:"Live in ancient Egypt"},
+{a:"Meet Cleopatra",b:"Meet Leonardo da Vinci"},
+{a:"Be a knight in medieval times",b:"Be a samurai in feudal Japan"},
+{a:"Witness the building of the pyramids",b:"Witness the moon landing"},
+{a:"Explore with Marco Polo",b:"Sail with Magellan"},
+{a:"Live during the Renaissance",b:"Live during the Roaring Twenties"},
+{a:"Be a Viking explorer",b:"Be a Polynesian navigator"},
+{a:"Visit ancient Greece during the Olympics",b:"Visit ancient China during the Tang Dynasty"},
+{a:"Be a Roman gladiator (who always wins)",b:"Be an Egyptian pharaoh"},
+{a:"Attend the first Olympic Games",b:"Attend the opening of the Colosseum"},
+{a:"Live in a medieval castle",b:"Live in a Japanese temple"},
+{a:"Be a pirate in the Caribbean",b:"Be a cowboy in the Wild West"},
+{a:"Time travel to the signing of the Declaration of Independence",b:"Time travel to the fall of the Berlin Wall"},
+{a:"Study under Aristotle",b:"Study under Confucius"},
+{a:"Be an inventor during the Industrial Revolution",b:"Be an artist during the Renaissance"},
+{a:"Explore Pompeii before the eruption",b:"Explore Atlantis if it existed"},
+{a:"Be a trader on the Silk Road",b:"Be a monk preserving knowledge in a monastery"},
+{a:"Live in the Aztec Empire at its peak",b:"Live in the Roman Empire at its peak"},
+{a:"Be at Woodstock",b:"Be at the first Super Bowl"},
+{a:"Discover a lost civilization",b:"Decode an ancient language nobody understands"}
+],
+medium:[
+{a:"Live through the Black Plague with immunity",b:"Live through a world war as a civilian"},
+{a:"Change one historical event",b:"Witness any historical event firsthand"},
+{a:"Be famous in history but for something embarrassing",b:"Be completely forgotten by history despite doing great things"},
+{a:"Live in a time without modern medicine",b:"Live in a time without modern communication"},
+{a:"Be a spy during the Cold War",b:"Be a journalist during Watergate"},
+{a:"Know how history ends but can't tell anyone",b:"Be able to change history but never know the consequences"},
+{a:"Be on the Titanic (and survive)",b:"Be at Pompeii (and escape)"},
+{a:"Be a monarch with total power in 1500",b:"Be a regular citizen with full rights in 2025"},
+{a:"Live in ancient times with modern knowledge",b:"Live in modern times with an ancient mindset"},
+{a:"Be Alexander the Great's strategist",b:"Be Napoleon's advisor"},
+{a:"Prevent one historical tragedy",b:"Cause one historical breakthrough to happen 100 years earlier"},
+{a:"Live before the invention of writing",b:"Live before the invention of electricity"},
+{a:"Be a revolutionary who changes the world",b:"Be a scholar who preserves the world's knowledge"},
+{a:"Have dinner with any 5 historical figures",b:"Spend a day shadowing any 1 historical figure"},
+{a:"Live in the era of exploration with all its dangers",b:"Live in the digital era with all its challenges"},
+{a:"Be a general who never loses but is morally questionable",b:"Be a pacifist leader who inspires change but faces opposition"},
+{a:"Witness the construction of the Great Wall of China",b:"Witness the construction of the Taj Mahal"},
+{a:"Be part of the French Revolution",b:"Be part of the American Revolution"},
+{a:"Experience the golden age of your own culture",b:"Experience the golden age of a completely different culture"},
+{a:"Live before human rights were established",b:"Live after all cultures have been homogenized"}
+],
+spicy:[
+{a:"Erase one historical atrocity (unknown butterfly effect)",b:"Keep all of history exactly as it happened"},
+{a:"Go back and assassinate one historical tyrant before they rise",b:"Let history play out knowing what's coming"},
+{a:"Be remembered as a villain who actually did good",b:"Be remembered as a hero who actually caused harm"},
+{a:"Live in a world where the other side won a major war",b:"Live in the actual timeline knowing what could have been different"},
+{a:"Sacrifice your life to prevent a genocide",b:"Live knowing you could have prevented it but didn't"},
+{a:"Be a slave who leads a revolution",b:"Be a ruler who peacefully abolishes slavery"},
+{a:"Know the full truth about every conspiracy in history",b:"Have every historical mystery remain unsolved"},
+{a:"Witness humanity's greatest cruelty firsthand",b:"Witness humanity's greatest kindness but from far away"},
+{a:"Be the person who drops the atomic bomb knowing it ends the war",b:"Be the person who refuses and the war continues"},
+{a:"Colonize a new world knowing the harm it will cause",b:"Stay home and let another nation colonize instead"},
+{a:"Be a conqueror who brings progress through destruction",b:"Be a leader who preserves culture but resists all change"},
+{a:"Have your culture be erased but your people survive",b:"Have your culture preserved but your people decimated"},
+{a:"Be a soldier who follows unjust orders to survive",b:"Be a resister who faces execution for defiance"},
+{a:"Judge historical figures by today's standards",b:"Accept that morality is relative to its time"},
+{a:"Relive the worst moment in your nation's history",b:"Forget your nation's history entirely"},
+{a:"Be the last person to remember a dying language",b:"Be the person who replaces it with a universal one"},
+{a:"Live in a utopia built on the suffering of the past",b:"Live in a struggling society that acknowledges all its history"},
+{a:"Choose which civilization thrives and which falls",b:"Let nature and chance decide"},
+{a:"Be born into the most powerful empire at its peak",b:"Be born into a small nation fighting for its survival"},
+{a:"End all war permanently but erase the lessons it taught",b:"Keep the lessons of war but conflict never ends"}
+]
+}
+};
 
 const FILTERS=[
     {id:'all',label:'All'},
@@ -328,7 +1369,6 @@ function selectPack(id){
     if(!pack) return;
     G.intensityLabels=pack.intensityLabels||['Light','Medium','Intense'];
     renderPacks();
-    // Go to intensity screen
     document.getElementById('intensityPackName').textContent=pack.icon+' '+pack.name;
     renderIntensity();
     show('phIntensity');
@@ -353,6 +1393,13 @@ async function startGame(){
     if(!G.selectedPack) return err('intensityErr','Pick a pack first');
     G.pack=G.selectedPack;
     if(G.couch){
+        // Check local questions first
+        if(LOCAL_QUESTIONS[G.pack] && LOCAL_QUESTIONS[G.pack][G.spice]){
+            G.questions=shuffle(LOCAL_QUESTIONS[G.pack][G.spice]);
+            G.total=G.questions.length;G.idx=0;G.matches=0;G.totalRounds=0;
+            showQ();
+            return;
+        }
         try{
             const res=await fetch(`${BK}/api/duo-questions?game=${GAME_TYPE}&pack=${G.pack}&spice=${G.spice}`);
             const data=await res.json();
@@ -361,7 +1408,6 @@ async function startGame(){
             showQ();
         }catch(e){err('intensityErr','Failed to load questions');}
     } else {
-        // Online: create room then go to setup
         sk.connect();
         sk.emit('duo-create',{gameType:GAME_TYPE,playerName:G.name,pack:G.pack,spice:G.spice});
     }
@@ -375,22 +1421,29 @@ function showQ(){
     G.q=G.questions[G.idx];G.chose=null;G.faved=false;
     document.getElementById('progFill').style.width=((G.idx/G.total)*100)+'%';
     document.getElementById('qCounter').textContent=(G.idx+1)+' of '+G.total;
-    document.getElementById('optA').textContent=G.q.a||G.q;
-    document.getElementById('optB').textContent=G.q.b||'';
+    document.getElementById('optA').textContent=G.q.a||'Option A';
+    document.getElementById('optB').textContent=G.q.b||'Option B';
     document.querySelectorAll('.opt-btn').forEach(b=>{b.classList.remove('chosen','disabled');});
-    document.getElementById('partnerStatus').textContent=G.couch?'Discuss and tap your choice!':'';
+    document.getElementById('partnerStatus').textContent=G.couch?'Tap your choice — you can switch before hitting Next':'';
     document.getElementById('partnerStatus').className='partner-status';
-    document.getElementById('favBtn').textContent='♡ Save';
-    document.getElementById('favBtn').classList.remove('saved');
+    if(G.couch){
+        document.getElementById('couchBtnRow').style.display='flex';
+        document.getElementById('couchNextBtn').disabled=true;
+        document.getElementById('favBtnGame').textContent='♡ Save';
+        document.getElementById('favBtnGame').classList.remove('saved');
+    } else {
+        document.getElementById('couchBtnRow').style.display='none';
+    }
     show('phGame');
 }
 
 function choose(c){
     if(G.couch){
-        G.chose=c;G.totalRounds++;
+        // Allow switching — don't lock, don't disable
+        G.chose=c;
+        document.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('chosen'));
         document.getElementById('opt'+c.toUpperCase()).classList.add('chosen');
-        document.querySelectorAll('.opt-btn').forEach(b=>b.classList.add('disabled'));
-        document.getElementById('partnerStatus').innerHTML='<button class="next-btn" onclick="couchNext()" style="margin-top:12px">NEXT →</button>';
+        document.getElementById('couchNextBtn').disabled=false;
         return;
     }
     if(G.chose)return;
@@ -400,9 +1453,14 @@ function choose(c){
     sk.emit('duo-choice',{code:G.code,choice:c});
 }
 
-function couchNext(){G.idx++;showQ();}
+function couchNext(){
+    if(!G.chose) return;
+    G.totalRounds++;
+    G.idx++;
+    showQ();
+}
 function next(){if(G.couch){couchNext();return;}sk.emit('duo-next',{code:G.code});}
-function fav(){G.faved=!G.faved;document.getElementById('favBtn').textContent=G.faved?'♥ Saved':'♡ Save';document.getElementById('favBtn').classList.toggle('saved',G.faved);if(G.faved&&!G.couch)sk.emit('duo-favorite',{code:G.code,index:G.idx});}
+function fav(){G.faved=!G.faved;const btns=[document.getElementById('favBtn'),document.getElementById('favBtnGame')];btns.forEach(b=>{if(b){b.textContent=G.faved?'♥ Saved':'♡ Save';b.classList.toggle('saved',G.faved);}});if(G.faved&&!G.couch)sk.emit('duo-favorite',{code:G.code,index:G.idx});}
 
 function backToPacks(){
     G.idx=0;G.questions=[];G.matches=0;G.totalRounds=0;G.selectedPack=null;G.spice='clean';
@@ -431,7 +1489,7 @@ function createRoom(){
     const name=document.getElementById('nameInput').value.trim();
     if(!name)return err('lobbyErr','Enter your name');
     G.name=name;
-    loadPacks(); // go to pack selection first
+    loadPacks();
 }
 function joinRoom(){
     const name=document.getElementById('nameInput').value.trim();
@@ -472,6 +1530,7 @@ function showOnlineQ(data){
     document.querySelectorAll('.opt-btn').forEach(b=>{b.classList.remove('chosen','disabled');});
     document.getElementById('partnerStatus').textContent='';
     document.getElementById('partnerStatus').className='partner-status';
+    document.getElementById('couchBtnRow').style.display='none';
     show('phGame');
 }
 
@@ -479,6 +1538,13 @@ function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 function miniConfetti(){const cl=['#e8825c','#e88da1','#e8a838','#5b8fd9','#4caf50','#d4644a'];for(let i=0;i<25;i++){const c=document.createElement('div');c.className='conf';c.style.left=Math.random()*100+'vw';c.style.background=cl[Math.floor(Math.random()*cl.length)];c.style.width=(4+Math.random()*6)+'px';c.style.height=(4+Math.random()*6)+'px';c.style.animationDuration=(2+Math.random()*2)+'s';c.style.animationDelay=(Math.random()*0.4)+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4000);}}
 
+function headerBackClick(){
+    const active=document.querySelector('.phase.on');
+    if(active&&(active.id==='phGame'||active.id==='phReveal'||active.id==='phEnd')){backToPacks();return false;}
+    if(active&&active.id==='phIntensity'){show('phPacks');return false;}
+    if(active&&(active.id==='phPacks'||active.id==='phSetup')){show('phMode');return false;}
+    return true;
+}
 document.getElementById('nameInput').addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
 document.getElementById('codeInput').addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>
