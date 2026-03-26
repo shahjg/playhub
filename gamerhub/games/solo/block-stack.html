@@ -1136,6 +1136,40 @@ document.getElementById('mobile-controls').addEventListener('click', e => {
     else if (action === 'rotate') rotatePiece(1);
 });
 
+// Mouse control — piece follows mouse X position over the board
+boardWrapper.addEventListener('mousemove', e => {
+    if (gameState !== 'playing' || !currentPiece) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const targetCol = Math.floor(mouseX / (rect.width / BOARD_W));
+    // Calculate the center column of the current piece shape
+    let minC = Infinity, maxC = -Infinity;
+    for (const [dy, dx] of currentPiece.shape) { minC = Math.min(minC, dx); maxC = Math.max(maxC, dx); }
+    const pieceCenterOffset = Math.floor((minC + maxC) / 2);
+    const targetX = targetCol - pieceCenterOffset;
+    // Move piece toward target column
+    while (currentPiece.x < targetX && !collision(currentPiece.x + 1, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x++;
+    }
+    while (currentPiece.x > targetX && !collision(currentPiece.x - 1, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x--;
+    }
+    updateGhost();
+});
+
+// Click on board = hard drop
+boardWrapper.addEventListener('click', e => {
+    if (gameState !== 'playing' || !currentPiece) return;
+    hardDrop();
+});
+
+// Right click = rotate
+boardWrapper.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (gameState !== 'playing' || !currentPiece) return;
+    rotatePiece(1);
+});
+
 // Touch swipe on canvas
 let touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchMoved = false;
 let longPressTimer = null;
