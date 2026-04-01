@@ -126,6 +126,12 @@
         .end-stat-label{font-size:0.55rem;color:var(--tf);letter-spacing:2px;margin-top:4px}
         .end-log{max-width:500px;width:100%;margin:0 auto 20px;text-align:left}
 
+        .timer-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:12px;overflow:hidden}
+        .timer-fill{height:100%;background:linear-gradient(90deg,var(--r),var(--y),var(--g));border-radius:2px;transition:width 1s linear;width:100%}
+        .timer-fill.urgent{background:linear-gradient(90deg,var(--r),#ff6644);animation:pulse-timer .5s infinite}
+        @keyframes pulse-timer{0%,100%{opacity:1}50%{opacity:.5}}
+        .timer-label{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--tf);text-align:center;margin-bottom:8px;letter-spacing:2px}
+
         .fb{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 28px;border-radius:6px;font-size:0.82rem;opacity:0;transition:all 0.3s;z-index:300;pointer-events:none}
         .fb.show{opacity:1;transform:translateX(-50%) translateY(0)}
         .fb-ok{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);color:#4ade80}
@@ -224,41 +230,43 @@
 // ═══ GAME STATE ═══
 var state={o2:100,power:100,morale:100,hull:100,cycle:0,choices:0,logs:[]};
 var crew=[
-    {id:'chen',name:'Dr. Chen',role:'Medical',icon:'👩‍⚕️',alive:true},
-    {id:'okafor',name:'Okafor',role:'Engineer',icon:'👨‍🔧',alive:true},
-    {id:'reeves',name:'Reeves',role:'Pilot',icon:'👨‍✈️',alive:true},
-    {id:'park',name:'Park',role:'Scientist',icon:'👩‍🔬',alive:true}
+    {id:'chen',name:'Dr. Yuna Chen',role:'Medical Officer',icon:'👩‍⚕️',alive:true,trust:5},
+    {id:'okafor',name:'Kofi Osei',role:'Chief Engineer',icon:'👨‍🔧',alive:true,trust:5},
+    {id:'reeves',name:'Sasha Volkov',role:'Navigator',icon:'👩‍✈️',alive:true,trust:5},
+    {id:'park',name:'Priya Nair',role:'Comms Specialist',icon:'👩‍💻',alive:true,trust:5}
 ];
 var ended=false;
+var decisionTimer=null;
+var timerSeconds=45;
 
 // ═══ STORY EVENTS ═══
 var EVENTS=[
-    {loc:'BRIDGE — COMMUNICATIONS',text:'The main console goes dark. Emergency lights bathe everything in red. <strong>All communication with Earth has been severed.</strong> Okafor reports a fried relay array. Dr. Chen is already checking crew vitals — everyone\'s shaken.',
+    {loc:'BRIDGE — COMMUNICATIONS',text:'The main console goes dark. Emergency lights bathe everything in red. <strong>All communication with Earth has been severed.</strong> Kofi reports a fried relay array. Dr. Chen is already checking crew vitals — everyone\'s shaken.',
         choices:[
-            {text:'Send Okafor on a spacewalk to repair the relay',cost:'Risky but may restore partial comms',fx:{power:-10,hull:-5},log:'Okafor braved a spacewalk. Relay partially restored.'},
+            {text:'Send Kofi on a spacewalk to repair the relay',cost:'Risky but may restore partial comms',fx:{power:-10,hull:-5},log:'Kofi braved a spacewalk. Relay partially restored.'},
             {text:'Conserve resources — wait for automatic backup systems',cost:'Safe, but slower',fx:{morale:-10,o2:-5},log:'Chose to wait. Backup systems are slow to respond.'},
             {text:'Reroute all power to emergency beacon',cost:'Power drain but signals Earth',fx:{power:-20},log:'Emergency beacon activated. Power reserves dropping.'}
         ]},
-    {loc:'ENGINE ROOM — SECTOR 3',text:'A <strong>micro-meteorite</strong> has punctured the hull near the engine room. Pressure is dropping in Sector 3. Okafor says he can patch it, but it\'ll take time.',
+    {loc:'ENGINE ROOM — SECTOR 3',text:'A <strong>micro-meteorite</strong> has punctured the hull near the engine room. Pressure is dropping in Sector 3. Kofi says he can patch it, but it\'ll take time.',
         choices:[
             {text:'Seal Sector 3 immediately — save air, lose engine access',cost:'Hull safe, but power generation limited',fx:{hull:5,power:-15,o2:5},log:'Sector 3 sealed. Engine access restricted.'},
-            {text:'Let Okafor patch it while keeping the sector open',cost:'Risky — oxygen will drop during repair',fx:{o2:-15,hull:10},log:'Okafor patched the hull. Lost some oxygen during repair.'},
+            {text:'Let Kofi patch it while keeping the sector open',cost:'Risky — oxygen will drop during repair',fx:{o2:-15,hull:10},log:'Kofi patched the hull. Lost some oxygen during repair.'},
             {text:'Evacuate and use emergency foam sealant',cost:'Quick fix but uses medical supplies',fx:{hull:5,morale:-5,o2:-5},log:'Emergency foam applied. Temporary seal holding.'}
         ]},
-    {loc:'MEDICAL BAY',text:'Dr. Chen reports that <strong>Park is showing symptoms of radiation exposure</strong> — likely from the damaged shielding in Sector 3. Treatment will consume significant medical power.',
+    {loc:'MEDICAL BAY',text:'Dr. Chen reports that <strong>Priya is showing symptoms of radiation exposure</strong> — likely from the damaged shielding in Sector 3. Treatment will consume significant medical power.',
         choices:[
-            {text:'Full treatment — divert power to medical systems',cost:'Saves Park, heavy power cost',fx:{power:-20,morale:10},log:'Park received full treatment. Medical systems strained.'},
-            {text:'Basic treatment — manage symptoms only',cost:'Park weakened but functional',fx:{power:-5,morale:-10},log:'Park received basic care. She\'s struggling but stable.'},
-            {text:'Focus resources elsewhere — Park is a scientist, not critical',cost:'Save power but crew morale tanks',fx:{morale:-25},log:'Park was denied full treatment. Crew is angry.',crewRisk:'park',riskChance:0.3}
+            {text:'Full treatment — divert power to medical systems',cost:'Saves Priya, heavy power cost',fx:{power:-20,morale:10},log:'Priya received full treatment. Medical systems strained.'},
+            {text:'Basic treatment — manage symptoms only',cost:'Priya weakened but functional',fx:{power:-5,morale:-10},log:'Priya received basic care. She\'s struggling but stable.'},
+            {text:'Focus resources elsewhere — Priya isn\'t critical for repairs, not critical',cost:'Save power but crew morale tanks',fx:{morale:-25},log:'Priya was denied full treatment. Crew is angry.',crewRisk:'park',trustFx:{park:-2},riskChance:0.3}
         ]},
-    {loc:'OBSERVATION DECK',text:'Reeves spots something on the radar — <strong>an abandoned cargo shuttle</strong> drifting 2km away. It could have supplies, fuel, or nothing. Docking would cost fuel and risk hull damage.',
+    {loc:'OBSERVATION DECK',text:'Sasha spots something on the radar — <strong>an abandoned cargo shuttle</strong> drifting 2km away. It could have supplies, fuel, or nothing. Docking would cost fuel and risk hull damage.',
         choices:[
             {text:'Attempt docking — we need those supplies',cost:'Risk hull damage, possible reward',fx:{hull:-10,power:-5},reward:{o2:20,power:15},rewardChance:0.7,log:'Attempted shuttle docking.',logSuccess:'Docked successfully! Found oxygen and fuel.',logFail:'Shuttle was empty. Hull scraped during approach.'},
             {text:'Too risky — focus on what we have',cost:'Safe, but supplies are getting thin',fx:{morale:-5},log:'Passed on the shuttle. Playing it safe.'}
         ]},
-    {loc:'CREW QUARTERS',text:'Tensions are high. <strong>Reeves and Okafor are in a heated argument</strong> about whether to conserve power or maintain full life support. The crew is looking to you.',
+    {loc:'CREW QUARTERS',text:'Tensions are high. <strong>Sasha and Kofi are in a heated argument</strong> about whether to conserve power or maintain full life support. The crew is looking to you.',
         choices:[
-            {text:'Side with Reeves — maintain full life support',cost:'Morale boost but power drain',fx:{morale:15,power:-15,o2:5},log:'Maintained full life support. Crew feels safer.'},
+            {text:'Side with Sasha — maintain full life support',cost:'Morale boost but power drain',fx:{morale:15,power:-15,o2:5},log:'Maintained full life support. Crew feels safer.'},
             {text:'Side with Okafor — reduce to minimum life support',cost:'Saves power, crew morale drops',fx:{morale:-15,power:10,o2:-10},log:'Reduced life support to minimum. Crew is cold and uneasy.'},
             {text:'Find a compromise — half measures for now',cost:'Nobody\'s happy but it works',fx:{morale:-5,power:-5},log:'Implemented compromise. An uneasy truce.'}
         ]},
@@ -274,13 +282,13 @@ var EVENTS=[
             {text:'Keep it secret — maintain hope',cost:'Morale stable for now, risky if discovered',fx:{morale:5},secret:true,log:'Kept rescue delay secret. Hope is fragile.'},
             {text:'Spin it positive — "rescue confirmed, just a bit longer"',cost:'Temporary morale boost',fx:{morale:10},spin:true,log:'Spun the delay as confirmation. Crew cautiously optimistic.'}
         ]},
-    {loc:'AIRLOCK CORRIDOR',text:'The <strong>oxygen recycler is failing</strong>. Park (if able) can attempt a manual recalibration, but it means entering the damaged Sector 3 without full protection.',
+    {loc:'AIRLOCK CORRIDOR',text:'The <strong>oxygen recycler is failing</strong>. Priya (if able) can attempt a manual recalibration, but it means entering the damaged Sector 3 without full protection.',
         choices:[
             {text:'Send someone to fix it — oxygen is critical',cost:'Dangerous but necessary',fx:{o2:20,hull:-5},log:'Recycler manually recalibrated. O2 recovering.',crewRisk:'okafor',riskChance:0.2},
             {text:'Switch to emergency O2 reserves',cost:'Safe but limited supply',fx:{o2:-5,power:-5},log:'Switched to emergency oxygen reserves.'},
             {text:'Reduce crew activity to minimum — lower O2 consumption',cost:'Boring but effective',fx:{o2:10,morale:-15},log:'Crew on minimal activity. Conservation mode.'}
         ]},
-    {loc:'ENGINE ROOM',text:'Okafor has <strong>a plan to boost the distress signal</strong> by overloading the secondary power core. It could reach Earth clearly — but risks an explosion.',
+    {loc:'ENGINE ROOM',text:'Kofi has <strong>a plan to boost the distress signal</strong> by overloading the secondary power core. It could reach Earth clearly — but risks an explosion.',
         choices:[
             {text:'Do it — we need Earth to hear us',cost:'High risk, high reward',fx:{power:-15,hull:-10},reward:{morale:25},rewardChance:0.6,log:'Attempted signal boost.',logSuccess:'Signal sent! Earth confirmed receipt. Rescue on track.',logFail:'Power core overloaded. Minor explosion in engine room.'},
             {text:'Too dangerous — stick to the beacon',cost:'No risk, no reward',fx:{morale:-5},log:'Played it safe with the existing beacon.'}
@@ -324,7 +332,8 @@ function updateBars(){
 
 function renderCrew(){
     document.getElementById('crewBar').innerHTML=crew.map(function(c){
-        return'<div class="crew-member'+(c.alive?'':' dead')+'"><span class="crew-icon">'+c.icon+'</span>'+c.name+'</div>';
+        var trustColor=c.trust>=7?'#4ade80':c.trust>=4?'var(--y)':'var(--r)';
+        return'<div class="crew-member'+(c.alive?'':' dead')+'"><span class="crew-icon">'+c.icon+'</span>'+c.name.split(' ').pop()+(c.alive?' <span style="color:'+trustColor+';font-size:.55rem">♥'+c.trust+'</span>':'')+'</div>';
     }).join('');
 }
 
@@ -363,15 +372,42 @@ function nextCycle(){
     document.getElementById('narrative').innerHTML='<div class="narrative"><div class="narr-loc">'+ev.loc+'</div><div class="narr-text">'+ev.text+'</div></div>';
 
     var ch=document.getElementById('choices');
-    ch.innerHTML=ev.choices.map(function(c,i){
+    // Timer bar
+    var isEmergency=state.cycle===10||state.cycle===6;
+    timerSeconds=isEmergency?15:45;
+    ch.innerHTML='<div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div><div class="timer-label" id="timerLabel">'+timerSeconds+'s REMAINING</div>';
+    ch.innerHTML+=ev.choices.map(function(c,i){
         var costParts=[];
         if(c.fx){Object.keys(c.fx).forEach(function(k){var v=c.fx[k];if(v!==0){var label={o2:'O2',power:'PWR',morale:'MRL',hull:'HULL'}[k]||k;costParts.push('<span class="'+(v<0?'neg':'pos')+'">'+label+' '+(v>0?'+':'')+v+'</span>')}})}
         return'<div class="choice" onclick="makeChoice('+i+')"><div class="choice-text">'+c.text+'</div><div class="choice-cost">'+c.cost+(costParts.length?' · '+costParts.join(' '):'')+'</div></div>';
     }).join('');
+    // Start countdown
+    if(decisionTimer)clearInterval(decisionTimer);
+    var remaining=timerSeconds;
+    var fill=document.getElementById('timerFill');
+    var label=document.getElementById('timerLabel');
+    if(fill)fill.style.width='100%';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){if(fill){fill.style.transition='width '+timerSeconds+'s linear';fill.style.width='0%'}})});
+    decisionTimer=setInterval(function(){
+        remaining--;
+        if(label)label.textContent=remaining+'s REMAINING';
+        if(remaining<=10&&fill)fill.classList.add('urgent');
+        if(remaining<=0){
+            clearInterval(decisionTimer);
+            if(!ended){
+                // Auto-select last (worst) option
+                addLog('⏰ Time expired — default action taken.','warn');
+                makeChoice(ev.choices.length-1);
+            }
+        }
+    },1000);
+    // Scroll narrative into view
+    document.getElementById('narrative').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function makeChoice(i){
     if(ended)return;
+    if(decisionTimer)clearInterval(decisionTimer);
     var ev=EVENTS[state.cycle-1];
     var c=ev.choices[i];
     state.choices++;
@@ -415,22 +451,38 @@ function makeChoice(i){
 
 function endGame(type){
     ended=true;
+    if(decisionTimer)clearInterval(decisionTimer);
     document.getElementById('s-game').classList.remove('on');
     var alive=crew.filter(function(c){return c.alive}).length;
-    var icons={rescued:'🛸',suffocate:'💨',dark:'🔌',breach:'💥',mutiny:'⚔️'};
-    var titles={rescued:'RESCUED',suffocate:'OXYGEN DEPLETED',dark:'POWER FAILURE',breach:'HULL BREACH',mutiny:'MUTINY'};
+    var totalTrust=crew.reduce(function(s,c){return s+(c.alive?c.trust:0)},0);
+
+    // Determine ending variant
+    var endType=type;
+    if(type==='rescued'){
+        if(alive===4&&state.o2>30&&state.power>30)endType='perfect';
+        else if(alive>=3)endType='bittersweet';
+        else endType='pyrrhic';
+    }
+
+    var icons={perfect:'🌟',bittersweet:'🛸',pyrrhic:'⚠️',suffocate:'💨',dark:'🔌',breach:'💥',mutiny:'⚔️',rescued:'🛸'};
+    var titles={perfect:'PERFECT RESCUE',bittersweet:'BITTERSWEET VICTORY',pyrrhic:'PYRRHIC VICTORY',suffocate:'OXYGEN DEPLETED',dark:'POWER FAILURE',breach:'HULL BREACH',mutiny:'MUTINY',rescued:'RESCUED'};
+
+    var deadNames=crew.filter(function(c){return!c.alive}).map(function(c){return c.name});
     var subs={
-        rescued:alive===4?'All four crew members survived. The rescue shuttle docked perfectly. You\'ll be remembered as the commander who brought everyone home.':'The rescue shuttle arrived. '+alive+' of 4 crew survived. You held it together against impossible odds.',
-        suffocate:'The oxygen ran out. One by one, the crew fell silent. The rescue shuttle found only ghosts.',
-        dark:'Without power, the station went cold and dark. Life support failed within hours.',
-        breach:'The hull gave way. Explosive decompression claimed the station in seconds.',
-        mutiny:'The crew lost faith in your command. In the chaos that followed, no one survived to see rescue.'
+        perfect:'All four crew members survived. The rescue shuttle docked perfectly. Dr. Chen wrote in her report: "The commander never faltered. Not once." You\'ll be remembered as the one who brought everyone home.',
+        bittersweet:'The rescue shuttle arrived. '+alive+' of 4 crew survived.'+(deadNames.length?' You lost '+deadNames.join(' and ')+'. Their sacrifice won\'t be forgotten.':'')+' You held it together against impossible odds.',
+        pyrrhic:'Everyone who survived is barely functional. The psychological damage may never heal. You made it — but at what cost? The debrief will last longer than the crisis.',
+        suffocate:'The oxygen ran out slowly. The last entry in the commander\'s log reads: "Sasha calculated we had 4 hours. She was wrong. We had 2. I don\'t blame her." The rescue shuttle found only silence.',
+        dark:'Without power, Meridian-7 went cold and dark. Life support failed within hours. The station became a tomb drifting through space.',
+        breach:'The hull gave way at 03:47 station time. Explosive decompression claimed the station in 11 seconds. There was no time for last words.',
+        mutiny:'Kofi was the first to refuse an order. Then Sasha. The crew lost faith in your command. In the chaos that followed, the station tore itself apart from within.',
+        rescued:'The rescue shuttle arrived. You survived, but barely. '+alive+' of 4 crew made it.'
     };
 
-    document.getElementById('endIcon').textContent=icons[type]||'🛸';
-    document.getElementById('endTitle').textContent=titles[type]||'THE END';
-    document.getElementById('endSub').textContent=subs[type]||'';
-    document.getElementById('eCycles').textContent=Math.min(state.cycle,12);
+    document.getElementById('endIcon').textContent=icons[endType]||'🛸';
+    document.getElementById('endTitle').textContent=titles[endType]||'SIGNAL LOST';
+    document.getElementById('endSub').textContent=subs[endType]||'The mission is over.';
+    document.getElementById('eCycles').textContent=Math.min(state.cycle,12)+'/12';
     document.getElementById('eCrew').textContent=alive+'/4';
     document.getElementById('eChoices').textContent=state.choices;
     document.getElementById('s-end').classList.add('on');
