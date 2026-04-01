@@ -823,10 +823,10 @@
     <div class="scr rev-scr" id="s-reveal">
         <div class="rev-cont">
             <p class="rev-l">Case Closed</p>
-            <h2 class="rev-t">The killer was <em>Nina Ashford</em></h2>
+            <h2 class="rev-t" id="revKillerName">The killer was <em>...</em></h2>
             <div id="revResult"></div>
             <div class="rev-killer">
-                <div class="rev-kp">💼</div>
+                <div class="rev-kp" id="revKillerEmoji">💼</div>
                 <div class="rev-ki">
                     <h4>Nina Ashford</h4>
                     <p>Nina discovered Marcus had siphoned $400,000 from the restaurant fund. When she confronted him during the third course, he laughed. She retrieved the sedative from her coat, dissolved it into his wine, and waited.</p>
@@ -837,7 +837,7 @@
                 <p class="rev-bd-title">Why each suspect is cleared — or isn't</p>
                 <div class="rev-bd-item"><span class="rev-bd-emoji">👩</span><span class="rev-bd-name">Vivienne</span><span class="rev-bd-text">Had a key and motive, but was genuinely in the restroom — confirmed by a timestamped selfie on her phone at 10:12 PM. Her anger was public, not lethal.</span></div>
                 <div class="rev-bd-item"><span class="rev-bd-emoji">👨‍🍳</span><span class="rev-bd-name">Tomás</span><span class="rev-bd-text">Had kitchen access and knowledge, but the sedative wasn't from the kitchen supply. His prints were on the plates, not the glasses. His betrayal was professional, not criminal.</span></div>
-                <div class="rev-bd-item rev-bd-killer"><span class="rev-bd-emoji">💼</span><span class="rev-bd-name">Nina</span><span class="rev-bd-text">Pharmacy receipt handwriting match. Burner phone. Handkerchief at the scene. Stepped outside at 10:15 — the valet confirms. Had the means, motive, and a 20-minute window.</span></div>
+                <div class="rev-bd-item rev-bd-killer" id="revKillerDetail"></div>
                 <div class="rev-bd-item"><span class="rev-bd-emoji">🎸</span><span class="rev-bd-name">Dex</span><span class="rev-bd-text">Was on a phone call with his sponsor at 10:08 PM — call logs confirm. His inheritance motive was real, but he was the only guest with a verified alibi during the critical window.</span></div>
                 <div class="rev-bd-item"><span class="rev-bd-emoji">📝</span><span class="rev-bd-name">Priya</span><span class="rev-bd-text">Had damaging information, but Marcus was worth more to her alive — a dead subject kills the story. Her recorder captured ambient audio that corroborates the timeline.</span></div>
             </div>
@@ -981,6 +981,7 @@ let suspNotes = {};
 let chatHistories = {};
 let questionsAsked = 0;
 SUS.forEach((_, i) => { suspNotes[i] = ''; chatHistories[i] = []; });
+let killerIdx = Math.floor(Math.random() * SUS.length);
 
 /* ═══ NAVIGATION ═══ */
 function goTo(id) {
@@ -1035,9 +1036,16 @@ function buildSysPrompt(i) {
     const foundNames = [];
     found.forEach(idx => foundNames.push(EV[idx].t));
     const evCtx = foundNames.length > 0
-        ? `\n\nThe investigator has found: ${foundNames.join(', ')}. React with awareness if they reference these items.`
+        ? '\n\nThe investigator has found: ' + foundNames.join(', ') + '. React with awareness if they reference these items.'
         : '';
-    return `You are ${s.n}, being interrogated about the murder of Chef Marcus Delaney at his restaurant Saffron. He was poisoned with a sedative in his wine.\n\n${s.sys}${evCtx}`;
+    const isKiller = (i === killerIdx);
+    let base = s.sys;
+    if (isKiller && !base.includes('YOU ARE THE KILLER')) {
+        base = base.replace('You are NOT the killer', 'You ARE THE KILLER. You committed the murder. Be evasive, deflect blame, and never confess. Show subtle tells when confronted with physical evidence');
+    } else if (!isKiller && base.includes('YOU ARE THE KILLER')) {
+        base = base.replace(/YOU ARE THE KILLER[\s\S]*?(?=\n\nHOW TO BEHAVE:|$)/m, 'You are NOT the killer. You are innocent but under suspicion. Be defensive and redirect to other suspects');
+    }
+    return 'You are ' + s.n + ', being interrogated about the murder of Chef Marcus Delaney at his restaurant Saffron. He was poisoned with a sedative in his wine.\n\n' + base + evCtx;
 }
 
 function startInterrog(i) {
@@ -1048,7 +1056,7 @@ function startInterrog(i) {
     document.getElementById('iN').textContent = s.n;
     document.getElementById('iR').textContent = s.r;
     document.getElementById('iB').textContent = s.bio;
-    document.getElementById('cRound').textContent = `Round ${round}/3`;
+    document.getElementById('cRound').textContent = `Round ${round}/5`;
     document.getElementById('iF').innerHTML = s.facts.map(f =>
         `<div class="int-fact"><span class="int-fl">${f[0]}</span><span class="int-fv">${f[1]}</span></div>`
     ).join('');
@@ -1175,9 +1183,9 @@ function endInterrog() {
     suspNotes[curSus] = document.getElementById('iNotes').value;
     interr.add(curSus);
     round++;
-    document.getElementById('navR').textContent = Math.min(round, 3);
+    document.getElementById('navR').textContent = Math.min(round, 5);
     buildLineup();
-    if (round > 3) goTo('board');
+    if (round > 5) goTo('board');
     else { document.getElementById('rNum').textContent = round; goTo('lineup'); }
 }
 
@@ -1296,21 +1304,30 @@ function pickK(el, i) {
 /* ═══ REVEAL ═══ */
 function doReveal() {
     document.getElementById('gnav').classList.remove('show');
-    const correct = selK === 2;
+    document.getElementById('revKillerName').innerHTML = 'The killer was <em>' + SUS[killerIdx].n + '</em>';
+    const ks = SUS[killerIdx];
+    document.getElementById('revKillerDetail').innerHTML = '<span class="rev-bd-emoji">' + ks.e + '</span><span class="rev-bd-name">' + ks.n.split(' ')[0] + '</span><span class="rev-bd-text">Evidence pointed to ' + ks.n + '. Motive: ' + ks.m + '. ' + ks.rel + '</span>';
+    document.getElementById('revKillerEmoji').textContent = ks.e;
+    const correct = selK === killerIdx;
     document.getElementById('revResult').innerHTML = correct
         ? '<div class="rev-result rev-correct">✓ Correct — You identified the killer!</div>'
-        : '<div class="rev-result rev-wrong">✗ Incorrect — The killer was Nina Ashford, not ' + SUS[selK].n + '.</div>';
+        : '<div class="rev-result rev-wrong">✗ Incorrect — The killer was ' + SUS[killerIdx].n + ', not ' + SUS[selK].n + '.</div>';
 
     const evPts = found.size * 8;
     const correctPts = correct ? 50 : 0;
-    const rUsed = Math.min(round - 1, 3);
-    const roundPts = rUsed <= 2 ? (3 - rUsed) * 5 : 0;
+    const rUsed = Math.min(round - 1, 5);
+    const roundPts = correct ? Math.max(0, (5 - rUsed) * 5) : 0;
+    const detectiveRank = correct && found.size >= 10 ? 'Master Detective' : correct && found.size >= 6 ? 'Good Detective' : correct ? 'Lucky Guess' : 'The Killer Escaped';
     const qPts = Math.min(questionsAsked * 2, 20);
     const total = evPts + correctPts + roundPts + qPts;
 
     document.getElementById('rEv').textContent = found.size + '/12';
     document.getElementById('rRd').textContent = rUsed;
     document.getElementById('rSc').textContent = total;
+    const rankEl = document.createElement('div');
+    rankEl.style.cssText = 'text-align:center;font-family:Cormorant Garamond,serif;font-size:1.2rem;color:var(--g);margin-top:12px;letter-spacing:2px';
+    rankEl.textContent = detectiveRank;
+    document.getElementById('rSc').parentElement.insertAdjacentElement('afterend', rankEl);
 
     // Score breakdown
     let sbH = '<div class="rev-score-bd">';
