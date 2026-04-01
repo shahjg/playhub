@@ -11,17 +11,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#c85040;--warm2:#a03828;--warmL:#ebc0b0;--warmLL:#fef0e7;--rose:#d07858;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#e8825c;--warm2:#c06040;--warmL:#ebc8b8;--warmLL:#fef0e7;--rose:#d08868;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1);--agree:#4caf50;--disagree:#e05050}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
         body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
         h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
-        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,80,64,0.07),transparent 60%),var(--bg)}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(232,130,92,0.08),transparent 60%),var(--bg)}
         header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
         .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
         .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
         .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
         .hdr-right{min-width:40px}
-        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;padding:60px 14px 24px;max-width:520px;margin:0 auto;width:100%}
         .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .mode-icon{font-size:3.5rem;margin-bottom:12px}
@@ -36,105 +36,391 @@
         .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
         .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
         .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
-        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(200,80,64,0.25)}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(232,130,92,0.25)}
         .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
         .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
         .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
         .join-row{display:flex;gap:8px;width:100%;max-width:320px}
         .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
         .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:460px;margin-bottom:16px;max-height:55vh;overflow-y:auto;padding-right:4px}
         .pack-grid::-webkit-scrollbar{width:3px}.pack-grid::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
-        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(200,80,64,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
-        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
+        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(232,130,92,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
+        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.7rem;font-weight:700;line-height:1.2}
         .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
-        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:12px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center;margin-top:10px}
+        .opt-row{display:flex;gap:6px;width:100%;max-width:340px;margin-bottom:10px;justify-content:center}
+        .opt-btn{flex:1;min-width:60px;padding:10px 6px;border-radius:10px;border:2px solid var(--border);background:var(--card);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:1px;color:var(--dim);transition:.2s}.opt-btn.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
         .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
         .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
         .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
         .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
-        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:420px;margin-bottom:12px}
-        .back-to-packs{font-size:.7rem;font-weight:700;color:var(--dim);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}.back-to-packs:hover{color:var(--warm)}
-        .q-counter{font-size:.75rem;font-weight:700;color:var(--dim);letter-spacing:1px}
-        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
-        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
-        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
-        .timer-display{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--warm);text-align:center;margin-bottom:12px;letter-spacing:4px}
-        .timer-display.danger{color:var(--red);animation:tmrPulse .5s ease infinite}
-        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-        .word-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:32px 24px;text-align:center;margin-bottom:20px}
-        .word-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,6vw,2.5rem);letter-spacing:3px;color:var(--warm2);line-height:1.2}
-        .word-sub{font-size:.75rem;color:var(--dim);margin-top:8px;letter-spacing:1px}
-        .take-input{width:100%;padding:14px;font-size:.95rem;font-family:'Inter',sans-serif;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);outline:none;resize:none;min-height:80px;transition:.3s;margin-top:12px}.take-input:focus{border-color:var(--warm)}
-        .take-input::placeholder{color:#c4b0a5}
-        .game-btns{display:flex;gap:10px;width:100%;max-width:420px}
-        .reveal-card{width:100%;max-width:420px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:20px;margin-bottom:12px;opacity:0;transform:scale(0.9);animation:revealPop .5s ease forwards}
-        .reveal-card:nth-child(2){animation-delay:.3s}
-        @keyframes revealPop{to{opacity:1;transform:scale(1)}}
-        .reveal-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--warm);margin-bottom:6px}
-        .reveal-text{font-size:.9rem;line-height:1.5;color:var(--text)}
-        .vote-btns{display:flex;gap:10px;width:100%;max-width:420px;margin-top:8px}
-        .vote-btn{flex:1;padding:14px;border-radius:14px;border:2px solid var(--border);background:var(--card);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-align:center;box-shadow:var(--shadow)}.vote-btn:hover{border-color:var(--warm);transform:translateY(-2px)}
-        .vote-btn.voted{border-color:var(--warm);background:var(--warmLL);color:var(--warm)}
-        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
-        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
-        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
-        .end-scores{margin-bottom:20px}
-        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:8px}
+        .q-counter{font-size:.72rem;font-weight:700;color:var(--dim);letter-spacing:1px}
+        .score-bar{display:flex;gap:10px;justify-content:center;margin-bottom:6px}
+        .score-chip{padding:6px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
+        .score-chip .s-name{font-size:.65rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--warm)}
+        .compat-bar{width:100%;max-width:300px;margin:0 auto 10px;text-align:center}
+        .compat-track{width:100%;height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin-bottom:4px}
+        .compat-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),var(--gold),var(--green));transition:width .5s ease}
+        .compat-label{font-size:.65rem;font-weight:700;color:var(--dim)}
+        .take-card{width:100%;background:var(--card);border-radius:20px;border:2px solid var(--warm);box-shadow:0 4px 24px rgba(232,130,92,0.15);padding:28px 20px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
+        .take-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--warm),var(--gold),var(--warm2))}
+        .take-cat{font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+        .take-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,5vw,2rem);letter-spacing:2px;color:var(--warm2);line-height:1.2}
+        .vote-row{display:flex;gap:12px;width:100%;max-width:400px;margin-bottom:12px}
+        .vote-btn{flex:1;padding:20px;border-radius:16px;border:3px solid;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;cursor:pointer;transition:.2s;text-align:center}
+        .vote-btn.agree{border-color:var(--agree);background:rgba(76,175,80,0.06);color:var(--agree)}
+        .vote-btn.disagree{border-color:var(--disagree);background:rgba(224,80,80,0.06);color:var(--disagree)}
+        .vote-btn:hover{transform:translateY(-3px)}
+        .vote-btn.chosen{transform:scale(1.05)}.vote-btn.agree.chosen{background:var(--agree);color:#fff}.vote-btn.disagree.chosen{background:var(--disagree);color:#fff}
+        .vote-btn.faded{opacity:.3;pointer-events:none;transform:none}
+        .reveal-split{display:flex;gap:8px;width:100%;margin-bottom:12px}
+        .reveal-half{flex:1;padding:16px 12px;border-radius:14px;text-align:center}
+        .reveal-half.agree-side{background:rgba(76,175,80,0.08);border:2px solid var(--agree)}
+        .reveal-half.disagree-side{background:rgba(224,80,80,0.08);border:2px solid var(--disagree)}
+        .reveal-half .rh-name{font-size:.7rem;font-weight:700;margin-bottom:4px}
+        .reveal-half .rh-vote{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px}
+        .reveal-half.agree-side .rh-vote{color:var(--agree)}
+        .reveal-half.disagree-side .rh-vote{color:var(--disagree)}
+        .match-result{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;text-align:center;padding:12px;border-radius:12px;margin-bottom:12px}
+        .match-result.same{background:rgba(76,175,80,0.1);color:var(--agree);border:1px solid var(--agree)}
+        .match-result.diff{background:rgba(232,130,92,0.1);color:var(--warm2);border:1px solid var(--warm)}
+        .debate-section{width:100%;text-align:center;margin-bottom:12px}
+        .debate-timer{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:3px;color:var(--warm);margin-bottom:6px}
+        .debate-timer.danger{color:var(--red);animation:tmrPulse .5s ease infinite}
+        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        .debate-who{font-size:.8rem;font-weight:700;color:var(--dim);margin-bottom:8px}
+        .debate-btns{display:flex;gap:8px;width:100%;margin-top:8px}
+        .mind-btn{padding:10px;border-radius:10px;border:2px solid var(--gold);background:rgba(232,168,56,0.08);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:1px;cursor:pointer;transition:.2s;width:100%}.mind-btn:hover{background:rgba(232,168,56,0.15)}
+        .spice-row{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+        .spice-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:.7rem;font-weight:700;color:var(--dim);transition:.2s}.spice-btn:hover{border-color:var(--warm)}.spice-btn.sel{border-color:var(--warm);color:var(--warm)}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:28px 20px;text-align:center;width:100%;max-width:440px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
+        .end-sub{color:var(--dim);font-size:.82rem;margin-bottom:12px}
+        .end-scores{margin-bottom:12px}
+        .end-score-row{display:flex;justify-content:space-between;padding:8px 14px;border-radius:10px;margin-bottom:4px;background:var(--bg2);border:1px solid var(--border)}
         .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
-        .end-btns{display:flex;gap:10px;width:100%}
+        .compat-result{padding:16px;border-radius:14px;border:2px solid var(--warm);background:var(--warmLL);margin-bottom:16px}
+        .compat-pct{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--warm2);letter-spacing:2px}
+        .compat-desc{font-size:.8rem;color:var(--dim);margin-top:4px}
+        .end-btns{display:flex;gap:8px;width:100%;margin-bottom:8px}
         .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
-        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--warm);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;cursor:pointer}
-        .cover-screen h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;margin-bottom:8px}
-        .cover-screen p{font-size:.85rem;opacity:.8}
+        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;cursor:pointer}
+        .cover-screen h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;margin-bottom:8px;color:var(--warm2)}
+        .cover-screen p{font-size:.85rem;color:var(--dim)}
     </style>
 </head>
 <body>
 <div class="bg"></div>
 <header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">HOT TAKE BATTLE</span><div class="hdr-right"></div></nav></header>
 <main>
-<div class="phase on" id="phMode"><div class="mode-icon">🔥</div><h1 class="mode-title">HOT TAKE BATTLE</h1><p class="mode-sub">Drop your hottest takes — who burns brighter?</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns typing — screen hides between</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Play on separate devices</div></div></div></div>
+
+<div class="phase on" id="phMode"><div class="mode-icon">🔥</div><h1 class="mode-title">HOT TAKE BATTLE</h1><p class="mode-sub">Agree or disagree — then defend your position!</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Both look away while voting, then reveal</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Vote on separate devices, reveal together</div></div></div></div>
+
 <div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
-<div class="phase" id="phPacks"><h2 class="pack-title">PICK A TOPIC</h2><p class="pack-sub">What are you battling over?</p><div class="pack-grid" id="packGrid"></div></div>
-<div class="phase" id="phSettings"><h2 class="setup-title">GAME SETTINGS</h2><p class="setup-sub">Get ready to battle</p><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
-<div class="phase" id="phGame"><div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">1 of 10</span></div><div class="score-bar" id="scoreBar"></div><div class="timer-display" id="timerDisplay">60</div><div class="word-card"><div class="word-text" id="wordText">TOPIC</div><div class="word-sub">Write your hottest take!</div></div><textarea class="take-input" id="takeInput" placeholder="Type your hot take..." maxlength="280"></textarea><div class="game-btns"><button class="btn btn-primary" onclick="submitTake()" style="width:100%">SUBMIT TAKE 🔥</button></div><div class="error-msg" id="gameErr"></div></div>
-<div class="phase" id="phReveal"><div class="game-top"><span></span><span class="q-counter" id="revealCounter">1 of 10</span></div><div class="word-card"><div class="word-text" id="revealTopic">TOPIC</div><div class="word-sub">Whose take was hotter?</div></div><div id="revealCards"></div><div class="vote-btns" id="voteBtns"></div><div class="error-msg" id="revealErr"></div></div>
-<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">🔥</div><h2 class="end-title">GAME OVER!</h2><p class="end-sub" id="endSub"></p><div class="end-scores" id="endScores"></div><div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">CHANGE PACK</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+
+<div class="phase" id="phPacks"><h2 class="pack-title">PICK A TOPIC</h2><p class="pack-sub">What are you debating?</p><div class="pack-grid" id="packGrid"></div></div>
+
+<div class="phase" id="phSettings">
+<h2 class="setup-title">BATTLE SETTINGS</h2>
+<div class="section-label">Rounds</div>
+<div class="opt-row">
+<div class="opt-btn sel" data-v="5" onclick="pickOpt('rounds',this)">5</div>
+<div class="opt-btn" data-v="7" onclick="pickOpt('rounds',this)">7</div>
+<div class="opt-btn" data-v="10" onclick="pickOpt('rounds',this)">10</div>
+</div>
+<div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div>
+<button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START 🔥</button>
+<div class="error-msg" id="settingsErr"></div>
+</div>
+
+<!-- VOTE PHASE -->
+<div class="phase" id="phVote">
+<div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Back</button><span class="q-counter" id="qCounter">Round 1 / 5</span></div>
+<div class="score-bar" id="scoreBar"></div>
+<div class="compat-bar"><div class="compat-track"><div class="compat-fill" id="compatFill" style="width:50%"></div></div><div class="compat-label" id="compatLabel">Compatibility: —</div></div>
+<div class="take-card"><div class="take-cat" id="takeCat">POP CULTURE</div><div class="take-text" id="takeText">Loading...</div></div>
+<div style="text-align:center;font-size:.75rem;color:var(--dim);margin-bottom:8px" id="votePrompt">What do you think?</div>
+<div class="vote-row" id="voteRow">
+<div class="vote-btn agree" onclick="castVote('agree')">AGREE ✓</div>
+<div class="vote-btn disagree" onclick="castVote('disagree')">DISAGREE ✗</div>
+</div>
+</div>
+
+<!-- REVEAL PHASE -->
+<div class="phase" id="phReveal">
+<div class="game-top"><span></span><span class="q-counter" id="revealCounter">Round 1 / 5</span></div>
+<div class="take-card"><div class="take-cat" id="revealCat"></div><div class="take-text" id="revealText"></div></div>
+<div class="reveal-split" id="revealSplit"></div>
+<div class="match-result" id="matchResult"></div>
+<div class="debate-section" id="debateSection" style="display:none">
+<div class="debate-who" id="debateWho">DEBATE TIME — 60 seconds each!</div>
+<div class="debate-timer" id="debateTimer">60</div>
+<div id="debatePrompt" style="font-size:.78rem;color:var(--dim);margin-bottom:8px"></div>
+<button class="btn btn-primary" onclick="nextDebater()" id="debateNextBtn" style="width:100%;max-width:300px">NEXT ARGUER →</button>
+</div>
+<div id="debateVoteSection" style="display:none;text-align:center">
+<div style="font-size:.78rem;color:var(--dim);margin-bottom:8px">Who argued better?</div>
+<div class="debate-btns" id="debateBtns"></div>
+<div style="margin-top:10px"><button class="mind-btn" onclick="changedMind()">🧠 I CHANGED MY MIND (+2 bonus)</button></div>
+</div>
+<div class="spice-row" id="spiceRow" style="display:none">
+<div style="font-size:.65rem;color:var(--dim);margin-right:4px;align-self:center">How spicy?</div>
+<button class="spice-btn" onclick="rateSpice(1,this)">Lukewarm</button>
+<button class="spice-btn" onclick="rateSpice(2,this)">🔥 Hot</button>
+<button class="spice-btn" onclick="rateSpice(3,this)">☢️ Nuclear</button>
+</div>
+<button class="btn btn-primary" onclick="nextRound()" id="nextRoundBtn" style="display:none;width:100%;max-width:300px;margin-top:8px">NEXT ROUND →</button>
+</div>
+
+<!-- END -->
+<div class="phase" id="phEnd"><div class="end-card">
+<div class="end-icon">🔥</div>
+<h2 class="end-title">BATTLE OVER!</h2>
+<p class="end-sub" id="endSub"></p>
+<div class="compat-result"><div class="compat-pct" id="endCompat">50%</div><div class="compat-desc" id="endCompatDesc">Compatible</div></div>
+<div class="end-scores" id="endScores"></div>
+<div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">NEW TOPIC</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div>
+</div></div>
+
 </main>
 <div class="cover-screen" id="coverScreen" style="display:none" onclick="dismissCover()"><h2 id="coverTitle">PASS THE PHONE</h2><p id="coverSub">Tap to continue</p></div>
+
 <script>
 const BK='https://web-production-519c7.up.railway.app';
 const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
-let G={mode:null,couch:false,code:null,name:null,pack:null,items:[],idx:0,total:0,scores:{},players:[],ti:null,timeLeft:60,takes:{},couchStep:0};
-const PACKS=[{id:'pop_culture',name:'Pop Culture',icon:'🎤'},{id:'relationships',name:'Relationships',icon:'💕'},{id:'food',name:'Food',icon:'🍕'}];
+
+const PACKS=[
+{id:'pop_culture',name:'Pop Culture',icon:'🎤'},
+{id:'relationships',name:'Relationships',icon:'💕'},
+{id:'food',name:'Food',icon:'🍕'},
+{id:'social_media',name:'Social Media',icon:'📱'},
+{id:'movies_tv',name:'Movies & TV',icon:'🎬'},
+{id:'music',name:'Music',icon:'🎵'},
+{id:'work_career',name:'Work & Career',icon:'💼'},
+{id:'controversial',name:'Controversial',icon:'🧠'},
+{id:'gaming',name:'Gaming',icon:'🎮'},
+{id:'lifestyle',name:'Lifestyle',icon:'🍿'},
+{id:'science_tech',name:'Science & Tech',icon:'🧬'},
+{id:'dating_modern',name:'Modern Dating',icon:'💑'}
+];
+
+const COMPAT_LABELS=[
+{min:95,label:'Soulmates',desc:'You agree on basically everything'},
+{min:70,label:'Compatible',desc:'You see eye to eye most of the time'},
+{min:50,label:'Healthy Disagreement',desc:'Different views, great debates'},
+{min:25,label:'Opposites Attract',desc:'You challenge each other constantly'},
+{min:0,label:'How Are You Together',desc:'Agree to disagree... on everything'}
+];
+
+let G={mode:null,couch:false,code:null,name:null,pack:null,rounds:5,items:[],idx:0,scores:{},players:[],ti:null,votes:{},agrees:0,totalVoted:0,debateStep:0,spiceLog:[],mindChanged:false};
+
 function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
 function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online')show('phLobby');else showPacks();}
 function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
 function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function pickOpt(type,el){el.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');if(type==='rounds')G.rounds=parseInt(el.dataset.v);}
 function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
-async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=hot-take&pack=${G.pack}&intensity=clean`);const data=await res.json();G.items=data.items;G.total=G.items.length;G.idx=0;G.scores={'Player 1':0,'Player 2':0};G.players=['Player 1','Player 2'];if(!G.items.length){err('settingsErr','No topics found');return;}startRound();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code});}}
-function startRound(){if(G.idx>=G.items.length){endGame();return;}G.takes={};G.couchStep=0;document.getElementById('qCounter').textContent=(G.idx+1)+' of '+G.total;document.getElementById('wordText').textContent=G.items[G.idx];document.getElementById('takeInput').value='';renderScores();startTimer();if(G.couch){document.getElementById('wordText').textContent=G.items[G.idx];show('phGame');}else{show('phGame');}}
-function startTimer(){G.timeLeft=60;document.getElementById('timerDisplay').textContent=G.timeLeft;document.getElementById('timerDisplay').classList.remove('danger');if(G.ti)clearInterval(G.ti);G.ti=setInterval(()=>{G.timeLeft--;document.getElementById('timerDisplay').textContent=Math.max(0,G.timeLeft);if(G.timeLeft<=10)document.getElementById('timerDisplay').classList.add('danger');if(G.timeLeft<=0){clearInterval(G.ti);submitTake();}},1000);}
-function submitTake(){const take=document.getElementById('takeInput').value.trim();if(!take)return err('gameErr','Write something!');if(G.couch){if(G.couchStep===0){G.takes[G.players[0]]=take;G.couchStep=1;clearInterval(G.ti);showCover(G.players[1]+"'S TURN",'Tap when ready — no peeking!',()=>{document.getElementById('takeInput').value='';startTimer();});}else{G.takes[G.players[1]]=take;clearInterval(G.ti);showReveal();}}else{sk.emit('act-submit',{code:G.code,take:take});document.getElementById('takeInput').value='';document.getElementById('takeInput').disabled=true;document.querySelector('#phGame .btn-primary').disabled=true;document.querySelector('#phGame .btn-primary').textContent='WAITING...';}}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+async function startGame(){
+    if(!G.pack)return;
+    if(G.couch){
+        try{
+            const res=await fetch(`${BK}/api/act-items?game=hot-take&pack=${G.pack}&intensity=clean`);
+            const data=await res.json();
+            G.items=shuffle(data.items||[]).slice(0,G.rounds);
+            if(!G.items.length){err('settingsErr','No takes found');return;}
+            G.idx=0;G.scores={'Player 1':0,'Player 2':0};G.players=['Player 1','Player 2'];
+            G.agrees=0;G.totalVoted=0;G.spiceLog=[];
+            startVote();
+        }catch(e){err('settingsErr','Failed to load');}
+    } else {
+        sk.emit('act-start',{code:G.code});
+    }
+}
+
+function startVote(){
+    if(G.idx>=G.items.length){endGame();return;}
+    G.votes={};G.mindChanged=false;
+    const pack=PACKS.find(p=>p.id===G.pack);
+    document.getElementById('qCounter').textContent='Round '+(G.idx+1)+' / '+G.items.length;
+    document.getElementById('takeCat').textContent=(pack?pack.icon+' ':'')+G.pack.toUpperCase().replace(/_/g,' ');
+    document.getElementById('takeText').textContent=G.items[G.idx];
+    document.getElementById('votePrompt').textContent=G.couch?G.players[0]+' — vote first (look away '+G.players[1]+'!)':'What do you think?';
+    document.getElementById('voteRow').innerHTML='<div class="vote-btn agree" onclick="castVote(\'agree\')">AGREE ✓</div><div class="vote-btn disagree" onclick="castVote(\'disagree\')">DISAGREE ✗</div>';
+    renderScores();
+    updateCompat();
+    show('phVote');
+}
+
+function castVote(v){
+    if(G.couch){
+        if(!G.votes[G.players[0]]){
+            G.votes[G.players[0]]=v;
+            // Highlight chosen
+            document.querySelectorAll('.vote-btn').forEach(b=>{b.classList.add('faded');if(b.classList.contains(v))b.classList.replace('faded','chosen');});
+            setTimeout(()=>{
+                showCover(G.players[1]+"'S TURN TO VOTE",'Tap when ready — no peeking!',()=>{
+                    document.getElementById('votePrompt').textContent=G.players[1]+' — your turn!';
+                    document.getElementById('voteRow').innerHTML='<div class="vote-btn agree" onclick="castVote(\'agree\')">AGREE ✓</div><div class="vote-btn disagree" onclick="castVote(\'disagree\')">DISAGREE ✗</div>';
+                });
+            },500);
+        } else {
+            G.votes[G.players[1]]=v;
+            document.querySelectorAll('.vote-btn').forEach(b=>{b.classList.add('faded');if(b.classList.contains(v))b.classList.replace('faded','chosen');});
+            setTimeout(()=>showReveal(),600);
+        }
+    } else {
+        sk.emit('act-submit',{code:G.code,vote:v});
+        document.querySelectorAll('.vote-btn').forEach(b=>{b.classList.add('faded');if(b.classList.contains(v))b.classList.replace('faded','chosen');});
+    }
+}
+
+function showReveal(){
+    const take=G.items[G.idx];
+    const pack=PACKS.find(p=>p.id===G.pack);
+    document.getElementById('revealCounter').textContent='Round '+(G.idx+1)+' / '+G.items.length;
+    document.getElementById('revealCat').textContent=(pack?pack.icon+' ':'')+G.pack.toUpperCase().replace(/_/g,' ');
+    document.getElementById('revealText').textContent=take;
+
+    // Show each player's vote
+    document.getElementById('revealSplit').innerHTML=G.players.map(n=>{
+        const v=G.votes[n]||'agree';
+        const cls=v==='agree'?'reveal-half agree-side':'reveal-half disagree-side';
+        return `<div class="${cls}"><div class="rh-name">${esc(n)}</div><div class="rh-vote">${v==='agree'?'AGREE ✓':'DISAGREE ✗'}</div></div>`;
+    }).join('');
+
+    const same=G.votes[G.players[0]]===G.votes[G.players[1]];
+    G.totalVoted++;
+    if(same)G.agrees++;
+    updateCompat();
+
+    const mr=document.getElementById('matchResult');
+    if(same){
+        mr.className='match-result same';mr.textContent='YOU AGREE! +1 each';
+        G.scores[G.players[0]]=(G.scores[G.players[0]]||0)+1;
+        G.scores[G.players[1]]=(G.scores[G.players[1]]||0)+1;
+        renderScores();
+        // No debate needed — show spice rating then next
+        document.getElementById('debateSection').style.display='none';
+        document.getElementById('debateVoteSection').style.display='none';
+        document.getElementById('spiceRow').style.display='flex';
+        document.getElementById('nextRoundBtn').style.display='';
+    } else {
+        mr.className='match-result diff';mr.textContent='DISAGREE — DEBATE TIME!';
+        // Start debate
+        document.getElementById('debateSection').style.display='';
+        document.getElementById('debateVoteSection').style.display='none';
+        document.getElementById('spiceRow').style.display='none';
+        document.getElementById('nextRoundBtn').style.display='none';
+        G.debateStep=0;
+        startDebateTimer(0);
+    }
+    show('phReveal');
+}
+
+function startDebateTimer(pi){
+    const name=G.players[pi];
+    document.getElementById('debateWho').textContent=name+' — ARGUE YOUR POSITION!';
+    document.getElementById('debatePrompt').textContent='You said '+(G.votes[name]==='agree'?'AGREE':'DISAGREE')+'. Convince them!';
+    document.getElementById('debateNextBtn').textContent=pi===0?'NEXT ARGUER →':'DONE — VOTE!';
+    let time=60;
+    const el=document.getElementById('debateTimer');
+    el.textContent=time;el.classList.remove('danger');
+    if(G.ti)clearInterval(G.ti);
+    G.ti=setInterval(()=>{
+        time--;el.textContent=Math.max(0,time);
+        if(time<=10)el.classList.add('danger');
+        if(time<=0){clearInterval(G.ti);nextDebater();}
+    },1000);
+}
+
+function nextDebater(){
+    if(G.ti)clearInterval(G.ti);
+    if(G.debateStep===0){G.debateStep=1;startDebateTimer(1);}
+    else{
+        // Both argued — now vote
+        document.getElementById('debateSection').style.display='none';
+        document.getElementById('debateVoteSection').style.display='';
+        document.getElementById('debateBtns').innerHTML=G.players.map(n=>`<button class="btn btn-secondary" onclick="debateVote('${esc(n)}')" style="flex:1">${esc(n)} 🔥</button>`).join('');
+    }
+}
+
+function debateVote(name){
+    G.scores[name]=(G.scores[name]||0)+3;
+    renderScores();
+    document.getElementById('debateVoteSection').style.display='none';
+    document.getElementById('spiceRow').style.display='flex';
+    document.getElementById('nextRoundBtn').style.display='';
+}
+
+function changedMind(){
+    if(G.mindChanged)return;G.mindChanged=true;
+    // The other player gets bonus points (whoever convinced)
+    // In couch mode we don't know who, so both get 1
+    G.players.forEach(n=>{G.scores[n]=(G.scores[n]||0)+1;});
+    renderScores();
+    const btn=document.querySelector('.mind-btn');
+    btn.textContent='MIND CHANGED! +1 each';btn.style.pointerEvents='none';btn.style.opacity='.5';
+}
+
+function rateSpice(level,btn){
+    G.spiceLog.push({take:G.items[G.idx],spice:level});
+    document.querySelectorAll('.spice-btn').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+}
+
+function nextRound(){
+    G.idx++;
+    if(G.idx>=G.items.length)endGame();
+    else{
+        if(G.couch)showCover('NEXT ROUND','Tap to continue',()=>startVote());
+        else startVote();
+    }
+}
+
+function updateCompat(){
+    const pct=G.totalVoted>0?Math.round((G.agrees/G.totalVoted)*100):50;
+    document.getElementById('compatFill').style.width=pct+'%';
+    document.getElementById('compatLabel').textContent='Compatibility: '+pct+'%';
+}
+
+function renderScores(){document.getElementById('scoreBar').innerHTML=G.players.map(n=>`<div class="score-chip"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0}</div></div>`).join('');}
+
+function endGame(){
+    if(G.ti)clearInterval(G.ti);
+    const pct=G.totalVoted>0?Math.round((G.agrees/G.totalVoted)*100):0;
+    const label=COMPAT_LABELS.find(l=>pct>=l.min)||COMPAT_LABELS[COMPAT_LABELS.length-1];
+    document.getElementById('endCompat').textContent=pct+'%';
+    document.getElementById('endCompatDesc').textContent=label.label+' — '+label.desc;
+    const sorted=Object.entries(G.scores).sort((a,b)=>b[1]-a[1]);
+    const tie=sorted.length>=2&&sorted[0][1]===sorted[1][1];
+    document.getElementById('endSub').textContent=tie?"It's a tie!":(sorted[0][0]+' is the Hot Take Champion with '+sorted[0][1]+' points!');
+    document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0&&!tie?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s} 🔥</span></div>`).join('');
+    show('phEnd');
+}
+
+function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.items=[];G.pack=null;G.spiceLog=[];showPacks();}
+
 function showCover(title,sub,cb){const cs=document.getElementById('coverScreen');document.getElementById('coverTitle').textContent=title;document.getElementById('coverSub').textContent=sub;cs.style.display='flex';cs._cb=cb;}
 function dismissCover(){const cs=document.getElementById('coverScreen');cs.style.display='none';if(cs._cb)cs._cb();}
-function showReveal(){document.getElementById('revealCounter').textContent=(G.idx+1)+' of '+G.total;document.getElementById('revealTopic').textContent=G.items[G.idx];const cards=document.getElementById('revealCards');cards.innerHTML=G.players.map(n=>`<div class="reveal-card"><div class="reveal-name">${esc(n)}</div><div class="reveal-text">${esc(G.takes[n]||'(no take)')}</div></div>`).join('');const vb=document.getElementById('voteBtns');vb.innerHTML=G.players.map(n=>`<button class="vote-btn" onclick="vote('${esc(n)}')">${esc(n)} 🔥</button>`).join('');show('phReveal');}
-function vote(name){G.scores[name]=(G.scores[name]||0)+1;if(G.couch){G.idx++;if(G.idx<G.items.length){showCover('NEXT ROUND','Tap to continue',()=>startRound());}else endGame();}else{sk.emit('act-rate',{code:G.code,vote:name});G.idx++;if(G.idx<G.items.length)setTimeout(()=>startRound(),1000);else setTimeout(()=>endGame(),1000);}}
-function renderScores(){document.getElementById('scoreBar').innerHTML=G.players.map(n=>`<div class="score-chip"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0}</div></div>`).join('');}
-function endGame(){if(G.ti)clearInterval(G.ti);const sorted=Object.entries(G.scores).sort((a,b)=>b[1]-a[1]);document.getElementById('endSub').textContent=sorted[0][0]+' wins with '+sorted[0][1]+' votes!';document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s}</span></div>`).join('');show('phEnd');}
-function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.items=[];G.pack=null;document.getElementById('takeInput').disabled=false;const btn=document.querySelector('#phGame .btn-primary');if(btn){btn.disabled=false;btn.textContent='SUBMIT TAKE 🔥';}showPacks();}
+
+// === ONLINE ===
 function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('act-create',{game:'hot-take',playerName:n});}
 function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('act-join',{code:c,playerName:n});}
-function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START 🔥':'WAITING...';}
 sk.on('act-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
 sk.on('act-joined',d=>{G.code=d.code;G.players=d.players;G.scores=d.scores||{};document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
 sk.on('act-player-joined',d=>{G.players=d.players;renderPlayers();});
-sk.on('act-round',d=>{G.idx=d.index;G.total=d.total;G.scores=d.scores;G.players=d.players;G.items[G.idx]=d.item;document.getElementById('takeInput').disabled=false;const btn=document.querySelector('#phGame .btn-primary');if(btn){btn.disabled=false;btn.textContent='SUBMIT TAKE 🔥';}startRound();});
-sk.on('act-reveal',d=>{G.takes=d.takes||{};showReveal();});
+sk.on('act-round',d=>{G.idx=d.index;G.items[G.idx]=d.item;G.scores=d.scores;G.players=d.players;startVote();});
+sk.on('act-reveal',d=>{G.votes=d.votes||d.takes||{};showReveal();});
 sk.on('act-score-update',d=>{G.scores=d.scores;renderScores();});
 sk.on('act-end',d=>{G.scores=d.scores;endGame();});
 sk.on('act-error',d=>err('lobbyErr',d.message));
+
 function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
