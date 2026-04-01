@@ -4,144 +4,379 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Roast Me – TheGaming.co</title>
-    <meta name="theme-color" content="#fef7ed">
+    <meta name="theme-color" content="#1a1a1a">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#b87030;--warm2:#8e5520;--warmL:#e8c8a0;--warmLL:#fef5e8;--rose:#c89050;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
+        :root{--bg:#1a1410;--bg2:#221a14;--card:#2a2018;--warm:#e8825c;--warm2:#ff6030;--warmL:#4a3020;--warmLL:#3a2418;--rose:#d4644a;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#f0e0d0;--dim:#8a7868;--border:rgba(240,200,160,0.1);--shadow:0 2px 16px rgba(0,0,0,0.3);--shadow-lg:0 8px 32px rgba(0,0,0,0.4)}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
         body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
         h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
-        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(184,112,48,0.07),transparent 60%),var(--bg)}
-        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(232,130,92,0.08),transparent 60%),var(--bg)}
+        header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(26,20,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
         .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
         .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
         .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--warm)}
         .hdr-right{min-width:40px}
-        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 16px 30px;max-width:520px;margin:0 auto;width:100%}
+        main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;padding:60px 14px 24px;max-width:520px;margin:0 auto;width:100%}
         .phase{display:none;width:100%}.phase.on{display:flex;flex-direction:column;align-items:center;animation:fadeUp .3s ease-out}
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .mode-icon{font-size:3.5rem;margin-bottom:12px}
-        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm2)}
+        .mode-title{font-size:2.5rem;letter-spacing:4px;text-align:center;margin-bottom:4px;color:var(--warm)}
         .mode-sub{color:var(--dim);font-size:.85rem;margin-bottom:28px;text-align:center}
         .mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
         .mode-card{padding:24px 20px;border-radius:18px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.mode-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.mode-card.primary{border-color:var(--warm);background:var(--warmLL)}
-        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
+        .mode-card-icon{font-size:2rem;margin-bottom:8px}.mode-card-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--warm);margin-bottom:4px}.mode-card-desc{font-size:.78rem;color:var(--dim);line-height:1.4}
         .lobby-sub{color:var(--dim);font-size:.85rem;margin-bottom:24px;text-align:center}
         .name-input,.code-input{width:100%;max-width:320px;padding:14px 18px;font-size:1rem;font-weight:600;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);text-align:center;outline:none;transition:.3s;margin-bottom:12px;box-shadow:var(--shadow)}.name-input:focus,.code-input:focus{border-color:var(--warm)}
-        .name-input::placeholder,.code-input::placeholder{color:#c4b0a5}
+        .name-input::placeholder,.code-input::placeholder{color:var(--dim)}
         .code-input{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;color:var(--warm);text-transform:uppercase;flex:1;margin-bottom:0}
         .lobby-btns{display:flex;gap:10px;width:100%;max-width:320px;margin-bottom:16px}
         .btn{flex:1;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;border:none;border-radius:14px;cursor:pointer;transition:.2s}
-        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(184,112,48,0.25)}
+        .btn-primary{background:linear-gradient(135deg,var(--warm),var(--warm2));color:#fff;box-shadow:0 4px 16px rgba(232,130,92,0.3)}
         .btn-secondary{background:var(--card);border:2px solid var(--border)!important;color:var(--text);box-shadow:var(--shadow)}
         .btn:hover{transform:translateY(-2px)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
         .or-line{display:flex;align-items:center;gap:12px;width:100%;max-width:320px;margin:12px 0;color:var(--dim);font-size:.7rem;letter-spacing:2px}.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border)}
         .join-row{display:flex;gap:8px;width:100%;max-width:320px}
-        .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm)}
         .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:460px;margin-bottom:16px;max-height:55vh;overflow-y:auto;padding-right:4px}
         .pack-grid::-webkit-scrollbar{width:3px}.pack-grid::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
-        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(184,112,48,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
-        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
-        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
-        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
-        .intensity-select{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:320px}
-        .intensity-opt{flex:1;padding:14px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:1px;color:var(--dim);transition:.2s}.intensity-opt.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(232,130,92,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
+        .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.7rem;font-weight:700;line-height:1.2;color:var(--text)}
+        .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm)}
+        .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:12px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center;margin-top:10px}
+        .opt-row{display:flex;gap:6px;width:100%;max-width:360px;margin-bottom:10px;justify-content:center}
+        .opt-btn{flex:1;min-width:60px;padding:10px 6px;border-radius:10px;border:2px solid var(--border);background:var(--card);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:1px;color:var(--dim);transition:.2s}.opt-btn.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm)}
+        .opt-btn.heat-1.sel{border-color:#e8a838;color:#e8a838;background:rgba(232,168,56,0.1)}
+        .opt-btn.heat-2.sel{border-color:#e8825c;color:#e8825c;background:rgba(232,130,92,0.1)}
+        .opt-btn.heat-3.sel{border-color:#e05050;color:#e05050;background:rgba(224,80,80,0.1)}
         .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
         .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
         .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
-        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
-        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:420px;margin-bottom:12px}
-        .back-to-packs{font-size:.7rem;font-weight:700;color:var(--dim);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}.back-to-packs:hover{color:var(--warm)}
-        .q-counter{font-size:.75rem;font-weight:700;color:var(--dim);letter-spacing:1px}
-        .score-bar{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
-        .score-chip{padding:8px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
-        .score-chip .s-name{font-size:.7rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--warm)}
-        .timer-display{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--warm);text-align:center;margin-bottom:12px;letter-spacing:4px}
-        .timer-display.danger{color:var(--red);animation:tmrPulse .5s ease infinite}
-        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-        .word-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:32px 24px;text-align:center;margin-bottom:20px}
-        .word-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,5vw,2.2rem);letter-spacing:3px;color:var(--warm2);line-height:1.2}
-        .word-sub{font-size:.75rem;color:var(--dim);margin-top:8px;letter-spacing:1px}
-        .roast-input{width:100%;max-width:420px;padding:14px;font-size:.95rem;font-family:'Inter',sans-serif;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);outline:none;resize:none;min-height:80px;transition:.3s;margin-bottom:12px}.roast-input:focus{border-color:var(--warm)}
-        .roast-input::placeholder{color:#c4b0a5}
-        .game-btns{display:flex;gap:10px;width:100%;max-width:420px}
-        .roast-display{width:100%;max-width:420px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:24px;text-align:center;margin-bottom:16px}
-        .roast-from{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--warm);margin-bottom:8px}
-        .roast-text{font-size:1rem;line-height:1.5;color:var(--text)}
-        .rating-row{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
-        .fire-btn{font-size:1.8rem;cursor:pointer;transition:.2s;opacity:.3;background:none;border:none;padding:4px}.fire-btn.lit{opacity:1;transform:scale(1.1)}
-        .too-far-btn{padding:10px 20px;border-radius:12px;border:2px solid var(--red);background:var(--card);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;cursor:pointer;transition:.2s}.too-far-btn:hover{background:#ffeaea}
-        .best-roasts{margin-bottom:16px}
-        .best-roast-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:8px;text-align:left}
-        .best-roast-from{font-size:.7rem;font-weight:700;color:var(--warm);margin-bottom:4px}
-        .best-roast-text{font-size:.85rem;line-height:1.4}
-        .best-roast-score{font-size:.7rem;color:var(--dim);margin-top:4px}
-        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:400px}
-        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
-        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
-        .end-scores{margin-bottom:20px}
-        .end-score-row{display:flex;justify-content:space-between;padding:10px 16px;border-radius:10px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border)}
+        .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--text)}.p-chip.me{border-color:var(--warm);color:var(--warm)}.p-chip.waiting{color:var(--dim);border-style:dashed}
+        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:8px}
+        .q-counter{font-size:.72rem;font-weight:700;color:var(--dim);letter-spacing:1px}
+        .score-bar{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
+        .score-chip{padding:6px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:center}
+        .score-chip .s-name{font-size:.65rem;color:var(--dim)}.score-chip .s-pts{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--warm)}
+        .heat-gauge{display:flex;gap:3px;justify-content:center;margin-bottom:10px}
+        .heat-bar{width:20px;height:6px;border-radius:3px;background:var(--warmL);transition:.3s}
+        .heat-bar.lit{background:var(--warm2)}
+        .roast-info{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:8px}
+        .roast-target{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--warm);padding:4px 14px;border-radius:10px;border:1px solid var(--warm);background:var(--warmLL)}
+        .timer-pill{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--warm);padding:4px 14px;border-radius:10px;background:var(--warmLL);border:1px solid var(--warm);min-width:50px;text-align:center}
+        .timer-pill.danger{color:var(--red);border-color:var(--red);background:rgba(224,80,80,0.1);animation:tmrPulse .5s ease infinite}
+        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        .prompt-card{width:100%;background:var(--card);border-radius:16px;border:2px solid var(--warm);box-shadow:0 4px 24px rgba(232,130,92,0.15);padding:20px;text-align:center;margin-bottom:12px;position:relative;overflow:hidden}
+        .prompt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--warm),var(--warm2),var(--gold))}
+        .prompt-cat{font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+        .prompt-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);letter-spacing:2px;color:var(--text);line-height:1.3}
+        .prompt-sub{font-size:.7rem;color:var(--dim);margin-top:6px}
+        .roast-input{width:100%;padding:14px;font-size:.9rem;font-family:'Inter',sans-serif;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);outline:none;resize:none;min-height:80px;transition:.3s;margin-bottom:8px}.roast-input:focus{border-color:var(--warm)}
+        .roast-input::placeholder{color:var(--dim)}
+        .roast-display{width:100%;background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:20px;text-align:center;margin-bottom:12px}
+        .roast-from{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--warm);margin-bottom:6px}
+        .roast-text{font-size:.95rem;line-height:1.5;color:var(--text);font-style:italic}
+        .reaction-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+        .reaction-btn{padding:12px 16px;border-radius:14px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:.2s;text-align:center;min-width:70px}
+        .reaction-btn:hover{transform:translateY(-2px);border-color:var(--warm)}
+        .reaction-btn .r-emoji{font-size:1.5rem;display:block;margin-bottom:2px}
+        .reaction-btn .r-label{font-size:.6rem;font-weight:700;letter-spacing:1px;color:var(--dim)}
+        .reaction-btn .r-pts{font-size:.55rem;color:var(--warm)}
+        .comeback-section{width:100%;text-align:center;margin-top:8px}
+        .comeback-label{font-size:.7rem;letter-spacing:2px;color:var(--gold);margin-bottom:6px;font-weight:700}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:28px 20px;text-align:center;width:100%;max-width:440px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm)}
+        .end-sub{color:var(--dim);font-size:.82rem;margin-bottom:12px}
+        .end-scores{margin-bottom:16px}
+        .end-score-row{display:flex;justify-content:space-between;padding:8px 14px;border-radius:10px;margin-bottom:4px;background:var(--bg2);border:1px solid var(--border)}
         .end-score-row.winner{background:var(--warmLL);border-color:var(--warm)}
-        .end-btns{display:flex;gap:10px;width:100%}
-        .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
-        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--warm);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;cursor:pointer}
-        .cover-screen h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;margin-bottom:8px}
-        .cover-screen p{font-size:.85rem;opacity:.8}
+        .best-roasts{margin-bottom:16px;text-align:left}
+        .br-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:6px}
+        .br-from{font-size:.6rem;color:var(--warm);font-weight:700;margin-bottom:3px}
+        .br-text{font-size:.82rem;line-height:1.4;font-style:italic}
+        .br-score{font-size:.6rem;color:var(--dim);margin-top:3px}
+        .end-btns{display:flex;gap:8px;width:100%;margin-bottom:8px}
+        .error-msg{color:var(--red);font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
+        .cover-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text);cursor:pointer;padding:30px}
+        .cover-screen h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:4px;margin-bottom:8px;color:var(--warm)}
+        .cover-screen p{font-size:.85rem;color:var(--dim)}
     </style>
 </head>
 <body>
 <div class="bg"></div>
 <header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">ROAST ME</span><div class="hdr-right"></div></nav></header>
 <main>
-<div class="phase on" id="phMode"><div class="mode-icon">🎤</div><h1 class="mode-title">ROAST ME</h1><p class="mode-sub">Structured roasts — keep it fun, keep it fiery</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns roasting — pass the phone</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Roast from a distance</div></div></div></div>
+
+<div class="phase on" id="phMode"><div class="mode-icon">🔥</div><h1 class="mode-title">ROAST ME</h1><p class="mode-sub">Structured roasts — keep it fun, keep it fiery</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns roasting — pass the phone</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Roast from a safe distance</div></div></div></div>
+
 <div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
-<div class="phase" id="phPacks"><h2 class="pack-title">PICK A CATEGORY</h2><p class="pack-sub">What kind of roasts?</p><div class="pack-grid" id="packGrid"></div></div>
-<div class="phase" id="phSettings"><h2 class="setup-title">GAME SETTINGS</h2><div class="section-label" style="margin-top:8px">Intensity</div><div class="intensity-select"><div class="intensity-opt sel" data-v="playful" onclick="pickIntensity(this)">PLAYFUL</div><div class="intensity-opt" data-v="medium" onclick="pickIntensity(this)">MEDIUM</div><div class="intensity-opt" data-v="roast" onclick="pickIntensity(this)">FULL ROAST</div></div><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
-<div class="phase" id="phGame"><div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">1 of 10</span></div><div class="score-bar" id="scoreBar"></div><div class="timer-display" id="timerDisplay">45</div><div class="word-card"><div class="word-text" id="wordText">ROAST PROMPT</div><div class="word-sub" id="wordSub">Roasting: Player 1</div></div><textarea class="roast-input" id="roastInput" placeholder="Write your roast..." maxlength="300"></textarea><div class="game-btns"><button class="btn btn-primary" onclick="submitRoast()" style="width:100%">DELIVER ROAST 🎤</button></div><div class="error-msg" id="gameErr"></div></div>
-<div class="phase" id="phRate"><div class="game-top"><span></span><span class="q-counter" id="rateCounter">1 of 10</span></div><div class="roast-display"><div class="roast-from" id="roastFrom">PLAYER 1'S ROAST</div><div class="roast-text" id="roastText">The roast goes here</div></div><p style="font-size:.8rem;color:var(--dim);margin-bottom:8px;text-align:center">Rate this roast!</p><div class="rating-row" id="ratingRow"></div><div style="text-align:center"><button class="too-far-btn" onclick="tooFar()">TOO FAR</button></div></div>
-<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">🎤</div><h2 class="end-title">ROAST OVER!</h2><p class="end-sub" id="endSub"></p><div class="end-scores" id="endScores"></div><div class="best-roasts" id="bestRoasts"></div><div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">CHANGE PACK</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+
+<div class="phase" id="phPacks"><h2 class="pack-title">PICK A CATEGORY</h2><p class="pack-sub">What are you roasting about?</p><div class="pack-grid" id="packGrid"></div></div>
+
+<div class="phase" id="phSettings">
+<h2 class="setup-title">ROAST SETTINGS</h2>
+<div class="section-label">Rounds</div>
+<div class="opt-row">
+<div class="opt-btn" data-v="3" onclick="pickOpt('rounds',this)">3</div>
+<div class="opt-btn sel" data-v="5" onclick="pickOpt('rounds',this)">5</div>
+<div class="opt-btn" data-v="7" onclick="pickOpt('rounds',this)">7</div>
+</div>
+<div class="section-label">Heat Level</div>
+<div class="opt-row">
+<div class="opt-btn heat-1 sel" data-v="playful" onclick="pickOpt('heat',this)">🟡 PLAYFUL</div>
+<div class="opt-btn heat-2" data-v="medium" onclick="pickOpt('heat',this)">🟠 MEDIUM</div>
+<div class="opt-btn heat-3" data-v="roast" onclick="pickOpt('heat',this)">🔴 FULL ROAST</div>
+</div>
+<div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div>
+<button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START 🔥</button>
+<div class="error-msg" id="settingsErr"></div>
+</div>
+
+<div class="phase" id="phGame">
+<div class="game-top"><button class="back-to-packs" onclick="backToPacks()" style="color:var(--dim);border-color:var(--border)">← Back</button><span class="q-counter" id="qCounter">Round 1 / 5</span></div>
+<div class="score-bar" id="scoreBar"></div>
+<div class="heat-gauge" id="heatGauge"></div>
+<div class="roast-info"><span class="roast-target" id="roastTarget">ROASTING: PLAYER 2</span><span class="timer-pill" id="timerPill">60</span></div>
+<div class="prompt-card"><div class="prompt-cat" id="promptCat">HABITS</div><div class="prompt-text" id="promptText">Roast their morning routine</div><div class="prompt-sub" id="promptSub">Only the roaster sees this prompt</div></div>
+<textarea class="roast-input" id="roastInput" placeholder="Write your roast..." maxlength="400"></textarea>
+<div style="display:flex;gap:8px;width:100%"><button class="btn btn-primary" onclick="submitRoast()" id="roastBtn" style="width:100%">DELIVER 🎤</button></div>
+<div class="error-msg" id="gameErr"></div>
+</div>
+
+<div class="phase" id="phRate">
+<div class="game-top"><span></span><span class="q-counter" id="rateCounter">Round 1 / 5</span></div>
+<div class="roast-display"><div class="roast-from" id="roastFrom">PLAYER 1'S ROAST</div><div class="roast-text" id="roastText"></div></div>
+<div style="text-align:center;font-size:.75rem;color:var(--dim);margin-bottom:8px">How did that land?</div>
+<div class="reaction-row">
+<div class="reaction-btn" onclick="react(10)"><span class="r-emoji">😂</span><span class="r-label">DEAD</span><span class="r-pts">+10</span></div>
+<div class="reaction-btn" onclick="react(7)"><span class="r-emoji">😤</span><span class="r-label">TOO REAL</span><span class="r-pts">+7</span></div>
+<div class="reaction-btn" onclick="react(3)"><span class="r-emoji">🙄</span><span class="r-label">MID</span><span class="r-pts">+3</span></div>
+<div class="reaction-btn" onclick="react(0)"><span class="r-emoji">❌</span><span class="r-label">MISSED</span><span class="r-pts">+0</span></div>
+</div>
+<div class="comeback-section" id="comebackSection" style="display:none">
+<div class="comeback-label">🔥 COMEBACK ROUND — 30 SECONDS</div>
+<div class="timer-pill" id="comebackTimer" style="margin-bottom:8px">30</div>
+<textarea class="roast-input" id="comebackInput" placeholder="Fire back..." maxlength="300" style="min-height:60px"></textarea>
+<button class="btn btn-primary" onclick="submitComeback()" style="width:100%">DELIVER COMEBACK 🎤</button>
+</div>
+</div>
+
+<div class="phase" id="phComebackRate">
+<div class="roast-display"><div class="roast-from" id="cbFrom">COMEBACK</div><div class="roast-text" id="cbText"></div></div>
+<div style="text-align:center;font-size:.75rem;color:var(--dim);margin-bottom:8px">Rate the comeback!</div>
+<div class="reaction-row">
+<div class="reaction-btn" onclick="rateCB(5)"><span class="r-emoji">😂</span><span class="r-label">DEVASTATING</span><span class="r-pts">+5</span></div>
+<div class="reaction-btn" onclick="rateCB(3)"><span class="r-emoji">👏</span><span class="r-label">SOLID</span><span class="r-pts">+3</span></div>
+<div class="reaction-btn" onclick="rateCB(0)"><span class="r-emoji">😬</span><span class="r-label">WEAK</span><span class="r-pts">+0</span></div>
+</div>
+</div>
+
+<div class="phase" id="phEnd"><div class="end-card">
+<div class="end-icon">🔥</div>
+<h2 class="end-title">ROAST OVER!</h2>
+<p class="end-sub" id="endSub"></p>
+<div class="end-scores" id="endScores"></div>
+<div class="section-label">BEST BURNS</div>
+<div class="best-roasts" id="bestRoasts"></div>
+<div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">NEW ROAST</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div>
+</div></div>
+
 </main>
 <div class="cover-screen" id="coverScreen" style="display:none" onclick="dismissCover()"><h2 id="coverTitle">PASS THE PHONE</h2><p id="coverSub">Tap to continue</p></div>
+
 <script>
 const BK='https://web-production-519c7.up.railway.app';
 const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
-let G={mode:null,couch:false,code:null,name:null,pack:null,intensity:'playful',items:[],idx:0,total:0,scores:{},players:[],ti:null,timeLeft:45,currentRoaster:0,bestRoasts:[]};
-const PACKS=[{id:'habits',name:'Habits',icon:'😤'}];
-const INTENSITY_MAP={playful:'playful',medium:'medium',roast:'roast'};
+
+const PACKS=[
+{id:'habits',name:'Habits',icon:'😤'},
+{id:'social_media',name:'Social Media',icon:'📱'},
+{id:'career',name:'Career',icon:'💼'},
+{id:'food',name:'Food Takes',icon:'🍽️'},
+{id:'dating',name:'Dating',icon:'❤️'},
+{id:'fashion',name:'Fashion',icon:'👗'},
+{id:'fitness',name:'Fitness',icon:'💪'},
+{id:'money',name:'Money',icon:'💸'},
+{id:'intelligence',name:'Intelligence',icon:'🧠'},
+{id:'personality',name:'Personality',icon:'🧬'}
+];
+
+const HEAT_NAMES={playful:'PLAYFUL',medium:'MEDIUM ROAST',roast:'FULL ROAST'};
+const REACTION_EMOJIS={10:'😂',7:'😤',3:'🙄',0:'❌'};
+
+let G={mode:null,couch:false,code:null,name:null,pack:null,heat:'playful',rounds:5,items:[],idx:0,scores:{},players:[],ti:null,timeLeft:60,roaster:0,bestRoasts:[],currentRoast:null,comebackRoast:null};
+
 function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
 function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online')show('phLobby');else showPacks();}
 function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
 function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
-function pickIntensity(el){document.querySelectorAll('.intensity-opt').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');G.intensity=el.dataset.v;}
+function pickOpt(type,el){el.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');if(type==='rounds')G.rounds=parseInt(el.dataset.v);if(type==='heat')G.heat=el.dataset.v;}
 function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
-async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=roast-me&pack=${G.pack}&intensity=${INTENSITY_MAP[G.intensity]}`);const data=await res.json();G.items=data.items;G.total=G.items.length;G.idx=0;G.currentRoaster=0;G.scores={'Player 1':0,'Player 2':0};G.players=['Player 1','Player 2'];G.bestRoasts=[];if(!G.items.length){err('settingsErr','No prompts found');return;}startRound();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code,intensity:G.intensity});}}
-function startRound(){if(G.idx>=G.items.length){endGame();return;}const roaster=G.players[G.currentRoaster%2];const target=G.players[(G.currentRoaster+1)%2];document.getElementById('qCounter').textContent=(G.idx+1)+' of '+G.total;document.getElementById('wordText').textContent=G.items[G.idx];document.getElementById('wordSub').textContent='Roasting: '+target;document.getElementById('roastInput').value='';renderScores();G.timeLeft=45;document.getElementById('timerDisplay').textContent=G.timeLeft;document.getElementById('timerDisplay').classList.remove('danger');if(G.ti)clearInterval(G.ti);G.ti=setInterval(()=>{G.timeLeft--;document.getElementById('timerDisplay').textContent=Math.max(0,G.timeLeft);if(G.timeLeft<=10)document.getElementById('timerDisplay').classList.add('danger');if(G.timeLeft<=0){clearInterval(G.ti);submitRoast();}},1000);show('phGame');}
-function submitRoast(){const roast=document.getElementById('roastInput').value.trim();if(!roast)return err('gameErr','Write something!');clearInterval(G.ti);const roaster=G.players[G.currentRoaster%2];if(G.couch){showCover(G.players[(G.currentRoaster+1)%2]+"'S TURN TO RATE",'Tap when ready',()=>{showRating(roaster,roast);});}else{sk.emit('act-submit',{code:G.code,roast:roast});}}
-function showRating(from,text){document.getElementById('rateCounter').textContent=(G.idx+1)+' of '+G.total;document.getElementById('roastFrom').textContent=from+"'S ROAST";document.getElementById('roastText').textContent=text;G._currentRoast={from,text};const row=document.getElementById('ratingRow');row.innerHTML='';for(let i=1;i<=5;i++){const b=document.createElement('button');b.className='fire-btn';b.textContent='🔥';b.onclick=()=>rateRoast(i);row.appendChild(b);}show('phRate');}
-function rateRoast(n){const row=document.getElementById('ratingRow');row.querySelectorAll('.fire-btn').forEach((b,i)=>{b.classList.toggle('lit',i<n);});const roaster=G._currentRoast.from;G.scores[roaster]=(G.scores[roaster]||0)+n;if(n>=4)G.bestRoasts.push({from:roaster,text:G._currentRoast.text,score:n});if(G.couch){G.currentRoaster++;G.idx++;setTimeout(()=>{if(G.idx<G.items.length){showCover('NEXT ROUND','Tap to continue',()=>startRound());}else endGame();},600);}else{sk.emit('act-rate',{code:G.code,rating:n});G.currentRoaster++;G.idx++;setTimeout(()=>{if(G.idx<G.items.length)startRound();else endGame();},800);}}
-function tooFar(){if(G.couch){G.currentRoaster++;G.idx++;if(G.idx<G.items.length){showCover('NEXT ROUND','That was too far! Moving on...',()=>startRound());}else endGame();}else{sk.emit('act-too-far',{code:G.code});G.currentRoaster++;G.idx++;if(G.idx<G.items.length)setTimeout(()=>startRound(),600);else setTimeout(()=>endGame(),600);}}
-function renderScores(){document.getElementById('scoreBar').innerHTML=G.players.map(n=>`<div class="score-chip"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0}</div></div>`).join('');}
-function endGame(){if(G.ti)clearInterval(G.ti);const sorted=Object.entries(G.scores).sort((a,b)=>b[1]-a[1]);document.getElementById('endSub').textContent=sorted[0][0]+' wins with '+sorted[0][1]+' points!';document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s}</span></div>`).join('');const br=document.getElementById('bestRoasts');if(G.bestRoasts.length){br.innerHTML='<div class="section-label" style="margin-bottom:12px">BEST ROASTS</div>'+G.bestRoasts.sort((a,b)=>b.score-a.score).slice(0,3).map(r=>`<div class="best-roast-card"><div class="best-roast-from">${esc(r.from)}</div><div class="best-roast-text">${esc(r.text)}</div><div class="best-roast-score">${'🔥'.repeat(r.score)}</div></div>`).join('');}else br.innerHTML='';show('phEnd');}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+async function startGame(){
+    if(!G.pack)return;
+    if(G.couch){
+        try{
+            const res=await fetch(`${BK}/api/act-items?game=roast-me&pack=${G.pack}&intensity=${G.heat}`);
+            const data=await res.json();
+            G.items=shuffle(data.items||[]).slice(0,G.rounds);
+            if(!G.items.length){err('settingsErr','No prompts found');return;}
+            G.idx=0;G.roaster=0;G.scores={'Player 1':0,'Player 2':0};G.players=['Player 1','Player 2'];G.bestRoasts=[];
+            startRound();
+        }catch(e){err('settingsErr','Failed to load');}
+    } else {
+        sk.emit('act-start',{code:G.code,intensity:G.heat});
+    }
+}
+
+function startRound(){
+    if(G.idx>=G.items.length){endGame();return;}
+    const roasterIdx=G.roaster%2;
+    const targetIdx=(G.roaster+1)%2;
+    const roasterName=G.players[roasterIdx];
+    const targetName=G.players[targetIdx];
+    const pack=PACKS.find(p=>p.id===G.pack);
+
+    document.getElementById('qCounter').textContent='Round '+(G.idx+1)+' / '+G.items.length;
+    document.getElementById('roastTarget').textContent='🎯 ROASTING: '+targetName;
+    document.getElementById('promptCat').textContent=(pack?pack.icon+' ':'')+G.pack.toUpperCase().replace(/_/g,' ')+' — '+HEAT_NAMES[G.heat];
+    document.getElementById('promptText').textContent=G.items[G.idx];
+    document.getElementById('promptSub').textContent=roasterName+' — only you see this prompt!';
+    document.getElementById('roastInput').value='';
+    document.getElementById('roastBtn').disabled=false;
+
+    // Heat gauge
+    const heatLevel=G.heat==='playful'?3:G.heat==='medium'?6:10;
+    document.getElementById('heatGauge').innerHTML=Array.from({length:10},(_, i)=>`<div class="heat-bar${i<heatLevel?' lit':''}"></div>`).join('');
+
+    renderScores();
+
+    // Timer
+    G.timeLeft=60;
+    const pill=document.getElementById('timerPill');
+    pill.textContent=G.timeLeft;pill.classList.remove('danger');
+    if(G.ti)clearInterval(G.ti);
+    G.ti=setInterval(()=>{
+        G.timeLeft--;pill.textContent=Math.max(0,G.timeLeft);
+        if(G.timeLeft<=10)pill.classList.add('danger');
+        if(G.timeLeft<=0){clearInterval(G.ti);submitRoast();}
+    },1000);
+
+    show('phGame');
+}
+
+function submitRoast(){
+    const text=document.getElementById('roastInput').value.trim();
+    if(!text)return err('gameErr','Write something!');
+    if(G.ti)clearInterval(G.ti);
+    G.currentRoast={from:G.players[G.roaster%2],target:G.players[(G.roaster+1)%2],text,prompt:G.items[G.idx]};
+    if(G.couch){
+        showCover(G.players[(G.roaster+1)%2]+"'S TURN TO REACT",'Tap when ready — the roast is about to be revealed!',()=>showReaction());
+    } else {
+        sk.emit('act-submit',{code:G.code,roast:text});
+    }
+}
+
+function showReaction(){
+    document.getElementById('rateCounter').textContent='Round '+(G.idx+1)+' / '+G.items.length;
+    document.getElementById('roastFrom').textContent=G.currentRoast.from+"'S ROAST 🔥";
+    document.getElementById('roastText').textContent='"'+G.currentRoast.text+'"';
+    document.getElementById('comebackSection').style.display='none';
+    show('phRate');
+}
+
+function react(pts){
+    G.scores[G.currentRoast.from]=(G.scores[G.currentRoast.from]||0)+pts;
+    if(pts>=7)G.bestRoasts.push({...G.currentRoast,score:pts,emoji:REACTION_EMOJIS[pts]});
+    renderScores();
+    // Start comeback round
+    document.getElementById('comebackSection').style.display='';
+    document.getElementById('comebackInput').value='';
+    document.querySelectorAll('.reaction-row .reaction-btn').forEach(b=>{b.style.pointerEvents='none';b.style.opacity='.5';});
+    let cbTime=30;
+    const cbPill=document.getElementById('comebackTimer');
+    cbPill.textContent=cbTime;cbPill.classList.remove('danger');
+    if(G.ti)clearInterval(G.ti);
+    G.ti=setInterval(()=>{
+        cbTime--;cbPill.textContent=Math.max(0,cbTime);
+        if(cbTime<=5)cbPill.classList.add('danger');
+        if(cbTime<=0){clearInterval(G.ti);submitComeback();}
+    },1000);
+}
+
+function submitComeback(){
+    if(G.ti)clearInterval(G.ti);
+    const text=document.getElementById('comebackInput').value.trim();
+    if(!text){advanceRound();return;}
+    G.comebackRoast={from:G.currentRoast.target,text};
+    if(G.couch){
+        showCover(G.currentRoast.from+"'S TURN TO RATE THE COMEBACK",'Tap when ready!',()=>showCBRate());
+    } else {
+        showCBRate();
+    }
+}
+
+function showCBRate(){
+    document.getElementById('cbFrom').textContent=G.comebackRoast.from+"'S COMEBACK 🔥";
+    document.getElementById('cbText').textContent='"'+G.comebackRoast.text+'"';
+    show('phComebackRate');
+}
+
+function rateCB(pts){
+    G.scores[G.comebackRoast.from]=(G.scores[G.comebackRoast.from]||0)+pts;
+    if(pts>=3)G.bestRoasts.push({from:G.comebackRoast.from,text:G.comebackRoast.text,score:pts,emoji:'🔄',prompt:'Comeback'});
+    renderScores();
+    document.querySelectorAll('#phComebackRate .reaction-btn').forEach(b=>{b.style.pointerEvents='none';b.style.opacity='.5';});
+    setTimeout(()=>advanceRound(),600);
+}
+
+function advanceRound(){
+    G.roaster++;G.idx++;
+    if(G.idx>=G.items.length){endGame();return;}
+    if(G.couch){showCover('NEXT ROUND','Tap to continue',()=>startRound());}
+    else startRound();
+}
+
+function renderScores(){document.getElementById('scoreBar').innerHTML=G.players.map(n=>`<div class="score-chip"><div class="s-name">${esc(n)}</div><div class="s-pts">${G.scores[n]||0} 🔥</div></div>`).join('');}
+
+function endGame(){
+    if(G.ti)clearInterval(G.ti);
+    const sorted=Object.entries(G.scores).sort((a,b)=>b[1]-a[1]);
+    const tie=sorted.length>=2&&sorted[0][1]===sorted[1][1];
+    document.getElementById('endSub').textContent=tie?"It's a tie!":(sorted[0][0]+' is the Roast Champion with '+sorted[0][1]+' burn points!');
+    document.getElementById('endScores').innerHTML=sorted.map(([n,s],i)=>`<div class="end-score-row${i===0&&!tie?' winner':''}"><span>${esc(n)}</span><span style="font-family:'Bebas Neue';font-size:1.3rem;color:var(--warm)">${s} 🔥</span></div>`).join('');
+    const br=document.getElementById('bestRoasts');
+    if(G.bestRoasts.length){
+        br.innerHTML=G.bestRoasts.sort((a,b)=>b.score-a.score).slice(0,5).map(r=>`<div class="br-card"><div class="br-from">${r.emoji} ${esc(r.from)} — ${esc(r.prompt||'')}</div><div class="br-text">"${esc(r.text)}"</div><div class="br-score">${r.score} burn points</div></div>`).join('');
+    } else br.innerHTML='<div style="text-align:center;color:var(--dim);font-size:.8rem;padding:12px">No standout roasts this session</div>';
+    show('phEnd');
+}
+
 function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.items=[];G.pack=null;G.bestRoasts=[];showPacks();}
+
 function showCover(title,sub,cb){const cs=document.getElementById('coverScreen');document.getElementById('coverTitle').textContent=title;document.getElementById('coverSub').textContent=sub;cs.style.display='flex';cs._cb=cb;}
 function dismissCover(){const cs=document.getElementById('coverScreen');cs.style.display='none';if(cs._cb)cs._cb();}
+
+// === ONLINE ===
 function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.connect();sk.emit('act-create',{game:'roast-me',playerName:n});}
 function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.connect();sk.emit('act-join',{code:c,playerName:n});}
-function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
+function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START 🔥':'WAITING...';}
 sk.on('act-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
 sk.on('act-joined',d=>{G.code=d.code;G.players=d.players;G.scores=d.scores||{};document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
 sk.on('act-player-joined',d=>{G.players=d.players;renderPlayers();});
-sk.on('act-round',d=>{G.idx=d.index;G.total=d.total;G.scores=d.scores;G.players=d.players;G.items[G.idx]=d.item;G.currentRoaster=d.roaster||0;startRound();});
-sk.on('act-reveal',d=>{showRating(d.from,d.roast);});
+sk.on('act-round',d=>{G.idx=d.index;G.items[G.idx]=d.item;G.scores=d.scores;G.players=d.players;G.roaster=d.roaster||0;startRound();});
+sk.on('act-reveal',d=>{G.currentRoast={from:d.from,text:d.roast,target:d.target,prompt:d.prompt};showReaction();});
 sk.on('act-score-update',d=>{G.scores=d.scores;renderScores();});
 sk.on('act-end',d=>{G.scores=d.scores;endGame();});
 sk.on('act-error',d=>err('lobbyErr',d.message));
+
 function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
