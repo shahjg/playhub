@@ -43,7 +43,16 @@
         .join-row{display:flex;gap:8px;width:100%;max-width:320px}
         .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
         .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:440px;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
+        .pack-grid::-webkit-scrollbar{width:3px}.pack-grid::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .intensity-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
+        .intensity-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
+        .intensity-pack-name{font-size:1rem;font-weight:700;color:var(--warm);margin-bottom:12px;text-align:center}
+        .intensity-row{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px;margin-bottom:16px}
+        .intensity-btn{padding:18px 16px;border-radius:16px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}
+        .intensity-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:rgba(192,96,64,0.3)}
+        .intensity-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--warm2)}
+        .intensity-desc{font-size:.72rem;color:var(--dim);margin-top:2px}
         .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(208,96,128,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
         .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
         .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
@@ -99,6 +108,7 @@
 <div class="phase on" id="phMode"><div class="mode-icon">💋</div><h1 class="mode-title">KISS MARRY KILL</h1><p class="mode-sub">The classic choice game — who do you pick?</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Take turns picking, then compare</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Pick at the same time, then reveal</div></div></div></div>
 <div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
 <div class="phase" id="phPacks"><h2 class="pack-title">PICK A CATEGORY</h2><p class="pack-sub">Who are you choosing between?</p><div class="pack-grid" id="packGrid"></div></div>
+<div class="phase" id="phVibe"><h2 class="intensity-title">PICK A VIBE</h2><p class="intensity-sub">How spicy do you want it?</p><div class="intensity-pack-name" id="vibePackName"></div><div class="intensity-row"><div class="intensity-btn" onclick="pickVibe('clean')"><div class="intensity-name">WHOLESOME</div><div class="intensity-desc">Safe for all audiences</div></div><div class="intensity-btn" onclick="pickVibe('medium')"><div class="intensity-name">REAL TALK</div><div class="intensity-desc">Mildly controversial, more interesting</div></div><div class="intensity-btn" onclick="pickVibe('spicy')"><div class="intensity-name">UNHINGED</div><div class="intensity-desc">Wild, unexpected, debate-sparking</div></div></div><button class="btn" onclick="show('phPacks')" style="width:100%;max-width:340px;margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--dim)">← BACK TO PACKS</button></div>
 <div class="phase" id="phSettings"><h2 class="setup-title">READY TO PLAY</h2><p class="setup-sub">Each round: assign Kiss, Marry, or Kill to 3 options</p><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
 <div class="phase" id="phGame"><div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">Round 1 of 10</span></div><div class="match-bar" id="matchBar"><div class="match-chip"><div class="m-label">Matches</div><div class="m-val" id="matchCount">0</div></div></div><div style="text-align:center"><span class="turn-badge p1" id="turnBadge">PLAYER 1</span></div><div class="kmk-card"><h3>CHOOSE WISELY</h3><div id="optionsList"></div></div><div class="game-btns"><button class="btn btn-primary" id="lockBtn" onclick="lockIn()" disabled style="width:100%">LOCK IN</button></div></div>
 <div class="phase" id="phResult"><div class="result-card reveal-anim"><h3>ROUND RESULTS</h3><div id="resultList"></div><div class="match-msg" id="matchMsg"></div></div><div class="game-btns"><button class="btn btn-primary" onclick="nextRound()" style="width:100%">NEXT ROUND</button></div></div>
@@ -108,15 +118,63 @@
 <script>
 const BK='https://web-production-519c7.up.railway.app';
 const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
-let G={mode:null,couch:false,code:null,name:null,pack:null,items:[],round:0,total:0,players:['Player 1','Player 2'],currentPlayer:0,choices:{0:{},1:{}},currentOptions:[],matches:0};
-const PACKS=[{id:'celebrities',name:'Celebrities',icon:'⭐'},{id:'fictional',name:'Fictional',icon:'🎬'},{id:'fast_food',name:'Fast Food',icon:'🍔'}];
+let G={mode:null,couch:false,code:null,name:null,pack:null,vibe:'clean',items:[],round:0,total:0,players:['Player 1','Player 2'],currentPlayer:0,choices:{0:{},1:{}},currentOptions:[],matches:0};
+
+const PACKS=[
+{id:'celebrities',name:'Celebrities',icon:'⭐'},
+{id:'fictional',name:'Fictional',icon:'🎬'},
+{id:'fast_food',name:'Fast Food',icon:'🍔'},
+{id:'political',name:'Political',icon:'🏛️'},
+{id:'historical',name:'Historical',icon:'📜'},
+{id:'video_games',name:'Video Games',icon:'🎮'},
+{id:'movie_chars',name:'Movie Characters',icon:'🎥'},
+{id:'anime',name:'Anime',icon:'⚡'},
+{id:'musicians',name:'Musicians',icon:'🎤'},
+{id:'athletes',name:'Athletes',icon:'⚽'},
+{id:'disney_animated',name:'Disney & Animated',icon:'🏰'},
+{id:'reality_tv',name:'Reality TV',icon:'📺'}
+];
+
 function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
 function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online'){sk.connect();show('phLobby');}else showPacks();}
 function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
-function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function selectPack(id){
+    G.pack=id;
+    const pack=PACKS.find(p=>p.id===id);
+    document.getElementById('vibePackName').textContent=pack?pack.icon+' '+pack.name:'';
+    show('phVibe');
+}
+function pickVibe(v){G.vibe=v;show('phSettings');}
 function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
-async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=kmk&pack=${G.pack}&intensity=clean`);const data=await res.json();G.items=data.items||[];G.total=Math.floor(G.items.length/3);if(G.total<1){err('settingsErr','Not enough items');return;}G.round=0;G.matches=0;startRound();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code});}}
-function startRound(){if(G.round>=G.total){endGame();return;}const base=G.round*3;G.currentOptions=[G.items[base],G.items[base+1],G.items[base+2]];G.choices={0:{},1:{}};G.currentPlayer=0;document.getElementById('qCounter').textContent='Round '+(G.round+1)+' of '+G.total;document.getElementById('matchCount').textContent=G.matches;renderTurn();show('phGame');}
+
+async function startGame(){
+    if(!G.pack)return;
+    if(G.couch){
+        try{
+            const res=await fetch(`${BK}/api/act-items?game=kmk&pack=${G.pack}&intensity=${G.vibe}`);
+            const data=await res.json();
+            G.items=data.items||[];
+            // items is an array of 3-element arrays (each is one KMK set)
+            G.total=G.items.length;
+            if(G.total<1){err('settingsErr','Not enough items');return;}
+            G.round=0;G.matches=0;
+            startRound();
+        }catch(e){err('settingsErr','Failed to load');}
+    } else {
+        sk.emit('act-start',{code:G.code});
+    }
+}
+
+function startRound(){
+    if(G.round>=G.total){endGame();return;}
+    // Each item is a 3-element array [optA, optB, optC]
+    G.currentOptions=G.items[G.round];
+    G.choices={0:{},1:{}};G.currentPlayer=0;
+    document.getElementById('qCounter').textContent='Round '+(G.round+1)+' of '+G.total;
+    document.getElementById('matchCount').textContent=G.matches;
+    renderTurn();show('phGame');
+}
+
 function renderTurn(){const badge=document.getElementById('turnBadge');badge.textContent=G.players[G.currentPlayer];badge.className='turn-badge p'+(G.currentPlayer+1);renderOptions();document.getElementById('lockBtn').disabled=true;}
 function renderOptions(){const list=document.getElementById('optionsList');list.innerHTML=G.currentOptions.map((opt,i)=>`<div class="option-row" data-idx="${i}"><div class="option-name">${esc(opt)}</div><div class="choice-btns"><button class="choice-btn kiss${G.choices[G.currentPlayer][i]==='kiss'?' sel':''}" onclick="choose(${i},'kiss')">💋</button><button class="choice-btn marry${G.choices[G.currentPlayer][i]==='marry'?' sel':''}" onclick="choose(${i},'marry')">💍</button><button class="choice-btn kill${G.choices[G.currentPlayer][i]==='kill'?' sel':''}" onclick="choose(${i},'kill')">💀</button></div></div>`).join('');}
 function choose(idx,type){const pc=G.choices[G.currentPlayer];for(let i=0;i<3;i++){if(pc[i]===type)delete pc[i];}pc[idx]=type;renderOptions();const has=t=>Object.values(pc).includes(t);document.getElementById('lockBtn').disabled=!(has('kiss')&&has('marry')&&has('kill'));}
@@ -126,7 +184,7 @@ function dismissCover(){document.getElementById('coverScreen').style.display='no
 function showResult(){const list=document.getElementById('resultList');let allMatch=true;list.innerHTML=G.currentOptions.map((opt,i)=>{const p1c=G.choices[0][i]||'';const p2c=G.choices[1][i]||'';if(p1c!==p2c)allMatch=false;return`<div class="result-row"><div class="result-name">${esc(opt)}</div><div class="result-badges"><span class="r-badge ${p1c}">${esc(G.players[0])}: ${p1c.toUpperCase()}</span><span class="r-badge ${p2c}">${esc(G.players[1])}: ${p2c.toUpperCase()}</span></div></div>`;}).join('');if(allMatch)G.matches++;const msg=document.getElementById('matchMsg');msg.textContent=allMatch?'Perfect match! You think alike!':'Different choices — time to debate!';msg.className='match-msg '+(allMatch?'yes':'no');show('phResult');}
 function nextRound(){G.round++;startRound();}
 function endGame(){document.getElementById('endSub').textContent='You matched on '+G.matches+' of '+G.total+' rounds!';show('phEnd');}
-function backToPacks(){G.round=0;G.items=[];G.pack=null;G.matches=0;showPacks();}
+function backToPacks(){G.round=0;G.items=[];G.pack=null;G.vibe='clean';G.matches=0;showPacks();}
 function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.emit('act-create',{playerName:n,game:'kmk'});showPacks();}
 function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.emit('act-join',{code:c,playerName:n});}
 function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
