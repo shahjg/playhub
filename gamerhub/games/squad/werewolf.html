@@ -1435,7 +1435,7 @@
                     showPhase('nightPhase');
                     updatePhaseIndicator(getNightLabel(data.activeRole));
                     buildNightActionUI(data);
-                    startTimer('nightTimer', data.timeLimit || 45);
+                    startTimer('nightTimer', data.timeLimit || 45, () => { if(localStorage.getItem('tempIsHost')==='true') socket.emit('werewolf-force-advance', {roomCode}); });
                 });
             } else {
                 currentPhase = 'night';
@@ -1443,7 +1443,7 @@
                 showPhase('nightPhase');
                 updatePhaseIndicator(getNightLabel(data.activeRole));
                 buildNightActionUI(data);
-                startTimer('nightTimer', data.timeLimit || 45);
+                startTimer('nightTimer', data.timeLimit || 45, () => { if(localStorage.getItem('tempIsHost')==='true') socket.emit('werewolf-force-advance', {roomCode}); });
             }
         });
 
@@ -1502,7 +1502,7 @@
                 }
 
                 updateAlivePlayersList(data.alivePlayers);
-                startTimer('dayTimer', data.timeLimit || 90);
+                startTimer('dayTimer', data.timeLimit || 90, () => { if(localStorage.getItem('tempIsHost')==='true') socket.emit('werewolf-force-advance', {roomCode}); });
 
                 const isHost = localStorage.getItem('tempIsHost') === 'true';
                 document.getElementById('skipDiscussionBtn').style.display = isHost ? 'inline-block' : 'none';
@@ -1947,18 +1947,16 @@
             else bg.classList.remove('day-mode');
         }
 
-        function startTimer(elementId, seconds) {
+        function startTimer(elementId, seconds, onExpire) {
             clearAllTimers();
             const el = document.getElementById(elementId);
             let timeLeft = seconds;
-            el.textContent = timeLeft;
-            el.classList.remove('warning');
+            if(el){el.textContent = timeLeft;el.classList.remove('warning');}
 
             phaseTimer = setInterval(() => {
                 timeLeft--;
-                el.textContent = timeLeft;
-                if (timeLeft <= 10) el.classList.add('warning');
-                if (timeLeft <= 0) clearInterval(phaseTimer);
+                if(el){el.textContent = Math.max(0,timeLeft);if(timeLeft <= 10) el.classList.add('warning');}
+                if (timeLeft <= 0) {clearInterval(phaseTimer);phaseTimer=null;if(typeof onExpire==='function')onExpire();}
             }, 1000);
         }
 

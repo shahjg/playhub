@@ -2552,6 +2552,9 @@ io.on('connection', (socket) => {
     else if (room.gameType === 'power-struggle') {
         additionalSquadGames.initPowerStruggleGame(room, { reformation: reformation || false, useInquisitor: useInquisitor || false });
         additionalSquadGames.sendPowerStruggleState(room, io);
+        // Re-broadcast state after clients have navigated to the game page
+        setTimeout(() => { additionalSquadGames.sendPowerStruggleState(room, io); }, 2000);
+        setTimeout(() => { additionalSquadGames.sendPowerStruggleState(room, io); }, 5000);
     } else if (room.gameType === 'word-bomb') {
         squadGames.initWordBombGame(room, difficulty || 'medium');
     } else if (room.gameType === 'ludo') {

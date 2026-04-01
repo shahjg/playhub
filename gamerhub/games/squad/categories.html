@@ -289,7 +289,7 @@
 
 <script>
 const BK='https://web-production-519c7.up.railway.app';
-const S={room:null,name:null,sk:null,t:0,ti:null,cat:null,feed:[],scores:{},players:[],playerData:{},tMax:15,mode:'classic',lives:{},eliminated:[],alive:[],amDead:false};
+const S={room:null,name:null,sk:null,t:0,ti:null,cat:null,feed:[],scores:{},players:[],playerData:{},tMax:15,mode:'classic',lives:{},eliminated:[],alive:[],amDead:false,isHost:localStorage.getItem('tempIsHost')==='true'};
 
 const up=new URLSearchParams(location.search);
 S.room=up.get('room')||localStorage.getItem('tempRoomCode');
@@ -303,7 +303,7 @@ const _isPrem=localStorage.getItem('tempIsPremium')==='true';
 const _cosm=JSON.parse(localStorage.getItem('tempCosmetics')||'null');
 S.sk.on('connect',()=>S.sk.emit('rejoin-room',{roomCode:S.room,playerName:S.name,isPremium:_isPrem,cosmetics:_cosm}));
 function storePlayerData(players){S.players=players.map(p=>p.name);players.forEach(p=>{S.playerData[p.name]={isPremium:p.isPremium||false,cosmetics:p.cosmetics||null};});}
-S.sk.on('room-joined',d=>{storePlayerData(d.room.players||[]);});
+S.sk.on('room-joined',d=>{storePlayerData(d.room.players||[]);const me=(d.room.players||[]).find(p=>p.name===S.name);if(me)S.isHost=!!me.isHost;});
 S.sk.on('player-joined',d=>{storePlayerData(d.room.players||[]);});
 S.sk.on('player-disconnected',d=>{storePlayerData(d.room.players||[]);});
 
@@ -413,7 +413,7 @@ function startTimer(){
     S.ti=setInterval(()=>{
         S.t--;el.textContent=Math.max(0,S.t);
         box.className='timer-box'+(S.t<=3?' danger':S.t<=5?' warn':'');
-        if(S.t<=0){stopTimer();S.sk.emit('categories-time-up',{roomCode:S.room});}
+        if(S.t<=0){stopTimer();if(S.isHost)S.sk.emit('categories-time-up',{roomCode:S.room});}
     },1000);
 }
 function stopTimer(){if(S.ti){clearInterval(S.ti);S.ti=null;}}

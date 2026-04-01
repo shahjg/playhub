@@ -1239,10 +1239,31 @@
             barEl.style.width = (remaining / total * 100) + '%';
             
             if (remaining <= 5) barEl.classList.add('urgent');
-            if (remaining <= 0) clearInterval(timerInterval);
+            if (remaining <= 0) { clearInterval(timerInterval); autoSubmit(); }
         }, 1000);
     }
     
+    function autoSubmit() {
+        if (currentPhase === 'submit' && !hasSubmitted) {
+            hasSubmitted = true;
+            socket.emit('fools-submit-answer', { roomCode, playerName, answer: answerInput.value.trim() || '' });
+            document.getElementById('submit-btn').disabled = true;
+            answerInput.disabled = true;
+            showPhase('waiting');
+        } else if (currentPhase === 'voting' && !hasVoted) {
+            const options = document.querySelectorAll('.answer-option');
+            if (options.length) {
+                const randomOpt = options[Math.floor(Math.random() * options.length)];
+                const answerId = randomOpt.dataset.answerId;
+                if (answerId) {
+                    hasVoted = true;
+                    myVote = answerId;
+                    socket.emit('fools-submit-vote', { roomCode, playerName, answerId });
+                }
+            }
+        }
+    }
+
     function renderQuestion(text) {
         // Replace _____ or similar with styled blank
         return text.replace(/_{3,}|<blank>/gi, '<span class="blank">?????</span>');

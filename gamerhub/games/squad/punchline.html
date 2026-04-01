@@ -264,7 +264,8 @@ function showGameOver(){
     document.getElementById('gameoverOverlay').classList.add('active');
 }
 
-function startTimer(secs){stopTimer();state.timeRemaining=secs;updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0)stopTimer();},1000);}
+function startTimer(secs){stopTimer();state.timeRemaining=secs;updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0){stopTimer();autoSubmit();}},1000);}
+function autoSubmit(){if(state.phase==='answering'){socket.emit('punchline-answer',{roomCode,answer:answerInput.value.trim()||''});answerInput.disabled=true;actionBtn.disabled=true;actionBtn.textContent='Time\'s up!';}else if(state.phase==='voting'){if(state.myVote===null&&state.answers.length){state.myVote=state.answers[Math.floor(Math.random()*state.answers.length)].id;}if(state.myVote!==null){socket.emit('punchline-vote',{roomCode,votedFor:state.myVote});actionBtn.disabled=true;actionBtn.textContent='Time\'s up!';}}}
 function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
 function updTimer(){const el=document.getElementById('timer');el.textContent=state.timeRemaining;el.classList.toggle('danger',state.timeRemaining<=10);}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}

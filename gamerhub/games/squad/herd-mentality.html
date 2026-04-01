@@ -295,6 +295,7 @@ const playerName=localStorage.getItem('tempPlayerName')||localStorage.getItem('p
 let currentPhase='loading';
 let timerInterval=null;
 let hasSubmitted=false;
+let isHost=localStorage.getItem('tempIsHost')==='true';
 let allPlayers=[];
 let playerData={};
 let currentQuestion='';
@@ -313,6 +314,8 @@ socket.on('connect',()=>{
 function storePlayers(players){allPlayers=players.map(p=>p.name);players.forEach(p=>{playerData[p.name]={isPremium:p.isPremium||false,cosmetics:p.cosmetics||null};});}
 socket.on('room-joined',d=>{
     storePlayers(d.room.players||[]);
+    const me=(d.room.players||[]).find(p=>p.name===playerName);
+    if(me) isHost=!!me.isHost;
     renderPlayerBubbles();
 });
 socket.on('player-joined',d=>{
@@ -459,8 +462,8 @@ function startTimer(seconds){
                 const answer=document.getElementById('answerInput').value.trim();
                 if(answer) submitAnswer();
             }
-            // Tell server timer expired
-            socket.emit('herd-timer-expired',{roomCode});
+            // Tell server timer expired (host only to avoid N duplicate events)
+            if(isHost) socket.emit('herd-timer-expired',{roomCode});
         }
     },1000);
 }

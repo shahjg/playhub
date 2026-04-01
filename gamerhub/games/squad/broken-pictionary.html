@@ -312,7 +312,8 @@ function handleAction(){
     }
 }
 
-function startTimer(){stopTimer();updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0)stopTimer();},1000);}
+function startTimer(){stopTimer();updTimer();timerInt=setInterval(()=>{state.timeRemaining--;updTimer();if(state.timeRemaining<=0){stopTimer();autoSubmit();}},1000);}
+function autoSubmit(){if(state.phase==='write'){socket.emit('bp-submit-prompt',{roomCode,prompt:document.getElementById('promptInput').value.trim()||''});document.getElementById('actionBtn').disabled=true;document.getElementById('actionBtn').textContent='Time\'s up!';}else if(state.phase==='draw'){socket.emit('bp-submit-drawing',{roomCode,drawing:canvas.toDataURL('image/png')});document.getElementById('actionBtn').disabled=true;document.getElementById('actionBtn').textContent='Time\'s up!';}else if(state.phase==='guess'){socket.emit('bp-submit-guess',{roomCode,guess:document.getElementById('guessInput').value.trim()||''});document.getElementById('actionBtn').disabled=true;document.getElementById('actionBtn').textContent='Time\'s up!';}}
 function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
 function updTimer(){document.getElementById('timerFill').style.width=(state.timeRemaining/state.timeLimit*100)+'%';}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
