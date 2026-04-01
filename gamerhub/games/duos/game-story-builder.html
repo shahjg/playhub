@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#d4944a;--warm2:#b07830;--warmL:#f0d8b8;--warmLL:#fef6e8;--rose:#d4a060;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1)}
+        :root{--bg:#fef7ed;--bg2:#fdf2e9;--card:#fff;--warm:#d4944a;--warm2:#b07830;--warmL:#f0d8b8;--warmLL:#fef6e8;--rose:#d4a060;--green:#4caf50;--red:#e05050;--gold:#e8a838;--text:#3e2c23;--dim:#9a8578;--border:rgba(62,44,35,0.08);--shadow:0 2px 16px rgba(62,44,35,0.06);--shadow-lg:0 8px 32px rgba(62,44,35,0.1);--p1:#d4944a;--p2:#5b8fd9}
         html{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
         body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden}
         h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px}
-        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,148,74,0.07),transparent 60%),var(--bg)}
+        .bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,148,74,0.07),transparent 60%),var(--bg);transition:background .5s}
         header{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;display:flex;align-items:center;padding:0 14px;background:rgba(254,247,237,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
         .nav{width:100%;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
         .back-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:0;border:1px solid var(--border);color:var(--dim);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-decoration:none;transition:.2s;cursor:pointer}.back-link:hover{color:var(--warm)}.back-link svg{width:12px;height:12px}
@@ -43,107 +43,431 @@
         .join-row{display:flex;gap:8px;width:100%;max-width:320px}
         .pack-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
         .pack-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
+        .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:440px;margin-bottom:16px;max-height:55vh;overflow-y:auto;padding-right:4px}
         .pack-grid::-webkit-scrollbar{width:3px}.pack-grid::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
         .pack-card{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:.2s;text-align:center}.pack-card:hover{border-color:rgba(212,148,74,0.3)}.pack-card.sel{border-color:var(--warm);background:var(--warmLL)}
         .pack-card-icon{font-size:1.5rem;margin-bottom:4px}.pack-card-name{font-size:.72rem;font-weight:700;line-height:1.2}
         .setup-title{font-size:1.8rem;letter-spacing:3px;margin-bottom:4px;text-align:center;color:var(--warm2)}
         .setup-sub{color:var(--dim);font-size:.8rem;margin-bottom:16px;text-align:center}
-        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center}
+        .section-label{font-size:.6rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;text-align:center;margin-top:12px}
+        .opt-row{display:flex;gap:8px;width:100%;max-width:340px;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+        .opt-btn{flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--dim);transition:.2s}.opt-btn.sel{border-color:var(--warm);background:var(--warmLL);color:var(--warm2)}
+        .opt-btn .opt-desc{font-family:'Inter',sans-serif;font-size:.6rem;font-weight:400;letter-spacing:0;display:block;margin-top:2px}
+        .toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--dim)}
+        .toggle-row input{accent-color:var(--warm);width:16px;height:16px}
         .setup-code{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:6px;color:var(--warm);text-align:center;margin-bottom:4px}
         .setup-copy{color:var(--dim);font-size:.7rem;cursor:pointer;text-align:center;margin-bottom:16px;text-decoration:underline}
         .players-box{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
         .p-chip{padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--card)}.p-chip.me{border-color:var(--warm);color:var(--warm);background:var(--warmLL)}.p-chip.waiting{color:var(--dim);border-style:dashed}
-        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:420px;margin-bottom:12px}
+        .game-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:460px;margin-bottom:8px}
         .back-to-packs{font-size:.7rem;font-weight:700;color:var(--dim);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}.back-to-packs:hover{color:var(--warm)}
         .q-counter{font-size:.75rem;font-weight:700;color:var(--dim);letter-spacing:1px}
-        .timer-display{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--warm);text-align:center;margin-bottom:8px;letter-spacing:4px}
-        .timer-display.danger{color:var(--red);animation:tmrPulse .5s ease infinite}
-        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-        .turn-badge{display:inline-block;padding:6px 18px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:12px}
+        .turn-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}
+        .turn-badge{display:inline-block;padding:6px 18px;border-radius:20px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px}
         .turn-badge.p1{background:var(--warmLL);color:var(--warm2);border:1px solid var(--warm)}
         .turn-badge.p2{background:#e8f0fe;color:#3060a0;border:1px solid #90b0d8}
-        .story-card{width:100%;max-width:420px;background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:24px;margin-bottom:16px;max-height:200px;overflow-y:auto}
-        .story-card::-webkit-scrollbar{width:3px}.story-card::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
-        .story-line{font-size:.9rem;line-height:1.6;margin-bottom:4px}
-        .story-line .author{font-size:.65rem;font-weight:700;letter-spacing:1px;margin-right:4px}
-        .story-line .author.p1{color:var(--warm)}
-        .story-line .author.p2{color:#3060a0}
-        .story-line .author.prompt{color:var(--dim)}
-        .input-area{width:100%;max-width:420px;margin-bottom:12px}
-        .story-input{width:100%;padding:14px 18px;font-size:.95rem;font-family:'Inter',sans-serif;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);outline:none;transition:.3s;resize:none;height:80px;box-shadow:var(--shadow)}.story-input:focus{border-color:var(--warm)}
+        .timer-pill{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--warm);padding:4px 14px;border-radius:12px;background:var(--warmLL);border:1px solid var(--warm);min-width:50px;text-align:center}
+        .timer-pill.danger{color:var(--red);border-color:var(--red);background:#fde5df;animation:tmrPulse .5s ease infinite}
+        @keyframes tmrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        .story-book{width:100%;max-width:460px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:20px 20px 12px;margin-bottom:12px;max-height:220px;overflow-y:auto}
+        .story-book::-webkit-scrollbar{width:3px}.story-book::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
+        .story-line{font-family:'Lora',serif;font-size:.92rem;line-height:1.7;margin-bottom:8px;padding:6px 10px;border-radius:8px;animation:lineReveal .4s ease-out}
+        @keyframes lineReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .story-line.p1{background:rgba(212,148,74,0.06);border-left:3px solid var(--p1)}
+        .story-line.p2{background:rgba(91,143,217,0.06);border-left:3px solid var(--p2)}
+        .story-line.prompt{background:rgba(154,133,120,0.06);border-left:3px solid var(--dim);font-style:italic}
+        .story-line.wild{background:rgba(232,168,56,0.1);border-left:3px solid var(--gold);font-weight:600}
+        .story-line .sl-author{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px}
+        .story-line.p1 .sl-author{color:var(--p1)}
+        .story-line.p2 .sl-author{color:var(--p2)}
+        .story-line.prompt .sl-author{color:var(--dim)}
+        .story-line.wild .sl-author{color:var(--gold)}
+        .input-area{width:100%;max-width:460px;margin-bottom:10px}
+        .story-input{width:100%;padding:14px 18px;font-size:.92rem;font-family:'Inter',sans-serif;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);outline:none;transition:.3s;resize:none;height:72px;box-shadow:var(--shadow)}.story-input:focus{border-color:var(--warm)}
         .story-input::placeholder{color:#c4b0a5}
-        .char-info{display:flex;justify-content:space-between;margin-top:4px;font-size:.7rem;color:var(--dim)}
-        .game-btns{display:flex;gap:10px;width:100%;max-width:420px}
-        .btn-wild{background:var(--gold);color:#fff;box-shadow:0 4px 16px rgba(232,168,56,0.25);flex:0 0 auto;padding:14px 18px}
+        .char-info{display:flex;justify-content:space-between;margin-top:4px;font-size:.68rem;color:var(--dim)}
+        .game-btns{display:flex;gap:8px;width:100%;max-width:460px}
+        .btn-wild{background:var(--gold);color:#fff;box-shadow:0 4px 16px rgba(232,168,56,0.25);flex:0 0 auto;padding:14px 16px;position:relative}
+        .btn-wild .wild-count{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:.65rem;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:700}
         .btn-submit{background:linear-gradient(135deg,var(--warm),var(--rose));color:#fff;box-shadow:0 4px 16px rgba(212,148,74,0.25)}
+        .wild-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:20px}
+        .wild-modal.open{display:flex}
+        .wild-panel{background:var(--card);border-radius:20px;padding:24px;max-width:360px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+        .wild-panel h3{text-align:center;margin-bottom:12px;color:var(--warm2)}
+        .wild-card{padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--bg2);margin-bottom:8px;cursor:pointer;transition:.2s;font-size:.85rem;line-height:1.4}
+        .wild-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+        .wild-card .wc-type{font-size:.6rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
         .cover-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
         .cover-screen h2{font-size:2rem;letter-spacing:4px;color:var(--warm2);margin-bottom:8px}
         .cover-screen p{color:var(--dim);font-size:.85rem;margin-bottom:24px}
-        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:36px 24px;text-align:center;width:100%;max-width:420px}
-        .end-icon{font-size:3.5rem;margin-bottom:8px}.end-title{font-size:2.5rem;letter-spacing:4px;margin-bottom:4px;color:var(--warm2)}
-        .end-sub{color:var(--dim);font-size:.85rem;margin-bottom:16px}
-        .final-story{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;max-height:300px;overflow-y:auto;text-align:left}
+        .end-card{background:var(--card);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow-lg);padding:28px 20px;text-align:center;width:100%;max-width:460px}
+        .end-icon{font-size:3.5rem;margin-bottom:8px}
+        .end-title{font-size:2rem;letter-spacing:4px;margin-bottom:2px;color:var(--warm2)}
+        .end-story-title{font-family:'Lora',serif;font-size:1.1rem;font-style:italic;color:var(--dim);margin-bottom:12px}
+        .end-sub{color:var(--dim);font-size:.82rem;margin-bottom:12px}
+        .end-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+        .end-badge{padding:4px 12px;border-radius:20px;font-size:.68rem;font-weight:700;background:var(--warmLL);color:var(--warm2);border:1px solid var(--warm)}
+        .final-story{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;max-height:300px;overflow-y:auto;text-align:left}
         .final-story::-webkit-scrollbar{width:3px}.final-story::-webkit-scrollbar-thumb{background:var(--warmL);border-radius:3px}
-        .final-line{font-size:.9rem;line-height:1.7;margin-bottom:6px}
-        .final-line .fname{font-weight:700;font-size:.7rem;letter-spacing:1px}
-        .final-line .fname.p1{color:var(--warm)}
-        .final-line .fname.p2{color:#3060a0}
-        .end-btns{display:flex;gap:10px;width:100%}
-        .btn-copy{background:var(--card);border:2px solid var(--border)!important;color:var(--text)}
+        .final-line{font-family:'Lora',serif;font-size:.88rem;line-height:1.7;margin-bottom:8px;padding:6px 10px;border-radius:8px}
+        .final-line.p1{background:rgba(212,148,74,0.06);border-left:3px solid var(--p1)}
+        .final-line.p2{background:rgba(91,143,217,0.06);border-left:3px solid var(--p2)}
+        .final-line.prompt{background:rgba(154,133,120,0.06);border-left:3px solid var(--dim);font-style:italic}
+        .final-line.wild{background:rgba(232,168,56,0.1);border-left:3px solid var(--gold)}
+        .final-line .fl-name{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px}
+        .final-line.p1 .fl-name{color:var(--p1)}
+        .final-line.p2 .fl-name{color:var(--p2)}
+        .final-line.prompt .fl-name{color:var(--dim)}
+        .final-line.wild .fl-name{color:var(--gold)}
+        .end-btns{display:flex;gap:10px;width:100%;margin-bottom:8px}
         .error-msg{color:#d4644a;font-size:.8rem;text-align:center;margin-top:8px;min-height:20px}
-        @keyframes revealLine{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        .reveal-anim{animation:revealLine .4s ease-out}
+        .saboteur-reveal{background:var(--warmLL);border:2px solid var(--warm);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center}
+        .saboteur-reveal h4{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--warm2);margin-bottom:4px}
+        .saboteur-reveal p{font-size:.82rem;color:var(--dim);line-height:1.4}
+        .saboteur-secret{background:#1a1a2e;color:#e8a838;padding:16px;border-radius:14px;margin-bottom:12px;text-align:center;font-family:'Lora',serif;font-size:.9rem;line-height:1.5}
     </style>
 </head>
 <body>
-<div class="bg"></div>
+<div class="bg" id="bgEl"></div>
 <header><nav class="nav"><a class="back-link" href="/duos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><span class="hdr-title">STORY BUILDER</span><div class="hdr-right"></div></nav></header>
 <main>
-<div class="phase on" id="phMode"><div class="mode-icon">📖</div><h1 class="mode-title">STORY BUILDER</h1><p class="mode-sub">Build wild stories together, one sentence at a time!</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Pass the phone — take turns writing</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Play on separate devices</div></div></div></div>
+
+<div class="phase on" id="phMode"><div class="mode-icon">📖</div><h1 class="mode-title">STORY BUILDER</h1><p class="mode-sub">Build wild stories together, one sentence at a time!</p><div class="mode-cards"><div class="mode-card primary" onclick="pickMode('couch')"><div class="mode-card-icon">🛋️</div><div class="mode-card-title">SAME DEVICE</div><div class="mode-card-desc">Pass the phone — take turns writing</div></div><div class="mode-card" onclick="pickMode('online')"><div class="mode-card-icon">📱</div><div class="mode-card-title">ONLINE</div><div class="mode-card-desc">Play on separate devices in real time</div></div></div></div>
+
 <div class="phase" id="phLobby"><div class="mode-icon">📱</div><h2 class="setup-title">ONLINE MODE</h2><p class="lobby-sub">Play on separate phones</p><input class="name-input" id="nameInput" placeholder="Your name" maxlength="16" autocomplete="off"><div class="lobby-btns"><button class="btn btn-primary" onclick="createRoom()">CREATE ROOM</button></div><div class="or-line">OR JOIN</div><div class="join-row"><input class="code-input" id="codeInput" placeholder="CODE" maxlength="6"><button class="btn btn-secondary" onclick="joinRoom()" style="flex:0 0 80px">JOIN</button></div><div class="error-msg" id="lobbyErr"></div></div>
+
 <div class="phase" id="phPacks"><h2 class="pack-title">PICK A GENRE</h2><p class="pack-sub">What kind of story are you telling?</p><div class="pack-grid" id="packGrid"></div></div>
-<div class="phase" id="phSettings"><h2 class="setup-title">GAME SETTINGS</h2><p class="setup-sub">Each player gets 45 seconds per sentence</p><div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div><button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button><div class="error-msg" id="settingsErr"></div></div>
-<div class="phase" id="phGame"><div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Packs</button><span class="q-counter" id="qCounter">Sentence 1 of 10</span></div><div style="text-align:center"><span class="turn-badge p1" id="turnBadge">PLAYER 1'S TURN</span></div><div class="timer-display" id="timerDisplay">45</div><div class="story-card" id="storyCard"></div><div class="input-area"><textarea class="story-input" id="storyInput" placeholder="Add your sentence..." maxlength="200"></textarea><div class="char-info"><span id="charCount">0/200</span><span>One sentence!</span></div></div><div class="game-btns"><button class="btn btn-wild" onclick="wildCard()">🌀 WILD</button><button class="btn btn-submit" onclick="submitSentence()" id="submitBtn" disabled>ADD SENTENCE</button></div></div>
-<div class="phase" id="phEnd"><div class="end-card"><div class="end-icon">📖</div><h2 class="end-title">YOUR STORY</h2><p class="end-sub" id="endSub">A masterpiece by two brilliant minds</p><div class="final-story" id="finalStory"></div><div class="end-btns"><button class="btn btn-copy" onclick="copyStory()">COPY STORY</button><button class="btn btn-primary" onclick="shareStory()">SHARE</button></div><div style="height:10px"></div><div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">NEW STORY</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div></div></div>
+
+<div class="phase" id="phSettings">
+<h2 class="setup-title">STORY SETTINGS</h2>
+<div class="section-label">Story Length</div>
+<div class="opt-row" id="lengthRow">
+<div class="opt-btn sel" data-v="10" onclick="pickOpt('length',this)">SHORT<span class="opt-desc">10 lines</span></div>
+<div class="opt-btn" data-v="20" onclick="pickOpt('length',this)">MEDIUM<span class="opt-desc">20 lines</span></div>
+<div class="opt-btn" data-v="30" onclick="pickOpt('length',this)">LONG<span class="opt-desc">30 lines</span></div>
+<div class="opt-btn" data-v="0" onclick="pickOpt('length',this)">ENDLESS<span class="opt-desc">no limit</span></div>
+</div>
+<div class="section-label">Timer Per Turn</div>
+<div class="opt-row" id="timerRow">
+<div class="opt-btn" data-v="0" onclick="pickOpt('timer',this)">OFF</div>
+<div class="opt-btn" data-v="60" onclick="pickOpt('timer',this)">60s<span class="opt-desc">relaxed</span></div>
+<div class="opt-btn sel" data-v="30" onclick="pickOpt('timer',this)">30s<span class="opt-desc">normal</span></div>
+<div class="opt-btn" data-v="15" onclick="pickOpt('timer',this)">15s<span class="opt-desc">fast</span></div>
+<div class="opt-btn" data-v="8" onclick="pickOpt('timer',this)">8s<span class="opt-desc">chaos</span></div>
+</div>
+<label class="toggle-row"><input type="checkbox" id="villainToggle"> Villain Mode — one player secretly sabotages</label>
+<div id="onlineSettings" style="display:none"><div class="setup-code" id="setupCode">------</div><div class="setup-copy" onclick="copyCode()">Tap to copy</div><div class="players-box" id="playersBox"></div></div>
+<button class="btn btn-primary" id="startBtn" onclick="startGame()" style="width:100%;max-width:320px">START</button>
+<div class="error-msg" id="settingsErr"></div>
+</div>
+
+<div class="phase" id="phGame">
+<div class="game-top"><button class="back-to-packs" onclick="backToPacks()">← Genre</button><span class="q-counter" id="qCounter">1 / 10</span></div>
+<div class="turn-row"><span class="turn-badge p1" id="turnBadge">PLAYER 1</span><span class="timer-pill" id="timerPill" style="display:none">30</span></div>
+<div class="story-book" id="storyBook"></div>
+<div class="input-area"><textarea class="story-input" id="storyInput" placeholder="Continue the story..." maxlength="200"></textarea><div class="char-info"><span id="charCount">0 / 200</span><span id="charHint">One sentence!</span></div></div>
+<div class="game-btns"><button class="btn btn-wild" onclick="openWildMenu()" id="wildBtn">🌀<span class="wild-count" id="wildCount">3</span></button><button class="btn btn-submit" onclick="submitSentence()" id="submitBtn" disabled>ADD →</button><button class="btn btn-secondary" id="endlessEndBtn" onclick="endGame()" style="display:none;flex:0 0 auto;padding:14px 16px">END</button></div>
+</div>
+
+<div class="phase" id="phEnd"><div class="end-card">
+<div class="end-icon" id="endIcon">📖</div>
+<h2 class="end-title">YOUR STORY</h2>
+<div class="end-story-title" id="storyTitle"></div>
+<div class="end-sub" id="endSub"></div>
+<div class="end-badges" id="endBadges"></div>
+<div id="saboteurReveal"></div>
+<div class="final-story" id="finalStory"></div>
+<div class="end-btns"><button class="btn btn-secondary" onclick="copyStory()">COPY</button><button class="btn btn-primary" onclick="shareStory()">SHARE</button></div>
+<div class="end-btns"><button class="btn btn-secondary" onclick="backToPacks()">NEW STORY</button><button class="btn btn-primary" onclick="location.href='/duos.html'">MORE GAMES</button></div>
+</div></div>
+
+<div class="wild-modal" id="wildModal"><div class="wild-panel"><h3>🌀 PLAY A WILD CARD</h3><div id="wildList"></div><button class="btn btn-secondary" onclick="closeWildMenu()" style="width:100%;margin-top:8px">CANCEL</button></div></div>
 <div class="cover-screen" id="coverScreen" style="display:none"><h2 id="coverTitle">PASS THE PHONE</h2><p id="coverSub">Hand it to the next player</p><button class="btn btn-primary" onclick="dismissCover()" style="width:200px">I'M READY</button></div>
+<div class="saboteur-secret" id="saboteurCard" style="display:none"><strong>🕵️ YOU ARE THE SABOTEUR</strong><br>Your secret mission:<br><span id="saboteurMission"></span><br><br><button class="btn btn-primary" onclick="dismissSaboteur()" style="width:160px">GOT IT</button></div>
 </main>
+
 <script>
 const BK='https://web-production-519c7.up.railway.app';
 const sk=io(BK,{transports:['websocket','polling'],autoConnect:false});
-let G={mode:null,couch:false,code:null,name:null,pack:null,items:[],idx:0,total:10,story:[],players:['Player 1','Player 2'],currentPlayer:0,ti:null,timeLeft:45,wildUsed:false};
-const PACKS=[{id:'romance',name:'Romance',icon:'💕'},{id:'horror',name:'Horror',icon:'👻'},{id:'comedy',name:'Comedy',icon:'😂'},{id:'scifi',name:'Sci-Fi',icon:'🚀'},{id:'mystery',name:'Mystery',icon:'🔍'},{id:'absurd',name:'Absurd',icon:'🤪'}];
+
+const GENRES=[
+{id:'romance',name:'Romance',icon:'💕',color:'#e88da1'},
+{id:'horror',name:'Horror',icon:'👻',color:'#8b0000'},
+{id:'comedy',name:'Comedy',icon:'😂',color:'#e8a838'},
+{id:'scifi',name:'Sci-Fi',icon:'🚀',color:'#5b8fd9'},
+{id:'mystery',name:'Mystery',icon:'🔍',color:'#4a7c59'},
+{id:'absurd',name:'Absurd',icon:'🤪',color:'#d4644a'},
+{id:'fantasy',name:'Fantasy',icon:'🗡️',color:'#8b5fd9'},
+{id:'drama',name:'Drama',icon:'🎭',color:'#9a6850'},
+{id:'tragedy',name:'Tragedy',icon:'💔',color:'#6b4c5e'},
+{id:'adventure',name:'Adventure',icon:'🌍',color:'#2e8b57'},
+{id:'historical',name:'Historical',icon:'👑',color:'#b8860b'},
+{id:'western',name:'Western',icon:'🤠',color:'#cd853f'},
+{id:'childrens',name:'Children\'s',icon:'🧸',color:'#dda0dd'},
+{id:'reality_tv',name:'Reality TV',icon:'📺',color:'#ff6347'},
+{id:'bollywood',name:'Bollywood',icon:'🎬',color:'#e8825c'},
+{id:'anime',name:'Anime',icon:'🎌',color:'#d4644a'},
+{id:'dark',name:'Dark',icon:'🔞',color:'#2c2c3e'},
+{id:'thriller',name:'Thriller',icon:'🕵️',color:'#3a3a5c'},
+{id:'superhero',name:'Superhero',icon:'🦸',color:'#4169e1'}
+];
+
+const SABOTEUR_MISSIONS=[
+'Steer the story so the main character ends up completely alone.',
+'Make sure a wedding gets ruined by the end.',
+'Get everyone lost in space with no way home.',
+'Make sure the hero accidentally becomes the villain.',
+'Ensure the story ends with everyone trapped in a time loop.',
+'Steer the story toward a dramatic betrayal by the best friend.',
+'Make sure a ghost takes over by the end.',
+'Get the main character fired, dumped, and evicted by the final sentence.',
+'Ensure the story ends with the discovery that nothing was real.',
+'Steer toward a cliffhanger so unresolved it would make Netflix jealous.'
+];
+
+let G={mode:null,couch:false,code:null,name:null,genre:null,storyLen:10,timerSec:30,villain:false,saboteurIdx:-1,items:[],story:[],players:['Player 1','Player 2'],currentPlayer:0,ti:null,timeLeft:30,wildCards:3,wildcardDeck:[],idx:0};
+
 function show(id){document.querySelectorAll('.phase').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online'){sk.connect();show('phLobby');}else showPacks();}
-function showPacks(){document.getElementById('packGrid').innerHTML=PACKS.map(p=>`<div class="pack-card${G.pack===p.id?' sel':''}" onclick="selectPack('${p.id}')"><div class="pack-card-icon">${p.icon}</div><div class="pack-card-name">${p.name}</div></div>`).join('');show('phPacks');}
-function selectPack(id){G.pack=id;showPacks();setTimeout(()=>show('phSettings'),200);}
+function pickMode(m){G.mode=m;G.couch=(m==='couch');if(m==='online'){sk.connect();show('phLobby');}else showGenres();}
+function showGenres(){document.getElementById('packGrid').innerHTML=GENRES.map(g=>`<div class="pack-card${G.genre===g.id?' sel':''}" onclick="selectGenre('${g.id}')"><div class="pack-card-icon">${g.icon}</div><div class="pack-card-name">${g.name}</div></div>`).join('');show('phPacks');}
+function selectGenre(id){G.genre=id;showGenres();setTimeout(()=>show('phSettings'),200);}
+function pickOpt(type,el){const row=el.parentElement;row.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');const v=parseInt(el.dataset.v);if(type==='length')G.storyLen=v;if(type==='timer')G.timerSec=v;}
 function copyCode(){navigator.clipboard.writeText(G.code);document.querySelector('.setup-copy').textContent='Copied!';}
-async function startGame(){if(!G.pack)return;if(G.couch){try{const res=await fetch(`${BK}/api/act-items?game=story-builder&pack=${G.pack}&intensity=clean`);const data=await res.json();G.items=data.items||[];G.total=Math.min(G.items.length,10);G.idx=0;G.story=[];G.currentPlayer=0;G.wildUsed=false;if(!G.items.length){err('settingsErr','No prompts found');return;}startTurn();}catch(e){err('settingsErr','Failed to load');}}else{sk.emit('act-start',{code:G.code});}}
-function startTurn(){if(G.idx>=G.total){endGame();return;}document.getElementById('qCounter').textContent='Sentence '+(G.idx+1)+' of '+G.total;const pName=G.players[G.currentPlayer];const badge=document.getElementById('turnBadge');badge.textContent=pName+"'S TURN";badge.className='turn-badge p'+(G.currentPlayer+1);renderStoryCard();document.getElementById('storyInput').value='';document.getElementById('charCount').textContent='0/200';document.getElementById('submitBtn').disabled=true;G.timeLeft=45;document.getElementById('timerDisplay').textContent='45';document.getElementById('timerDisplay').classList.remove('danger');if(G.ti)clearInterval(G.ti);G.ti=setInterval(()=>{G.timeLeft--;document.getElementById('timerDisplay').textContent=Math.max(0,G.timeLeft);if(G.timeLeft<=10)document.getElementById('timerDisplay').classList.add('danger');if(G.timeLeft<=0){clearInterval(G.ti);autoSubmit();}},1000);show('phGame');}
-function renderStoryCard(){const card=document.getElementById('storyCard');if(G.story.length===0&&G.items[0]){card.innerHTML='<div class="story-line"><span class="author prompt">PROMPT:</span> '+esc(G.items[G.idx])+'</div>';}else{let html='';if(G.items[0])html+='<div class="story-line"><span class="author prompt">PROMPT:</span> '+esc(G.items[0])+'</div>';G.story.forEach((s,i)=>{html+='<div class="story-line'+(i===G.story.length-1?' reveal-anim':'')+'"><span class="author p'+(s.pi+1)+'">'+esc(s.name)+':</span> '+esc(s.text)+'</div>';});card.innerHTML=html;}card.scrollTop=card.scrollHeight;}
-function autoSubmit(){const input=document.getElementById('storyInput');const text=input.value.trim();if(text){doSubmit(text);}else{doSubmit('...');}}
-function submitSentence(){const text=document.getElementById('storyInput').value.trim();if(!text)return;if(G.ti)clearInterval(G.ti);doSubmit(text);}
-function doSubmit(text){G.story.push({name:G.players[G.currentPlayer],pi:G.currentPlayer,text:text});G.idx++;G.currentPlayer=G.currentPlayer===0?1:0;if(G.idx>=G.total){endGame();return;}if(G.couch){showCover(G.players[G.currentPlayer]+"'S TURN","Pass the phone — don't peek!");}else{startTurn();}}
+
+async function startGame(){
+    if(!G.genre)return;
+    G.villain=document.getElementById('villainToggle').checked;
+    if(G.couch){
+        try{
+            const res=await fetch(`${BK}/api/act-items?game=story-builder&pack=${G.genre}&intensity=clean`);
+            const data=await res.json();
+            G.items=data.items||[];
+            if(!G.items.length){err('settingsErr','No prompts found');return;}
+            // load wildcards
+            try{const wr=await fetch(`${BK}/api/story-wildcards`);const wd=await wr.json();G.wildcardDeck=wd.wildcards||{};}catch(e){G.wildcardDeck={};}
+            G.story=[];G.idx=0;G.currentPlayer=0;G.wildCards=3;
+            // pick a random starter
+            const starter=G.items[Math.floor(Math.random()*G.items.length)];
+            G.story.push({type:'prompt',text:starter});
+            // set genre color
+            const genre=GENRES.find(g=>g.id===G.genre);
+            if(genre)document.getElementById('bgEl').style.background=`radial-gradient(ellipse 80% 60% at 50% 0%,${genre.color}11,transparent 60%),var(--bg)`;
+            // saboteur
+            if(G.villain){
+                G.saboteurIdx=Math.floor(Math.random()*2);
+                showSaboteur(G.saboteurIdx);
+            } else {
+                startTurn();
+            }
+        }catch(e){err('settingsErr','Failed to load');}
+    } else {
+        sk.emit('act-start',{code:G.code});
+    }
+}
+
+function showSaboteur(idx){
+    document.getElementById('saboteurMission').textContent=SABOTEUR_MISSIONS[Math.floor(Math.random()*SABOTEUR_MISSIONS.length)];
+    document.getElementById('saboteurCard').style.display='flex';
+    document.getElementById('saboteurCard').style.flexDirection='column';
+    document.getElementById('saboteurCard').style.position='fixed';
+    document.getElementById('saboteurCard').style.inset='0';
+    document.getElementById('saboteurCard').style.zIndex='300';
+    document.getElementById('saboteurCard').style.alignItems='center';
+    document.getElementById('saboteurCard').style.justifyContent='center';
+    document.getElementById('saboteurCard').style.padding='30px';
+    // show cover first to hand to right player
+    if(G.couch) showCover(G.players[idx]+"'S SECRET","Only "+G.players[idx]+" should look at the next screen!");
+}
+function dismissSaboteur(){document.getElementById('saboteurCard').style.display='none';startTurn();}
+
+function startTurn(){
+    const sentenceNum=G.story.filter(s=>s.type!=='prompt').length;
+    const isEndless=G.storyLen===0;
+    if(!isEndless&&sentenceNum>=G.storyLen){endGame();return;}
+    document.getElementById('qCounter').textContent=isEndless?'Line '+(sentenceNum+1):(sentenceNum+1)+' / '+G.storyLen;
+    document.getElementById('endlessEndBtn').style.display=isEndless?'':'none';
+    const pName=G.players[G.currentPlayer];
+    const badge=document.getElementById('turnBadge');
+    badge.textContent=pName+"'S TURN";
+    badge.className='turn-badge p'+(G.currentPlayer+1);
+    renderStoryBook();
+    document.getElementById('storyInput').value='';
+    document.getElementById('charCount').textContent='0 / 200';
+    document.getElementById('submitBtn').disabled=true;
+    document.getElementById('wildCount').textContent=G.wildCards;
+    document.getElementById('wildBtn').disabled=G.wildCards<=0;
+    // timer
+    const pill=document.getElementById('timerPill');
+    if(G.timerSec>0){
+        pill.style.display='';G.timeLeft=G.timerSec;pill.textContent=G.timeLeft;pill.classList.remove('danger');
+        if(G.ti)clearInterval(G.ti);
+        G.ti=setInterval(()=>{
+            G.timeLeft--;pill.textContent=Math.max(0,G.timeLeft);
+            if(G.timeLeft<=5)pill.classList.add('danger');
+            if(G.timeLeft<=0){clearInterval(G.ti);autoSubmit();}
+        },1000);
+    } else {pill.style.display='none';if(G.ti)clearInterval(G.ti);}
+    show('phGame');
+    document.getElementById('storyInput').focus();
+}
+
+function renderStoryBook(){
+    const book=document.getElementById('storyBook');
+    book.innerHTML=G.story.map((s,i)=>{
+        const cls=s.type==='prompt'?'story-line prompt':s.type==='wild'?'story-line wild':'story-line p'+(s.pi+1);
+        const author=s.type==='prompt'?'Opening':s.type==='wild'?'🌀 Wild Card':s.name;
+        return `<div class="${cls}"><span class="sl-author">${esc(author)}</span>${esc(s.text)}</div>`;
+    }).join('');
+    book.scrollTop=book.scrollHeight;
+}
+
+function autoSubmit(){
+    const text=document.getElementById('storyInput').value.trim();
+    doSubmit(text||'...');
+}
+function submitSentence(){
+    const text=document.getElementById('storyInput').value.trim();
+    if(!text)return;
+    if(G.ti)clearInterval(G.ti);
+    doSubmit(text);
+}
+function doSubmit(text){
+    G.story.push({type:'sentence',name:G.players[G.currentPlayer],pi:G.currentPlayer,text:text});
+    G.idx++;G.currentPlayer=G.currentPlayer===0?1:0;
+    const sentenceNum=G.story.filter(s=>s.type!=='prompt').length;
+    const isEndless=G.storyLen===0;
+    if(!isEndless&&sentenceNum>=G.storyLen){endGame();return;}
+    if(G.couch){showCover(G.players[G.currentPlayer]+"'S TURN","Pass the phone — don't peek!");}
+    else{startTurn();}
+}
+
+// === WILD CARDS ===
+function openWildMenu(){
+    if(G.wildCards<=0)return;
+    const deck=G.wildcardDeck;
+    const list=document.getElementById('wildList');
+    let cards=[];
+    const types=['plot_twist','chaos','character','genre_swap'];
+    const typeNames={plot_twist:'Plot Twist',chaos:'Chaos',character:'Character',genre_swap:'Genre Swap'};
+    types.forEach(t=>{
+        const arr=deck[t]||[];
+        if(arr.length){
+            const pick=arr[Math.floor(Math.random()*arr.length)];
+            cards.push({type:t,text:pick});
+        }
+    });
+    if(!cards.length){
+        cards=[{type:'chaos',text:'A musical number spontaneously breaks out!'},{type:'plot_twist',text:'PLOT TWIST: Everything so far was a dream!'},{type:'character',text:'A mysterious stranger walks in and changes everything.'}];
+    }
+    list.innerHTML=cards.map((c,i)=>`<div class="wild-card" onclick="playWild(${i})"><div class="wc-type">${typeNames[c.type]||c.type}</div>${esc(c.text)}</div>`).join('');
+    list._cards=cards;
+    document.getElementById('wildModal').classList.add('open');
+}
+function closeWildMenu(){document.getElementById('wildModal').classList.remove('open');}
+function playWild(i){
+    const cards=document.getElementById('wildList')._cards;
+    const card=cards[i];
+    G.wildCards--;
+    G.story.push({type:'wild',text:card.text});
+    closeWildMenu();
+    renderStoryBook();
+    document.getElementById('wildCount').textContent=G.wildCards;
+    document.getElementById('wildBtn').disabled=G.wildCards<=0;
+}
+
+// === COVER ===
 function showCover(title,sub){document.getElementById('coverTitle').textContent=title;document.getElementById('coverSub').textContent=sub;document.getElementById('coverScreen').style.display='flex';}
-function dismissCover(){document.getElementById('coverScreen').style.display='none';startTurn();}
-async function wildCard(){if(G.wildUsed)return;G.wildUsed=true;try{const res=await fetch(`${BK}/api/story-wildcards`);const data=await res.json();const twist=data.wildcard||data.item||'Suddenly, a portal opens and everything changes!';const input=document.getElementById('storyInput');input.value=twist;input.dispatchEvent(new Event('input'));}catch(e){const twists=['Suddenly, aliens landed in the middle of the scene!','Out of nowhere, a talking cat appeared with a warning!','The ground shook and everything turned upside down!','A mysterious stranger walked in and changed everything!'];const input=document.getElementById('storyInput');input.value=twists[Math.floor(Math.random()*twists.length)];input.dispatchEvent(new Event('input'));}}
-function endGame(){if(G.ti)clearInterval(G.ti);const names=[...new Set(G.story.map(s=>s.name))];document.getElementById('endSub').textContent='A masterpiece by '+names.join(' & ');let html='';if(G.items[0])html+='<div class="final-line"><em>'+esc(G.items[0])+'</em></div>';G.story.forEach(s=>{html+='<div class="final-line"><span class="fname p'+(s.pi+1)+'">'+esc(s.name)+':</span> '+esc(s.text)+'</div>';});document.getElementById('finalStory').innerHTML=html;show('phEnd');}
-function copyStory(){let text='';if(G.items[0])text+=G.items[0]+'\n';G.story.forEach(s=>{text+=s.name+': '+s.text+'\n';});navigator.clipboard.writeText(text).then(()=>{const btn=document.querySelector('.btn-copy');btn.textContent='COPIED!';setTimeout(()=>btn.textContent='COPY STORY',2000);});}
-function shareStory(){let text='Our Story Builder creation!\n\n';if(G.items[0])text+=G.items[0]+'\n';G.story.forEach(s=>{text+=s.name+': '+s.text+'\n';});text+='\nMade on TheGaming.co';if(navigator.share){navigator.share({title:'Our Story',text:text});}else{copyStory();}}
-function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.story=[];G.pack=null;G.wildUsed=false;showPacks();}
-function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.emit('act-create',{playerName:n,game:'story-builder'});showPacks();}
+function dismissCover(){
+    document.getElementById('coverScreen').style.display='none';
+    if(G.villain&&document.getElementById('saboteurCard').style.display!=='none'){return;}
+    startTurn();
+}
+
+// === END ===
+function endGame(){
+    if(G.ti)clearInterval(G.ti);
+    const genre=GENRES.find(g=>g.id===G.genre);
+    document.getElementById('endIcon').textContent=genre?genre.icon:'📖';
+    // auto-generate title
+    const firstSentence=G.story.find(s=>s.type==='sentence');
+    const titleWord=firstSentence?firstSentence.text.split(' ').slice(0,4).join(' ')+'...':'Untitled';
+    document.getElementById('storyTitle').textContent='"'+titleWord+'"';
+    const names=[...new Set(G.story.filter(s=>s.name).map(s=>s.name))];
+    document.getElementById('endSub').textContent='A '+(genre?genre.name:'')+' story by '+names.join(' & ');
+    // fun badges
+    const badges=[];
+    const sentenceCount=G.story.filter(s=>s.type==='sentence').length;
+    const wildCount=G.story.filter(s=>s.type==='wild').length;
+    if(wildCount>=3)badges.push('🌀 Chaos Agent');
+    if(sentenceCount>=20)badges.push('📚 Epic Saga');
+    if(sentenceCount<=8)badges.push('⚡ Speed Round');
+    if(G.story.some(s=>s.text&&s.text.includes('!')))badges.push('❗ Dramatic');
+    if(G.story.some(s=>s.text&&s.text.includes('?')))badges.push('❓ Mysterious');
+    if(G.villain)badges.push('🕵️ Villain Mode');
+    badges.push(genre?genre.icon+' '+genre.name:'📖 Story');
+    document.getElementById('endBadges').innerHTML=badges.map(b=>`<span class="end-badge">${b}</span>`).join('');
+    // saboteur reveal
+    const sr=document.getElementById('saboteurReveal');
+    if(G.villain&&G.saboteurIdx>=0){
+        sr.innerHTML=`<div class="saboteur-reveal"><h4>🕵️ THE SABOTEUR WAS...</h4><p><strong>${esc(G.players[G.saboteurIdx])}</strong></p><p style="margin-top:6px;font-size:.78rem">Their mission: ${esc(document.getElementById('saboteurMission').textContent)}</p><p style="margin-top:8px;font-size:.75rem;color:var(--dim)">Did they succeed? Discuss!</p></div>`;
+    } else {sr.innerHTML='';}
+    // final story
+    let html='';
+    G.story.forEach(s=>{
+        const cls=s.type==='prompt'?'final-line prompt':s.type==='wild'?'final-line wild':'final-line p'+(s.pi+1);
+        const name=s.type==='prompt'?'Opening':s.type==='wild'?'🌀 Wild Card':s.name;
+        html+=`<div class="${cls}"><span class="fl-name">${esc(name)}</span>${esc(s.text)}</div>`;
+    });
+    document.getElementById('finalStory').innerHTML=html;
+    show('phEnd');
+}
+
+function getStoryText(){
+    let text='';
+    G.story.forEach(s=>{
+        if(s.type==='prompt')text+=s.text+'\n\n';
+        else if(s.type==='wild')text+='[🌀 '+s.text+']\n\n';
+        else text+=s.text+' ';
+    });
+    return text.trim();
+}
+function copyStory(){
+    navigator.clipboard.writeText(getStoryText()).then(()=>{
+        const btns=document.querySelectorAll('.end-btns .btn-secondary');
+        if(btns[0]){btns[0].textContent='COPIED!';setTimeout(()=>btns[0].textContent='COPY',2000);}
+    });
+}
+function shareStory(){
+    const genre=GENRES.find(g=>g.id===G.genre);
+    const text='Our '+((genre?genre.name:'')+' Story Builder creation!\n\n')+getStoryText()+'\n\nMade on TheGaming.co';
+    if(navigator.share){navigator.share({title:'Our Story',text});}else{copyStory();}
+}
+
+function backToPacks(){if(G.ti)clearInterval(G.ti);G.idx=0;G.story=[];G.genre=null;G.wildCards=3;document.getElementById('bgEl').style.background='';showGenres();}
+
+// === ONLINE ===
+function createRoom(){const n=document.getElementById('nameInput').value.trim();if(!n)return err('lobbyErr','Enter your name');G.name=n;sk.emit('act-create',{playerName:n,game:'story-builder'});showGenres();}
 function joinRoom(){const n=document.getElementById('nameInput').value.trim(),c=document.getElementById('codeInput').value.trim().toUpperCase();if(!n)return err('lobbyErr','Enter name');if(!c)return err('lobbyErr','Enter code');G.name=n;sk.emit('act-join',{code:c,playerName:n});}
 function renderPlayers(){const box=document.getElementById('playersBox');box.innerHTML=G.players.map(n=>`<div class="p-chip${n===G.name?' me':''}">${esc(n)}</div>`).join('');if(G.players.length<2)box.innerHTML+='<div class="p-chip waiting">Waiting...</div>';document.getElementById('startBtn').disabled=G.players.length<2;document.getElementById('startBtn').textContent=G.players.length>=2?'START':'WAITING...';}
 sk.on('act-created',d=>{G.code=d.code;G.players=[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
 sk.on('act-joined',d=>{G.code=d.code;G.players=d.players||[G.name];document.getElementById('onlineSettings').style.display='';document.getElementById('setupCode').textContent=d.code;renderPlayers();show('phSettings');});
 sk.on('act-player-joined',d=>{G.players=d.players;renderPlayers();});
-sk.on('act-round',d=>{G.idx=d.index||0;G.total=d.total||10;G.players=d.players||G.players;G.items=d.items||G.items;if(d.item&&!G.items[0])G.items[0]=d.item;startTurn();});
-sk.on('act-reveal',d=>{if(d.story)G.story=d.story;if(d.sentence)G.story.push(d.sentence);renderStoryCard();});
+sk.on('act-round',d=>{G.idx=d.index||0;G.players=d.players||G.players;G.items=d.items||G.items;if(d.item&&!G.items[0])G.items[0]=d.item;startTurn();});
+sk.on('act-reveal',d=>{if(d.story)G.story=d.story;if(d.sentence)G.story.push(d.sentence);renderStoryBook();});
 sk.on('act-end',d=>{if(d.story)G.story=d.story;endGame();});
 sk.on('act-error',d=>err('lobbyErr',d.message));
+
 function err(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;setTimeout(()=>el.textContent='',3000);}}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
-document.getElementById('storyInput').addEventListener('input',function(){const len=this.value.length;document.getElementById('charCount').textContent=len+'/200';document.getElementById('submitBtn').disabled=len===0;});
+
+document.getElementById('storyInput').addEventListener('input',function(){
+    const len=this.value.length;
+    document.getElementById('charCount').textContent=len+' / 200';
+    document.getElementById('submitBtn').disabled=len===0;
+});
+document.getElementById('storyInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitSentence();}
+});
 document.getElementById('nameInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')createRoom();});
 document.getElementById('codeInput')?.addEventListener('keypress',e=>{if(e.key==='Enter')joinRoom();});
 </script>

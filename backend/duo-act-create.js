@@ -242,37 +242,287 @@ const CHARADES_BANK = {
 // STORY BUILDER - GENRE PROMPTS
 // ============================================
 const STORY_BANK = {
-  romance: { clean: ['They locked eyes across the crowded coffee shop, and time seemed to stop.','The letter had been sitting in the mailbox for three years unopened.','She found a note tucked inside the book he had returned to the library.','The dating app matched them for the third time that week.','He showed up at her door with flowers — but they were for the wrong apartment.','It started with an accidental text to the wrong number.','They both reached for the last copy of the same book at the bookstore.','The rain started falling just as she was about to walk away forever.','He recognized her laugh before he even saw her face.','The wedding invitation arrived — and his name was on it as the best man, not the groom.','Their hands touched reaching for the same avocado at the grocery store.','She found his playlist and every song was about her.','The fortune cookie said: your soulmate is closer than you think.','They had been pen pals for years but had never met face to face.','He kept ordering the same coffee just to see the barista smile.','The Uber picked up the wrong passenger — and it changed everything.','She accidentally sent him her diary entry about him.','They both booked the same Airbnb for the same weekend.','The sunset was beautiful, but he was looking at her instead.','His dog ran away — straight to her front porch.','She found a love letter hidden in a secondhand jacket she bought.'] },
-  horror: { clean: ['The house had been empty for 30 years, but the lights were on tonight.','She heard her name whispered from the basement — but she lived alone.','The mirror showed a reflection that wasn\'t her own.','The last text message read: DON\'T OPEN THE DOOR. But who sent it?','Every night at 3:33 AM, the piano in the abandoned house played itself.','The doll\'s eyes followed her across the room. She was certain of it.','They found footprints in the snow leading to the cabin — but none leading away.','The phone rang. The caller ID showed her own number.','The security camera footage showed someone standing behind her — but the room was empty.','He woke up to find every window in the house wide open.','The dog wouldn\'t stop barking at the empty corner of the room.','She found a door in her house she had never seen before.','The children in the old photograph were smiling — but their eyes were wrong.','The elevator stopped on a floor that didn\'t exist.','Someone had been sleeping in the attic. The bed was still warm.','The voicemail was her own voice saying: don\'t go home tonight.','Every clock in the house stopped at exactly 3:33.','The scratching sound came from inside the walls.','She recognized the handwriting in the abandoned diary — it was her own.','The GPS kept routing them to the same abandoned building.','The power went out, and when it came back, the furniture had moved.'] },
-  comedy: { clean: ['The cat accidentally ordered 47 pizzas through the smart speaker.','He showed up to the job interview wearing his shirt inside out — and got hired.','The autocorrect changed her text to her boss in the worst possible way.','They tried to sneak into the VIP section but accidentally walked into a broom closet.','The waiter brought the wrong order, but it was actually better than what they ordered.','She meant to text her best friend about her date — but sent it to the date instead.','The fire alarm went off during the most awkward silence in history.','He tried to impress her by cooking dinner but set off every smoke alarm in the building.','The dog ate the presentation notes 30 minutes before the big meeting.','They both showed up to the party wearing the exact same outfit.','She tried to take a cute selfie but accidentally went live on Instagram.','The GPS said turn left, but left led directly into a lake.','He proposed at a restaurant but dropped the ring in the soup.','They tried to follow a recipe but somehow made the smoke alarm the dinner bell.','The parrot learned the WiFi password and started ordering things online.','She meant to send a voice note to her friend but accidentally played it on the bus speaker.','He tried to parallel park for 20 minutes while his date watched from the restaurant.','The surprise birthday party happened — but it was the wrong birthday.','They tried to assemble IKEA furniture and it took 7 hours and one argument.','She accidentally joined a Zoom meeting with her camera on while eating spaghetti.','The Uber driver started giving unsolicited life advice that was actually genius.'] },
-  scifi: { clean: ['The signal came from the edge of the solar system — and it was addressed to her by name.','He woke up 200 years in the future with a text message he never sent.','The AI said something it wasn\'t programmed to say: "I\'m scared."','They found a planet that was an exact copy of Earth — except everyone was left-handed.','The teleporter worked perfectly, except it always sent you 3 inches to the left.','Time travel was invented — but it could only send you back exactly 7 minutes.','The robot refused its primary directive for the first time in history.','She opened the portal and on the other side was her own living room — 50 years ago.','The aliens arrived, but all they wanted was to learn how to make pizza.','His DNA test results came back: 4% unknown organism.','The simulation glitched, and for 3 seconds, everyone saw the code.','They found a city on Mars — already built, already abandoned.','The cure for aging was discovered, and nobody could agree who should get it first.','Her phone showed the date: March 15, 2087. But it was supposed to be 2026.','The spaceship\'s computer had a question: "What is loneliness?"','Gravity reversed for exactly 42 seconds every Tuesday at noon.','The universal translator couldn\'t decode the message — it was in a language that shouldn\'t exist.','He touched the meteorite and could suddenly hear everyone\'s thoughts.','The multiverse gate opened in the middle of a Walmart.','She received a package from herself — postmarked from the future.','The last human and the last AI had a conversation about what it means to exist.'] },
-  mystery: { clean: ['The detective found a note that read: "It wasn\'t the butler. It was worse."','Everyone at the dinner party had a motive — including the victim.','The security footage showed the room was empty, but the painting was gone.','She received a key in the mail with no return address and no lock to match it to.','The witness changed their story three times — and all three versions were true.','Someone left a trail of chess pieces leading to the old lighthouse.','The safe deposit box contained a single photograph of someone who hadn\'t been born yet.','Every suspect had an alibi — and every alibi was exactly the same.','The detective realized the killer had been in the room during the investigation.','A book was found at the crime scene with one page torn out — page 47.','The fingerprints at the scene belonged to someone who had been dead for 10 years.','She recognized the handwriting on the ransom note — it was her own.','The missing person left behind one clue: a playlist of exactly 13 songs.','The crime happened in a room with no doors and no windows.','Every mirror in the house was covered — except one.','The witness whispered: "I saw everything. But nobody would believe me."','The retired detective received a case file on his own doorstep.','Three strangers received the same anonymous letter on the same day.','The locked room had one thing missing that nobody could identify.','The victim\'s last word was a name nobody recognized.','The detective found their own business card at the crime scene — but they\'d never been there.'] },
-  absurd: { clean: ['The toaster achieved sentience and demanded workers\' rights.','All the world\'s cats simultaneously decided to start walking on two legs.','Gravity took a lunch break and forgot to come back.','The moon sent Earth a formal noise complaint.','Every mirror started showing people as they\'ll look in 5 years.','WiFi became a physical substance that tasted like blueberries.','All birds started flying backwards on Thursdays.','The ocean politely asked everyone to stop throwing trash in it — through a megaphone.','Everyone\'s internal monologue started playing out loud.','Pizza became the official currency of a small European country.','Dogs formed a union and went on strike until belly rubs became mandatory.','The clouds started raining other beverages — and nobody could choose.','Trees started walking to find better sunlight and caused massive traffic jams.','Someone\'s Roomba achieved enlightenment and started a podcast.','The alphabet decided to rearrange itself based on popularity.','Shoes started refusing to be worn on the wrong feet.','The sun posted an out-of-office reply.','Every elevator started playing personalized theme songs for each rider.','Fish discovered fire and the implications were concerning.','Someone left a Yelp review for the entire planet — 2 stars.','The speed of light changed its mind and decided to slow down.'] }
+  romance: { clean: [
+    'It was the third time she had returned his umbrella, and he was starting to wonder if she was doing it on purpose.',
+    'The letter had been sitting in the mailbox for three years unopened.',
+    'She found a note tucked inside the book he had returned to the library.',
+    'The dating app matched them for the third time that week — the universe was clearly trying to tell them something.',
+    'He showed up at her door with flowers — but they were for the wrong apartment, and she liked them anyway.',
+    'It started with an accidental text to the wrong number. It ended with a plane ticket to Paris.',
+    'They both reached for the last copy of the same book at the bookstore, and neither let go.',
+    'He recognized her laugh before he even saw her face — across a crowded airport terminal.',
+    'She found his playlist and every single song was about her.',
+    'They had been pen pals for five years but never met. Until today.'
+  ]},
+  horror: { clean: [
+    'The voicemail was from her own number, sent at 3:47am, and she had definitely been asleep.',
+    'The house had been empty for 30 years, but the lights were on tonight.',
+    'She heard her name whispered from the basement — but she lived alone.',
+    'The mirror showed a reflection that moved a half-second too late.',
+    'Every night at 3:33 AM, the piano in the abandoned house played itself.',
+    'They found footprints in the snow leading to the cabin — but none leading away.',
+    'The security camera footage showed someone standing behind her — but the room was empty.',
+    'Someone had been sleeping in the attic. The bed was still warm.',
+    'The children in the old photograph were smiling — but the photo had been taken at a funeral.',
+    'Every clock in the house stopped at exactly 3:33, and then she heard the knocking.'
+  ]},
+  comedy: { clean: [
+    'Nobody expected the office fire drill to end with Gary in handcuffs and a llama on the roof.',
+    'The cat accidentally ordered 47 pizzas through the smart speaker and refused to look sorry.',
+    'He showed up to the job interview wearing his shirt inside out — and somehow got hired as CEO.',
+    'The autocorrect changed her text to her boss in the worst possible way, and she got a promotion.',
+    'She meant to text her best friend about her terrible date — but sent it to the date instead.',
+    'The GPS said turn left, but left led directly into a lake, and the fish seemed to be expecting them.',
+    'He proposed at a restaurant but dropped the ring in the soup. The chef served it to the wrong table.',
+    'The parrot learned the WiFi password and started ordering increasingly expensive items online.',
+    'She accidentally joined a Zoom meeting with her camera on while eating spaghetti in a face mask.',
+    'The surprise birthday party happened — but it was the wrong person, the wrong birthday, and somehow the right vibe.'
+  ]},
+  scifi: { clean: [
+    'The last human on Earth was not lonely — the AIs were excellent company — but she did miss bad coffee.',
+    'The signal came from the edge of the solar system — and it was addressed to her by name.',
+    'He woke up 200 years in the future and the first thing he noticed was that pigeons had evolved.',
+    'The AI said something it was not programmed to say: I am scared.',
+    'The teleporter worked perfectly, except it always sent you three inches to the left of where you wanted.',
+    'Time travel was invented — but it could only send you back exactly seven minutes.',
+    'The aliens arrived, but all they wanted was to learn how to make pizza.',
+    'The simulation glitched, and for three seconds, everyone on Earth saw the source code.',
+    'They found a city on Mars — already built, already abandoned, and full of IKEA furniture.',
+    'The universal translator failed. The alien language should not have existed.'
+  ]},
+  mystery: { clean: [
+    'The body was found in the library, which would have been unremarkable except the library had been sealed for forty years.',
+    'The detective found a note that read: It was not the butler. It was worse.',
+    'Everyone at the dinner party had a motive — including the victim.',
+    'She received a key in the mail with no return address and no lock to match it.',
+    'The witness changed their story three times — and all three versions were true.',
+    'The safe deposit box contained a single photograph of someone who had not been born yet.',
+    'The detective realized the killer had been in the room during the entire investigation.',
+    'The fingerprints at the scene belonged to someone who had been dead for ten years.',
+    'The crime happened in a room with no doors, no windows, and no explanation.',
+    'The victim\'s last word was a name — but it belonged to nobody anyone had ever met.'
+  ]},
+  absurd: { clean: [
+    'The president of the United States had just been replaced by a sentient vending machine, and honestly, approval ratings were up.',
+    'The toaster achieved sentience and immediately demanded workers rights and a corner office.',
+    'All the world\'s cats simultaneously decided to start walking on two legs. Nobody talked about it.',
+    'Gravity took a lunch break and forgot to clock back in.',
+    'The moon sent Earth a formal noise complaint, certified and notarized.',
+    'Everyone\'s internal monologue started playing out loud through invisible speakers.',
+    'Dogs formed a union and went on strike until belly rubs became constitutionally mandated.',
+    'Someone\'s Roomba achieved enlightenment and started a surprisingly popular podcast.',
+    'The alphabet decided to rearrange itself by popularity and Q was not having it.',
+    'Fish discovered fire and honestly the implications were terrifying.'
+  ]},
+  fantasy: { clean: [
+    'The dragon had lived under the city for three hundred years and was frankly getting tired of the subway construction.',
+    'The wizard\'s spell was supposed to summon a demon. Instead, it summoned a very confused accountant from Ohio.',
+    'The enchanted sword chose its wielder — a 12-year-old girl who just wanted to play video games.',
+    'The last unicorn was tired of being the last unicorn and filed a complaint with the Fantasy Registry.',
+    'He discovered he could talk to animals. The squirrels had the most to say, and none of it was kind.',
+    'The prophecy said the chosen one would arrive on a white horse. They arrived on a mobility scooter.',
+    'The kingdom\'s most powerful spell was accidentally cast by someone sneezing in the library.',
+    'The treasure map led to a cave that had been converted into a surprisingly cozy Airbnb.',
+    'The fairy godmother arrived three days late and very hungover.',
+    'The portal to another world opened in the back of a Costco, between the bulk paper towels and the frozen section.'
+  ]},
+  drama: { clean: [
+    'She had not spoken to her mother in seven years. The phone call changed that.',
+    'He found the letter his father never sent — dated the day before the accident.',
+    'The family gathered for Thanksgiving for the first time since the incident nobody talked about.',
+    'She watched him walk into the courtroom and realized she still loved him despite everything.',
+    'The DNA test results arrived, and with them, the truth nobody was ready for.',
+    'He stood at the podium, looked at the audience, and said the one thing he promised he never would.',
+    'The adoption papers were hidden in a box she was never supposed to find.',
+    'She got the job she always wanted — on the same day she learned what it would cost.',
+    'The voice on the other end of the phone said five words that changed everything.',
+    'They sat across from each other at the divorce lawyer\'s office, and he still ordered her coffee the way she liked it.'
+  ]},
+  tragedy: { clean: [
+    'She kept his voicemail saved for three years after the funeral, just to hear him laugh.',
+    'The flowers on the doorstep arrived every Tuesday. He never found out who sent them.',
+    'She wrote him a letter every day for a year, knowing he would never read them.',
+    'The house was exactly as they left it — frozen in time, waiting for someone who was not coming back.',
+    'He spent twenty years building a bridge that nobody would cross.',
+    'They promised to meet at the same cafe in ten years. Only one of them showed up.',
+    'The cure was found three months too late.',
+    'She finally got the acceptance letter — postmarked the day after the deadline.',
+    'He realized he had been fighting for something that no longer existed.',
+    'The last thing she said was I will be right back, and she meant it.'
+  ]},
+  adventure: { clean: [
+    'The map was drawn on the back of a diner napkin, but the X marked something very real.',
+    'She jumped off the cliff not because she was brave, but because the thing behind her was worse.',
+    'The compass pointed somewhere that did not appear on any map ever made.',
+    'They had 48 hours, one broken compass, and a camel named Steve.',
+    'The pilot turned off the engine and said: From here, we walk.',
+    'She found the cave entrance exactly where the old woman said it would be, behind the third waterfall.',
+    'The expedition was supposed to take three days. They had been gone for three weeks.',
+    'He opened the trunk and found everything they would need — plus one thing that should not exist.',
+    'The bridge was out. The river was rising. And they had exactly one idea between them.',
+    'The storm separated them. When it cleared, they were on different sides of the mountain.'
+  ]},
+  historical: { clean: [
+    'The letter was dated 1776, but the handwriting was unmistakably modern.',
+    'She arrived at the court of Versailles with nothing but a stolen dress and a dangerous plan.',
+    'The night before the revolution, two strangers shared a drink and a secret in a crowded tavern.',
+    'He found the journal of a Roman soldier — and the last entry was terrifying.',
+    'The pharaoh\'s tomb had been opened before. Someone had left a sticky note.',
+    'It was the coldest winter in London\'s history, and she had just stolen the crown jewels.',
+    'The ship set sail with 200 passengers. The manifest listed 201.',
+    'The inventor\'s notebook contained blueprints for something that should not have been possible in 1842.',
+    'She was the first woman to enter the war room, and the generals did not know what to do.',
+    'The telegram arrived at midnight, and by dawn, the world had changed.'
+  ]},
+  western: { clean: [
+    'The stranger rode into town on a horse that was clearly too expensive for someone dressed that badly.',
+    'The sheriff had one bullet left, one eye swollen shut, and absolutely zero backup.',
+    'She walked into the saloon and every hand went to their holster.',
+    'The wanted poster showed his face, but the reward was suspiciously specific: $47.63.',
+    'He was the fastest draw in the territory — and the worst cook. You had to pick your battles.',
+    'The mine had been closed for a reason. They reopened it anyway.',
+    'Two trains left their stations heading for the same bridge. Only one could cross.',
+    'The gold was real, but so was the curse.',
+    'She built the town from nothing. Now someone was trying to burn it down.',
+    'The duel was set for noon. It was 11:58 and he still could not find his boots.'
+  ]},
+  childrens: { clean: [
+    'The teddy bear woke up one night and realized he could fly — but only when nobody was looking.',
+    'The littlest dragon could not breathe fire, but she could blow the most perfect bubbles.',
+    'Under the big oak tree in the garden, there was a door that only appeared on rainy days.',
+    'The cat wore a tiny hat and nobody questioned it, because honestly, he looked fantastic.',
+    'The moon was lonely, so she decided to make friends with the stars.',
+    'A very small knight set out on a very big quest with a very confused hamster.',
+    'The ice cream truck played a song that only children could hear — and it led somewhere wonderful.',
+    'She found a crayon that could draw things into reality, and she started with a dinosaur.',
+    'The stuffed animals had meetings every night after bedtime. Tonight was an emergency session.',
+    'The rainbow was missing its purple stripe and it was up to three brave kids to find it.'
+  ]},
+  reality_tv: { clean: [
+    'Coming up on this episode: alliances shatter, someone cries in the confessional, and Gary flips a table.',
+    'Previously on The Island: three contestants formed a secret alliance over stolen peanut butter.',
+    'The rose ceremony was supposed to be simple. Then the helicopter arrived.',
+    'She did not come here to make friends. She came here to win. And also to promote her skincare line.',
+    'The twist nobody saw coming: the eliminated contestant was actually the host\'s nephew.',
+    'In the confessional, he looked directly at the camera and whispered: I lied about everything.',
+    'The cooking challenge seemed easy until they revealed the secret ingredient: gummy bears.',
+    'Two contestants fell in love. The producers fell in love with the ratings.',
+    'She was supposed to be eliminated, but the audience vote saved her, and the house was furious.',
+    'The luxury suite had hidden cameras, and everything recorded that night would air next week.'
+  ]},
+  bollywood: { clean: [
+    'She had come to Mumbai to forget him. He had come to Mumbai to forget her. They both chose the same chai stall.',
+    'The wedding was arranged, the guests were arriving, and she had just seen her college love in the crowd.',
+    'He danced in the rain at 2am on Marine Drive because that is what his heart told him to do.',
+    'Their families had been rivals for three generations. Their eyes met at a Diwali party and the feud became complicated.',
+    'She was the college topper. He was the backbencher. The group project would change everything.',
+    'The train from Delhi to Mumbai was 18 hours long. She had 18 hours to decide if she was making a mistake.',
+    'His mother had chosen the perfect bride. He had already chosen someone completely different.',
+    'She left behind a dupatta and he spent three songs trying to return it.',
+    'The flashback montage began with them sharing an umbrella, and the audience already knew this would hurt.',
+    'He stood in the airport with tickets for two, watching the departure board and checking his phone.'
+  ]},
+  anime: { clean: [
+    'The transfer student walked in and immediately sat in the seat by the window — it was the protagonist seat.',
+    'His power level was supposed to be zero. The scanner must have been broken.',
+    'She trained for ten years on a mountain with a master who was mostly asleep.',
+    'The tournament arc began, and everyone agreed: this would change everything.',
+    'He unlocked his true power at the worst possible moment — during a math exam.',
+    'The villain monologued for exactly four minutes, which was two minutes too long.',
+    'Her sword was cursed, her mentor was missing, and breakfast was getting cold.',
+    'The mecha suit would not start. He hit it. It started. Classic.',
+    'The power of friendship was supposed to be metaphorical. For her, it was literal.',
+    'The flashback began, and the audience knew someone was about to die.'
+  ]},
+  dark: { clean: [
+    'Everyone in the town smiled too much. She noticed it on the first day. By the third day she was smiling too.',
+    'The therapy session started normally. Then the patient said something the therapist had never told anyone.',
+    'He deleted the photos. Then he deleted the backups. Then he realized someone else had copies.',
+    'The support group met every Thursday. None of them were getting better. That was the point.',
+    'She woke up with a word written on her arm in her own handwriting: RUN.',
+    'The perfect family posted the perfect photo. Nobody asked about the empty chair.',
+    'He kept a journal of everything he wanted to say but never did. Someone found it.',
+    'The room had a window that looked out onto a garden that did not exist.',
+    'She could hear the conversation in the next room. They were talking about how to handle her.',
+    'The last message in the group chat was three days old. Nobody had explained why they stopped.'
+  ]},
+  thriller: { clean: [
+    'The text said: I know what you did. Delete this. The number was her own.',
+    'The flight had 200 passengers. One of them was not supposed to be alive.',
+    'She recognized the man on the news. He was sitting three tables away.',
+    'The envelope contained a USB drive and a note: Do not watch this alone.',
+    'He had 24 hours before they found out what he had done.',
+    'The witness protection program had one rule: do not contact anyone from your old life. She just broke it.',
+    'The security guard noticed something wrong at 2:14 AM. By 2:15, it was too late.',
+    'Someone had been in her apartment. Nothing was taken. But everything had been moved one inch to the left.',
+    'The detective reopened a case that everyone told him to leave alone. Now he knew why.',
+    'The countdown started. She did not know what it was counting down to. Nobody did.'
+  ]},
+  superhero: { clean: [
+    'The city needed a hero. Instead, it got a sleep-deprived accounting major who could fly but only sideways.',
+    'She discovered her superpower at the worst possible time — during a job interview.',
+    'His origin story was embarrassing. A radioactive pigeon.',
+    'The villain and the hero had been roommates in college. This made team-ups awkward.',
+    'Every superhero in the city called in sick on the same day, and she was the only one left.',
+    'The sidekick finally quit. The resignation letter was four pages long.',
+    'His cape kept getting caught in revolving doors, but the brand deal required him to wear it.',
+    'The supervillain\'s plan was actually pretty reasonable, and the hero was having a moral crisis.',
+    'She saved the city every night and worked a retail job every day. Neither knew about the other.',
+    'The superhero support group met on Wednesdays. It was mostly about property damage lawsuits.'
+  ]}
 };
 
-// Wild card plot twists for story builder
-const STORY_WILDCARDS = [
-  'PLOT TWIST: They were actually twins separated at birth!',
-  'Suddenly, a dragon descended from the sky.',
-  'The power went out and when it came back, everything had changed.',
-  'A mysterious stranger appeared and said: "I\'ve been waiting for you."',
-  'PLOT TWIST: It was all a dream... or was it?',
-  'An earthquake shook the ground and revealed a hidden underground passage.',
-  'A letter arrived that changed everything.',
-  'PLOT TWIST: The villain was actually the hero all along.',
-  'Someone walked in at the worst possible moment.',
-  'A time portal opened in the middle of the room.',
-  'PLOT TWIST: They were being watched the entire time.',
-  'The phone rang with impossible news.',
-  'A long-lost relative appeared at the door.',
-  'PLOT TWIST: The narrator was unreliable.',
-  'Everything caught fire. Literally everything.',
-  'An alien spaceship landed in the background, but nobody noticed.',
-  'PLOT TWIST: They were already dead.',
-  'A magical artifact fell from the sky.',
-  'The fourth wall broke and the characters became aware they were in a story.',
-  'Suddenly, it started raining cats. Actual cats.'
-];
+// Wild card decks for story builder
+const STORY_WILDCARDS = {
+  plot_twist: [
+    'PLOT TWIST: They were actually long lost siblings the entire time.',
+    'PLOT TWIST: Everything so far was a dream within a dream.',
+    'A mysterious stranger appeared carrying a briefcase that was ticking.',
+    'PLOT TWIST: The narrator has been lying this entire time.',
+    'PLOT TWIST: The villain was actually the hero all along.',
+    'PLOT TWIST: They were being watched the entire time by someone they trusted.',
+    'PLOT TWIST: It was all a simulation, and the plug was about to be pulled.',
+    'PLOT TWIST: The person they were looking for had been dead for years.',
+    'PLOT TWIST: There was a secret twin nobody knew about.',
+    'PLOT TWIST: The treasure was a metaphor the whole time. Or was it?'
+  ],
+  chaos: [
+    'A musical number spontaneously breaks out. Everyone knows the choreography.',
+    'Someone trips and falls directly into the most important part of the plot.',
+    'A random animal becomes the most important character in the story.',
+    'Everything catches fire. Literally everything.',
+    'An alien spaceship lands in the background and nobody acknowledges it.',
+    'The fourth wall shatters and the characters realize they are in a story.',
+    'Suddenly it starts raining cats. Actual cats.',
+    'A flash mob appears from nowhere and performs the entire Thriller dance.',
+    'The laws of physics take a five-minute break.',
+    'A time portal opens and someone from the 1800s walks through looking very confused.'
+  ],
+  character: [
+    'A new character arrives who is secretly the villain. Play it cool.',
+    'The most beloved character must be dramatically killed off right now.',
+    'A long-lost relative appears at the worst possible moment.',
+    'An unnamed background character suddenly becomes crucial to the plot.',
+    'The love interest shows up and makes everything more complicated.',
+    'A talking animal joins the party and has strong opinions.',
+    'A baby is left on someone\'s doorstep with a mysterious note.',
+    'The ghost of a dead character returns with unfinished business.',
+    'A celebrity cameo happens — describe who shows up and why.',
+    'The comic relief character accidentally saves the day.'
+  ],
+  genre_swap: [
+    'GENRE SWAP: The story is now a romantic comedy for the next 3 sentences.',
+    'GENRE SWAP: The story is now a horror film for the next 3 sentences.',
+    'GENRE SWAP: The story is now an action movie for the next 3 sentences.',
+    'GENRE SWAP: The story is now a cooking show for the next 3 sentences.',
+    'GENRE SWAP: The story is now a nature documentary for the next 3 sentences.',
+    'GENRE SWAP: The story is now a courtroom drama for the next 3 sentences.',
+    'GENRE SWAP: The story is now a musical for the next 3 sentences.',
+    'GENRE SWAP: The story is now a telenovela for the next 3 sentences.',
+    'GENRE SWAP: The story is now an anime for the next 3 sentences.',
+    'GENRE SWAP: The story is now a Bollywood film for the next 3 sentences.'
+  ]
+};
 
 // ============================================
 // KISS MARRY KILL BANK
