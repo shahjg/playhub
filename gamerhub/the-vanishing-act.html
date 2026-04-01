@@ -375,6 +375,7 @@
             <div class="result-stats">
                 <div class="result-stat"><div class="result-stat-val" id="resEv">0</div><div class="result-stat-label">EVIDENCE FOUND</div></div>
                 <div class="result-stat"><div class="result-stat-val" id="resQ">0</div><div class="result-stat-label">QUESTIONS ASKED</div></div>
+                <div class="result-stat"><div class="result-stat-val" id="resSc">0</div><div class="result-stat-label">SCORE</div></div>
             </div>
             <div class="result-reveal" id="resReveal"></div>
             <button class="btn" onclick="location.reload()">Play Again →</button>
@@ -399,7 +400,18 @@ const SUSPECTS = [
     {id:'sofia',name:'Sofia Reyes',role:'Prop Designer',icon:'🎭',motive:'Victor publicly humiliated her work at the last press conference.',alibi:'Says she was in the prop workshop all night.',key:'access'}
 ];
 
-const KILLER = 'marco'; // Marco did it
+// Randomize the killer each playthrough
+const KILLER_POOL = ['diana','marco','elena','james','sofia'];
+const KILLER = KILLER_POOL[Math.floor(Math.random() * KILLER_POOL.length)];
+
+// Each suspect's guilt narrative for the reveal
+const KILLER_REVEALS = {
+    diana: 'Diana Voss — Victor\'s stage manager for 12 years — snapped when she learned she was being replaced. She had full access to the theater and knew Victor\'s pre-show ritual of whiskey before every performance. She acquired belladonna from the botanical garden she volunteers at, poisoned the decanter during her "lighting check," and wore her stage gloves to avoid prints. Her alibi of checking lights falls apart — she was never in the wings during the critical window.',
+    marco: 'Marco Delacroix — real name Marcel Fontaine — built his entire career on an act he stole from a rival performer in Prague. Victor discovered the truth and planned to expose Marco during the final show. Desperate to protect his secret, Marco poisoned Victor\'s pre-show whiskey with belladonna, signed the gift card with his initial "M," and wore stage gloves to avoid fingerprints. The botanical reference book, Prague program, and witness testimony all pointed to his guilt.',
+    elena: 'Elena Malone showed up uninvited, claiming to discuss the divorce. But she had a darker purpose. She smuggled belladonna extract from a contact in the pharmaceutical industry and slipped it into Victor\'s whiskey during a brief visit to his dressing room. Her backstage pass was scanned at 6:15 PM — forty minutes before she claims to have arrived. The card on the whiskey reading "—M" was for Malone, not Marco.',
+    james: 'James Chen, the theater owner, couldn\'t afford to lose Victor — or rather, couldn\'t afford for Victor to expose the Meridian\'s financial irregularities. Victor had discovered James was embezzling from the production budget. James poisoned the whiskey during a "routine walkthrough" of the theater before the show, using belladonna he sourced through a former business associate. His office alibi crumbles when security footage shows him on the backstage corridor.',
+    sofia: 'Sofia Reyes, the prop designer, had more than a humiliation motive. Victor had been stealing her innovative stage designs and patenting them under his own name. She confronted him, he laughed, and she decided his final show would truly be his last. With expert knowledge of stage chemicals, she synthesized belladonna extract in her workshop and introduced it to Victor\'s whiskey. The gloves found backstage were her custom-made prop handler gloves.'
+};
 
 const ROOMS = {
     stage: {
@@ -668,19 +680,61 @@ function selectAccusation(id) {
 function submitAccusation() {
     if (!accusation) return;
     var correct = accusation === KILLER;
+    var killerSus = SUSPECTS.find(function(s) { return s.id === KILLER });
+    var accusedSus = SUSPECTS.find(function(s) { return s.id === accusation });
     document.querySelectorAll('.scr').forEach(function(s) { s.classList.remove('on') });
     document.getElementById('gnav').classList.remove('show');
     document.getElementById('s-result').classList.add('on');
 
+    // Detective rank based on evidence and correctness
+    var evCount = foundEvidence.size;
+    var rank = correct && evCount >= 7 ? 'Master Detective' : correct && evCount >= 4 ? 'Good Detective' : correct ? 'Lucky Guess' : 'The Killer Escaped';
+
+    // Score calculation
+    var evPts = evCount * 10;
+    var correctPts = correct ? 50 : 0;
+    var qPts = Math.min(totalQuestions * 3, 30);
+    var total = evPts + correctPts + qPts;
+
     document.getElementById('resIcon').textContent = correct ? '🎯' : '❌';
     document.getElementById('resTitle').textContent = correct ? 'Case Solved!' : 'Wrong Suspect';
     document.getElementById('resSub').textContent = correct
-        ? 'You correctly identified Marco Delacroix as the killer. Brilliant detective work.'
-        : 'You accused the wrong person. The real killer was Marco Delacroix.';
-    document.getElementById('resEv').textContent = foundEvidence.size + '/8';
+        ? 'You correctly identified ' + killerSus.name + ' as the killer. ' + rank + '!'
+        : 'You accused ' + accusedSus.name + ', but the real killer was ' + killerSus.name + '. ' + rank + '.';
+    document.getElementById('resEv').textContent = evCount + '/8';
     document.getElementById('resQ').textContent = totalQuestions;
+    document.getElementById('resSc').textContent = total;
 
-    document.getElementById('resReveal').innerHTML = '<h4>THE TRUTH</h4><p>Marco Delacroix — real name Marcel Fontaine — built his entire career on an act he stole from a rival performer in Prague. Victor discovered the truth and planned to expose Marco during the final show. Desperate to protect his secret, Marco poisoned Victor\'s pre-show whiskey with belladonna, signed the gift card with his initial "M," and wore stage gloves to avoid fingerprints. The botanical reference book in the green room, the Prague theater program, and Elena\'s witness testimony of seeing Marco leave Victor\'s dressing room all pointed to his guilt.</p>';
+    var revealHTML = '<h4>THE TRUTH</h4><p>' + (KILLER_REVEALS[KILLER] || 'The truth has been revealed.') + '</p>';
+    revealHTML += '<div style="margin-top:16px;padding:12px;border:1px solid rgba(155,109,255,0.15);border-radius:6px;background:rgba(155,109,255,0.03)">';
+    revealHTML += '<div style="font-size:0.65rem;letter-spacing:2px;color:var(--g);margin-bottom:6px">SCORE BREAKDOWN</div>';
+    revealHTML += '<div style="font-size:0.8rem;color:var(--td);line-height:2">';
+    revealHTML += 'Evidence found (' + evCount + ' × 10): <strong style="color:var(--p)">+' + evPts + '</strong><br>';
+    revealHTML += 'Correct accusation: <strong style="color:var(--p)">+' + correctPts + '</strong><br>';
+    revealHTML += 'Questions asked (' + totalQuestions + ' × 3, max 30): <strong style="color:var(--p)">+' + qPts + '</strong><br>';
+    revealHTML += '<strong style="color:var(--g);font-size:1rem">Total: ' + total + ' points</strong>';
+    revealHTML += '</div></div>';
+    revealHTML += '<div style="text-align:center;font-size:1.1rem;color:var(--g);margin-top:12px;letter-spacing:2px;font-family:Playfair Display,serif">' + rank + '</div>';
+
+    if (!correct) {
+        revealHTML += '<div style="margin-top:16px;padding:12px;border:1px solid rgba(139,45,45,0.2);border-radius:6px;background:rgba(139,45,45,0.04)">';
+        revealHTML += '<div style="font-size:0.65rem;letter-spacing:2px;color:var(--rb);margin-bottom:6px">WHAT YOU MISSED</div>';
+        revealHTML += '<div style="font-size:0.82rem;color:var(--td);line-height:1.7">';
+        // Show evidence not found
+        var missed = [];
+        Object.keys(ROOMS).forEach(function(r) {
+            ROOMS[r].evidence.forEach(function(ev) {
+                if (!foundEvidence.has(ev.id)) missed.push(ev);
+            });
+        });
+        if (missed.length) {
+            revealHTML += 'Evidence you missed:<br>';
+            missed.forEach(function(ev) { revealHTML += '• ' + ev.icon + ' ' + ev.name + '<br>'; });
+        }
+        revealHTML += '</div></div>';
+    }
+
+    document.getElementById('resReveal').innerHTML = revealHTML;
 }
 
 // ═══ MULTIPLAYER ═══
