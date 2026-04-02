@@ -796,7 +796,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p class="footer-copyright">© 2025 TheGaming.co — Free party games, forever.</p>
+                <p class="footer-copyright">© 2026 TheGaming.co — Free games for everyone, forever.</p>
                 <div class="footer-legal">
                     <a href="privacy.html">Privacy</a>
                     <a href="terms.html">Terms</a>
@@ -950,7 +950,7 @@
             }
             if (error) throw error;
             if (!supporters || supporters.length === 0) {
-                supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first!</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support Now →</a></div>';
+                supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first to support TheGaming.co and get your name here forever.</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support Now →</a></div>';
                 return;
             }
             const leaderboardHTML = supporters.map((supporter, index) => {
@@ -963,7 +963,7 @@
             }).join('');
             supportersList.innerHTML = leaderboardHTML;
         } catch (error) {
-            supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first!</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support →</a></div>';
+            supportersList.innerHTML = '<div class="supporters-empty"><p>Be the first to support TheGaming.co and get your name here forever.</p><a href="https://ko-fi.com/thegamingco" target="_blank" rel="noopener">Support →</a></div>';
         }
     }
 
@@ -1035,24 +1035,63 @@
         }, {passive: true});
     })();
 
-    function updateDailyCountdowns() {
-        const countdowns = document.querySelectorAll('.daily-countdown');
-        const now = new Date();
-        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-        const diff = tomorrow - now;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        const timeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-        countdowns.forEach(el => el.textContent = timeStr);
-    }
-    updateDailyCountdowns();
-    setInterval(updateDailyCountdowns, 1000);
-
     document.addEventListener('visibilitychange', function() {
         const particles = document.querySelectorAll('.particle, .floating-heart, .floating-star, .confetti');
         particles.forEach(p => { p.style.animationPlayState = document.hidden ? 'paused' : 'running'; });
     });
+    </script>
+
+    <script>
+    // Daily countdown timers and streak loading — independent of supabase
+    (function() {
+        function updateDailyCountdowns() {
+            const countdowns = document.querySelectorAll('.daily-countdown');
+            const now = new Date();
+            const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+            const diff = tomorrow - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            const timeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            countdowns.forEach(el => el.textContent = timeStr);
+        }
+
+        function loadDailyStreaks() {
+            const streakMap = [
+                { selector: 0, key: 'connections_stats' },
+                { selector: 1, key: 'gamedle_stats' },
+                { selector: 2, key: 'athletedle_stats' },
+                { selector: 3, key: 'jobdle_stats' },
+                { selector: 4, key: 'weebdle_stats' }
+            ];
+            const streakEls = document.querySelectorAll('.daily-streak');
+            streakMap.forEach(function(item) {
+                try {
+                    const raw = localStorage.getItem(item.key);
+                    if (raw) {
+                        const stats = JSON.parse(raw);
+                        const streak = stats.streak || 0;
+                        if (streakEls[item.selector]) {
+                            streakEls[item.selector].textContent = '\uD83D\uDD25 ' + streak;
+                            if (streak > 0) streakEls[item.selector].classList.add('active');
+                        }
+                    }
+                } catch (e) {}
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                updateDailyCountdowns();
+                loadDailyStreaks();
+                setInterval(updateDailyCountdowns, 1000);
+            });
+        } else {
+            updateDailyCountdowns();
+            loadDailyStreaks();
+            setInterval(updateDailyCountdowns, 1000);
+        }
+    })();
     </script>
 
     <link rel="stylesheet" href="/social.css">
