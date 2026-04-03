@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -16,18 +17,18 @@
             --r:#c44a4a;
             --t:rgba(232,213,168,0.85);--td:rgba(232,213,168,0.4);--tf:rgba(232,213,168,0.2)
         }
-        body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);color:var(--t);min-height:100vh;overflow:hidden}
+        body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);color:var(--t);margin:0;overflow:hidden}
         h1,h2,h3,h4{font-family:'Cinzel',serif}
+        canvas{display:block;width:100vw;height:100vh;touch-action:none}
 
         .noise{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:0.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
         .vig{position:fixed;inset:0;pointer-events:none;z-index:9997;background:radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,0.6) 100%)}
 
-        .scr{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;opacity:0;pointer-events:none;transition:opacity 0.6s;z-index:10;overflow-y:auto;background:rgba(10,8,4,0.92)}
+        .scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;opacity:0;pointer-events:none;transition:opacity 0.6s;z-index:100;background:rgba(10,8,4,0.92)}
         .scr.on{opacity:1;pointer-events:all}
         .btn{display:inline-flex;align-items:center;gap:10px;padding:13px 36px;border:1px solid var(--pd);background:0;color:var(--p);font-family:'Cinzel',serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all 0.3s}
         .btn:hover{border-color:var(--g);color:var(--g);box-shadow:0 0 20px rgba(212,168,67,0.08)}
 
-        /* ═══ PREMIUM BAR ═══ */
         .premium-bar{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(10,8,4,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(212,168,67,0.08)}
         .pb-left{display:flex;align-items:center;gap:12px}
         .pb-exit{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid rgba(232,213,168,0.4);border-radius:4px;background:none;color:#e8d5a8;font-size:0.75rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;text-decoration:none;font-family:inherit}
@@ -49,14 +50,55 @@
 
         .mp-overlay{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
         .mp-overlay.on{opacity:1;pointer-events:all}
-        .mp-modal{background:rgba(18,14,8,0.95);border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .mp-modal{background:rgba(18,14,8,0.95);border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center;position:relative}
+        .mp-close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--td);font-size:1.4rem;cursor:pointer}
+        .mp-close:hover{color:var(--g)}
         .mp-h{font-size:1.2rem;color:#d4a843;margin-bottom:8px;letter-spacing:2px}
         .mp-sub{font-size:0.8rem;color:var(--td);margin-bottom:20px}
         .mp-code{font-size:2.5rem;letter-spacing:12px;color:var(--p);font-family:monospace;margin:16px 0;padding:12px;background:rgba(212,168,67,0.04);border-radius:6px;border:1px solid rgba(212,168,67,0.1)}
         .mp-actions{display:flex;gap:8px;justify-content:center;margin-top:16px}
         .mp-btn{padding:10px 24px;border:1px solid #d4a843;border-radius:4px;background:none;color:#d4a843;font-size:0.8rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
         .mp-btn.primary{background:#d4a843;color:#0a0804}
-        .mp-join-input{padding:10px 16px;border:1px solid rgba(212,168,67,0.2);border-radius:4px;background:rgba(212,168,67,0.04);color:var(--p);font-size:1rem;letter-spacing:4px;text-align:center;width:160px;font-family:monospace}
+        .mp-divider{border:none;border-top:1px solid rgba(212,168,67,0.1);margin:20px 0}
+        .mp-join-input{padding:10px 16px;border:1px solid rgba(212,168,67,0.2);border-radius:4px;background:rgba(212,168,67,0.04);color:var(--p);font-size:1rem;letter-spacing:4px;text-align:center;width:200px;font-family:monospace}
+
+        /* ═══ CROSSHAIR ═══ */
+        .ch{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;pointer-events:none;opacity:0;transition:opacity 0.3s}
+        .ch.on{opacity:1}
+        .ch-dot{width:6px;height:6px;border-radius:50%;background:rgba(232,213,168,0.4);transition:all 0.3s}
+        .ch-dot.active{background:#d4a843;box-shadow:0 0 10px rgba(212,168,67,0.5)}
+
+        /* ═══ FOCUS PROMPT ═══ */
+        .fp{position:fixed;top:55%;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(10,8,4,0.85);border:1px solid rgba(212,168,67,0.15);border-radius:6px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(8px)}
+        .fp.on{opacity:1;pointer-events:all}
+        .fp-icon{font-size:1rem}
+        .fp-name{font-size:0.7rem;letter-spacing:2px;color:var(--p);text-transform:uppercase}
+        .fp-btn{padding:4px 12px;border:1px solid var(--gd);border-radius:3px;background:0;color:var(--g);font-size:0.65rem;letter-spacing:1px;cursor:pointer;font-family:'Cinzel',serif}
+
+        /* ═══ HUD ═══ */
+        .hud{position:fixed;top:48px;left:0;right:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .hud.on{opacity:1;pointer-events:all}
+        .hud-timer{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--g);letter-spacing:3px;padding:6px 14px;background:rgba(10,8,4,0.7);border:1px solid rgba(212,168,67,0.1);border-radius:4px;backdrop-filter:blur(8px)}
+        .hud-timer.warn{color:var(--r);animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .hud-puzzles{font-size:0.8rem;color:var(--td);padding:6px 14px;background:rgba(10,8,4,0.7);border:1px solid rgba(212,168,67,0.06);border-radius:4px;backdrop-filter:blur(8px)}
+        .hud-puzzles span{color:var(--g);font-weight:600}
+
+        /* ═══ INVENTORY ═══ */
+        .inv{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:80;display:flex;gap:6px;padding:8px 12px;background:rgba(10,8,4,0.85);border:1px solid rgba(212,168,67,0.08);border-radius:8px;backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .inv.on{opacity:1;pointer-events:all}
+        .inv-slot{width:40px;height:40px;border:1px solid rgba(212,168,67,0.15);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:all 0.2s;background:rgba(212,168,67,0.03)}
+        .inv-slot:hover{border-color:var(--g)}
+        .inv-slot.sel{border-color:var(--g);background:rgba(212,168,67,0.1);box-shadow:0 0 10px rgba(212,168,67,0.15)}
+        .ie{font-size:0.7rem;color:var(--td);white-space:nowrap}
+
+        /* ═══ ROOM LABEL ═══ */
+        #rl{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:80;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:4px;color:var(--gd);text-transform:uppercase;opacity:0;transition:opacity 0.5s;pointer-events:none;background:rgba(10,8,4,0.6);padding:4px 14px;border-radius:3px}
+        #rl.on{opacity:1}
+
+        /* ═══ NAV ═══ */
+        .navD{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:80;display:flex;gap:12px;opacity:0;pointer-events:none;transition:opacity 0.3s}
+        .navD.on{opacity:1;pointer-events:all}
 
         /* ═══ TITLE ═══ */
         .title-screen{background:rgba(10,8,4,0.95)}
@@ -68,34 +110,6 @@
         .tdet{display:flex;gap:24px;justify-content:center;margin-bottom:30px;font-size:0.7rem;color:var(--tf);letter-spacing:2px}
         .tdet span{padding:5px 12px;border:1px solid var(--pd);border-radius:3px}
 
-        /* ═══ HUD ═══ */
-        .hud{position:fixed;bottom:0;left:0;right:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(10,8,4,0.95);border-top:1px solid rgba(212,168,67,0.08);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity 0.3s}
-        .hud.on{opacity:1;pointer-events:all}
-        .hud-timer{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--g);letter-spacing:3px}
-        .hud-timer.warn{color:var(--r);animation:pulse 1s infinite}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-        .hud-puzzles{font-size:0.8rem;color:var(--td)}
-        .hud-puzzles span{color:var(--g);font-weight:600}
-        .hud-inv{display:flex;gap:6px}
-        .inv-slot{width:36px;height:36px;border:1px solid rgba(212,168,67,0.15);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;transition:all 0.2s;background:rgba(212,168,67,0.03)}
-        .inv-slot:hover{border-color:var(--g)}
-        .inv-slot.sel{border-color:var(--g);background:rgba(212,168,67,0.1);box-shadow:0 0 10px rgba(212,168,67,0.15)}
-
-        /* ═══ CHAMBERS ═══ */
-        .chamber{position:fixed;top:44px;left:0;right:0;bottom:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.5s;background:var(--bg);z-index:5}
-        .chamber.on{opacity:1;pointer-events:all}
-        .ch-title{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:5px;color:var(--g);margin-bottom:10px}
-        .ch-desc{font-size:0.88rem;color:var(--td);text-align:center;max-width:600px;line-height:1.7;margin-bottom:20px}
-        .ch-visual{position:relative;width:min(700px,95vw);aspect-ratio:16/9;background:var(--bg2);border:1px solid rgba(212,168,67,0.08);border-radius:6px;overflow:hidden;margin-bottom:10px}
-        .ch-visual svg{width:100%;height:100%}
-
-        /* Clickable hotspots */
-        .hotspot{position:absolute;cursor:pointer;z-index:5;transition:all 0.3s}
-        .hotspot .hs-ring{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.04);display:flex;align-items:center;justify-content:center;transition:all 0.3s;animation:evp 3s ease-in-out infinite}
-        .hotspot:hover .hs-ring{border-color:var(--g);background:rgba(212,168,67,0.12);transform:scale(1.2);box-shadow:0 0 20px rgba(212,168,67,0.15)}
-        .hotspot.solved .hs-ring{border-color:rgba(74,180,74,0.4);background:rgba(74,180,74,0.06);animation:none}
-        @keyframes evp{0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,0.08)}50%{box-shadow:0 0 0 10px rgba(212,168,67,0)}}
-
         /* ═══ PUZZLE PANEL ═══ */
         .pnl-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);opacity:0;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(3px)}
         .pnl-bg.on{opacity:1;pointer-events:all}
@@ -106,21 +120,17 @@
         .pnl-title{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--p);margin-bottom:10px}
         .pnl-text{font-size:0.85rem;color:var(--td);line-height:1.7;margin-bottom:14px}
         .pnl-hint{font-size:0.75rem;color:var(--gd);font-style:italic;margin-bottom:10px}
-
-        /* Puzzle-specific */
         .hiero-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
         .hiero-cell{aspect-ratio:1;border:1px solid rgba(212,168,67,0.15);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;cursor:pointer;transition:all 0.2s;background:rgba(212,168,67,0.03);user-select:none}
         .hiero-cell:hover{border-color:var(--g);background:rgba(212,168,67,0.08)}
         .hiero-cell.active{border-color:var(--g);background:rgba(212,168,67,0.12);box-shadow:0 0 10px rgba(212,168,67,0.1)}
         .hiero-cell.correct{border-color:rgba(74,180,74,0.5);background:rgba(74,180,74,0.08)}
-
         .dial-row{display:flex;gap:12px;justify-content:center;margin:14px 0}
         .dial{display:flex;flex-direction:column;align-items:center;gap:4px}
         .dial-btn{width:36px;height:28px;border:1px solid var(--pd);border-radius:4px;background:0;color:var(--p);cursor:pointer;font-size:1rem;transition:all 0.2s}
         .dial-btn:hover{border-color:var(--g);color:var(--g)}
         .dial-val{font-family:'Cinzel',serif;font-size:1.5rem;color:var(--g);width:36px;text-align:center}
         .dial-label{font-size:0.55rem;color:var(--tf);letter-spacing:2px}
-
         .scale-visual{display:flex;align-items:flex-end;justify-content:center;gap:40px;margin:14px 0;min-height:120px}
         .scale-side{display:flex;flex-direction:column;align-items:center;gap:6px}
         .scale-plate{width:80px;height:80px;border:1px solid rgba(212,168,67,0.2);border-radius:50%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;padding:8px;background:rgba(212,168,67,0.03);transition:transform 0.3s}
@@ -130,20 +140,17 @@
         .weight-opt{padding:8px 14px;border:1px solid var(--pd);border-radius:4px;background:0;color:var(--p);cursor:pointer;font-size:1rem;transition:all 0.2s}
         .weight-opt:hover{border-color:var(--g)}
         .weight-opt.placed{opacity:0.3;pointer-events:none}
-
         .eb{padding:10px 24px;border:1px solid var(--gd);border-radius:4px;background:rgba(212,168,67,0.06);color:var(--g);font-size:0.82rem;letter-spacing:1px;cursor:pointer;transition:all 0.2s;font-family:inherit}
         .eb:hover{background:rgba(212,168,67,0.12)}
-
+        .solved-badge{display:inline-block;padding:6px 16px;background:rgba(74,180,74,0.1);border:1px solid rgba(74,180,74,0.2);border-radius:4px;color:#6aaa6a;font-size:0.72rem;letter-spacing:2px;margin-bottom:12px}
         .fb{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 28px;border-radius:6px;font-size:0.82rem;opacity:0;transition:all 0.3s;z-index:300;pointer-events:none}
         .fb.show{opacity:1;transform:translateX(-50%) translateY(0)}
         .fb-ok{background:rgba(74,180,74,0.15);border:1px solid rgba(74,180,74,0.3);color:#6aaa6a}
         .fb-no{background:rgba(196,74,74,0.15);border:1px solid rgba(196,74,74,0.3);color:#c44a4a}
         .fb-info{background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.25);color:#d4a843}
 
-        .solved-badge{display:inline-block;padding:6px 16px;background:rgba(74,180,74,0.1);border:1px solid rgba(74,180,74,0.2);border-radius:4px;color:#6aaa6a;font-size:0.72rem;letter-spacing:2px;margin-bottom:12px}
-
         /* ═══ WIN/LOSE ═══ */
-        .win-screen{z-index:90}
+        .win-screen{z-index:200}
         .win-icon{font-size:4rem;margin-bottom:12px}
         .win-title{font-family:'Cinzel',serif;font-size:2rem;color:var(--p);margin-bottom:8px}
         .win-sub{font-size:0.95rem;color:var(--td);margin-bottom:20px;line-height:1.7;max-width:500px;text-align:center}
@@ -152,29 +159,31 @@
         .win-stat-val{font-size:1.8rem;color:var(--g);font-weight:600}
         .win-stat-label{font-size:0.6rem;color:var(--tf);letter-spacing:2px;margin-top:4px}
 
-        /* Navigation arrows */
-        .nav-arrows{display:flex;gap:12px;margin-top:10px}
-        .nav-arrow{padding:8px 20px;border:1px solid var(--pd);border-radius:4px;background:0;color:var(--p);font-size:0.78rem;cursor:pointer;transition:all 0.2s;font-family:inherit;letter-spacing:1px}
-        .nav-arrow:hover{border-color:var(--g);color:var(--g)}
-        .nav-arrow:disabled{opacity:0.2;pointer-events:none}
-
         @media(max-width:768px){
-            .ch-visual{aspect-ratio:4/3}
-            .hud{padding:8px 12px}
             .hiero-grid{grid-template-columns:repeat(4,1fr);gap:6px}
             .hiero-cell{font-size:1.2rem}
         }
     </style>
 </head>
 <body>
-    <div class="premium-bar" id="premiumBar">
+    <canvas id="c3d"></canvas>
+    <div class="noise"></div><div class="vig"></div><div class="fb" id="fb"></div>
+
+    <div class="ch" id="ch"><div class="ch-dot" id="chDot"></div></div>
+    <div class="fp" id="fp" onclick="fpTap()">
+        <span class="fp-icon" id="fpIcon">☥</span>
+        <span class="fp-name" id="fpName"></span>
+        <button class="fp-btn" id="fpBtn">EXAMINE</button>
+    </div>
+
+    <div class="premium-bar">
         <div class="pb-left">
             <a href="/premium" class="pb-exit"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>EXIT</a>
             <span class="pb-title">The Pharaoh's Tomb</span>
         </div>
         <div class="pb-right">
             <button class="pb-btn" onclick="document.getElementById('htpOverlay').classList.add('on')">HOW TO PLAY</button>
-            <button class="pb-btn" onclick="shareGame()">👥 INVITE</button>
+            <button class="pb-btn" onclick="shareGame()">INVITE</button>
         </div>
     </div>
 
@@ -182,35 +191,47 @@
         <div class="htp-modal">
             <button class="htp-close" onclick="this.parentElement.parentElement.classList.remove('on')">&times;</button>
             <div class="htp-h">HOW TO PLAY</div>
-            <div class="htp-section"><div class="htp-sh">OBJECTIVE</div><div class="htp-p">You're trapped in an ancient Egyptian tomb. Solve 5 puzzles across 3 chambers to find the exit before time runs out.</div></div>
-            <div class="htp-section"><div class="htp-sh">GAMEPLAY</div>
+            <div class="htp-section"><div class="htp-sh">OBJECTIVE</div><div class="htp-p">Explore an ancient Egyptian tomb in 3D. Solve 5 puzzles across 3 chambers to escape before time runs out.</div></div>
+            <div class="htp-section"><div class="htp-sh">CONTROLS</div>
                 <ol class="htp-steps">
-                    <li>Click glowing markers in each chamber to discover puzzles</li>
-                    <li>Solve puzzles to collect artifacts and unlock new chambers</li>
-                    <li>Items in your inventory can be used on certain puzzles</li>
-                    <li>Navigate between chambers using the arrow buttons</li>
-                    <li>Solve all puzzles and reach the exit before 25 minutes</li>
+                    <li>Drag to look around the chamber</li>
+                    <li>Point at glowing objects — the crosshair turns gold</li>
+                    <li>Click EXAMINE to interact with objects and puzzles</li>
+                    <li>Use navigation arrows to move between chambers</li>
+                    <li>Select inventory items to use them on puzzles</li>
                 </ol>
             </div>
             <div class="htp-section"><div class="htp-sh">WITH FRIENDS</div><div class="htp-p">Click INVITE to share a room code. Each player solves independently, then compare escape times!</div></div>
         </div>
     </div>
 
-    <div class="mp-overlay" id="mpOverlay">
+    <div class="mp-overlay" id="mpOverlay" onclick="if(event.target===this)this.classList.remove('on')">
         <div class="mp-modal">
-            <div id="mpContent">
-                <div class="mp-h">PLAY WITH FRIENDS</div>
-                <div class="mp-sub">Share the room code</div>
-                <div class="mp-code" id="mpCode">----</div>
-                <div class="mp-actions">
-                    <button class="mp-btn" onclick="copyRoomCode()">COPY CODE</button>
-                    <button class="mp-btn" onclick="document.getElementById('mpOverlay').classList.remove('on')">CLOSE</button>
-                </div>
+            <button class="mp-close" onclick="document.getElementById('mpOverlay').classList.remove('on')">&times;</button>
+            <div class="mp-h">PLAY WITH FRIENDS</div>
+            <div class="mp-sub">Share this code so others can play along</div>
+            <div class="mp-code" id="mpCode">------</div>
+            <div class="mp-actions">
+                <button class="mp-btn" onclick="copyRoomLink()">COPY LINK</button>
+                <button class="mp-btn" onclick="copyRoomCode()">COPY CODE</button>
+            </div>
+            <hr class="mp-divider">
+            <div class="mp-sub">Or join someone else's room</div>
+            <div class="mp-actions">
+                <input class="mp-join-input" id="mpJoinCode" maxlength="6" placeholder="CODE">
+                <button class="mp-btn primary" onclick="joinRoom()">JOIN</button>
             </div>
         </div>
     </div>
 
-    <div class="noise"></div><div class="vig"></div><div class="fb" id="fb"></div>
+    <!-- HUD -->
+    <div class="hud" id="hud">
+        <div><span class="hud-timer" id="timer">25:00</span></div>
+        <div class="hud-puzzles">Puzzles: <span id="pzCount">0</span>/5</div>
+    </div>
+    <div class="inv" id="inv"><div id="invI"><span class="ie">Look around the tomb</span></div></div>
+    <div id="rl"></div>
+    <div class="navD" id="navD"></div>
 
     <!-- TITLE -->
     <div class="scr title-screen on" id="s-title">
@@ -219,60 +240,16 @@
             <div class="tey">Escape Room</div>
             <h1 class="ttl">The Pharaoh's Tomb</h1>
             <p class="tsub">"Those who disturb the slumber of Kha-Re shall never see the light of day again."</p>
-            <div class="tdet"><span>1 PLAYER</span><span>20–25 MIN</span><span>5 PUZZLES</span></div>
-            <button class="btn" onclick="startGame()">Enter the Tomb →</button>
+            <div class="tdet"><span>1 PLAYER</span><span>20-25 MIN</span><span>5 PUZZLES</span></div>
+            <button class="btn" onclick="enterTomb()">Enter the Tomb</button>
         </div>
-    </div>
-
-    <!-- HUD -->
-    <div class="hud" id="hud">
-        <div><span class="hud-timer" id="timer">25:00</span></div>
-        <div class="hud-puzzles">Puzzles: <span id="pzCount">0</span>/5</div>
-        <div class="hud-inv" id="invBar"></div>
-    </div>
-
-    <!-- CHAMBER 1: Entrance Hall -->
-    <div class="chamber" id="ch1">
-        <div class="ch-title">CHAMBER I — ENTRANCE HALL</div>
-        <div class="ch-desc">Massive stone doors have sealed behind you. Torchlight flickers across walls covered in hieroglyphs. Two puzzles guard the way forward.</div>
-        <div class="ch-visual" id="vis1">
-            <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#0a0804"/><polygon points="0,0 100,50 100,400 0,450" fill="#120e08" stroke="#1a1408" stroke-width="0.5"/><polygon points="800,0 700,50 700,400 800,450" fill="#120e08" stroke="#1a1408" stroke-width="0.5"/><rect x="100" y="50" width="600" height="350" fill="#0e0a06"/><polygon points="0,0 800,0 700,50 100,50" fill="#14100a"/><polygon points="0,450 800,450 700,400 100,400" fill="#0a0804"/><g stroke="#1a1408" stroke-width="0.5" opacity="0.4"><line x1="100" y1="120" x2="700" y2="120"/><line x1="100" y1="190" x2="700" y2="190"/><line x1="100" y1="260" x2="700" y2="260"/><line x1="100" y1="330" x2="700" y2="330"/></g><rect x="340" y="180" width="120" height="220" fill="#0a0804" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.15" rx="2"/><polygon points="340,180 400,140 460,180" fill="#0e0a06" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.15"/><circle cx="400" cy="280" r="4" fill="#d4a843" opacity="0.15"/><rect x="150" y="100" width="100" height="130" fill="#0e0a06" stroke="#d4a843" stroke-width="0.3" stroke-opacity="0.1" rx="2"/><text x="200" y="145" text-anchor="middle" fill="#d4a843" font-size="24" opacity="0.15">𓂀</text><text x="200" y="185" text-anchor="middle" fill="#d4a843" font-size="18" opacity="0.1">𓃭𓅃𓆣</text><rect x="550" y="100" width="100" height="130" fill="#0e0a06" stroke="#d4a843" stroke-width="0.3" stroke-opacity="0.1" rx="2"/><circle cx="600" cy="165" r="25" fill="none" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.15"/><text x="600" y="172" text-anchor="middle" fill="#d4a843" font-size="14" opacity="0.15">☥</text><circle cx="170" cy="110" r="15" fill="#d4a843" opacity="0.02"/><rect x="168" y="90" width="4" height="15" rx="1" fill="#d4a843" opacity="0.08"/><circle cx="630" cy="110" r="15" fill="#d4a843" opacity="0.02"/><rect x="628" y="90" width="4" height="15" rx="1" fill="#d4a843" opacity="0.08"/></svg>
-            <div class="hotspot" id="hs-hiero" style="left:15%;top:25%" onclick="openPuzzle('hiero')"><div class="hs-ring"><span style="font-size:0.8rem">𓂀</span></div></div>
-            <div class="hotspot" id="hs-dial" style="left:70%;top:25%" onclick="openPuzzle('dial')"><div class="hs-ring"><span style="font-size:0.8rem">☥</span></div></div>
-            <div class="hotspot" id="hs-door1" style="left:47%;top:55%" onclick="openPuzzle('door1')"><div class="hs-ring"><span style="font-size:0.7rem">🚪</span></div></div>
-        </div>
-        <div class="nav-arrows"><button class="nav-arrow" disabled>← Back</button><button class="nav-arrow" id="nav1fwd" onclick="goCh(2)" disabled>Forward →</button></div>
-    </div>
-
-    <!-- CHAMBER 2: Treasure Room -->
-    <div class="chamber" id="ch2">
-        <div class="ch-title">CHAMBER II — TREASURE ROOM</div>
-        <div class="ch-desc">Gold gleams in the torchlight. A massive sarcophagus dominates the center. The scales of Ma'at guard the inner sanctum.</div>
-        <div class="ch-visual" id="vis2">
-            <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#0c0806"/><rect x="80" y="40" width="640" height="370" fill="#100c06" stroke="#1a1408" stroke-width="0.5"/><rect x="300" y="150" width="200" height="250" fill="#0e0a06" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.2" rx="4"/><rect x="340" y="180" width="120" height="80" fill="none" stroke="#d4a843" stroke-width="0.3" stroke-opacity="0.15" rx="2"/><text x="400" y="230" text-anchor="middle" fill="#d4a843" font-size="30" opacity="0.12">𓁹</text><rect x="120" y="200" width="100" height="100" fill="#100c06" stroke="#d4a843" stroke-width="0.3" stroke-opacity="0.1"/><rect x="580" y="200" width="100" height="100" fill="#100c06" stroke="#d4a843" stroke-width="0.3" stroke-opacity="0.1"/><line x1="400" y1="100" x2="400" y2="140" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.15"/><line x1="300" y1="140" x2="500" y2="140" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.15"/><ellipse cx="170" cy="320" rx="40" ry="10" fill="#d4a843" opacity="0.03"/><ellipse cx="630" cy="320" rx="40" ry="10" fill="#d4a843" opacity="0.03"/><circle cx="400" cy="80" r="30" fill="#d4a843" opacity="0.02"/></svg>
-            <div class="hotspot" id="hs-scale" style="left:15%;top:45%" onclick="openPuzzle('scale')"><div class="hs-ring"><span style="font-size:0.8rem">⚖️</span></div></div>
-            <div class="hotspot" id="hs-sarc" style="left:47%;top:45%" onclick="openPuzzle('sarc')"><div class="hs-ring"><span style="font-size:0.7rem">⚱️</span></div></div>
-            <div class="hotspot" id="hs-door2" style="left:75%;top:50%" onclick="openPuzzle('door2')"><div class="hs-ring"><span style="font-size:0.7rem">🚪</span></div></div>
-        </div>
-        <div class="nav-arrows"><button class="nav-arrow" onclick="goCh(1)">← Back</button><button class="nav-arrow" id="nav2fwd" onclick="goCh(3)" disabled>Forward →</button></div>
-    </div>
-
-    <!-- CHAMBER 3: Exit -->
-    <div class="chamber" id="ch3">
-        <div class="ch-title">CHAMBER III — THE WAY OUT</div>
-        <div class="ch-desc">Light streams through a crack in the ceiling. The exit is ahead — if you can unlock the final seal.</div>
-        <div class="ch-visual" id="vis3">
-            <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="450" fill="#0a0804"/><rect x="300" y="50" width="200" height="350" fill="#14100a" stroke="#d4a843" stroke-width="1" stroke-opacity="0.2" rx="4"/><polygon points="300,50 400,10 500,50" fill="#14100a" stroke="#d4a843" stroke-width="0.5" stroke-opacity="0.2"/><circle cx="400" cy="200" r="30" fill="none" stroke="#d4a843" stroke-width="1" stroke-opacity="0.3"/><text x="400" y="208" text-anchor="middle" fill="#d4a843" font-size="20" opacity="0.3">☥</text><line x1="350" y1="0" x2="380" y2="50" stroke="#ffe" stroke-width="2" opacity="0.08"/><line x1="420" y1="0" x2="430" y2="50" stroke="#ffe" stroke-width="1.5" opacity="0.06"/><circle cx="400" cy="0" r="100" fill="#ffe" opacity="0.01"/></svg>
-            <div class="hotspot" id="hs-exit" style="left:47%;top:40%" onclick="openPuzzle('exit')"><div class="hs-ring"><span style="font-size:0.8rem">☥</span></div></div>
-        </div>
-        <div class="nav-arrows"><button class="nav-arrow" onclick="goCh(2)">← Back</button><button class="nav-arrow" disabled>Forward →</button></div>
     </div>
 
     <!-- WIN -->
     <div class="scr win-screen" id="s-win">
-        <div class="win-icon" id="winIcon">🏛️</div>
-        <h2 class="win-title" id="winTitle">ESCAPED!</h2>
-        <p class="win-sub" id="winSub">You deciphered the tomb's ancient puzzles and escaped into the desert sun. The curse of Kha-Re could not hold you.</p>
+        <div class="win-icon" id="winIcon"></div>
+        <h2 class="win-title" id="winTitle"></h2>
+        <p class="win-sub" id="winSub"></p>
         <div class="win-stats">
             <div class="win-stat"><div class="win-stat-val" id="wTime">--:--</div><div class="win-stat-label">ESCAPE TIME</div></div>
             <div class="win-stat"><div class="win-stat-val" id="wPz">0/5</div><div class="win-stat-label">PUZZLES SOLVED</div></div>
@@ -284,77 +261,288 @@
 
     <!-- PUZZLE PANEL -->
     <div class="pnl-bg" id="pnlBg" onclick="closePnl()"></div>
-    <div class="pnl" id="pnl"><button class="pnl-close" onclick="closePnl()">×</button><div id="pnlC"></div></div>
+    <div class="pnl" id="pnl"><button class="pnl-close" onclick="closePnl()">x</button><div id="pnlC"></div></div>
 
 <script>
-var TP=5,solved=new Set(),inv=[],selItem=null,tLeft=1500,timerInt=null,hints=0,started=false;
+/* ═══ GLOBALS ═══ */
+var S,Cam,Ren,rc,m2d,CK=[],gt=0,examining=false;
+var cp=0,started=false,transiting=false;
+var camX=0,camY=1.6,camZ=0,tCX=0,tCY=1.6,tCZ=0;
+var yaw=0,pitch=0,tYaw=0,tPitch=0;
+var focusId=null,dragging=false,lx=0,ly=0;
 
+var RMS=[
+    {x:0,z:0,name:"Entrance Hall"},
+    {x:0,z:-16,name:"Treasure Room"},
+    {x:0,z:-32,name:"The Way Out"}
+];
+var CONN=[[1],[0,2],[1]];
+
+/* ═══ PUZZLE STATE ═══ */
+var TP=5,solved=new Set(),inv=[],selItem=null,tLeft=1500,timerInt=null,hints=0;
+
+/* ═══ THREE.JS SETUP ═══ */
+function mt(c,r,m){return new THREE.MeshStandardMaterial({color:c,roughness:r===undefined?0.85:r,metalness:m||0})}
+function bx(w,h,d,c,x,y,z){var g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mt(c));g.position.set(x,y,z);S.add(g);return g}
+function pl(w,h,c,x,y,z,rx,ry){var g=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mt(c));g.position.set(x,y,z);if(rx)g.rotation.x=rx;if(ry)g.rotation.y=ry;S.add(g);return g}
+function hb(id,x,y,z,w,h,d){w=w||2;h=h||2;d=d||2;var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));m.position.set(x,y,z);m.userData={id:id};CK.push(m);S.add(m);return m}
+function torch(x,y,z){
+    var base=bx(0.15,0.8,0.15,0x3d2a1a,x,y,z);
+    var flame=new THREE.Mesh(new THREE.SphereGeometry(0.12,6,4),new THREE.MeshStandardMaterial({color:0xff6622,emissive:0xff4400,emissiveIntensity:3,transparent:true,opacity:0.8}));
+    flame.position.set(x,y+0.5,z);flame.userData.fl=true;S.add(flame);
+    var light=new THREE.PointLight(0xff6622,0.6,10);light.position.set(x,y+0.5,z);light.userData.fk=true;S.add(light);
+}
+
+function buildRoom(ri){
+    var ox=RMS[ri].x,oz=RMS[ri].z;
+    var rw=12,hh=4.5,hw=rw/2;
+    // Floor
+    pl(rw,rw,0x1a1208,ox,0,oz,-Math.PI/2,0);
+    // Ceiling
+    pl(rw,rw,0x0e0a06,ox,hh,oz,Math.PI/2,0);
+    // Back wall
+    pl(rw,hh,0x2a1a0d,ox,hh/2,oz-hw,0,0);
+    // Front wall
+    pl(rw,hh,0x2a1a0d,ox,hh/2,oz+hw,0,Math.PI);
+    // Left wall
+    pl(rw,hh,0x3d2a1a,ox-hw,hh/2,oz,0,Math.PI/2);
+    // Right wall
+    pl(rw,hh,0x3d2a1a,ox+hw,hh/2,oz,0,-Math.PI/2);
+    // Torches
+    torch(ox-hw+0.5,2.2,oz-3);torch(ox-hw+0.5,2.2,oz+3);
+    torch(ox+hw-0.5,2.2,oz-3);torch(ox+hw-0.5,2.2,oz+3);
+
+    if(ri===0) buildEntrance(ox,oz,hw,hh);
+    if(ri===1) buildTreasure(ox,oz,hw,hh);
+    if(ri===2) buildExit(ox,oz,hw,hh);
+}
+
+function buildEntrance(ox,oz,hw,hh){
+    // Hieroglyph panel (left wall)
+    var hieroPnl=bx(0.1,2,2.5,0xd4a843,ox-hw+0.06,2,oz-2);hieroPnl.material.emissive=new THREE.Color(0xd4a843);hieroPnl.material.emissiveIntensity=0.05;
+    hb('hiero',ox-hw+0.5,2,oz-2,1,2,2.5);
+    // Ankh dial (right wall)
+    var dialPnl=bx(0.1,1.8,1.8,0xd4a843,ox+hw-0.06,2,oz+1);dialPnl.material.emissive=new THREE.Color(0xd4a843);dialPnl.material.emissiveIntensity=0.05;
+    var ring=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.06,8,24),mt(0xd4a843,0.3,0.5));ring.position.set(ox+hw-0.15,2,oz+1);ring.rotation.y=Math.PI/2;S.add(ring);
+    hb('dial',ox+hw-0.5,2,oz+1,1,2,2);
+    // Door (back wall center)
+    bx(2.5,3.5,0.3,0x1a1208,ox,1.75,oz-hw+0.15);
+    var doorFrame=bx(2.8,3.8,0.15,0xd4a843,ox,1.9,oz-hw+0.08);doorFrame.material.emissive=new THREE.Color(0xd4a843);doorFrame.material.emissiveIntensity=0.02;
+    hb('door1',ox,2,oz-hw+0.5,2.5,3.5,1);
+}
+
+function buildTreasure(ox,oz,hw,hh){
+    // Sarcophagus (center)
+    bx(2,0.8,4,0x3d2a1a,ox,0.4,oz);
+    bx(2.1,0.15,4.1,0xd4a843,ox,0.85,oz); // Gold lid
+    var scarabSlot=new THREE.Mesh(new THREE.CircleGeometry(0.2,16),mt(0x0a0804));scarabSlot.position.set(ox,0.93,oz);scarabSlot.rotation.x=-Math.PI/2;S.add(scarabSlot);
+    hb('sarc',ox,0.8,oz,2.5,1.2,4.5);
+    // Scales (left side)
+    bx(0.1,1.5,0.1,0xd4a843,ox-3,0.75,oz-2); // Post
+    bx(2,0.05,0.05,0xd4a843,ox-3,1.55,oz-2); // Beam
+    var lPlate=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.04,16),mt(0xd4a843,0.3,0.5));lPlate.position.set(ox-4,1.2,oz-2);S.add(lPlate);
+    var rPlate=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.04,16),mt(0xd4a843,0.3,0.5));rPlate.position.set(ox-2,1.2,oz-2);S.add(rPlate);
+    hb('scale',ox-3,1.2,oz-2,3,1.8,1.5);
+    // Door (back wall)
+    bx(2.5,3.5,0.3,0x1a1208,ox,1.75,oz-hw+0.15);
+    hb('door2',ox,2,oz-hw+0.5,2.5,3.5,1);
+    // Spot light on sarcophagus
+    var sp=new THREE.SpotLight(0xd4a843,0.8,12,Math.PI/5,0.4);sp.position.set(ox,hh-0.3,oz);sp.target.position.set(ox,0,oz);S.add(sp);S.add(sp.target);
+}
+
+function buildExit(ox,oz,hw,hh){
+    // Exit door with ankh seal
+    bx(3,4,0.3,0x1a1208,ox,2,oz-hw+0.15);
+    var seal=new THREE.Mesh(new THREE.TorusGeometry(0.6,0.08,8,24),mt(0xd4a843,0.3,0.6));seal.position.set(ox,2.2,oz-hw+0.32);S.add(seal);
+    var sealCenter=new THREE.Mesh(new THREE.CircleGeometry(0.35,16),mt(0xd4a843,0.4,0.4));sealCenter.position.set(ox,2.2,oz-hw+0.33);S.add(sealCenter);
+    hb('exit',ox,2.2,oz-hw+0.5,2,3,1);
+    // Light beam from ceiling crack
+    var beam=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.8,hh,8),new THREE.MeshStandardMaterial({color:0xffffee,emissive:0xffffdd,emissiveIntensity:0.3,transparent:true,opacity:0.06}));
+    beam.position.set(ox+1,hh/2,oz+1);S.add(beam);
+    var ceilLight=new THREE.PointLight(0xffeedd,0.3,8);ceilLight.position.set(ox+1,hh-0.2,oz+1);S.add(ceilLight);
+}
+
+function i3(){
+    S=new THREE.Scene();
+    S.background=new THREE.Color(0x0a0604);
+    S.fog=new THREE.FogExp2(0x0a0604,0.02);
+    Cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,80);
+    Ren=new THREE.WebGLRenderer({canvas:document.getElementById("c3d"),antialias:true});
+    Ren.setSize(innerWidth,innerHeight);
+    Ren.setPixelRatio(Math.min(devicePixelRatio,1.5));
+    Ren.toneMapping=THREE.ACESFilmicToneMapping;
+    Ren.toneMappingExposure=0.7;
+    rc=new THREE.Raycaster();m2d=new THREE.Vector2();
+    S.add(new THREE.AmbientLight(0x1a1408,0.2));
+    for(var i=0;i<3;i++)buildRoom(i);
+    // Hallways between rooms
+    for(var i=0;i<2;i++){
+        var z1=RMS[i].z-6,z2=RMS[i+1].z+6;
+        pl(3,4.5,0x1a1208,0,2.25,(z1+z2)/2,0,Math.PI/2);
+        pl(3,4.5,0x1a1208,0,2.25,(z1+z2)/2,0,-Math.PI/2);
+    }
+    setCam(0);
+    sI();
+    anim();
+}
+
+function setCam(ri){
+    cp=ri;
+    tCX=RMS[ri].x;tCY=1.6;tCZ=RMS[ri].z+3;
+    tYaw=0;tPitch=0;
+    document.getElementById('rl').textContent=RMS[ri].name;
+    document.getElementById('rl').classList.add('on');
+    updateNav();
+}
+
+function goToRoom(ri){
+    if(transiting)return;
+    transiting=true;
+    document.getElementById('rl').classList.remove('on');
+    setTimeout(function(){
+        setCam(ri);
+        camX=tCX;camY=tCY;camZ=tCZ;
+        setTimeout(function(){transiting=false},300);
+    },400);
+}
+
+function updateNav(){
+    var nd=document.getElementById('navD');
+    var h='';
+    CONN[cp].forEach(function(r){
+        var dir=r>cp?'Forward':'Back';
+        var disabled='';
+        if(cp===0&&r===1&&!(solved.has('hiero')&&solved.has('dial')))disabled=' disabled';
+        if(cp===1&&r===2&&!solved.has('scale'))disabled=' disabled';
+        h+='<button class="btn" style="padding:8px 20px;font-size:0.7rem" onclick="goToRoom('+r+')"'+disabled+'>'+dir+' — '+RMS[r].name+'</button>';
+    });
+    nd.innerHTML=h;
+}
+
+/* ═══ INPUT ═══ */
+function sI(){
+    var cv=document.getElementById('c3d');
+    cv.addEventListener('mousedown',function(e){dragging=true;lx=e.clientX;ly=e.clientY});
+    cv.addEventListener('mousemove',function(e){if(!dragging)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;tYaw=Math.max(-Math.PI*0.4,Math.min(Math.PI*0.4,tYaw-dx*0.004));tPitch=Math.max(-0.3,Math.min(0.3,tPitch+dy*0.003))});
+    window.addEventListener('mouseup',function(){dragging=false});
+    var touchId=null;
+    cv.addEventListener('touchstart',function(e){var t=e.changedTouches[0];touchId=t.identifier;lx=t.clientX;ly=t.clientY},{passive:true});
+    cv.addEventListener('touchmove',function(e){for(var i=0;i<e.changedTouches.length;i++){var t=e.changedTouches[i];if(t.identifier===touchId){var dx=t.clientX-lx,dy=t.clientY-ly;lx=t.clientX;ly=t.clientY;tYaw=Math.max(-Math.PI*0.4,Math.min(Math.PI*0.4,tYaw-dx*0.004));tPitch=Math.max(-0.3,Math.min(0.3,tPitch+dy*0.003))}}},{passive:true});
+    cv.addEventListener('touchend',function(){touchId=null},{passive:true});
+    window.addEventListener('resize',function(){Cam.aspect=innerWidth/innerHeight;Cam.updateProjectionMatrix();Ren.setSize(innerWidth,innerHeight)});
+}
+
+function fpTap(){if(focusId)openPuzzle(focusId)}
+
+var OBJS={
+    hiero:{name:'Hieroglyph Wall',icon:'𓂀'},
+    dial:{name:'Ankh Dial Lock',icon:'☥'},
+    door1:{name:'Sealed Door',icon:'🚪'},
+    scale:{name:'Scales of Ma\'at',icon:'⚖️'},
+    sarc:{name:'Sarcophagus',icon:'⚱️'},
+    door2:{name:'Inner Door',icon:'🚪'},
+    exit:{name:'The Final Seal',icon:'☥'}
+};
+
+/* ═══ ANIMATION ═══ */
+function anim(){
+    requestAnimationFrame(anim);
+    gt+=0.016;
+    var sp=transiting?0.04:0.07;
+    camX+=(tCX-camX)*sp;camY+=(tCY-camY)*sp;camZ+=(tCZ-camZ)*sp;
+    yaw+=(tYaw-yaw)*0.08;pitch+=(tPitch-pitch)*0.08;
+    var sway=examining?0:Math.sin(gt*0.5)*0.008;
+    Cam.position.set(camX,camY,camZ);
+    var lookX=camX+Math.sin(yaw+sway)*5;
+    var lookY=camY+pitch*3;
+    var lookZ=camZ-Math.cos(yaw+sway)*5;
+    Cam.lookAt(lookX,lookY,lookZ);
+    // Animate flames & flicker
+    S.traverse(function(c){
+        if(c.userData){
+            if(c.userData.fl){c.scale.y=0.5+Math.sin(gt*12+c.id)*0.5;c.material.emissiveIntensity=2+Math.sin(gt*8+c.id)*2}
+            if(c.userData.fk&&c.isLight){c.intensity=c.intensity*0.9+(0.5+Math.sin(gt*11)*0.2)*0.1}
+        }
+    });
+    // Raycaster
+    if(started&&!examining&&!transiting){
+        Cam.updateMatrixWorld();m2d.set(0,0);rc.setFromCamera(m2d,Cam);
+        var hits=rc.intersectObjects(CK);
+        var nf=null;
+        if(hits.length>0&&hits[0].object.userData.id)nf=hits[0].object.userData.id;
+        if(nf!==focusId){
+            focusId=nf;
+            var fp=document.getElementById('fp'),dot=document.getElementById('chDot');
+            if(focusId&&OBJS[focusId]){
+                document.getElementById('fpIcon').textContent=OBJS[focusId].icon;
+                document.getElementById('fpName').textContent=OBJS[focusId].name;
+                fp.classList.add('on');dot.classList.add('active');
+            }else{fp.classList.remove('on');dot.classList.remove('active')}
+        }
+    }
+    Ren.render(S,Cam);
+}
+
+/* ═══ GAME FLOW ═══ */
+function enterTomb(){
+    document.getElementById('s-title').classList.remove('on');
+    setTimeout(function(){
+        started=true;
+        document.getElementById('ch').classList.add('on');
+        document.getElementById('hud').classList.add('on');
+        document.getElementById('inv').classList.add('on');
+        document.getElementById('navD').classList.add('on');
+        document.getElementById('rl').classList.add('on');
+        timerInt=setInterval(function(){
+            tLeft--;if(tLeft<=0){clearInterval(timerInt);gameOver();return}
+            var m=Math.floor(tLeft/60),s=tLeft%60;
+            document.getElementById('timer').textContent=m+':'+String(s).padStart(2,'0');
+            if(tLeft<=300)document.getElementById('timer').classList.add('warn');
+        },1000);
+    },600);
+}
+
+/* ═══ UI HELPERS ═══ */
 function fb(m,t,d){t=t||'info';d=d||3000;var e=document.getElementById('fb');e.textContent=m;e.className='fb show fb-'+t;setTimeout(function(){e.classList.remove('show')},d)}
-function openPnl(h){document.getElementById('pnlC').innerHTML=h;document.getElementById('pnl').classList.add('on');document.getElementById('pnlBg').classList.add('on')}
-function closePnl(){document.getElementById('pnl').classList.remove('on');document.getElementById('pnlBg').classList.remove('on')}
+function openPnl(h){examining=true;document.getElementById('pnlC').innerHTML=h;document.getElementById('pnl').classList.add('on');document.getElementById('pnlBg').classList.add('on');document.getElementById('fp').classList.remove('on')}
+function closePnl(){examining=false;document.getElementById('pnl').classList.remove('on');document.getElementById('pnlBg').classList.remove('on')}
 function addInv(id,icon,name){if(inv.find(function(i){return i.id===id}))return;inv.push({id:id,icon:icon,name:name});renderInv();fb('Found: '+name,'ok')}
 function hasInv(id){return inv.some(function(i){return i.id===id})}
 function rmInv(id){inv=inv.filter(function(i){return i.id!==id});if(selItem===id)selItem=null;renderInv()}
-function renderInv(){var bar=document.getElementById('invBar');bar.innerHTML=inv.map(function(i){return'<div class="inv-slot'+(selItem===i.id?' sel':'')+'" onclick="selInv(\''+i.id+'\')" title="'+i.name+'">'+i.icon+'</div>'}).join('')}
+function renderInv(){var bar=document.getElementById('invI');if(inv.length===0){bar.innerHTML='<span class="ie">Look around the tomb</span>';return}bar.innerHTML=inv.map(function(i){return'<div class="inv-slot'+(selItem===i.id?' sel':'')+'" onclick="selInv(\''+i.id+'\')" title="'+i.name+'">'+i.icon+'</div>'}).join('')}
 function selInv(id){selItem=selItem===id?null:id;renderInv();if(selItem)fb(inv.find(function(i){return i.id===id}).name,'info',1500)}
-function slv(id){if(solved.has(id))return;solved.add(id);document.getElementById('pzCount').textContent=solved.size;var hs=document.getElementById('hs-'+id);if(hs)hs.classList.add('solved');fb('Puzzle '+solved.size+'/'+TP+' solved!','ok');checkProgress()}
-function checkProgress(){if(solved.has('hiero')&&solved.has('dial'))document.getElementById('nav1fwd').disabled=false;if(solved.has('scale'))document.getElementById('nav2fwd').disabled=false;if(solved.size>=TP)setTimeout(function(){fb('All puzzles solved! Find the exit!','ok',5000)},1500)}
-
-function startGame(){
-    document.getElementById('s-title').classList.remove('on');
-    document.getElementById('hud').classList.add('on');
-    document.getElementById('ch1').classList.add('on');
-    started=true;
-    timerInt=setInterval(function(){
-        tLeft--;if(tLeft<=0){clearInterval(timerInt);gameOver();return}
-        var m=Math.floor(tLeft/60),s=tLeft%60;
-        document.getElementById('timer').textContent=m+':'+String(s).padStart(2,'0');
-        if(tLeft<=300)document.getElementById('timer').classList.add('warn');
-    },1000);
-}
-
-function goCh(n){
-    [1,2,3].forEach(function(c){document.getElementById('ch'+c).classList.remove('on')});
-    document.getElementById('ch'+n).classList.add('on');
-}
+function slv(id){if(solved.has(id))return;solved.add(id);document.getElementById('pzCount').textContent=solved.size;fb('Puzzle '+solved.size+'/'+TP+' solved!','ok');checkProgress()}
+function checkProgress(){updateNav();if(solved.size>=TP)setTimeout(function(){fb('All puzzles solved! Find the exit in The Way Out!','ok',5000)},1500)}
 
 function gameOver(){
     started=false;
-    [1,2,3].forEach(function(c){document.getElementById('ch'+c).classList.remove('on')});
-    document.getElementById('hud').classList.remove('on');
-    document.getElementById('winIcon').textContent='💀';
-    document.getElementById('winTitle').textContent='TIME UP';
+    document.getElementById('hud').classList.remove('on');document.getElementById('inv').classList.remove('on');
+    document.getElementById('navD').classList.remove('on');document.getElementById('ch').classList.remove('on');
+    document.getElementById('winIcon').textContent='💀';document.getElementById('winTitle').textContent='TIME UP';
     document.getElementById('winSub').textContent='The tomb has claimed another soul. The sands of time ran out before you could escape.';
-    document.getElementById('wTime').textContent='25:00';
-    document.getElementById('wPz').textContent=solved.size+'/5';
-    document.getElementById('wHints').textContent=hints;
+    document.getElementById('wTime').textContent='25:00';document.getElementById('wPz').textContent=solved.size+'/5';document.getElementById('wHints').textContent=hints;
     document.getElementById('s-win').classList.add('on');
 }
-
 function escape(){
     clearInterval(timerInt);started=false;
     var elapsed=1500-tLeft,m=Math.floor(elapsed/60),s=elapsed%60;
-    [1,2,3].forEach(function(c){document.getElementById('ch'+c).classList.remove('on')});
-    document.getElementById('hud').classList.remove('on');
-    document.getElementById('winIcon').textContent='☀️';
-    document.getElementById('winTitle').textContent='ESCAPED!';
+    document.getElementById('hud').classList.remove('on');document.getElementById('inv').classList.remove('on');
+    document.getElementById('navD').classList.remove('on');document.getElementById('ch').classList.remove('on');
+    document.getElementById('winIcon').textContent='\u2600\uFE0F';document.getElementById('winTitle').textContent='ESCAPED!';
     document.getElementById('winSub').textContent='You deciphered the ancient puzzles and escaped the Pharaoh\'s tomb. The curse of Kha-Re could not hold you.';
-    document.getElementById('wTime').textContent=m+':'+String(s).padStart(2,'0');
-    document.getElementById('wPz').textContent=solved.size+'/5';
-    document.getElementById('wHints').textContent=hints;
+    document.getElementById('wTime').textContent=m+':'+String(s).padStart(2,'0');document.getElementById('wPz').textContent=solved.size+'/5';document.getElementById('wHints').textContent=hints;
     document.getElementById('s-win').classList.add('on');
 }
 
-// ═══ PUZZLES ═══
-
+/* ═══ PUZZLES ═══ */
 function openPuzzle(id){
     if(id==='door1'){
-        if(solved.has('hiero')&&solved.has('dial')){closePnl();fb('The door opens! Moving forward...','ok');setTimeout(function(){goCh(2)},800)}
+        if(solved.has('hiero')&&solved.has('dial')){closePnl();fb('The door opens!','ok');setTimeout(function(){goToRoom(1)},800)}
         else openPnl('<div class="pnl-icon">🚪</div><div class="pnl-title">Sealed Door</div><div class="pnl-text">A massive stone door. Two puzzle locks glow on either side — both must be solved to proceed.</div><div class="pnl-text"><strong>'+(2-[solved.has('hiero'),solved.has('dial')].filter(Boolean).length)+'</strong> lock(s) remaining.</div>')
         return;
     }
     if(id==='door2'){
-        if(solved.has('scale')){closePnl();fb('The inner sanctum opens!','ok');setTimeout(function(){goCh(3)},800)}
+        if(solved.has('scale')){closePnl();fb('The inner sanctum opens!','ok');setTimeout(function(){goToRoom(2)},800)}
         else openPnl('<div class="pnl-icon">🚪</div><div class="pnl-title">Inner Sanctum Door</div><div class="pnl-text">This door is sealed by the Scales of Ma\'at. Balance the scales to proceed.</div>')
         return;
     }
@@ -369,16 +557,15 @@ function openPuzzle(id){
     if(puzzles[id])puzzles[id]();
 }
 
-// PUZZLE 1: Hieroglyph Sequence
 function pHiero(){
-    if(solved.has('hiero'))return openPnl('<div class="pnl-icon">𓂀</div><div class="pnl-title">Hieroglyph Wall</div><div class="solved-badge">✓ SOLVED</div>');
-    var symbols=['𓂀','𓃭','𓅃','𓆣','𓁹','𓃠','𓅱','𓇋'];
-    var answer=[0,2,4,1]; // 𓂀 𓅃 𓁹 𓃭
+    if(solved.has('hiero'))return openPnl('<div class="pnl-icon">\u{13080}</div><div class="pnl-title">Hieroglyph Wall</div><div class="solved-badge">\u2713 SOLVED</div>');
+    var symbols=['\u{13080}','\u{130ED}','\u{13143}','\u{131A3}','\u{13079}','\u{130E0}','\u{13171}','\u{1318B}'];
+    var answer=[0,2,4,1];
     window._hSel=[];
-    var h='<div class="pnl-icon">𓂀</div><div class="pnl-title">The Hieroglyph Wall</div>';
+    var h='<div class="pnl-icon">\u{13080}</div><div class="pnl-title">The Hieroglyph Wall</div>';
     h+='<div class="pnl-text">Ancient symbols cover the wall. A carved inscription reads:</div>';
     h+='<div style="text-align:center;padding:14px;background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.1);border-radius:4px;margin-bottom:14px;font-size:0.85rem;color:var(--g);line-height:1.8">"<em>The Eye sees first. The Bird flies third. The Scarab crawls second to last. The Jackal guards the end.</em>"</div>';
-    h+='<div class="pnl-hint">Select 4 symbols in the correct order: Eye(𓂀), then Bird(𓅃), then Scarab(𓁹), then Jackal(𓃭)</div>';
+    h+='<div class="pnl-hint">Select 4 symbols in the correct order</div>';
     h+='<div class="hiero-grid" id="hGrid">';
     symbols.forEach(function(s,i){h+='<div class="hiero-cell" onclick="hSel('+i+')">'+s+'</div>'});
     h+='</div><div style="text-align:center;margin-top:8px"><span id="hSelected" style="font-size:1.3rem;letter-spacing:8px;color:var(--g)">_ _ _ _</span></div>';
@@ -388,88 +575,69 @@ function pHiero(){
 function hSel(i){
     if(window._hSel.length>=4)return;
     window._hSel.push(i);
-    var symbols=['𓂀','𓃭','𓅃','𓆣','𓁹','𓃠','𓅱','𓇋'];
+    var symbols=['\u{13080}','\u{130ED}','\u{13143}','\u{131A3}','\u{13079}','\u{130E0}','\u{13171}','\u{1318B}'];
     var cells=document.querySelectorAll('.hiero-cell');
     cells[i].classList.add('active');
     document.getElementById('hSelected').textContent=window._hSel.map(function(x){return symbols[x]}).join(' ')+(window._hSel.length<4?' _'.repeat(4-window._hSel.length):'');
 }
 function hCheck(){
     if(window._hSel.length!==4)return fb('Select 4 symbols','no');
-    if(window._hSel.join(',')==='0,2,4,1'){
-        slv('hiero');addInv('scarab','𓆣','Sacred Scarab');closePnl();
-    }else{window._hSel=[];fb('Wrong sequence. Try again.','no');pHiero()}
+    if(window._hSel.join(',')==='0,2,4,1'){slv('hiero');addInv('scarab','\u{131A3}','Sacred Scarab');closePnl()}
+    else{window._hSel=[];fb('Wrong sequence. Try again.','no');pHiero()}
 }
 
-// PUZZLE 2: Number Dial
 function pDial(){
-    if(solved.has('dial'))return openPnl('<div class="pnl-icon">☥</div><div class="pnl-title">Ankh Dial Lock</div><div class="solved-badge">✓ SOLVED</div>');
+    if(solved.has('dial'))return openPnl('<div class="pnl-icon">\u2625</div><div class="pnl-title">Ankh Dial Lock</div><div class="solved-badge">\u2713 SOLVED</div>');
     window._dials=[0,0,0];
-    var h='<div class="pnl-icon">☥</div><div class="pnl-title">The Ankh Dial Lock</div>';
+    var h='<div class="pnl-icon">\u2625</div><div class="pnl-title">The Ankh Dial Lock</div>';
     h+='<div class="pnl-text">Three rotating dials surround an ankh symbol. An inscription reads:</div>';
     h+='<div style="text-align:center;padding:14px;background:rgba(212,168,67,0.04);border:1px solid rgba(212,168,67,0.1);border-radius:4px;margin-bottom:14px;font-size:0.85rem;color:var(--g);line-height:1.8">"<em>The sun rises at 3. It peaks at 7. It sets at 2.</em>"</div>';
     h+='<div class="pnl-hint">Set the dials to 3, 7, 2</div>';
     h+='<div class="dial-row" id="dialRow">';
-    for(var d=0;d<3;d++){
-        h+='<div class="dial"><button class="dial-btn" onclick="dAdj('+d+',1)">▲</button><div class="dial-val" id="dv'+d+'">0</div><button class="dial-btn" onclick="dAdj('+d+',-1)">▼</button><div class="dial-label">'+['SUN','PEAK','MOON'][d]+'</div></div>';
-    }
+    for(var d=0;d<3;d++){h+='<div class="dial"><button class="dial-btn" onclick="dAdj('+d+',1)">\u25B2</button><div class="dial-val" id="dv'+d+'">0</div><button class="dial-btn" onclick="dAdj('+d+',-1)">\u25BC</button><div class="dial-label">'+['SUN','PEAK','MOON'][d]+'</div></div>'}
     h+='</div><div style="text-align:center;margin-top:12px"><button class="eb" onclick="dCheck()">Turn Lock</button></div>';
     openPnl(h);
 }
 function dAdj(d,dir){window._dials[d]=(window._dials[d]+dir+10)%10;document.getElementById('dv'+d).textContent=window._dials[d]}
-function dCheck(){
-    if(window._dials.join(',')==='3,7,2'){slv('dial');addInv('key','🔑','Bronze Key');closePnl()}
-    else fb('The lock doesn\'t budge. Wrong combination.','no')
-}
+function dCheck(){if(window._dials.join(',')==='3,7,2'){slv('dial');addInv('key','\uD83D\uDD11','Bronze Key');closePnl()}else fb('The lock doesn\'t budge.','no')}
 
-// PUZZLE 3: Scales of Ma'at
 function pScale(){
-    if(solved.has('scale'))return openPnl('<div class="pnl-icon">⚖️</div><div class="pnl-title">Scales of Ma\'at</div><div class="solved-badge">✓ BALANCED</div>');
+    if(solved.has('scale'))return openPnl('<div class="pnl-icon">\u2696\uFE0F</div><div class="pnl-title">Scales of Ma\'at</div><div class="solved-badge">\u2713 BALANCED</div>');
     window._leftW=0;window._rightW=7;window._placed=[];
-    var h='<div class="pnl-icon">⚖️</div><div class="pnl-title">The Scales of Ma\'at</div>';
-    h+='<div class="pnl-text">The right scale holds a <strong>feather of truth</strong> weighing <strong>7 units</strong>. Place the correct combination of weights on the left to balance it.</div>';
-    h+='<div class="scale-visual"><div class="scale-side"><div class="scale-plate" id="sLeft"></div><div style="font-size:0.7rem;color:var(--td)">Left: <span id="sLV">0</span></div></div><div style="font-size:2rem;color:var(--gd)">⚖️</div><div class="scale-side"><div class="scale-plate" id="sRight"><span style="font-size:1.5rem">🪶</span></div><div style="font-size:0.7rem;color:var(--td)">Right: 7</div></div></div>';
+    var h='<div class="pnl-icon">\u2696\uFE0F</div><div class="pnl-title">The Scales of Ma\'at</div>';
+    h+='<div class="pnl-text">The right scale holds a <strong>feather of truth</strong> weighing <strong>7 units</strong>. Place weights on the left to balance.</div>';
+    h+='<div class="scale-visual"><div class="scale-side"><div class="scale-plate" id="sLeft"></div><div style="font-size:0.7rem;color:var(--td)">Left: <span id="sLV">0</span></div></div><div style="font-size:2rem;color:var(--gd)">\u2696\uFE0F</div><div class="scale-side"><div class="scale-plate" id="sRight"><span style="font-size:1.5rem">\uD83E\uDEB6</span></div><div style="font-size:0.7rem;color:var(--td)">Right: 7</div></div></div>';
     h+='<div class="pnl-text" style="text-align:center">Available weights:</div>';
     h+='<div class="weight-opts" id="wOpts">';
     [1,2,3,4,5,6].forEach(function(w){h+='<button class="weight-opt" id="wo'+w+'" onclick="placeW('+w+')">'+w+'</button>'});
     h+='</div><div style="text-align:center;margin-top:10px"><button class="eb" onclick="sCheck()">Check Balance</button> <button class="eb" onclick="sReset()" style="margin-left:8px">Reset</button></div>';
     openPnl(h);
 }
-function placeW(w){
-    if(window._placed.includes(w))return;
-    window._placed.push(w);window._leftW+=w;
-    document.getElementById('wo'+w).classList.add('placed');
-    document.getElementById('sLeft').innerHTML=window._placed.map(function(x){return'<span style="font-size:1rem">'+x+'</span>'}).join('');
-    document.getElementById('sLV').textContent=window._leftW;
-}
+function placeW(w){if(window._placed.includes(w))return;window._placed.push(w);window._leftW+=w;document.getElementById('wo'+w).classList.add('placed');document.getElementById('sLeft').innerHTML=window._placed.map(function(x){return'<span style="font-size:1rem">'+x+'</span>'}).join('');document.getElementById('sLV').textContent=window._leftW}
 function sReset(){window._placed=[];window._leftW=0;pScale()}
-function sCheck(){
-    if(window._leftW===7){slv('scale');addInv('ankh','☥','Golden Ankh');closePnl();fb('The scales balance! The inner sanctum opens.','ok')}
-    else if(window._leftW>7)fb('Too heavy! The left side crashes down.','no')
-    else fb('Too light. The scales tip right.','no')
-}
+function sCheck(){if(window._leftW===7){slv('scale');addInv('ankh','\u2625','Golden Ankh');closePnl();fb('The scales balance!','ok')}else if(window._leftW>7)fb('Too heavy!','no');else fb('Too light.','no')}
 
-// PUZZLE 4: Sarcophagus
 function pSarc(){
-    if(solved.has('sarc'))return openPnl('<div class="pnl-icon">⚱️</div><div class="pnl-title">Sarcophagus</div><div class="solved-badge">✓ OPENED</div>');
-    if(!hasInv('scarab'))return openPnl('<div class="pnl-icon">⚱️</div><div class="pnl-title">The Sarcophagus of Kha-Re</div><div class="pnl-text">A golden sarcophagus with a scarab-shaped indentation on the lid. Something needs to be placed here.</div>');
-    if(selItem==='scarab'){
-        rmInv('scarab');slv('sarc');addInv('map','🗺️','Tomb Map');
-        openPnl('<div class="pnl-icon">⚱️</div><div class="pnl-title">Sarcophagus Opened!</div><div class="pnl-text">The scarab fits perfectly. The lid slides open, revealing a <strong>map of the tomb</strong> showing the exit path. The golden ankh keyhole is in Chamber III.</div>');
-        return;
-    }
-    openPnl('<div class="pnl-icon">⚱️</div><div class="pnl-title">The Sarcophagus of Kha-Re</div><div class="pnl-text">Select the <strong>Sacred Scarab</strong> from your inventory, then click here again.</div>');
+    if(solved.has('sarc'))return openPnl('<div class="pnl-icon">\u26B1\uFE0F</div><div class="pnl-title">Sarcophagus</div><div class="solved-badge">\u2713 OPENED</div>');
+    if(!hasInv('scarab'))return openPnl('<div class="pnl-icon">\u26B1\uFE0F</div><div class="pnl-title">The Sarcophagus of Kha-Re</div><div class="pnl-text">A golden sarcophagus with a scarab-shaped indentation on the lid. Something needs to be placed here.</div>');
+    if(selItem==='scarab'){rmInv('scarab');slv('sarc');addInv('map','\uD83D\uDDFA\uFE0F','Tomb Map');openPnl('<div class="pnl-icon">\u26B1\uFE0F</div><div class="pnl-title">Sarcophagus Opened!</div><div class="pnl-text">The scarab fits perfectly. The lid slides open, revealing a <strong>map of the tomb</strong> showing the exit. The Golden Ankh keyhole is in Chamber III.</div>');return}
+    openPnl('<div class="pnl-icon">\u26B1\uFE0F</div><div class="pnl-title">The Sarcophagus of Kha-Re</div><div class="pnl-text">Select the <strong>Sacred Scarab</strong> from your inventory, then click here again.</div>');
 }
 
-// ═══ MULTIPLAYER ═══
-function generateRoomCode(){return Array.from({length:4},function(){return'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]}).join('')}
+/* ═══ MULTIPLAYER ═══ */
+function generateRoomCode(){return Array.from({length:6},function(){return'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]}).join('')}
 var roomCode=new URLSearchParams(window.location.search).get('room');
 var isHost=!roomCode;if(!roomCode)roomCode=generateRoomCode();
 function shareGame(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;if(navigator.share){navigator.share({title:document.title,text:'Join my escape!',url:url})}else{document.getElementById('mpCode').textContent=roomCode;document.getElementById('mpOverlay').classList.add('on')}}
-function copyRoomCode(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;navigator.clipboard.writeText(url).then(function(){var b=event.target;b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY CODE'},2000)})}
-function joinRoom(){var c=document.getElementById('mpJoinCode').value.trim().toUpperCase();if(c.length===4)window.location.href=window.location.pathname+'?room='+c}
-if(!isHost){document.addEventListener('DOMContentLoaded',function(){var t=document.querySelector('.pb-title');if(t)t.textContent+=' · Room: '+roomCode})}
+function copyRoomLink(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;navigator.clipboard.writeText(url).then(function(){var b=event.target;b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY LINK'},2000)})}
+function copyRoomCode(){navigator.clipboard.writeText(roomCode).then(function(){var b=event.target;b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY CODE'},2000)})}
+function joinRoom(){var c=document.getElementById('mpJoinCode').value.trim().toUpperCase();if(c.length===6)window.location.href=window.location.pathname+'?room='+c}
+if(!isHost){document.addEventListener('DOMContentLoaded',function(){var t=document.querySelector('.pb-title');if(t)t.textContent+=' \u00B7 Room: '+roomCode})}
 
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closePnl()});
+
+/* ═══ INIT ═══ */
+i3();
 </script>
 </body>
 </html>
