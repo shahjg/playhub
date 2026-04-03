@@ -51,7 +51,7 @@
 
         .mp-overlay{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
         .mp-overlay.on{opacity:1;pointer-events:all}
-        .mp-modal{background:rgba(14,11,18,0.95);border:1px solid rgba(155,109,255,0.15);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .mp-modal{position:relative;background:rgba(14,11,18,0.95);border:1px solid rgba(155,109,255,0.15);border-radius:8px;padding:32px;max-width:420px;width:90%;text-align:center}
         .mp-h{font-size:1.2rem;color:#9b6dff;margin-bottom:8px;letter-spacing:2px}
         .mp-sub{font-size:0.8rem;color:var(--td);margin-bottom:20px}
         .mp-code{font-size:2.5rem;letter-spacing:12px;color:var(--p);font-family:monospace;margin:16px 0;padding:12px;background:rgba(155,109,255,0.04);border-radius:6px;border:1px solid rgba(155,109,255,0.1)}
@@ -59,7 +59,10 @@
         .mp-btn{padding:10px 24px;border:1px solid #9b6dff;border-radius:4px;background:none;color:#9b6dff;font-size:0.8rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s;font-family:inherit}
         .mp-btn:hover{background:rgba(155,109,255,0.06)}
         .mp-btn.primary{background:#9b6dff;color:#08060a}
-        .mp-join-input{padding:10px 16px;border:1px solid rgba(155,109,255,0.2);border-radius:4px;background:rgba(155,109,255,0.04);color:var(--p);font-size:1rem;letter-spacing:4px;text-align:center;width:160px;font-family:monospace}
+        .mp-close{position:absolute;top:12px;right:16px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.5rem;cursor:pointer;padding:4px 8px;line-height:1;transition:color 0.2s}
+        .mp-close:hover{color:#fff}
+        .mp-divider{height:1px;background:rgba(155,109,255,0.1);margin:20px 0}
+        .mp-join-input{padding:10px 16px;border:1px solid rgba(155,109,255,0.2);border-radius:4px;background:rgba(155,109,255,0.04);color:var(--p);font-size:1rem;letter-spacing:4px;text-align:center;width:200px;font-family:monospace}
 
         /* ═══ TITLE SCREEN ═══ */
         .title-screen{background:rgba(8,6,10,0.95)}
@@ -242,24 +245,21 @@
     </div>
 
     <!-- Multiplayer Overlay -->
-    <div class="mp-overlay" id="mpOverlay">
+    <div class="mp-overlay" id="mpOverlay" onclick="if(event.target===this)this.classList.remove('on')">
         <div class="mp-modal">
-            <div id="mpContent">
-                <div class="mp-h">PLAY WITH FRIENDS</div>
-                <div class="mp-sub">Share the room code so others can join your session</div>
-                <div class="mp-code" id="mpCode">----</div>
-                <div class="mp-actions">
-                    <button class="mp-btn" onclick="copyRoomCode()">COPY CODE</button>
-                    <button class="mp-btn" onclick="document.getElementById('mpOverlay').classList.remove('on')">CLOSE</button>
-                </div>
+            <button class="mp-close" onclick="document.getElementById('mpOverlay').classList.remove('on')">&times;</button>
+            <div class="mp-h">INVITE FRIENDS</div>
+            <div class="mp-sub">Share the room code or link so others can join your session</div>
+            <div class="mp-code" id="mpCode">------</div>
+            <div class="mp-actions">
+                <button class="mp-btn" onclick="copyRoomLink()">COPY LINK</button>
+                <button class="mp-btn primary" onclick="copyRoomCode()">COPY CODE</button>
             </div>
-            <div id="mpJoin" style="display:none">
-                <div class="mp-h">JOIN GAME</div>
-                <div class="mp-sub">Enter the room code to join</div>
-                <input type="text" class="mp-join-input" id="mpJoinCode" maxlength="4" placeholder="CODE">
-                <div class="mp-actions" style="margin-top:16px">
-                    <button class="mp-btn primary" onclick="joinRoom()">JOIN</button>
-                </div>
+            <div class="mp-divider"></div>
+            <div class="mp-sub">Or join a friend's game</div>
+            <input type="text" class="mp-join-input" id="mpJoinCode" maxlength="6" placeholder="ENTER CODE">
+            <div class="mp-actions" style="margin-top:12px">
+                <button class="mp-btn primary" onclick="joinRoom()">JOIN GAME</button>
             </div>
         </div>
     </div>
@@ -738,7 +738,7 @@ function submitAccusation() {
 }
 
 // ═══ MULTIPLAYER ═══
-function generateRoomCode() { return Array.from({ length: 4 }, function() { return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)] }).join('') }
+function generateRoomCode() { return Array.from({ length: 6 }, function() { return 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)] }).join('') }
 var roomCode = new URLSearchParams(window.location.search).get('room');
 var isHost = !roomCode;
 if (!roomCode) roomCode = generateRoomCode();
@@ -752,9 +752,16 @@ function shareGame() {
         document.getElementById('mpOverlay').classList.add('on');
     }
 }
-function copyRoomCode() {
+function copyRoomLink() {
     var url = window.location.origin + window.location.pathname + '?room=' + roomCode;
     navigator.clipboard.writeText(url).then(function() {
+        var btn = event.target;
+        btn.textContent = 'COPIED!';
+        setTimeout(function() { btn.textContent = 'COPY LINK' }, 2000);
+    });
+}
+function copyRoomCode() {
+    navigator.clipboard.writeText(roomCode).then(function() {
         var btn = event.target;
         btn.textContent = 'COPIED!';
         setTimeout(function() { btn.textContent = 'COPY CODE' }, 2000);
@@ -762,7 +769,7 @@ function copyRoomCode() {
 }
 function joinRoom() {
     var code = document.getElementById('mpJoinCode').value.trim().toUpperCase();
-    if (code.length === 4) window.location.href = window.location.pathname + '?room=' + code;
+    if (code.length === 6) window.location.href = window.location.pathname + '?room=' + code;
 }
 if (!isHost) {
     document.addEventListener('DOMContentLoaded', function() {
