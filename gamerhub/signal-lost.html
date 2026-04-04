@@ -62,6 +62,25 @@
         .mp-divider{height:1px;background:rgba(0,255,136,0.1);margin:20px 0}
         .mp-join-input{padding:10px 16px;border:1px solid rgba(0,255,136,0.2);border-radius:4px;background:rgba(0,255,136,0.04);color:var(--p);font-size:1rem;letter-spacing:4px;text-align:center;width:200px;font-family:'IBM Plex Mono',monospace}
 
+        .lobby-overlay{position:fixed;inset:0;z-index:150;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;opacity:0;pointer-events:none;transition:opacity 0.5s}
+        .lobby-overlay.on{opacity:1;pointer-events:all}
+        .lobby-card{max-width:440px;width:100%;text-align:center}
+        .lobby-title{font-family:'Orbitron',serif;font-size:1.4rem;letter-spacing:3px;margin-bottom:8px}
+        .lobby-sub{font-size:0.82rem;color:var(--td);margin-bottom:24px}
+        .lobby-code{font-size:3rem;letter-spacing:14px;font-family:monospace;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin-bottom:16px}
+        .lobby-actions{display:flex;gap:8px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+        .lobby-btn{padding:10px 24px;border:1px solid rgba(255,255,255,0.15);border-radius:4px;background:none;color:inherit;font-size:0.78rem;letter-spacing:1px;cursor:pointer;transition:all 0.2s;font-family:inherit}
+        .lobby-btn:hover{border-color:var(--g);color:var(--g)}
+        .lobby-btn.primary{background:var(--g);color:var(--bg);border-color:var(--g)}
+        .lobby-divider{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:20px 0}
+        .lobby-players{margin-bottom:20px}
+        .lobby-player{display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:6px}
+        .lobby-player-icon{font-size:1.2rem}
+        .lobby-player-name{font-size:0.85rem;font-weight:600;flex:1}
+        .lobby-player-tag{font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--g);padding:3px 8px;border:1px solid rgba(255,255,255,0.08);border-radius:3px}
+        .lobby-status{font-size:0.75rem;color:var(--td);letter-spacing:1px;margin-top:12px}
+        .lobby-link{font-size:0.7rem;color:var(--td);word-break:break-all;background:rgba(255,255,255,0.02);padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,0.04);margin-bottom:16px;cursor:pointer}
+
         /* ═══ TITLE ═══ */
         .title-screen{background:rgba(5,5,8,0.98)}
         .tglow{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:500px;height:400px;background:radial-gradient(ellipse,rgba(0,255,136,0.04),transparent 60%);pointer-events:none}
@@ -197,6 +216,33 @@
             <input class="mp-join-input" id="mpJoinCode" maxlength="6" placeholder="ENTER CODE">
             <div class="mp-actions" style="margin-top:12px">
                 <button class="mp-btn primary" onclick="joinRoom()">JOIN GAME</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lobby-overlay" id="lobbyOverlay">
+        <div class="lobby-card">
+            <div style="font-size:2.5rem;margin-bottom:12px" id="lobbyIcon">🛸</div>
+            <div class="lobby-title" id="lobbyTitle">WAITING ROOM</div>
+            <div class="lobby-sub" id="lobbySub">Share the code below to invite others</div>
+            <div class="lobby-code" id="lobbyCode">------</div>
+            <div class="lobby-link" id="lobbyLink" onclick="copyLobbyLink()" title="Click to copy"></div>
+            <div class="lobby-actions">
+                <button class="lobby-btn" onclick="copyLobbyCode()">COPY CODE</button>
+                <button class="lobby-btn" onclick="copyLobbyLink()">COPY LINK</button>
+            </div>
+            <hr class="lobby-divider">
+            <div class="lobby-players" id="lobbyPlayers">
+                <div class="lobby-player">
+                    <div class="lobby-player-icon">👤</div>
+                    <div class="lobby-player-name" id="lobbyHostName">You</div>
+                    <div class="lobby-player-tag">HOST</div>
+                </div>
+            </div>
+            <div class="lobby-status" id="lobbyStatus">Waiting for others to join...</div>
+            <div class="lobby-actions" style="margin-top:20px">
+                <button class="lobby-btn primary" id="lobbyStartBtn" onclick="startFromLobby()">START GAME</button>
+                <button class="lobby-btn" onclick="closeLobby()">CANCEL</button>
             </div>
         </div>
     </div>
@@ -512,11 +558,16 @@ function endGame(type){
 function generateRoomCode(){return Array.from({length:6},function(){return'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]}).join('')}
 var roomCode=new URLSearchParams(window.location.search).get('room');
 var isHost=!roomCode;if(!roomCode)roomCode=generateRoomCode();
-function shareGame(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;if(navigator.share){navigator.share({title:document.title,text:'Join my mission!',url:url})}else{document.getElementById('mpCode').textContent=roomCode;document.getElementById('mpOverlay').classList.add('on')}}
+function openLobby(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;document.getElementById('lobbyCode').textContent=roomCode;document.getElementById('lobbyLink').textContent=url;document.getElementById('lobbyOverlay').classList.add('on')}
+function closeLobby(){document.getElementById('lobbyOverlay').classList.remove('on')}
+function copyLobbyCode(){navigator.clipboard.writeText(roomCode).then(function(){var el=document.getElementById('lobbyCode');el.style.borderColor='var(--g)';setTimeout(function(){el.style.borderColor=''},1500)})}
+function copyLobbyLink(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('lobbyLink');var old=el.textContent;el.textContent='Copied!';setTimeout(function(){el.textContent=old},1500)})}
+function startFromLobby(){closeLobby()}
+function shareGame(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;if(navigator.share){navigator.share({title:document.title,text:'Join my mission!',url:url})}else{openLobby()}}
 function copyRoomLink(){var url=window.location.origin+window.location.pathname+'?room='+roomCode;navigator.clipboard.writeText(url).then(function(){var b=event.target;b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY LINK'},2000)})}
 function copyRoomCode(){navigator.clipboard.writeText(roomCode).then(function(){var b=event.target;b.textContent='COPIED!';setTimeout(function(){b.textContent='COPY CODE'},2000)})}
 function joinRoom(){var code=document.getElementById('mpJoinCode').value.trim().toUpperCase();if(code.length===6)window.location.href=window.location.pathname+'?room='+code}
-if(!isHost){document.addEventListener('DOMContentLoaded',function(){var t=document.querySelector('.pb-title');if(t)t.textContent+=' · Room: '+roomCode})}
+if(!isHost){document.addEventListener('DOMContentLoaded',function(){var t=document.querySelector('.pb-title');if(t)t.textContent+=' · Room: '+roomCode;setTimeout(function(){document.getElementById('lobbyCode').textContent=roomCode;document.getElementById('lobbyLink').textContent=window.location.href;document.getElementById('lobbyTitle').textContent='JOINED ROOM';document.getElementById('lobbySub').textContent='You\'ve joined a session. Start when ready!';document.getElementById('lobbyStartBtn').textContent='READY';document.getElementById('lobbyStatus').textContent='Connected to room '+roomCode;document.getElementById('lobbyOverlay').classList.add('on')},500)})}
 </script>
 </body>
 </html>
