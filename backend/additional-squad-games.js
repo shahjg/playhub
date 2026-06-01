@@ -286,8 +286,9 @@ function endMostLikelyToGame(room, io) {
 
 // ==================== FAKE ARTIST ====================
 
-function initFakeArtistGame(room) {
+function initFakeArtistGame(room, category = 'mixed') {
   room.gameData = {
+    category,
     currentRound: 0,
     totalRounds: 3,
     currentWord: null,
@@ -324,17 +325,20 @@ function startFakeArtistRound(room, io) {
   gd.fakerIndex = room.players.findIndex(p => p.name === pick.name);
   gd.recentFakers.push(pick.name);
 
-  // 2: Pick a word not yet used this game, from a random category
-  const cats = Object.keys(FAKE_ARTIST_WORDS);
-  const shuffledCats = cats.slice().sort(() => Math.random() - 0.5);
+  // 2: Pick a word not yet used this game, respecting selected category
+  const allCats = Object.keys(FAKE_ARTIST_WORDS);
+  const activeCats = (gd.category && gd.category !== 'mixed' && FAKE_ARTIST_WORDS[gd.category])
+    ? [gd.category]
+    : allCats;
+  const shuffledCats = activeCats.slice().sort(() => Math.random() - 0.5);
   let word = null;
   for (const cat of shuffledCats) {
     const available = FAKE_ARTIST_WORDS[cat].filter(w => !gd.usedWords.has(w));
     if (available.length > 0) { word = available[Math.floor(Math.random() * available.length)]; break; }
   }
-  if (!word) { // All 160 words used — reset bank
+  if (!word) { // Bank exhausted for this category — reset and repick
     gd.usedWords.clear();
-    const cat = cats[Math.floor(Math.random() * cats.length)];
+    const cat = shuffledCats[0] || allCats[0];
     const arr = FAKE_ARTIST_WORDS[cat];
     word = arr[Math.floor(Math.random() * arr.length)];
   }
