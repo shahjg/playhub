@@ -415,42 +415,20 @@ class SocialSystem {
         0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
         50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.8); }
       }
-      /* ===== HEADER BUTTON ===== */
-      .friends-header-btn {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        background: transparent;
-        border: none;
-        border-radius: 10px;
-        color: rgba(255, 255, 255, 0.7);
-        cursor: pointer;
-        transition: all 0.2s ease;
+      /* ===== FRIENDS MENU ITEM + USER PILL NOTIF DOT ===== */
+      .user-pill { position: relative; }
+      .user-pill .notif-dot {
+        position: absolute; top: -2px; right: -2px;
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #ff4757; border: 2px solid rgba(10,10,15,1);
+        display: none; pointer-events: none;
       }
-      .friends-header-btn svg { width: 22px; height: 22px; }
-      .friends-header-btn:hover { 
-        background: rgba(255, 255, 255, 0.08); 
-        color: #fff; 
+      .user-pill .notif-dot.visible { display: block; }
+      #user-menu .user-menu-item .notif-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #ff4757; display: none; margin-left: auto; flex-shrink: 0;
       }
-      .friends-header-btn .notif-dot {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 8px;
-        height: 8px;
-        background: var(--s-danger);
-        border-radius: 50%;
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.2s ease;
-      }
-      .friends-header-btn .notif-dot.visible {
-        opacity: 1;
-        transform: scale(1);
-      }
+      #user-menu .user-menu-item .notif-dot.visible { display: inline-block; }
 
       /* ===== OVERLAY ===== */
       .s-overlay {
@@ -2506,17 +2484,24 @@ class SocialSystem {
   injectHTML() {
     if (document.getElementById('social-v5')) return;
 
-    // Add button to header
-    const headerActions = document.querySelector('.header-actions');
-    if (headerActions) {
-      const btn = document.createElement('button');
-      btn.className = 'friends-header-btn';
-      btn.id = 'friends-header-btn';
-      btn.innerHTML = `${this.icons.users}<span class="notif-dot" id="notif-dot"></span>`;
-      
-      const navLoggedIn = headerActions.querySelector('.nav-right-logged-in');
-      if (navLoggedIn) headerActions.insertBefore(btn, navLoggedIn);
-      else headerActions.appendChild(btn);
+    // Add Friends item at the top of the account dropdown
+    const userMenu = document.getElementById('user-menu');
+    if (userMenu) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'user-menu-item';
+      item.id = 'friends-menu-item';
+      item.setAttribute('role', 'menuitem');
+      item.innerHTML = 'Friends <span class="notif-dot" id="notif-dot"></span>';
+      userMenu.insertBefore(item, userMenu.firstChild);
+    }
+    // Add a dot on the user-pill itself so pending requests are visible without opening the menu
+    const pill = document.querySelector('.user-pill');
+    if (pill && !pill.querySelector('.notif-dot')) {
+      const pillDot = document.createElement('span');
+      pillDot.className = 'notif-dot';
+      pillDot.id = 'pill-notif-dot';
+      pill.appendChild(pillDot);
     }
 
     // Use placeholders - updateNameplate() will fill in correct values
@@ -2674,7 +2659,7 @@ class SocialSystem {
   // ==================== EVENTS ====================
 
   bindEvents() {
-    document.getElementById('friends-header-btn')?.addEventListener('click', () => {
+    document.getElementById('friends-menu-item')?.addEventListener('click', () => {
       this.toggle();
       if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
     });
@@ -3078,9 +3063,11 @@ class SocialSystem {
   updateNotificationBadge() {
     const count = this.pendingRequests.length + this.gameInvites.length + this.partyInvites.length;
     const dot = document.getElementById('notif-dot');
+    const pillDot = document.getElementById('pill-notif-dot');
     const reqCount = document.getElementById('req-count');
-    
+
     dot?.classList.toggle('visible', count > 0);
+    pillDot?.classList.toggle('visible', count > 0);
     
     if (reqCount) {
       reqCount.textContent = this.pendingRequests.length;
