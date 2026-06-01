@@ -3966,6 +3966,10 @@ socket.on('mostlikelyto-vote', (data) => {
                   playerName: player.playerName,
                   room: currentRoom
                 });
+                // Unblock fake artist if the leaver had an active turn or was the last vote
+                if (currentRoom.gameType === 'fake-artist' && currentRoom.gameData) {
+                  additionalSquadGames.handleFakeArtistPlayerLeave(currentRoom, player.playerName, io);
+                }
               }
             }
             

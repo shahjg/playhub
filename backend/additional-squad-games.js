@@ -36,9 +36,14 @@ const MLT_QUESTIONS = [
 ];
 
 const FAKE_ARTIST_WORDS = {
-  easy: ['Sun', 'House', 'Tree', 'Car', 'Dog', 'Cat', 'Fish', 'Bird', 'Apple', 'Flower', 'Star', 'Moon', 'Cloud', 'Rain', 'Hat'],
-  medium: ['Robot', 'Pizza', 'Guitar', 'Castle', 'Dragon', 'Pirate', 'Rocket', 'Penguin', 'Elephant', 'Butterfly', 'Snowman', 'Rainbow', 'Volcano', 'Mermaid', 'Unicorn'],
-  hard: ['Gravity', 'Freedom', 'Music', 'Time', 'Dream', 'Love', 'Happiness', 'Wisdom', 'Patience', 'Courage']
+  Animals:  ['Elephant','Penguin','Octopus','Giraffe','Kangaroo','Hedgehog','Dolphin','Owl','Crocodile','Squirrel','Flamingo','Snail','Rhino','Peacock','Lobster','Bat','Camel','Walrus','Chameleon','Jellyfish'],
+  Food:     ['Pizza','Hamburger','Sushi','Pancakes','Hot Dog','Cupcake','Taco','Spaghetti','Pretzel','Donut','Popcorn','Watermelon','Ice Cream','Sandwich','Pineapple','Fried Egg','Cheese','Lollipop','Burrito','Waffle'],
+  Objects:  ['Umbrella','Telescope','Anchor','Lightbulb','Scissors','Camera','Hourglass','Compass','Toaster','Ladder','Padlock','Wheelbarrow','Fire Extinguisher','Vending Machine','Chandelier','Typewriter','Lawnmower','Microscope','Trophy','Hammer'],
+  Places:   ['Lighthouse','Castle','Pyramid','Igloo','Windmill','Skyscraper','Treehouse','Volcano','Stadium','Bridge','Barn','Cave','Aquarium','Carnival','Temple','Subway Station','Greenhouse','Campsite','Harbor','Observatory'],
+  Vehicles: ['Helicopter','Submarine','Hot Air Balloon','Tractor','Motorcycle','Sailboat','Train','Rocket','Bicycle','Ambulance','Bulldozer','Canoe','Scooter','Tank','Cruise Ship','Jet Ski','Forklift','Tricycle','Glider','Monster Truck'],
+  Nature:   ['Rainbow','Tornado','Waterfall','Cactus','Mushroom','Snowflake','Lightning','Mountain','Coral Reef','Palm Tree','Iceberg','Geyser','Sunflower','Whirlpool','Canyon','Aurora','Tide Pool','Sand Dune','Comet','Glacier'],
+  Sports:   ['Basketball','Surfing','Boxing','Archery','Skateboarding','Bowling','Fencing','Golf','Ice Skating','Rock Climbing','Ping Pong','Skiing','Hurdles','Diving','Tennis','Karate','Cycling','Gymnastics','Sumo','Darts'],
+  Fantasy:  ['Dragon','Unicorn','Mermaid','Wizard','Genie','Phoenix','Knight','Fairy','Troll','Pirate','Witch','Centaur','Sorcerer','Goblin','Griffin','Vampire','Werewolf','Yeti','Kraken','Cyclops']
 };
 
 const BP_WORDS = ['Elephant', 'Dancing', 'Birthday cake', 'Superhero', 'Rainbow', 'Robot', 'Spaghetti', 'Volcano', 'Spaceship', 'Penguin', 'Wizard', 'Treehouse', 'Waterfall', 'Dinosaur', 'Pirate ship', 'Snowman', 'Campfire', 'Roller coaster', 'Astronaut', 'Mermaid'];
@@ -282,15 +287,14 @@ function endMostLikelyToGame(room, io) {
 // ==================== FAKE ARTIST ====================
 
 function initFakeArtistGame(room) {
-  const words = [...FAKE_ARTIST_WORDS.easy, ...FAKE_ARTIST_WORDS.medium].sort(() => Math.random() - 0.5);
   room.gameData = {
-    words,
-    wordIndex: 0,
     currentRound: 0,
     totalRounds: 3,
     currentWord: null,
     fakerIndex: -1,
     faker: null,
+    recentFakers: [],
+    usedWords: new Set(),
     turnOrder: [],
     currentTurnIndex: 0,
     drawingsPerRound: 2,
@@ -304,23 +308,45 @@ function initFakeArtistGame(room) {
 
 function startFakeArtistRound(room, io) {
   const gd = room.gameData;
+  if (gd.phase === 'drawing') return; // 3e: double-start guard
   gd.currentRound++;
-  
+
   if (gd.currentRound > gd.totalRounds) {
     endFakeArtistGame(room, io);
     return;
   }
-  
-  // Select faker randomly
-  gd.fakerIndex = Math.floor(Math.random() * room.players.length);
-  gd.faker = room.players[gd.fakerIndex].name;
-  gd.currentWord = gd.words[gd.wordIndex++];
+
+  // 1b: Fair faker rotation — exclude recent fakers until everyone has had a turn
+  let eligible = room.players.filter(p => !gd.recentFakers.includes(p.name));
+  if (eligible.length === 0) { gd.recentFakers = []; eligible = room.players.slice(); }
+  const pick = eligible[Math.floor(Math.random() * eligible.length)];
+  gd.faker = pick.name;
+  gd.fakerIndex = room.players.findIndex(p => p.name === pick.name);
+  gd.recentFakers.push(pick.name);
+
+  // 2: Pick a word not yet used this game, from a random category
+  const cats = Object.keys(FAKE_ARTIST_WORDS);
+  const shuffledCats = cats.slice().sort(() => Math.random() - 0.5);
+  let word = null;
+  for (const cat of shuffledCats) {
+    const available = FAKE_ARTIST_WORDS[cat].filter(w => !gd.usedWords.has(w));
+    if (available.length > 0) { word = available[Math.floor(Math.random() * available.length)]; break; }
+  }
+  if (!word) { // All 160 words used — reset bank
+    gd.usedWords.clear();
+    const cat = cats[Math.floor(Math.random() * cats.length)];
+    const arr = FAKE_ARTIST_WORDS[cat];
+    word = arr[Math.floor(Math.random() * arr.length)];
+  }
+  gd.usedWords.add(word);
+  gd.currentWord = word;
+
   gd.turnOrder = room.players.map(p => p.name).sort(() => Math.random() - 0.5);
   gd.currentTurnIndex = 0;
   gd.currentDrawingRound = 0;
   gd.votes = {};
   gd.phase = 'drawing';
-  
+
   // Send round info to each player
   room.players.forEach(p => {
     const isFaker = p.name === gd.faker;
@@ -332,41 +358,54 @@ function startFakeArtistRound(room, io) {
       turnOrder: gd.turnOrder
     });
   });
-  
-  // Start first turn
-  io.to(room.code).emit('fakeartist-turn', {
-    turnIndex: 0,
-    currentPlayer: gd.turnOrder[0]
-  });
+
+  // Start first turn (3b: guard against empty turnOrder)
+  if (gd.turnOrder.length > 0) {
+    io.to(room.code).emit('fakeartist-turn', {
+      turnIndex: 0,
+      currentPlayer: gd.turnOrder[0]
+    });
+  }
 }
 
 function handleFakeArtistDraw(room, socketId, drawData, io) {
-  // Broadcast drawing to all players
+  const gd = room.gameData;
+  // 3d: reject strokes from anyone who isn't the current turn player
+  const sender = room.players.find(p => p.id === socketId);
+  if (!sender || sender.name !== gd.turnOrder[gd.currentTurnIndex]) return;
   io.to(room.code).emit('fakeartist-draw', drawData);
 }
 
 function handleFakeArtistDone(room, socketId, io) {
   const gd = room.gameData;
   if (gd.phase !== 'drawing') return;
-  
+  // 3d: only the current turn player may advance the turn
+  const sender = room.players.find(p => p.id === socketId);
+  const currentPlayer = gd.turnOrder[gd.currentTurnIndex];
+  if (!sender || sender.name !== currentPlayer) return;
+
   gd.currentTurnIndex++;
-  
+
   // Check if all players have drawn this round
   if (gd.currentTurnIndex >= gd.turnOrder.length) {
     gd.currentDrawingRound++;
     gd.currentTurnIndex = 0;
-    
-    // Check if all drawing rounds complete
     if (gd.currentDrawingRound >= gd.drawingsPerRound) {
       startFakeArtistVoting(room, io);
       return;
     }
   }
-  
-  // Next player's turn
+
+  // 3b: safety clamp in case turnOrder shrank
+  if (gd.currentTurnIndex >= gd.turnOrder.length) {
+    gd.currentTurnIndex = 0;
+  }
+  const next = gd.turnOrder[gd.currentTurnIndex];
+  if (!next) { startFakeArtistVoting(room, io); return; }
+
   io.to(room.code).emit('fakeartist-turn', {
     turnIndex: gd.currentTurnIndex,
-    currentPlayer: gd.turnOrder[gd.currentTurnIndex]
+    currentPlayer: next
   });
 }
 
@@ -383,11 +422,11 @@ function startFakeArtistVoting(room, io) {
 function handleFakeArtistVote(room, playerName, votedFor, io) {
   const gd = room.gameData;
   if (gd.phase !== 'voting') return;
-  
   gd.votes[playerName] = votedFor;
-  
-  // Check if everyone voted
-  if (Object.keys(gd.votes).length >= room.players.length) {
+  // 3c: compare against currently connected players only
+  const connected = room.players.map(p => p.name);
+  const votedAndConnected = Object.keys(gd.votes).filter(n => connected.includes(n));
+  if (votedAndConnected.length >= connected.length) {
     calculateFakeArtistResults(room, io);
   }
 }
@@ -432,11 +471,49 @@ function calculateFakeArtistResults(room, io) {
 function endFakeArtistGame(room, io) {
   room.gameState = 'ended';
   const sorted = Object.entries(room.gameData.scores).sort((a, b) => b[1] - a[1]);
-  
   io.to(room.code).emit('fakeartist-game-over', {
     scores: room.gameData.scores,
     winner: sorted[0]?.[0]
   });
+}
+
+// 3a+3c: called by server.js disconnect handler after removing the player from room.players
+function handleFakeArtistPlayerLeave(room, playerName, io) {
+  const gd = room.gameData;
+  if (!gd || !['drawing', 'voting'].includes(gd.phase)) return;
+
+  if (gd.phase === 'drawing') {
+    const leaverIdx = gd.turnOrder.indexOf(playerName);
+    const wasTheirTurn = leaverIdx === gd.currentTurnIndex;
+    gd.turnOrder = gd.turnOrder.filter(n => n !== playerName);
+
+    if (gd.turnOrder.length === 0) { startFakeArtistVoting(room, io); return; }
+
+    // Re-clamp index after removal
+    if (gd.currentTurnIndex > leaverIdx) gd.currentTurnIndex--;
+    if (gd.currentTurnIndex >= gd.turnOrder.length) {
+      gd.currentDrawingRound++;
+      gd.currentTurnIndex = 0;
+      if (gd.currentDrawingRound >= gd.drawingsPerRound) { startFakeArtistVoting(room, io); return; }
+    }
+
+    if (wasTheirTurn) {
+      const next = gd.turnOrder[gd.currentTurnIndex];
+      if (!next) { startFakeArtistVoting(room, io); return; }
+      io.to(room.code).emit('fakeartist-turn', {
+        turnIndex: gd.currentTurnIndex,
+        currentPlayer: next
+      });
+    }
+  } else if (gd.phase === 'voting') {
+    // Re-check: if all remaining connected players have voted, resolve now
+    const connected = room.players.map(p => p.name);
+    if (connected.length === 0) return;
+    const votedAndConnected = Object.keys(gd.votes).filter(n => connected.includes(n));
+    if (votedAndConnected.length >= connected.length) {
+      calculateFakeArtistResults(room, io);
+    }
+  }
 }
 
 // ==================== BROKEN PICTIONARY ====================
@@ -1377,6 +1454,7 @@ module.exports = {
   startFakeArtistRound,
   handleFakeArtistDraw,
   handleFakeArtistVote,
+  handleFakeArtistPlayerLeave,
   
   // Broken Pictionary
   initBrokenPictionaryGame,
