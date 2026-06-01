@@ -36,7 +36,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/header.css">
-    <link rel="stylesheet" href="/search-dropdown.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -93,43 +92,7 @@
         .hero-players { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 4px; color: #3e2c23; margin-bottom: 20px; }
         .hero-desc { font-size: 1.1rem; color: #3e2c23; line-height: 1.7; }
 
-        /* Search Bar — scoped to beat social.css overrides */
-        .duos-search.search-wrapper {
-            max-width: 500px;
-            width: 100%;
-            margin: 28px auto 0;
-            position: relative;
-        }
-        .duos-search .search-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            color: #e8825c;
-            pointer-events: none;
-            z-index: 1;
-        }
-        .duos-search .search-input {
-            width: 100%;
-            padding: 14px 20px 14px 44px !important;
-            background: #fff9f4 !important;
-            border: 1px solid #fbd5c3 !important;
-            border-radius: 50px !important;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            color: #3e2c23 !important;
-            outline: none;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            box-sizing: border-box;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        .duos-search .search-input::placeholder { color: #e8825c !important; opacity: 0.5 !important; }
-        .duos-search .search-input:focus { border-color: #e8825c !important; box-shadow: 0 0 0 3px rgba(232,130,92,0.1) !important; }
-
-        /* Featured Card */
+/* Featured Card */
         .featured-banner {
             max-width: 1100px;
             margin: 0 auto 40px;
@@ -834,12 +797,7 @@
                 <h1 class="hero-title">DUOS</h1>
                 <p class="hero-players">2 PLAYERS</p>
                 <p class="hero-desc">Games for two — whether it's date night or just hanging with a friend. Conversation starters, quick battles, and ways to learn more about each other.</p>
-                <div class="search-wrapper duos-search">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                    <input type="text" class="search-input" id="search-input" placeholder="Search games..." autocomplete="off">
-                    <button class="search-clear" id="search-clear" aria-label="Clear search">✕</button>
-                </div>
-                <div id="search-suggestions" class="search-suggestions"></div>
+
             </div>
         </section>
 
@@ -2337,7 +2295,6 @@
         // Filter functionality
         const filterBtns = document.querySelectorAll('.filter-btn');
         const categoryBlocks = document.querySelectorAll('.category-block');
-        const searchInput = document.getElementById('search-input');
         const noResults = document.getElementById('no-results');
 
         const featuredBanner = document.querySelector('.featured-banner');
@@ -2363,9 +2320,6 @@
                 btn.classList.add('active');
                 const filter = btn.dataset.filter;
 
-                // Clear search when changing filter
-                searchInput.value = '';
-
                 // Show featured banner only when showing all
                 if (featuredBanner) featuredBanner.style.display = filter === 'all' ? '' : 'none';
 
@@ -2379,41 +2333,6 @@
                 });
                 updateNoResults();
             });
-        });
-
-        // Search functionality
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
-
-            // Reset filter to all
-            filterBtns.forEach(b => b.classList.remove('active'));
-            filterBtns[0].classList.add('active');
-
-            if (!query) {
-                categoryBlocks.forEach(block => {
-                    block.classList.remove('hidden');
-                    block.querySelectorAll('.game-card').forEach(card => card.classList.remove('hidden'));
-                });
-                noResults.classList.remove('active');
-                noResults.style.display = 'none';
-                if (featuredBanner) featuredBanner.style.display = '';
-                return;
-            }
-
-            // Hide featured banner during search
-            if (featuredBanner) featuredBanner.style.display = 'none';
-
-            categoryBlocks.forEach(block => {
-                let blockHasVisible = false;
-                block.querySelectorAll('.game-card').forEach(card => {
-                    const name = card.dataset.name.toLowerCase();
-                    const matches = name.includes(query);
-                    card.classList.toggle('hidden', !matches);
-                    if (matches) blockHasVisible = true;
-                });
-                block.classList.toggle('hidden', !blockHasVisible);
-            });
-            updateNoResults();
         });
 
         // Sort functionality
@@ -2492,20 +2411,6 @@
             });
         });
     </script>
-    <script src="/search-helper.js"></script>
-    <script>
-      // Initialize global search for duos
-      setTimeout(() => {
-        initGlobalSearch({
-          inputId: 'search-input',
-          suggestionsId: 'search-suggestions',
-          clearBtnId: 'search-clear',
-          onSelect: (gameId) => {
-            const card = document.querySelector(`[data-game-id="${gameId}"]`);
-            if (card) card.click();
-          }
-        });
-      }, 100);
-    </script>
+
 </body>
 </html>
