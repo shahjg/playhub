@@ -5,6 +5,91 @@
 (function() {
     'use strict';
 
+    const GAME_INDEX = [
+      // SQUAD
+      {n:'Spy Hunt',u:'/lobby.html?game=spyfall',c:'Squad',a:['spyfall','spy fall','spy','find the spy']},
+      {n:'Mafia',u:'/lobby.html?game=werewolf',c:'Squad',a:['werewolf','mafia','village']},
+      {n:'Secret Roles',u:'/lobby.html?game=secret-roles',c:'Squad',a:['avalon','resistance','merlin']},
+      {n:'Imposter',u:'/lobby.html?game=imposter',c:'Squad',a:['imposter','impostor','undercover']},
+      {n:'Fake Artist',u:'/lobby.html?game=fake-artist',c:'Squad',a:['fake artist','drawing','new york']},
+      {n:'Insider',u:'/lobby.html?game=insider',c:'Squad',a:['insider','20 questions','twenty questions']},
+      {n:'Power Struggle',u:'/lobby.html?game=power-struggle',c:'Squad',a:['coup','bluff','power']},
+      {n:'Codewords',u:'/lobby.html?game=codenames',c:'Squad',a:['codenames','code names','spymaster','grid']},
+      {n:'Spectrum',u:'/lobby.html?game=wavelength',c:'Squad',a:['wavelength','spectrum','dial']},
+      {n:'Think Alike',u:'/lobby.html?game=herd-mentality',c:'Squad',a:['herd mentality','herd','match majority']},
+      {n:'Categories',u:'/lobby.html?game=categories',c:'Squad',a:['categories','scattergories']},
+      {n:'Word Chain',u:'/lobby.html?game=word-association',c:'Squad',a:['word association','word chain']},
+      {n:'Word Bomb',u:'/lobby.html?game=word-bomb',c:'Squad',a:['word bomb','bomb party','bomb']},
+      {n:'Name Place Animal Thing',u:'/lobby.html?game=npat',c:'Squad',a:['npat','name place animal thing','stop']},
+      {n:'Punchline',u:'/lobby.html?game=punchline',c:'Squad',a:['punchline','cards against','apples','quiplash']},
+      {n:'Fools Gold',u:'/lobby.html?game=fools-gold',c:'Squad',a:['fools gold','fibbage','bluff trivia']},
+      {n:'Broken Pictionary',u:'/lobby.html?game=broken-pictionary',c:'Squad',a:['broken pictionary','telephone','gartic']},
+      {n:'Doodle Duel',u:'/lobby.html?game=doodle-duel',c:'Squad',a:['doodle duel','draw','sketch']},
+      {n:'Two Truths One Lie',u:'/lobby.html?game=two-truths',c:'Squad',a:['two truths','one lie','2 truths']},
+      {n:'Sketch & Guess',u:'/lobby.html?game=sketch-guess',c:'Squad',a:['sketch','pictionary','skribbl','draw guess']},
+      {n:'Charades',u:'/lobby.html?game=charades',c:'Squad',a:['charades','act it out','heads up']},
+      {n:'Celebrity',u:'/lobby.html?game=celebrity',c:'Squad',a:['celebrity','salad bowl']},
+      {n:'Fishbowl',u:'/lobby.html?game=fishbowl',c:'Squad',a:['fishbowl','salad bowl']},
+      {n:'Most Likely To',u:'/lobby.html?game=most-likely-to',c:'Squad',a:['most likely to','who would']},
+      {n:'Ludo',u:'/lobby.html?game=ludo',c:'Squad',a:['ludo','parcheesi','sorry','board']},
+      // PARTY
+      {n:'Trivia Royale',u:'/lobby.html?game=trivia-royale',c:'Party',a:['trivia','quiz','kahoot']},
+      {n:'This or That',u:'/lobby.html?game=this-or-that-party',c:'Party',a:['this or that','would you rather','pick']},
+      {n:'Hot Takes',u:'/lobby.html?game=hot-takes-party',c:'Party',a:['hot takes','opinions','controversial']},
+      {n:'Never Have I Ever',u:'/lobby.html?game=never-ever-party',c:'Party',a:['never have i ever','never ever','nhie']},
+      {n:'Bet or Bluff',u:'/lobby.html?game=bet-or-bluff',c:'Party',a:['bet or bluff','wager','gamble trivia']},
+      // DUOS
+      {n:'Truth or Dare',u:'/games/duos/game-truth-or-dare.html',c:'Duos',a:['truth or dare','tod']},
+      {n:'21 Questions',u:'/games/duos/game-21-questions.html',c:'Duos',a:['21 questions','twenty one questions']},
+      {n:'Would You Rather',u:'/games/duos/game-would-you-rather.html',c:'Duos',a:['would you rather','wyr']},
+      {n:'Never Have I Ever',u:'/games/duos/game-never-have-i-ever.html',c:'Duos',a:['never have i ever','nhie']},
+      {n:'KMK',u:'/games/duos/game-kmk.html',c:'Duos',a:['kmk','kiss marry kill','marry']},
+      {n:'Taboo',u:'/games/duos/game-taboo.html',c:'Duos',a:['taboo','forbidden words']},
+      {n:'Draw & Guess',u:'/games/duos/game-draw-guess.html',c:'Duos',a:['draw guess','pictionary','skribbl']},
+      {n:'Hangman',u:'/games/duos/game-hangman.html',c:'Duos',a:['hangman','guess word']},
+      {n:'Word Chain',u:'/games/duos/game-word-chain.html',c:'Duos',a:['word chain','word association']},
+      {n:'This or That',u:'/games/duos/game-this-or-that.html',c:'Duos',a:['this or that']},
+      {n:'Tic Tac Toe',u:'/games/duos/game-tic-tac-toe.html',c:'Duos',a:['tic tac toe','noughts crosses','xo']},
+      {n:'Connect Four',u:'/games/duos/game-connect-four.html',c:'Duos',a:['connect four','connect 4']},
+      {n:'Rock Paper Scissors',u:'/games/duos/game-rock-paper-scissors.html',c:'Duos',a:['rock paper scissors','rps']},
+      {n:'Battleship',u:'/games/duos/game-battleship.html',c:'Duos',a:['battleship','sink ships']},
+      {n:'Reaction Race',u:'/games/duos/game-reaction-race.html',c:'Duos',a:['reaction race','reflex']},
+      {n:'Memory Match',u:'/games/duos/game-memory-match.html',c:'Duos',a:['memory match','concentration','pairs']},
+      {n:'Story Builder',u:'/games/duos/game-story-builder.html',c:'Duos',a:['story builder','collaborative story']},
+      {n:'Finish My Sentence',u:'/games/duos/game-finish-my-sentence.html',c:'Duos',a:['finish my sentence','complete']},
+      {n:'Wordle Duel',u:'/games/duos/game-wordle-duel.html',c:'Duos',a:['wordle','wordle duel']},
+      {n:'TypeRacer',u:'/games/duos/game-typeracer.html',c:'Duos',a:['typeracer','typing race','speed type']},
+      {n:'Scramble',u:'/games/duos/game-scramble.html',c:'Duos',a:['scramble','anagram','unscramble']},
+      {n:'Quiz Duel',u:'/games/duos/game-quiz-duel.html',c:'Duos',a:['quiz duel','trivia battle']},
+      {n:'Roast Me',u:'/games/duos/game-roast-me.html',c:'Duos',a:['roast me','roast','burn']},
+      {n:'Rhyme Battle',u:'/games/duos/game-rhyme-battle.html',c:'Duos',a:['rhyme battle','rap','bars']},
+      {n:'Movie Pitch',u:'/games/duos/game-movie-pitch.html',c:'Duos',a:['movie pitch','film idea']},
+      {n:'Hot Take',u:'/games/duos/game-hot-take.html',c:'Duos',a:['hot take','opinion']},
+      {n:'Dots & Boxes',u:'/games/duos/game-dots-boxes.html',c:'Duos',a:['dots and boxes','dots boxes']},
+      // SOLO
+      {n:'Connections',u:'/connections.html',c:'Solo',a:['connections','grouping']},
+      {n:'Gamedle',u:'/gamedle.html',c:'Solo',a:['gamedle','guess game']},
+      {n:'Athletedle',u:'/athletedle.html',c:'Solo',a:['athletedle','guess athlete']},
+      {n:'Jobdle',u:'/jobdle.html',c:'Solo',a:['jobdle','guess job']},
+      {n:'Weebdle',u:'/weebdle.html',c:'Solo',a:['weebdle','anime','guess anime']},
+      {n:'Aim Trainer',u:'/games/solo/aim-trainer.html',c:'Solo',a:['aim trainer','aim','flick']},
+      {n:'Typing Speed Test',u:'/games/solo/typing-test.html',c:'Solo',a:['typing test','wpm','typing speed']},
+      {n:'Reaction Time',u:'/games/solo/reaction-time.html',c:'Solo',a:['reaction time','reflex']},
+      {n:'Chimp Test',u:'/games/solo/chimp-test.html',c:'Solo',a:['chimp test','memory']},
+      {n:'Number Memory',u:'/games/solo/number-memory.html',c:'Solo',a:['number memory']},
+      {n:'Sequence Memory',u:'/games/solo/sequence-memory.html',c:'Solo',a:['sequence memory','simon']},
+      {n:'Visual Memory',u:'/games/solo/visual-memory.html',c:'Solo',a:['visual memory']},
+      {n:'Verbal Memory',u:'/games/solo/verbal-memory.html',c:'Solo',a:['verbal memory']},
+      {n:'Math Speed',u:'/games/solo/math-speed.html',c:'Solo',a:['math speed','mental math','arithmetic']},
+      {n:'Sudoku',u:'/games/solo/sudoku.html',c:'Solo',a:['sudoku']},
+      {n:'2048',u:'/games/solo/2048.html',c:'Solo',a:['2048','tile merge']},
+      {n:'Minesweeper',u:'/games/solo/minesweeper.html',c:'Solo',a:['minesweeper','mines']},
+      {n:'Nonogram',u:'/games/solo/nonogram.html',c:'Solo',a:['nonogram','picross']},
+      {n:'Crossword',u:'/games/solo/crossword.html',c:'Solo',a:['crossword']},
+      {n:'Word Search',u:'/games/solo/wordsearch.html',c:'Solo',a:['word search','wordsearch']},
+      {n:'Block Stack',u:'/games/solo/block-stack.html',c:'Solo',a:['block stack','tetris','blocks']}
+    ];
+
     const SUPABASE_URL = 'https://tvvivtmzofsyehatzlvl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2dml2dG16b2ZzeWVoYXR6bHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4OTExODYsImV4cCI6MjA4MDQ2NzE4Nn0.Qy8kHMO0Nb4yJ0ZHjby7RuQtzwWB8rUcZvkdnbL1b3M';
     
@@ -93,6 +178,12 @@
                     
                     <div class="nav-right-wrapper">
                         <div class="header-actions">
+                            <div class="hdr-search">
+                                <button type="button" class="hdr-search-trigger" id="hdr-search-trigger" aria-label="Search games">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <span class="hdr-search-trigger-text">Search games…</span>
+                                </button>
+                            </div>
                             <div class="user-pill-skeleton" id="auth-skeleton"></div>
                             
                             <div class="nav-right-logged-out">
@@ -116,6 +207,14 @@
                         </div>
                     </div>
                 </nav>
+                <div class="hdr-search-panel" id="hdr-search-panel" role="dialog" aria-label="Game search">
+                    <div class="hdr-search-box">
+                        <svg class="hdr-search-box-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="hdr-search-input" class="hdr-search-input" placeholder="Search games… try 'spyfall' or 'trivia'" autocomplete="off" spellcheck="false" aria-label="Search games">
+                        <button type="button" class="hdr-search-close" id="hdr-search-close" aria-label="Close">✕</button>
+                    </div>
+                    <div class="hdr-search-results" id="hdr-search-results"></div>
+                </div>
             </header>
         `;
     }
@@ -252,6 +351,87 @@
         });
     }
 
+    function setupSearch() {
+        const trigger = document.getElementById('hdr-search-trigger');
+        const panel = document.getElementById('hdr-search-panel');
+        const input = document.getElementById('hdr-search-input');
+        const closeBtn = document.getElementById('hdr-search-close');
+        const results = document.getElementById('hdr-search-results');
+        if (!trigger || !panel || !input || !results) return;
+
+        let activeIdx = -1, current = [];
+
+        function openPanel() {
+            panel.classList.add('open');
+            document.body.classList.add('hdr-search-active');
+            setTimeout(() => input.focus(), 50);
+            render('');
+        }
+        function closePanel() {
+            panel.classList.remove('open');
+            document.body.classList.remove('hdr-search-active');
+            input.value = ''; activeIdx = -1;
+        }
+        function score(g, q) {
+            const name = g.n.toLowerCase();
+            if (name === q) return 100;
+            if (name.startsWith(q)) return 80;
+            for (const al of g.a) { if (al === q) return 75; if (al.startsWith(q)) return 60; }
+            if (name.includes(q)) return 40;
+            for (const al of g.a) { if (al.includes(q)) return 30; }
+            if (g.c.toLowerCase().includes(q)) return 10;
+            return 0;
+        }
+        function render(q) {
+            q = q.trim().toLowerCase();
+            if (!q) {
+                results.innerHTML = '<div class="hdr-search-hint">Start typing to find a game across Solo, Duos, Squad & Party.</div>';
+                current = []; activeIdx = -1; return;
+            }
+            const scored = GAME_INDEX.map(g => ({g, s: score(g, q)})).filter(x => x.s > 0)
+                .sort((a,b) => b.s - a.s || a.g.n.localeCompare(b.g.n)).slice(0, 8);
+            current = scored.map(x => x.g);
+            if (!current.length) {
+                results.innerHTML = '<div class="hdr-search-empty"><strong>No games found</strong><span>Try another word — like "draw", "trivia", or "word".</span></div>';
+                activeIdx = -1; return;
+            }
+            const catColor = {Solo:'#4facfe',Duos:'#a445b2',Squad:'#ff6b9d',Party:'#ffd166'};
+            results.innerHTML = current.map((g, i) =>
+                '<a href="'+g.u+'" class="hdr-search-item'+(i===activeIdx?' active':'')+'" data-i="'+i+'">'
+                + '<span class="hdr-search-icon" style="--c:'+(catColor[g.c]||'#888')+'">'+(g.n.charAt(0))+'</span>'
+                + '<span class="hdr-search-item-main"><span class="hdr-search-item-name">'+g.n+'</span>'
+                + '<span class="hdr-search-item-sub">'+g.c+' • Play now</span></span>'
+                + '<svg class="hdr-search-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></a>'
+            ).join('');
+        }
+        function move(d) {
+            if (!current.length) return;
+            activeIdx = (activeIdx + d + current.length) % current.length;
+            [...results.querySelectorAll('.hdr-search-item')].forEach((el,i) => el.classList.toggle('active', i===activeIdx));
+            const act = results.querySelector('.hdr-search-item.active');
+            if (act) act.scrollIntoView({block:'nearest'});
+        }
+
+        trigger.addEventListener('click', openPanel);
+        closeBtn.addEventListener('click', closePanel);
+        input.addEventListener('input', () => render(input.value));
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+            else if (e.key === 'Enter') {
+                const target = activeIdx >= 0 ? current[activeIdx] : current[0];
+                if (target) window.location.href = target.u;
+            } else if (e.key === 'Escape') { closePanel(); }
+        });
+        panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === '/' || (e.key === 'k' && (e.metaKey||e.ctrlKey))) && !panel.classList.contains('open')) {
+                const tag = (document.activeElement.tagName||'').toLowerCase();
+                if (tag !== 'input' && tag !== 'textarea') { e.preventDefault(); openPanel(); }
+            }
+        });
+    }
+
     // ========================================
     // SUPABASE AUTH
     // ========================================
@@ -356,7 +536,10 @@
         
         // Setup dropdown menu
         setupMenu();
-        
+
+        // Setup search
+        setupSearch();
+
         // Initialize auth
         initSupabaseAuth();
         
