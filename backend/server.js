@@ -1435,15 +1435,13 @@ function initImposterGame(room, category = 'random', twoImposters = false) {
     ]
   };
   
-  // Get words from selected category or all categories
-  let words;
+  // Resolve 'random' to a real category so imposter can see the category name
+  let chosenCategory = category;
   if (category === 'random' || !wordCategories[category]) {
-    // Combine all categories
-    words = Object.values(wordCategories).flat();
-  } else {
-    words = wordCategories[category];
+    const keys = Object.keys(wordCategories);
+    chosenCategory = keys[Math.floor(Math.random() * keys.length)];
   }
-  
+  const words = wordCategories[chosenCategory];
   const word = words[Math.floor(Math.random() * words.length)];
 
   // Determine number of imposters (2 only if enabled AND 5+ players)
@@ -1458,7 +1456,7 @@ function initImposterGame(room, category = 'random', twoImposters = false) {
   // Store game data with role assignments
   room.gameData = {
     word: word,
-    category: category,
+    category: chosenCategory,
     imposterId: imposterIds[0], // primary imposter (for backwards compat with voting results)
     imposterIds: imposterIds,
     imposterName: imposterNames[0],
@@ -1480,7 +1478,8 @@ function initImposterGame(room, category = 'random', twoImposters = false) {
     room.gameData.roleAssignments[player.name] = {
       role: isImposter ? 'imposter' : 'player',
       word: isImposter ? null : word,
-      isImposter: isImposter,
+      category: chosenCategory,
+      isImposter,
       imposterTeam: teammates
     };
   });
@@ -1901,22 +1900,22 @@ function calculateImposterResults(room) {
     voteCounts[votedPlayerId] = (voteCounts[votedPlayerId] || 0) + 1;
   });
   
-  // Find player with most votes
+  // Find player with most votes; null if tie or no votes
   let maxVotes = 0;
   let votedOutPlayerId = null;
-  
+  let isTie = false;
+
   Object.entries(voteCounts).forEach(([playerId, votes]) => {
-    if (votes > maxVotes) {
-      maxVotes = votes;
-      votedOutPlayerId = playerId;
-    }
+    if (votes > maxVotes) { maxVotes = votes; votedOutPlayerId = playerId; isTie = false; }
+    else if (votes === maxVotes) { isTie = true; }
   });
-  
+  if (isTie) votedOutPlayerId = null; // tie → no one voted out
+
   // Determine if imposter was caught (check against all imposter IDs)
   const imposterIds = room.gameData.imposterIds || [room.gameData.imposterId];
   const imposterNames = room.gameData.imposterNames || [room.gameData.imposterName];
-  const imposterCaught = imposterIds.includes(votedOutPlayerId);
-  const votedOutPlayer = room.players.find(p => p.id === votedOutPlayerId);
+  const imposterCaught = votedOutPlayerId !== null && imposterIds.includes(votedOutPlayerId);
+  const votedOutPlayer = votedOutPlayerId ? room.players.find(p => p.id === votedOutPlayerId) : null;
   const imposterPlayer = room.players.find(p => p.name === imposterNames[0]);
 
   room.gameData.phase = 'results';
@@ -2832,8 +2831,8 @@ io.on('connection', (socket) => {
       totalPlayers: room.players.length
     });
     
-    // If all players submitted clues, start voting phase
-    if (room.gameData.clues.length === room.players.length) {
+    // If all connected players submitted clues, start voting phase
+    if (room.gameData.clues.length >= room.players.length) {
       room.gameData.phase = 'voting';
       room.gameData.votes = {}; // Reset votes
       room.gameData.skipVotes = []; // Reset skip votes
