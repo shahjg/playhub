@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Charades — Couch Mode</title>
+  <link rel="stylesheet" href="/header.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#f3ead9; --bg2:#efe2cc; --card:#fffaf1; --ink:#4a3b2e; --soft:#9c8a73;
+      --terra:#d08552; --terra-d:#b86c3a; --sage:#7ba06a; --sage-d:#5f8550;
+      --tan:#e6d6bd; --tan-d:#cdb593;
+      --display:'Fredoka',sans-serif; --body:'Quicksand',sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: var(--body);
+      background: radial-gradient(ellipse 120% 60% at 60% 0%, #ede0c8, var(--bg) 70%);
+      min-height: 100vh; color: var(--ink); overflow-x: hidden;
+    }
+
+    .screen { display:none; min-height:calc(100vh - 60px); padding:72px 16px 40px; max-width:520px; margin:0 auto; flex-direction:column; gap:16px; }
+    .screen.active { display:flex; }
+
+    /* Header strip */
+    .couch-header { text-align:center; padding:4px 0 8px; }
+    .couch-logo { font-family:var(--display); font-size:1.7rem; color:var(--terra); }
+    .couch-tagline { font-size:0.85rem; color:var(--soft); margin-top:2px; }
+
+    /* Cards */
+    .card { background:var(--card); border-radius:28px; padding:24px 20px; box-shadow:0 10px 0 var(--tan-d); }
+    .card-title { font-family:var(--display); font-size:1.15rem; color:var(--ink); margin-bottom:14px; }
+
+    /* Category grid */
+    .cat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .cat-btn { font-family:var(--body); font-size:0.9rem; font-weight:700; padding:14px 10px; border-radius:18px; border:2.5px solid var(--tan-d); background:var(--tan); color:var(--ink); cursor:pointer; transition:all 0.12s; text-align:center; }
+    .cat-btn:hover { background:var(--terra); border-color:var(--terra-d); color:#fff; }
+    .cat-btn.selected { background:var(--terra); border-color:var(--terra-d); color:#fff; }
+    .cat-btn.surprise { grid-column:1/-1; background:var(--ink); border-color:var(--ink); color:var(--tan); }
+    .cat-btn.surprise:hover, .cat-btn.surprise.selected { background:#2e2318; border-color:#2e2318; }
+
+    /* Custom words */
+    .custom-words-area { width:100%; padding:12px 14px; border-radius:16px; border:2px solid var(--tan-d); background:var(--bg); font-family:var(--body); font-size:0.9rem; color:var(--ink); resize:vertical; min-height:88px; line-height:1.5; }
+    .custom-words-area:focus { outline:none; border-color:var(--terra); }
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+    .toggle-label { font-size:0.88rem; color:var(--soft); font-weight:600; }
+    .toggle-pill { position:relative; width:44px; height:24px; background:var(--tan-d); border-radius:12px; cursor:pointer; transition:background 0.2s; flex-shrink:0; }
+    .toggle-pill.on { background:var(--terra); }
+    .toggle-pill::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; background:#fff; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+    .toggle-pill.on::after { transform:translateX(20px); }
+
+    /* Timer picker */
+    .timer-row { display:flex; gap:10px; }
+    .timer-opt { flex:1; font-family:var(--body); font-weight:700; font-size:1rem; padding:12px; border-radius:16px; border:2.5px solid var(--tan-d); background:var(--tan); color:var(--ink); cursor:pointer; transition:all 0.12s; }
+    .timer-opt.selected { background:var(--terra); border-color:var(--terra-d); color:#fff; }
+
+    /* Buttons */
+    .btn { font-family:var(--display); font-size:1.35rem; padding:17px; border-radius:22px; border:none; cursor:pointer; width:100%; transition:transform 0.1s, box-shadow 0.1s; }
+    .btn:active { transform:translateY(4px); box-shadow:none !important; }
+    .btn-start { background:var(--terra); color:#fff; box-shadow:0 6px 0 var(--terra-d); }
+    .btn-got { background:var(--sage); color:#fff; box-shadow:0 6px 0 var(--sage-d); font-size:1.5rem; }
+    .btn-pass { background:var(--tan); color:var(--ink); box-shadow:0 6px 0 var(--tan-d); font-size:1.5rem; }
+    .btn-outline { background:transparent; border:2.5px solid var(--terra); color:var(--terra); box-shadow:none; font-size:1.1rem; }
+    .btn-outline:active { transform:none; }
+    .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+    /* Play screen */
+    .play-topbar { display:flex; align-items:center; justify-content:space-between; }
+    .play-mode-label { font-size:0.82rem; color:var(--soft); font-weight:700; }
+    .play-score { font-family:var(--display); font-size:1.4rem; color:var(--terra); }
+    .timer-display { font-family:var(--display); font-size:clamp(52px,14vw,72px); color:var(--ink); text-align:center; line-height:1; transition:color 0.3s; }
+    .timer-display.warning { color:var(--terra); }
+    .cat-pill { display:inline-block; background:var(--tan); color:var(--soft); font-size:0.78rem; font-weight:700; padding:6px 16px; border-radius:30px; text-transform:uppercase; letter-spacing:0.07em; }
+    .cat-pill-wrap { text-align:center; }
+    .word-card { background:var(--card); border-radius:28px; padding:40px 24px; box-shadow:0 10px 0 var(--tan-d); flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; min-height:180px; }
+    .big-word { font-family:var(--display); font-size:clamp(34px,11vw,56px); color:var(--ink); line-height:1.1; text-align:center; }
+    .word-hint { font-size:0.82rem; color:var(--soft); text-align:center; }
+    .play-actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* Summary */
+    .summary-score { font-family:var(--display); font-size:clamp(56px,18vw,80px); color:var(--terra); text-align:center; line-height:1; }
+    .summary-label { font-size:1rem; color:var(--soft); text-align:center; }
+    .word-result-list { display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+    .word-result { display:flex; align-items:center; gap:8px; padding:9px 14px; border-radius:14px; font-size:0.92rem; font-weight:700; }
+    .word-result.got { background:rgba(123,160,106,0.18); color:var(--sage-d); }
+    .word-result.passed { background:rgba(229,214,189,0.5); color:var(--soft); text-decoration:line-through; font-weight:600; }
+    .summary-actions { display:flex; flex-direction:column; gap:10px; }
+
+    @media (max-width:380px) {
+      .btn-got, .btn-pass { font-size:1.25rem; padding:14px; }
+      .big-word { font-size:32px; }
+    }
+  </style>
+</head>
+<body>
+<div id="site-header"></div>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen" class="screen active">
+  <div class="couch-header">
+    <div class="couch-logo">🛋️ Couch Mode</div>
+    <div class="couch-tagline">Pass the phone — no teams needed</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Pick a category</div>
+    <div class="cat-grid" id="catGrid">
+      <button class="cat-btn" data-cat="Movies">🎬 Movies</button>
+      <button class="cat-btn" data-cat="Animals">🐘 Animals</button>
+      <button class="cat-btn" data-cat="Actions">🏃 Actions</button>
+      <button class="cat-btn" data-cat="People">🧙 People</button>
+      <button class="cat-btn" data-cat="Objects">🎸 Objects</button>
+      <button class="cat-btn" data-cat="Sports">⚽ Sports</button>
+      <button class="cat-btn surprise" data-cat="random">🎲 Surprise me!</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Add your own words <span style="font-family:var(--body);font-size:0.8rem;color:var(--soft);font-weight:500">(optional)</span></div>
+    <textarea id="customWordsArea" class="custom-words-area" placeholder="Pizza&#10;Eiffel Tower&#10;Running in slow motion&#10;(one word or phrase per line)"></textarea>
+    <div class="toggle-row">
+      <span class="toggle-label">Only use my words</span>
+      <div class="toggle-pill" id="onlyMyWordsPill" onclick="toggleOnlyMine()"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Round length</div>
+    <div class="timer-row">
+      <button class="timer-opt selected" data-sec="60">60s</button>
+      <button class="timer-opt" data-sec="90">90s</button>
+      <button class="timer-opt" data-sec="120">120s</button>
+    </div>
+  </div>
+
+  <button class="btn btn-start" onclick="startRound()">Start Round →</button>
+</div>
+
+<!-- PLAY SCREEN -->
+<div id="playScreen" class="screen">
+  <div class="play-topbar">
+    <span class="play-mode-label">🛋️ Couch Mode</span>
+    <span class="play-score">⭐ <span id="scoreDisplay">0</span></span>
+  </div>
+  <div class="timer-display" id="timerDisplay">60</div>
+  <div class="cat-pill-wrap"><span class="cat-pill" id="catPill">Movies</span></div>
+  <div class="word-card">
+    <div class="big-word" id="bigWord">—</div>
+    <div class="word-hint">Act it out — no talking!</div>
+  </div>
+  <div class="play-actions">
+    <button class="btn btn-pass" id="passBtn" onclick="handlePass()">Pass →</button>
+    <button class="btn btn-got" id="gotBtn" onclick="handleGot()">Got it! ✓</button>
+  </div>
+</div>
+
+<!-- SUMMARY SCREEN -->
+<div id="summaryScreen" class="screen">
+  <div class="couch-header">
+    <div class="couch-logo">Round over! 🎉</div>
+  </div>
+  <div class="card" style="text-align:center;gap:4px;display:flex;flex-direction:column">
+    <div class="summary-score" id="finalScore">0</div>
+    <div class="summary-label" id="finalLabel">words guessed!</div>
+  </div>
+  <div class="card">
+    <div class="card-title">This round</div>
+    <div class="word-result-list" id="wordResultList"></div>
+  </div>
+  <div class="summary-actions">
+    <button class="btn btn-start" onclick="playAgain()">Play Again 🔁</button>
+    <button class="btn btn-outline" onclick="changeCategory()">Change Category</button>
+  </div>
+</div>
+
+<script>
+const COUCH_WORDS = {
+  Movies:   ['Titanic','Jaws','Frozen','Avatar','Shrek','Rocky','Batman','Jurassic Park','Star Wars','Finding Nemo','Toy Story','The Lion King','Home Alone','Ghostbusters','E.T.','Up','Inception','Gladiator','Matrix','Top Gun'],
+  Animals:  ['Elephant','Penguin','Monkey','Kangaroo','Snake','Eagle','Octopus','Giraffe','Crocodile','Frog','Gorilla','Chicken','Horse','Dolphin','Butterfly','Bat','Crab','Rabbit','Bear','Owl'],
+  Actions:  ['Swimming','Boxing','Cooking','Driving','Fishing','Dancing','Sleeping','Texting','Juggling','Sneezing','Yawning','Climbing','Skateboarding','Painting','Brushing Teeth','Tying Shoes','Bowling','Surfing','Skiing','Karate'],
+  People:   ['Superhero','Pirate','Ninja','Cowboy','Wizard','Zombie','Robot','Vampire','Clown','Astronaut','Ballerina','Chef','Doctor','Firefighter','Baby','Grandpa','Referee','Magician','Mermaid','King'],
+  Objects:  ['Umbrella','Toothbrush','Guitar','Camera','Scissors','Ladder','Balloon','Telephone','Vacuum','Hammer','Lightbulb','Kite','Yo-yo','Suitcase','Microphone','Fishing Rod','Trampoline','Lawnmower','Chainsaw','Skateboard'],
+  Sports:   ['Basketball','Tennis','Golf','Soccer','Bowling','Archery','Boxing','Surfing','Skiing','Gymnastics','Baseball','Volleyball','Hockey','Fencing','Diving','Cycling','Wrestling','Karate','Sumo','Darts']
+};
+
+var selectedCat = 'random';
+var selectedSec = 60;
+var onlyMine = false;
+var score = 0;
+var wordPool = [];
+var wordIdx = 0;
+var roundResults = [];
+var timerInterval = null;
+var timeLeft = 0;
+
+// Pre-select from URL param
+var urlParams = new URLSearchParams(window.location.search);
+var urlCat = urlParams.get('cat') || 'random';
+if (COUCH_WORDS[urlCat]) selectedCat = urlCat;
+
+// Init category buttons
+document.querySelectorAll('.cat-btn').forEach(function(btn) {
+  var isMatch = btn.dataset.cat === selectedCat || (selectedCat === 'random' && btn.dataset.cat === 'random');
+  if (isMatch) btn.classList.add('selected');
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedCat = btn.dataset.cat;
+  });
+});
+
+// Timer picker
+document.querySelectorAll('.timer-opt').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.timer-opt').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedSec = parseInt(btn.dataset.sec);
+  });
+});
+
+function toggleOnlyMine() {
+  onlyMine = !onlyMine;
+  document.getElementById('onlyMyWordsPill').classList.toggle('on', onlyMine);
+}
+
+function buildWordPool() {
+  var custom = document.getElementById('customWordsArea').value
+    .split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
+  if (onlyMine && custom.length > 0) return shuffle(custom);
+  var base = [];
+  if (selectedCat === 'random') {
+    Object.values(COUCH_WORDS).forEach(function(arr){ base = base.concat(arr); });
+  } else {
+    base = (COUCH_WORDS[selectedCat] || []).slice();
+  }
+  if (custom.length > 0) base = base.concat(custom);
+  return shuffle(base);
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function startRound() {
+  wordPool = buildWordPool();
+  if (wordPool.length === 0) { alert('Add at least one word to play!'); return; }
+  wordIdx = 0; score = 0; roundResults = []; timeLeft = selectedSec;
+
+  document.getElementById('scoreDisplay').textContent = '0';
+  var label = selectedCat === 'random' ? '🎲 Mixed' : selectedCat;
+  if (onlyMine) label = '✏️ Custom';
+  document.getElementById('catPill').textContent = label;
+  var td = document.getElementById('timerDisplay');
+  td.textContent = timeLeft; td.classList.remove('warning');
+
+  showScreen('playScreen');
+  showNextWord();
+  startTimer();
+}
+
+function showNextWord() {
+  if (wordIdx >= wordPool.length) { wordPool = shuffle(wordPool); wordIdx = 0; }
+  document.getElementById('bigWord').textContent = wordPool[wordIdx];
+}
+
+function handleGot() {
+  if (!timerInterval) return;
+  roundResults.push({ word: wordPool[wordIdx], got: true });
+  score++;
+  document.getElementById('scoreDisplay').textContent = score;
+  wordIdx++;
+  showNextWord();
+}
+
+function handlePass() {
+  if (!timerInterval) return;
+  roundResults.push({ word: wordPool[wordIdx], got: false });
+  wordIdx++;
+  showNextWord();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(function() {
+    timeLeft--;
+    var td = document.getElementById('timerDisplay');
+    td.textContent = timeLeft;
+    if (timeLeft <= 10) td.classList.add('warning');
+    if (timeLeft <= 0) { clearInterval(timerInterval); timerInterval = null; endRound(); }
+  }, 1000);
+}
+
+function endRound() {
+  showScreen('summaryScreen');
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalLabel').textContent = score === 1 ? 'word guessed!' : 'words guessed!';
+  var list = document.getElementById('wordResultList');
+  list.innerHTML = '';
+  roundResults.forEach(function(r) {
+    var el = document.createElement('div');
+    el.className = 'word-result ' + (r.got ? 'got' : 'passed');
+    el.textContent = (r.got ? '✓ ' : '— ') + r.word;
+    list.appendChild(el);
+  });
+}
+
+function playAgain() { clearInterval(timerInterval); timerInterval = null; startRound(); }
+function changeCategory() { clearInterval(timerInterval); timerInterval = null; showScreen('setupScreen'); }
+</script>
+<script src="/header.js"></script>
+</body>
+</html>

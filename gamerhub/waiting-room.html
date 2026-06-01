@@ -684,6 +684,13 @@ function renderSettings() {
         initCustomizationControls();
         initCustomQuestionsWatcher();
     }
+    // Wire couch mode: mode select re-evaluates start button immediately
+    var modeSelect = document.getElementById('setting-mode');
+    if (modeSelect) {
+        modeSelect.addEventListener('change', function() {
+            updateStartButton(currentRoom ? currentRoom.players.length : 1);
+        });
+    }
     // Wire custom locations UI for spyfall
     if (gameType === 'spyfall') {
         var catSel = document.getElementById('setting-category');
@@ -885,8 +892,14 @@ function handleLogoUpload(input) {
 function selectColor(color, taken) { if (taken) return; selectedColor = color; socket.emit('update-player-color', { roomCode: roomCode, color: color }); renderColorPicker(currentRoom ? currentRoom.players : []); }
 function updateSetting(id, value) { socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: value } }); }
 function toggleSetting(id) { var t = document.getElementById('setting-' + id); t.classList.toggle('active'); socket.emit('update-settings', { roomCode: roomCode, settings: { [id]: t.classList.contains('active') } }); }
+function isCouchMode() {
+    var modeEl = document.getElementById('setting-mode');
+    return modeEl && modeEl.value === 'couch';
+}
 function updateStartButton(count) {
     var btn = document.getElementById('start-btn');
+    // Couch mode: always enable, solo-friendly
+    if (isCouchMode()) { btn.disabled = false; btn.textContent = '🛋️ Start Couch Game'; return; }
     var min = gameConfig.minPlayers;
     var max = gameConfig.maxPlayers;
     // Use premium player cap if set
@@ -895,6 +908,13 @@ function updateStartButton(count) {
     if (count < min) { btn.disabled = true; btn.textContent = 'Need ' + (min - count) + ' More Player' + (min - count > 1 ? 's' : ''); } else if (count > max) { btn.disabled = true; btn.textContent = 'Too Many (Max ' + max + ')'; } else { btn.disabled = false; btn.textContent = '🚀 START GAME'; }
 }
 document.getElementById('start-btn').onclick = function() {
+    // Couch mode: bypass multiplayer entirely, go straight to local page
+    if (isCouchMode()) {
+        var catEl = document.getElementById('setting-category');
+        var cat = catEl ? catEl.value : 'random';
+        window.location.href = '/games/squad/charades-couch.html?game=' + gameType + '&cat=' + encodeURIComponent(cat);
+        return;
+    }
     console.log('Start button clicked, socket connected:', socket.connected);
     var startData = { roomCode: roomCode };
     if (gameConfig.settings) {
