@@ -1492,6 +1492,32 @@ function initImposterGame(room, category = 'random', twoImposters = false) {
 function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
   // EXPANDED LOCATION PACKS - 15-20 locations each
   const locationPacks = {
+    everyday: [
+      { name: 'Beach', roles: ['Lifeguard','Surfer','Ice Cream Vendor','Sunbather','Sandcastle Builder','Volleyball Player','Tourist','Fisherman'] },
+      { name: 'Hospital', roles: ['Surgeon','Nurse','Patient','Paramedic','Receptionist','Visitor','Anesthesiologist','Janitor'] },
+      { name: 'Airplane', roles: ['Pilot','Flight Attendant','First Class Passenger','Air Marshal','Co-Pilot','Economy Passenger','Frequent Flyer','Crying Baby'] },
+      { name: 'Casino', roles: ['Dealer','High Roller','Bartender','Security Guard','Cocktail Waitress','Card Counter','Pit Boss','Slot Player'] },
+      { name: 'School', roles: ['Teacher','Principal','Student','Janitor','Cafeteria Worker','Hall Monitor','Substitute','New Kid'] },
+      { name: 'Hotel', roles: ['Receptionist','Bellhop','Guest','Housekeeper','Manager','Chef','Concierge','Doorman'] },
+      { name: 'Bank', roles: ['Teller','Manager','Customer','Security Guard','Loan Officer','Robber','Financial Advisor','Janitor'] },
+      { name: 'Restaurant', roles: ['Head Chef','Waiter','Customer','Host','Dishwasher','Food Critic','Bartender','Busboy'] },
+      { name: 'Cruise Ship', roles: ['Captain','Cruise Director','Passenger','Bartender','Lifeguard','Entertainer','Deckhand','Chef'] },
+      { name: 'Supermarket', roles: ['Cashier','Stock Clerk','Shopper','Manager','Butcher','Security Guard','Sample Server','Bagger'] },
+      { name: 'Movie Theater', roles: ['Ticket Seller','Usher','Moviegoer','Projectionist','Concession Worker','Manager','Critic','Late Arriver'] },
+      { name: 'Train Station', roles: ['Conductor','Commuter','Ticket Inspector','Station Master','Vendor','Tourist','Pickpocket','Janitor'] },
+      { name: 'Police Station', roles: ['Detective','Officer','Suspect','Desk Sergeant','Lawyer','Witness','Forensic Tech','Chief'] },
+      { name: 'Gym', roles: ['Personal Trainer','Member','Receptionist','Bodybuilder','Yoga Instructor','Janitor','New Member','Smoothie Bar Worker'] },
+      { name: 'Zoo', roles: ['Zookeeper','Visitor','Tour Guide','Veterinarian','Gift Shop Clerk','Photographer','Child','Ticket Seller'] },
+      { name: 'Museum', roles: ['Curator','Tour Guide','Visitor','Security Guard','Art Restorer','Student','Gift Shop Clerk','Docent'] },
+      { name: 'Amusement Park', roles: ['Ride Operator','Visitor','Mascot','Ticket Seller','Food Vendor','Security Guard','Lost Child','Maintenance Worker'] },
+      { name: 'Wedding', roles: ['Bride','Groom','Officiant','Guest','Wedding Planner','Photographer','DJ','Caterer'] },
+      { name: 'Spa', roles: ['Masseuse','Client','Receptionist','Esthetician','Manager','Nail Technician','Yoga Instructor','Janitor'] },
+      { name: 'Campsite', roles: ['Camp Counselor','Camper','Park Ranger','Hiker','Cook','Fisherman','Lost Tourist','Scout Leader'] },
+      { name: 'Gas Station', roles: ['Cashier','Customer','Mechanic','Pump Attendant','Truck Driver','Manager','Lost Traveler','Window Washer'] },
+      { name: 'Coffee Shop', roles: ['Barista','Customer','Manager','Student Studying','Musician','Pastry Chef','Regular','Delivery Driver'] },
+      { name: 'Nightclub', roles: ['DJ','Bouncer','Bartender','Dancer','VIP Guest','Cocktail Waitress','Promoter','Coat Check'] },
+      { name: 'Stadium', roles: ['Athlete','Referee','Fan','Coach','Vendor','Security Guard','Commentator','Mascot'] }
+    ],
     classic: [
       { name: 'Airport', roles: ['First Class Passenger', 'Air Marshal', 'Mechanic', 'Flight Attendant', 'Co-Pilot', 'Captain', 'Tourist', 'Security Guard', 'Pilot', 'Baggage Handler', 'TSA Agent', 'Gate Agent', 'Janitor', 'Customs Officer', 'Duty Free Clerk'] },
       { name: 'Bank', roles: ['Armored Car Driver', 'Manager', 'Consultant', 'Customer', 'Robber', 'Security Guard', 'Teller', 'Janitor', 'Loan Officer', 'Vault Keeper', 'Financial Advisor', 'ATM Technician', 'Intern', 'Branch Director', 'Auditor'] },
