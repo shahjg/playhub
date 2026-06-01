@@ -1489,7 +1489,7 @@ function initImposterGame(room, category = 'random', twoImposters = false) {
 }
 
 // Initialize Spyfall game
-function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
+function initSpyfallGame(room, locationPack = 'everyday', twoSpies = false, customLocations = []) {
   // EXPANDED LOCATION PACKS - 15-20 locations each
   const locationPacks = {
     everyday: [
@@ -1733,6 +1733,66 @@ function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
       { name: 'Cabin in the Woods', roles: ['Cabin Owner','Lost Hiker','Killer','Park Ranger','Camper','Hunter','Skeptical Friend','Hermit','Documentary Maker','Survivalist','Neighbor','Repairman','Cult Member','Tourist','Victim'] }
     ],
 
+    classic2: [
+      { name: 'Submarine', roles: ['Captain','Navigator','Sonar Operator','Engineer','Cook','Sailor','Medic','Radio Operator'] },
+      { name: 'Circus Tent', roles: ['Ringmaster','Clown','Acrobat','Lion Tamer','Spectator','Ticket Seller','Juggler','Strongman'] },
+      { name: 'Pirate Ship', roles: ['Captain','First Mate','Cabin Boy','Cook','Gunner','Prisoner','Navigator','Deckhand'] },
+      { name: 'Polar Research Station', roles: ['Scientist','Mechanic','Cook','Radio Operator','Doctor','Pilot','Geologist','Visitor'] },
+      { name: 'Embassy', roles: ['Ambassador','Diplomat','Security Guard','Translator','Visa Applicant','Chef','Janitor','Attaché'] },
+      { name: 'Space Station', roles: ['Commander','Astronaut','Engineer','Scientist','Medic','Mission Liaison','Botanist','Technician'] },
+      { name: 'Opera House', roles: ['Conductor','Soprano','Usher','Patron','Stagehand','Critic','Musician','Director'] },
+      { name: 'Theater Stage', roles: ['Director','Lead Actor','Stagehand','Costume Designer','Audience Member','Lighting Tech','Understudy','Usher'] },
+      { name: 'University Lecture Hall', roles: ['Professor','Student','Teaching Assistant','Dean','Janitor','Guest Lecturer','Late Student','Auditor'] },
+      { name: 'Lighthouse', roles: ['Keeper','Coast Guard','Fisherman','Tourist','Historian','Radio Operator','Hermit','Sailor'] }
+    ],
+    modern2: [
+      { name: 'Coworking Space', roles: ['Freelancer','Startup Founder','Community Manager','Barista','Remote Worker','Investor','Intern','IT Support'] },
+      { name: 'Food Truck', roles: ['Chef','Customer','Cashier','Health Inspector','Line Cook','Regular','Tourist','Owner'] },
+      { name: 'Escape Room', roles: ['Game Master','Player','Stuck Teammate','Birthday Group','Staff','Beginner','Competitive Player','Observer'] },
+      { name: 'EV Charging Station', roles: ['Driver','Attendant','Technician','Waiting Customer','Rideshare Driver','Tourist','Maintenance Worker','Manager'] },
+      { name: 'Trampoline Park', roles: ['Jumper','Staff','Parent','Birthday Kid','Lifeguard','Manager','Dodgeball Player','Photographer'] },
+      { name: 'Streaming Studio', roles: ['Streamer','Editor','Moderator','Sponsor','Camera Operator','Fan','Manager','Guest'] },
+      { name: 'Vaccine Clinic', roles: ['Nurse','Patient','Receptionist','Doctor','Volunteer','Security','Pharmacist','Anxious Patient'] },
+      { name: 'Drive-Thru', roles: ['Cashier','Customer','Cook','Manager','Drive-Thru Worker','Delivery Driver','Regular','New Hire'] },
+      { name: 'Self-Storage Facility', roles: ['Manager','Renter','Mover','Security Guard','Auction Bidder','Maintenance','Lost Customer','Cleaner'] },
+      { name: 'Influencer House', roles: ['Content Creator','Manager','Editor','Brand Rep','Assistant','Photographer','Guest','Fan'] }
+    ],
+    everyday2: [
+      { name: 'Library', roles: ['Librarian','Student','Researcher','Child','Janitor','Volunteer','Late Returner','Author'] },
+      { name: 'Pharmacy', roles: ['Pharmacist','Customer','Cashier','Pharmacy Tech','Delivery Driver','Manager','Sick Patient','Stock Clerk'] },
+      { name: "Dentist's Office", roles: ['Dentist','Hygienist','Patient','Receptionist','Assistant','Nervous Patient','Manager','Child'] },
+      { name: 'Car Dealership', roles: ['Salesperson','Customer','Manager','Mechanic','Test Driver','Finance Officer','Detailer','Browser'] },
+      { name: 'Shopping Mall', roles: ['Shopper','Store Clerk','Security Guard','Food Court Worker','Janitor','Mall Santa','Teenager','Kiosk Vendor'] },
+      { name: 'Aquarium', roles: ['Marine Biologist','Visitor','Tour Guide','Diver','Gift Shop Clerk','Child','Photographer','Ticket Seller'] },
+      { name: 'Bowling Alley', roles: ['Bowler','Staff','Shoe Rental Clerk','League Player','Birthday Group','Bartender','Mechanic','Beginner'] },
+      { name: 'Farm', roles: ['Farmer','Farmhand','Veterinarian','Visitor','Tractor Driver','Animal Handler','Market Seller','Intern'] },
+      { name: 'Courtroom', roles: ['Judge','Lawyer','Defendant','Juror','Bailiff','Witness','Court Reporter','Spectator'] },
+      { name: 'Fire Station', roles: ['Firefighter','Captain','Dispatcher','Rookie','Mechanic','Paramedic','Visitor','Cook'] }
+    ],
+    workplace: [
+      { name: 'Corporate Office', roles: ['CEO','Manager','Intern','Receptionist','IT Support','Accountant','Janitor','New Hire'] },
+      { name: 'Warehouse', roles: ['Forklift Operator','Picker','Supervisor','Truck Driver','Inventory Clerk','Security Guard','Manager','Temp Worker'] },
+      { name: 'Construction Site', roles: ['Foreman','Electrician','Crane Operator','Laborer','Architect','Inspector','Plumber','Apprentice'] },
+      { name: 'Call Center', roles: ['Agent','Supervisor','Trainee','IT Support','Angry Caller','Manager','Quality Analyst','Cleaner'] },
+      { name: 'Newsroom', roles: ['Editor','Reporter','Anchor','Camera Operator','Intern','Producer','Fact Checker','Guest'] },
+      { name: 'Factory Floor', roles: ['Machine Operator','Foreman','Quality Inspector','Engineer','Packer','Maintenance','Safety Officer','Apprentice'] },
+      { name: 'Startup Office', roles: ['Founder','Developer','Designer','Investor','Intern','Product Manager','Sales Rep','Office Manager'] },
+      { name: 'Law Firm', roles: ['Partner','Associate','Paralegal','Client','Receptionist','Intern','Court Runner','Janitor'] },
+      { name: 'Hotel Kitchen', roles: ['Head Chef','Sous Chef','Dishwasher','Server','Food Critic','Supplier','Manager','Trainee'] },
+      { name: 'TV Studio', roles: ['Director','Host','Camera Operator','Producer','Audience Member','Makeup Artist','Sound Tech','Guest'] }
+    ],
+    travel: [
+      { name: 'Airport Terminal', roles: ['Pilot','Gate Agent','Traveler','Security Officer','Flight Attendant','Lost Tourist','Janitor','Customs Officer'] },
+      { name: 'Resort', roles: ['Guest','Concierge','Pool Bartender','Lifeguard','Housekeeper','Activities Host','Spa Therapist','Manager'] },
+      { name: 'Ski Lodge', roles: ['Skier','Instructor','Lift Operator','Lodge Staff','Snowboarder','Rescue Patrol','Bartender','Tourist'] },
+      { name: 'Safari Lodge', roles: ['Tour Guide','Ranger','Tourist','Driver','Cook','Photographer','Naturalist','Lodge Manager'] },
+      { name: 'Hostel', roles: ['Backpacker','Receptionist','Cleaner','Solo Traveler','Group Tourist','Bartender','Manager','Night Owl'] },
+      { name: 'Road Trip RV', roles: ['Driver','Navigator','Sleeping Passenger','Snack Manager','Tourist','Mechanic','Hitchhiker','Map Reader'] },
+      { name: 'Cruise Port', roles: ['Customs Officer','Tourist','Tour Guide','Vendor','Taxi Driver','Ship Crew','Pickpocket','Photographer'] },
+      { name: 'Mountain Cabin', roles: ['Hiker','Host','Lost Tourist','Park Ranger','Cook','Fisherman','Neighbor','Caretaker'] },
+      { name: 'Theme Park', roles: ['Visitor','Ride Operator','Mascot','Food Vendor','Lost Child','Security','Photographer','Maintenance'] },
+      { name: 'Border Crossing', roles: ['Customs Officer','Traveler','Truck Driver','Tour Guide','Translator','Guard','Tourist','Inspector'] }
+    ],
     videogames: [
       { name: 'Blocky Sandbox World', roles: ['Miner','Builder','Creeper','Villager','Zombie','Enderman','Redstone Engineer','Farmer','Explorer','Nether Traveler','Trader','Skeleton Archer','Pet Wolf','Griefer','Speedrunner'] },
       { name: 'Battle Royale Island', roles: ['Last Survivor','Builder','Sniper','Looter','Squad Leader','Storm Chaser','Camper','Trickshotter','Reviver','Loot Hunter','Default Skin','Tryhard','Bush Camper','Emote Spammer','Eliminated Player'] },
@@ -1750,11 +1810,20 @@ function initSpyfallGame(room, locationPack = 'classic', twoSpies = false) {
   };
   // Get locations from selected pack or all packs for random
   let locations;
-  if (locationPack !== 'random' && !locationPacks[locationPack]) console.warn('[SPYFALL] Unknown pack "' + locationPack + '" — falling back to random');
-  if (locationPack === 'random' || !locationPacks[locationPack]) {
-    locations = Object.values(locationPacks).flat();
+  if (locationPack === 'custom' && Array.isArray(customLocations) && customLocations.length >= 10) {
+    const genericRoles = ['Manager','Staff Member','Customer','Regular','Newcomer','Owner','Security Guard','Cleaner','Supervisor','Visitor'];
+    locations = customLocations
+      .map(n => String(n).trim().slice(0, 40))
+      .filter(n => n.length > 0)
+      .map(name => ({ name, roles: genericRoles }));
   } else {
-    locations = locationPacks[locationPack];
+    if (locationPack === 'custom') locationPack = 'everyday';
+    if (locationPack !== 'random' && !locationPacks[locationPack]) console.warn('[SPYFALL] Unknown pack "' + locationPack + '" — falling back to random');
+    if (locationPack === 'random' || !locationPacks[locationPack]) {
+      locations = Object.values(locationPacks).flat();
+    } else {
+      locations = locationPacks[locationPack];
+    }
   }
   // Select random location
   const selectedLocation = locations[Math.floor(Math.random() * locations.length)];
@@ -2491,7 +2560,7 @@ io.on('connection', (socket) => {
 
   // START GAME
  socket.on('start-game', (data) => {
-    const { roomCode, category, twoSpies, twoImposters, mode, variant, difficulty, customQuestions, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, reformation, useInquisitor } = data;
+    const { roomCode, category, twoSpies, twoImposters, mode, variant, difficulty, customQuestions, customLocations, roundCount, playerCap, customTitle, customBackground, customBackgroundImage, themeColor, logoImage, reformation, useInquisitor } = data;
     const room = rooms.get(roomCode);
 
     if (!room) {
@@ -2534,7 +2603,7 @@ io.on('connection', (socket) => {
     if (room.gameType === 'imposter') {
         initImposterGame(room, category || 'random', twoImposters === 'true' || twoImposters === true);
     } else if (room.gameType === 'spyfall') {
-        initSpyfallGame(room, category || 'classic', twoSpies || false);
+        initSpyfallGame(room, category || 'everyday', twoSpies || false, customLocations || []);
     } else if (room.gameType === 'werewolf') {
         initWerewolfGame(room);
     } else if (room.gameType === 'herd-mentality') {

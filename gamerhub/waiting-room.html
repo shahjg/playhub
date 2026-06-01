@@ -295,6 +295,11 @@
             <div id="settings-container"></div>
             <div id="roles-preview"></div>
             <div id="color-picker-section" style="display:none"><div class="setting-label" style="margin-top:1rem">Choose Your Color</div><div class="color-picker" id="color-picker"></div></div>
+            <div id="custom-loc-section" style="display:none">
+                <div class="setting-label" style="margin-top:1rem">Your Locations <span style="font-weight:400;opacity:0.6">(one per line, min 10)</span></div>
+                <textarea id="custom-locations" rows="8" placeholder="Casino&#10;Beach&#10;Space Station&#10;Library&#10;Gym&#10;Hospital&#10;Farm&#10;Police Station&#10;Circus&#10;Embassy" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.7rem;font-family:inherit;font-size:0.9rem;resize:vertical;outline:none;margin-top:0.3rem"></textarea>
+                <div id="custom-loc-count" style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem">0 / 10 minimum</div>
+            </div>
             <button class="btn-start" id="start-btn" disabled>Waiting for Players...</button>
         </div>
     </div>
@@ -308,7 +313,7 @@ const GAMES = {
         displayName: 'SPY HUNT', tagline: 'Find the spy before they discover your location', theme: 'theme-spyfall', minPlayers: 4, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/spyfall.html',
         howToPlay: '<h3>🎯 Objective</h3><p>Everyone knows the secret location except one player - <strong>the Spy</strong>. The spy must figure out where they are while everyone else tries to identify the spy through clever questioning.</p><h3>⚙️ Setup</h3><ul><li>Each player receives a role showing the location OR "SPY"</li><li>Only one player is the spy (two in 8+ player games if enabled)</li><li>A timer starts (default 8 minutes)</li></ul><h3>🎮 How to Play</h3><ol><li><strong>Questioning:</strong> Take turns asking each other questions about the location</li><li><strong>Answer Carefully:</strong> Questions should test knowledge without revealing the location to the spy</li><li><strong>Spy Blends In:</strong> The spy listens for clues and gives plausible answers</li><li><strong>Call a Vote:</strong> Anyone can call for a vote to accuse someone at any time</li></ol><h3>🏆 Winning</h3><ul><li><strong>Players win</strong> if they correctly vote out the Spy</li><li><strong>Spy wins</strong> if they correctly guess the location when accused, OR survive until time runs out</li></ul><div class="tip-box">💡 <strong>Pro Tips:</strong><br>• Ask questions like "What would you wear there?" - specific enough to test knowledge, vague enough to not help the spy<br>• Watch for hesitation and overly vague answers<br>• The spy should copy the confidence level of other players</div><div class="example-box"><strong>Example:</strong> Location is Airport<br>Good Q: "How long would you typically spend here?"<br>Good A: "Depends if I\'m picking someone up or traveling myself"<br>Suspicious A: "Um... a normal amount of time?"</div>',
         settings: [
-            { id: 'category', type: 'select', label: 'Location Pack', options: [{value:'everyday',text:'🏙️ Everyday (recommended)'},{value:'classic',text:'🏛️ Classic'},{value:'modern',text:'☕ Modern'},{value:'movies',text:'🎬 Movies — themed'},{value:'medieval',text:'⚔️ Medieval — themed'},{value:'fantasy',text:'🐉 Fantasy — themed'},{value:'horror',text:'🔪 Horror — themed'},{value:'videogames',text:'🎮 Video Games — themed'},{value:'marvel',text:'🦸 Marvel — themed'},{value:'dc',text:'🦇 DC — themed'},{value:'anime',text:'🎌 Anime — themed'},{value:'popculture',text:'⭐ Pop Culture — themed'},{value:'websites',text:'🌐 Websites — themed'},{value:'adult',text:'🔞 Adult (18+) — themed'}]},
+            { id: 'category', type: 'select', label: 'Location Pack', options: [{value:'everyday',text:'🏙️ Everyday'},{value:'everyday2',text:'🏙️ Everyday 2'},{value:'classic',text:'🏛️ Classic'},{value:'classic2',text:'🏛️ Classic 2'},{value:'modern',text:'☕ Modern'},{value:'modern2',text:'☕ Modern 2'},{value:'custom',text:'✏️ Custom'},{value:'workplace',text:'💼 Workplace — themed'},{value:'travel',text:'✈️ Travel — themed'},{value:'movies',text:'🎬 Movies — themed'},{value:'medieval',text:'⚔️ Medieval — themed'},{value:'fantasy',text:'🐉 Fantasy — themed'},{value:'horror',text:'🔪 Horror — themed'},{value:'videogames',text:'🎮 Video Games — themed'},{value:'marvel',text:'🦸 Marvel — themed'},{value:'dc',text:'🦇 DC — themed'},{value:'anime',text:'🎌 Anime — themed'},{value:'popculture',text:'⭐ Pop Culture — themed'},{value:'websites',text:'🌐 Websites — themed'},{value:'adult',text:'🔞 Adult (18+) — themed'}]},
             { id: 'twoSpies', type: 'toggle', label: 'Two Spies Mode (8+ players)' },
             { id: 'roundTime', type: 'select', label: 'Round Timer', options: [{value:'5',text:'5 min'},{value:'8',text:'8 min'},{value:'10',text:'10 min'}]}
         ]
@@ -674,6 +679,27 @@ function renderSettings() {
         initCustomizationControls();
         initCustomQuestionsWatcher();
     }
+    // Wire custom locations UI for spyfall
+    if (gameType === 'spyfall') {
+        var catSel = document.getElementById('setting-category');
+        var customSec = document.getElementById('custom-loc-section');
+        var customTA = document.getElementById('custom-locations');
+        var customCount = document.getElementById('custom-loc-count');
+        function updateCustomLocUI() {
+            if (!catSel || !customSec) return;
+            var isCustom = catSel.value === 'custom';
+            customSec.style.display = isCustom ? 'block' : 'none';
+        }
+        function updateCustomLocCount() {
+            if (!customTA || !customCount) return;
+            var lines = customTA.value.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+            var n = lines.length;
+            customCount.textContent = n + ' / 10 minimum';
+            customCount.style.color = n >= 10 ? '#4a9e6f' : '#e2403e';
+        }
+        if (catSel) { catSel.addEventListener('change', updateCustomLocUI); updateCustomLocUI(); }
+        if (customTA) { customTA.addEventListener('input', updateCustomLocCount); }
+    }
 }
 
 function syncSettingsValues() {
@@ -891,6 +917,14 @@ document.getElementById('start-btn').onclick = function() {
         if (customBgData) startData.customBackgroundImage = customBgData;
         if (selectedThemeColor) startData.themeColor = selectedThemeColor;
         if (customLogoData) startData.logoImage = customLogoData;
+    }
+    // Custom locations for spyfall
+    if (gameType === 'spyfall' && startData.category === 'custom') {
+        var customTA = document.getElementById('custom-locations');
+        var locs = customTA ? customTA.value.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;}) : [];
+        locs = locs.filter(function(v,i,a){return a.indexOf(v)===i;}); // dedupe
+        if (locs.length < 10) { alert('Add at least 10 locations to start a custom game.'); return; }
+        startData.customLocations = locs;
     }
     console.log('Emitting start-game:', startData);
     localStorage.setItem('tempCategory', startData.category || '');
