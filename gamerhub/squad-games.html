@@ -101,6 +101,7 @@
         .info-btn svg{width:16px;height:16px;color:var(--blue)}
 
         .game-preview{width:100%;height:140px;overflow:hidden;position:relative}
+        .game-preview img{width:100%;height:100%;object-fit:cover;display:block}
         .game-preview svg{width:100%;height:100%}
         .preview-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s}
         .game-card:hover .preview-overlay{opacity:1}
@@ -953,5 +954,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <script src="/header.js"></script>
+<script>
+// Inject real screenshot previews over SVGs — falls back to SVG if webp missing
+(function() {
+  document.querySelectorAll('.game-card[data-game-id]').forEach(function(card) {
+    var id      = card.dataset.gameId;
+    var preview = card.querySelector('.game-preview');
+    var svg     = preview && preview.querySelector('svg');
+    if (!preview || !svg) return;
+    var img = document.createElement('img');
+    img.src     = '/assets/previews/' + id + '.webp';
+    img.alt     = (card.dataset.name || id) + ' preview';
+    img.loading = 'lazy';
+    img.width   = 320;
+    img.height  = 140;
+    // On successful load: hide the SVG
+    img.onload  = function() { svg.style.display = 'none'; };
+    // On failure: hide img, keep SVG visible
+    img.onerror = function() { img.style.display = 'none'; svg.style.display = ''; };
+    // Insert before SVG so SVG stays as fallback underneath
+    preview.insertBefore(img, svg);
+  });
+})();
+</script>
 </body>
 </html>
