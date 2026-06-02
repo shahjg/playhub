@@ -170,9 +170,9 @@ const WAVELENGTH_SPECTRUMS = [['Cold','Hot'],['Bad','Good'],['Underrated','Overr
 
 function initWavelengthGame(room, io) {
   const pc = room.players.length;
-  if (pc < 4 || pc > 12) { io.to(room.code).emit('error', { message: 'Wavelength requires 4-12 players' }); return; }
+  if (pc < 2 || pc > 12) { io.to(room.code).emit('error', { message: 'Spectrum requires 2–12 players. Go back and try again.' }); return; }
   room.gameState = 'playing';
-  room.gameData = { round: 1, maxRounds: Math.min(pc, 8), psychicIndex: 0, scores: {}, targetPosition: 0, spectrum: null, clue: null, guesses: {}, phase: 'clue' };
+  room.gameData = { round: 1, maxRounds: Math.min(pc * 2, 8), psychicIndex: 0, scores: {}, targetPosition: 0, spectrum: null, clue: null, guesses: {}, phase: 'clue' };
   room.players.forEach(p => room.gameData.scores[p.id] = 0);
   startWavelengthRound(room, io);
 }
@@ -198,9 +198,12 @@ function handleWavelengthClue(room, clue, io) {
 }
 
 function handleWavelengthGuess(room, playerId, guess, io) {
-  if (playerId === room.players[room.gameData.psychicIndex].id) return;
+  const psychicId = room.players[room.gameData.psychicIndex]?.id;
+  if (playerId === psychicId) return;
   room.gameData.guesses[playerId] = guess;
-  if (Object.keys(room.gameData.guesses).length >= room.players.length - 1) calculateWavelengthResults(room, io);
+  // Compare against currently connected non-psychic players so a disconnect never hangs the round
+  const connectedGuessers = room.players.filter(p => p.id !== psychicId).length;
+  if (Object.keys(room.gameData.guesses).length >= connectedGuessers) calculateWavelengthResults(room, io);
 }
 
 function calculateWavelengthResults(room, io) {
