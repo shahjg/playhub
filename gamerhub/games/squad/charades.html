@@ -98,11 +98,10 @@
 <div class="bg"></div>
 <header><nav class="nav">
     <div style="display:flex;align-items:center;gap:12px">
-        <a href="/squad-games.html" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Leave</a>
         <span class="badge" id="room">------</span>
     </div>
     <span class="logo">🎭 CHARADES</span>
-    <div></div>
+    <button class="back" onclick="confirmLeave()" style="background:none;cursor:pointer;border:1px solid rgba(230,214,189,0.3)">Leave</button>
 </nav></header>
 
 <main>
@@ -155,7 +154,7 @@
         <h2>🏆 GAME OVER</h2>
         <div class="scoreboard"><div class="sb-title">Final Scores</div><div class="score-list" id="finalScores"></div></div>
         <div class="modal-btns">
-            <button class="btn btn-s" onclick="location.href='/squad-games.html'">Leave</button>
+            <button class="btn btn-s" onclick="location.href='/lobby.html?game=charades'">Leave</button>
             <button class="btn btn-p" onclick="location.href='/waiting-room.html?room='+roomCode">Play Again</button>
         </div>
     </div>
@@ -236,7 +235,7 @@ socket.on('charades-time-up',d=>{
 });
 
 socket.on('charades-game-over',d=>{state.scores=d.scores;showGameOver();});
-socket.on('host-left',()=>{alert('Host left');location.href='/squad-games.html';});
+socket.on('host-left',()=>{alert('Host left the game.');location.href='/lobby.html?game=charades';});
 
 function renderGuessers(){
     const grid=document.getElementById('guesserGrid');
@@ -291,6 +290,7 @@ function updTimer(){
 }
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 window.addEventListener('beforeunload',()=>{stopTimer();socket.disconnect();});
+function confirmLeave(){if(confirm('Leave the game?')){stopTimer();socket.disconnect();location.href='/lobby.html?game=charades';}}
 </script>
 <script src="/header.js"></script>
 </body>
