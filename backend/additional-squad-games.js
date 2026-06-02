@@ -795,7 +795,7 @@ function initPowerStruggleGame(room, options = {}) {
     deck,
     playerCards: {},
     coins: {},
-    currentTurnIndex: 0,
+    currentPlayer: room.players[0].name,
     phase: 'action',
     pendingAction: null,
     logs: [],
@@ -829,8 +829,12 @@ function initPowerStruggleGame(room, options = {}) {
 
 function sendPowerStruggleState(room, io) {
   const gd = room.gameData;
-  const aliveTurnOrder = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
-  const currentName = aliveTurnOrder[gd.currentTurnIndex % aliveTurnOrder.length];
+  let currentName = gd.currentPlayer;
+  // safety: if stored current player was eliminated, advance to next alive
+  if (gd.eliminated.includes(currentName)) {
+    currentName = psNextAliveAfter(gd, currentName);
+    gd.currentPlayer = currentName;
+  }
   const allSame = psAllSameFaction(gd);
 
   room.players.forEach(p => {
@@ -1308,24 +1312,26 @@ function addPSLog(room, message, io) {
   if (io) io.to(room.code).emit('ps-log', { message, logs: room.gameData.logs.slice(-15) });
 }
 
+function psNextAliveAfter(gd, name) {
+  const order = gd.turnOrder;
+  const start = order.indexOf(name);
+  for (let step = 1; step <= order.length; step++) {
+    const cand = order[(start + step) % order.length];
+    if (!gd.eliminated.includes(cand)) return cand;
+  }
+  return name; // only itself left
+}
+
 function nextPowerStruggleTurn(room, io) {
   const gd = room.gameData;
-  const alivePlayers = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
-
-  if (alivePlayers.length <= 1) {
-    endPowerStruggleGame(room, io);
-    return;
-  }
-
-  gd.currentTurnIndex = (gd.currentTurnIndex + 1) % alivePlayers.length;
+  const alive = gd.turnOrder.filter(n => !gd.eliminated.includes(n));
+  if (alive.length <= 1) { endPowerStruggleGame(room, io); return; }
+  gd.currentPlayer = psNextAliveAfter(gd, gd.currentPlayer);
   gd.phase = 'action';
   gd.pendingAction = null;
-
-  const currentName = alivePlayers[gd.currentTurnIndex];
-  if ((gd.coins[currentName] || 0) >= 10) {
-    addPSLog(room, `${currentName} has 10+ coins — must Coup!`, io);
+  if ((gd.coins[gd.currentPlayer] || 0) >= 10) {
+    addPSLog(room, `${gd.currentPlayer} has 10+ coins — must Coup!`, io);
   }
-
   sendPowerStruggleState(room, io);
 }
 
