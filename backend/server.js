@@ -2635,9 +2635,9 @@ io.on('connection', (socket) => {
             });
         }, 100);
     } else if (room.gameType === 'charades') {
-        squadGames.initCharadesGame(room, category || 'random', 'classic', data.adult === 'true' || data.adult === true);
+        squadGames.initCharadesGame(room, category || 'random', 'classic');
     } else if (room.gameType === 'heads-up') {
-        squadGames.initCharadesGame(room, category || 'random', 'headsup', data.adult === 'true' || data.adult === true);
+        squadGames.initCharadesGame(room, category || 'random', 'headsup');
     } else if (room.gameType === 'secret-roles') {
         missingSquadGames.initAvalonGame(room, io);
     } else if (room.gameType === 'fake-artist') {

@@ -116,14 +116,8 @@
       <button class="cat-btn" data-cat="Hard">🧠 Hard Words</button>
       <button class="cat-btn" data-cat="Spooky">👻 Spooky</button>
       <button class="cat-btn" data-cat="Villains">😈 Villains & History</button>
+      <button class="cat-btn" data-cat="afterDark">🔞 After Dark</button>
       <button class="cat-btn surprise" data-cat="random">🎲 Surprise me!</button>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:0 2px">
-      <span style="font-size:0.78rem;color:var(--soft);font-weight:600">Show 18+ category</span>
-      <div class="toggle-pill" id="adultTogglePill" onclick="toggleAdult()"></div>
-    </div>
-    <div id="afterDarkBtn" style="display:none;margin-top:10px">
-      <button class="cat-btn" data-cat="afterDark" style="width:100%">🔞 After Dark</button>
     </div>
   </div>
 
@@ -203,8 +197,6 @@ const COUCH_WORDS = {
 var selectedCat = 'random';
 var selectedSec = 60;
 var onlyMine = false;
-var adultEnabled = false;
-var adultConfirmed = false;
 var score = 0;
 var wordPool = [];
 var wordIdx = 0;
@@ -212,62 +204,21 @@ var roundResults = [];
 var timerInterval = null;
 var timeLeft = 0;
 
-// Pre-select from URL params
+// Pre-select from URL param
 var urlParams = new URLSearchParams(window.location.search);
 var urlCat = urlParams.get('cat') || 'random';
-var urlAdult = urlParams.get('adult') === 'true';
-
-// If adult was pre-enabled from lobby, auto-confirm the gate
-if (urlAdult) { adultEnabled = true; adultConfirmed = true; }
-// Safety: if URL requests afterDark but adult not confirmed, use random
-if (urlCat === 'afterDark' && !adultConfirmed) urlCat = 'random';
 if (COUCH_WORDS[urlCat]) selectedCat = urlCat;
-
-function toggleAdult() {
-  if (!adultEnabled) {
-    if (!confirm('These words are for adults (18+). Continue?')) return;
-    adultEnabled = true; adultConfirmed = true;
-    document.getElementById('adultTogglePill').classList.add('on');
-    document.getElementById('afterDarkBtn').style.display = 'block';
-    // Re-register the afterDark button
-    registerCatBtn(document.querySelector('#afterDarkBtn .cat-btn'));
-  } else {
-    adultEnabled = false;
-    document.getElementById('adultTogglePill').classList.remove('on');
-    document.getElementById('afterDarkBtn').style.display = 'none';
-    if (selectedCat === 'afterDark') { selectedCat = 'random'; refreshSelected(); }
-  }
-}
-
-function refreshSelected() {
-  document.querySelectorAll('.cat-btn').forEach(function(b){
-    b.classList.toggle('selected', b.dataset.cat === selectedCat);
-  });
-}
-
-function registerCatBtn(btn) {
-  if (!btn) return;
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('selected'); });
-    btn.classList.add('selected');
-    selectedCat = btn.dataset.cat;
-  });
-}
 
 // Init category buttons
 document.querySelectorAll('.cat-btn').forEach(function(btn) {
   var isMatch = btn.dataset.cat === selectedCat || (selectedCat === 'random' && btn.dataset.cat === 'random');
   if (isMatch) btn.classList.add('selected');
-  registerCatBtn(btn);
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedCat = btn.dataset.cat;
+  });
 });
-
-// Init adult state from URL param
-if (adultEnabled) {
-  document.getElementById('adultTogglePill').classList.add('on');
-  document.getElementById('afterDarkBtn').style.display = 'block';
-  registerCatBtn(document.querySelector('#afterDarkBtn .cat-btn'));
-  if (selectedCat === 'afterDark') refreshSelected();
-}
 
 // Timer picker
 document.querySelectorAll('.timer-opt').forEach(function(btn) {
@@ -287,17 +238,11 @@ function buildWordPool() {
   var custom = document.getElementById('customWordsArea').value
     .split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
   if (onlyMine && custom.length > 0) return shuffle(custom);
-  // Gate afterDark
-  var cat = selectedCat;
-  if (cat === 'afterDark' && !adultEnabled) cat = 'random';
   var base = [];
-  if (cat === 'random') {
-    Object.keys(COUCH_WORDS).forEach(function(k) {
-      if (k === 'afterDark' && !adultEnabled) return;
-      base = base.concat(COUCH_WORDS[k]);
-    });
+  if (selectedCat === 'random') {
+    Object.values(COUCH_WORDS).forEach(function(arr){ base = base.concat(arr); });
   } else {
-    base = (COUCH_WORDS[cat] || []).slice();
+    base = (COUCH_WORDS[selectedCat] || []).slice();
   }
   if (custom.length > 0) base = base.concat(custom);
   return shuffle(base);

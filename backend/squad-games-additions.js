@@ -900,15 +900,11 @@ const CHARADES_WORDS = {
     ]
 };
 
-function initCharadesGame(room, category = 'random', mode = 'classic', adult = false) {
+function initCharadesGame(room, category = 'random', mode = 'classic') {
     // mode: 'classic' (one actor) or 'headsup' (phone on forehead style)
-    // adult: gate for afterDark — never served when false
-    if (category === 'afterDark' && !adult) category = 'random';
-
     let wordPool = [];
     if (category === 'mixed' || category === 'random' || !CHARADES_WORDS[category]) {
-        Object.entries(CHARADES_WORDS).forEach(([key, words]) => {
-            if (key === 'afterDark' && !adult) return; // skip adult unless gated
+        Object.values(CHARADES_WORDS).forEach(words => {
             wordPool = [...wordPool, ...words];
         });
     } else {
