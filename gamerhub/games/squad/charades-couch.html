@@ -111,9 +111,19 @@
       <button class="cat-btn" data-cat="Animals">🐘 Animals</button>
       <button class="cat-btn" data-cat="Actions">🏃 Actions</button>
       <button class="cat-btn" data-cat="People">🧙 People</button>
-      <button class="cat-btn" data-cat="Objects">🎸 Objects</button>
+      <button class="cat-btn" data-cat="Objects">📦 Objects</button>
       <button class="cat-btn" data-cat="Sports">⚽ Sports</button>
+      <button class="cat-btn" data-cat="Hard">🧠 Hard Words</button>
+      <button class="cat-btn" data-cat="Spooky">👻 Spooky</button>
+      <button class="cat-btn" data-cat="Villains">😈 Villains & History</button>
       <button class="cat-btn surprise" data-cat="random">🎲 Surprise me!</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:0 2px">
+      <span style="font-size:0.78rem;color:var(--soft);font-weight:600">Show 18+ category</span>
+      <div class="toggle-pill" id="adultTogglePill" onclick="toggleAdult()"></div>
+    </div>
+    <div id="afterDarkBtn" style="display:none;margin-top:10px">
+      <button class="cat-btn" data-cat="afterDark" style="width:100%">🔞 After Dark</button>
     </div>
   </div>
 
@@ -178,17 +188,23 @@
 
 <script>
 const COUCH_WORDS = {
-  Movies:   ['Titanic','Jaws','Frozen','Avatar','Shrek','Rocky','Batman','Jurassic Park','Star Wars','Finding Nemo','Toy Story','The Lion King','Home Alone','Ghostbusters','E.T.','Up','Inception','Gladiator','Matrix','Top Gun'],
+  Movies:   ['Titanic','Jaws','Frozen','Avatar','Shrek','Rocky','Batman','Jurassic Park','Star Wars','Finding Nemo','Toy Story','The Lion King','Home Alone','Ghostbusters','E.T.','Up','Inception','Gladiator','Matrix','Top Gun','The Godfather','Pulp Fiction','Barbie','Oppenheimer','The Dark Knight','Pirates of the Caribbean','Twilight','The Hunger Games','Mean Girls','Deadpool','Frozen II','Encanto','John Wick','Mission Impossible','Fast and Furious'],
   Animals:  ['Elephant','Penguin','Monkey','Kangaroo','Snake','Eagle','Octopus','Giraffe','Crocodile','Frog','Gorilla','Chicken','Horse','Dolphin','Butterfly','Bat','Crab','Rabbit','Bear','Owl'],
   Actions:  ['Swimming','Boxing','Cooking','Driving','Fishing','Dancing','Sleeping','Texting','Juggling','Sneezing','Yawning','Climbing','Skateboarding','Painting','Brushing Teeth','Tying Shoes','Bowling','Surfing','Skiing','Karate'],
   People:   ['Superhero','Pirate','Ninja','Cowboy','Wizard','Zombie','Robot','Vampire','Clown','Astronaut','Ballerina','Chef','Doctor','Firefighter','Baby','Grandpa','Referee','Magician','Mermaid','King'],
   Objects:  ['Umbrella','Toothbrush','Guitar','Camera','Scissors','Ladder','Balloon','Telephone','Vacuum','Hammer','Lightbulb','Kite','Yo-yo','Suitcase','Microphone','Fishing Rod','Trampoline','Lawnmower','Chainsaw','Skateboard'],
-  Sports:   ['Basketball','Tennis','Golf','Soccer','Bowling','Archery','Boxing','Surfing','Skiing','Gymnastics','Baseball','Volleyball','Hockey','Fencing','Diving','Cycling','Wrestling','Karate','Sumo','Darts']
+  Sports:   ['Basketball','Tennis','Golf','Soccer','Bowling','Archery','Boxing','Surfing','Skiing','Gymnastics','Baseball','Volleyball','Hockey','Fencing','Diving','Cycling','Wrestling','Karate','Sumo','Darts'],
+  Hard:     ['Photosynthesis','Procrastination','Claustrophobia','Bureaucracy','Déjà vu','Mortgage','Inflation','Gravity','Evolution','Democracy','Algorithm','Nostalgia','Quarantine','Hypnosis','Telepathy','Camouflage','Avalanche','Eclipse','Mirage','Karma','Insomnia','Allergy','Vertigo','Static electricity','Time travel','Black hole','Boomerang','Origami','Acupuncture','Ventriloquist'],
+  Spooky:   ['Haunted house','Zombie','Werewolf','Vampire','Witch','Ghost','Frankenstein','Mummy','Grim reaper','Possessed doll','Séance','Ouija board','Black cat','Full moon','Graveyard','Skeleton','Demon','Exorcism','Headless horseman','Bloody Mary','Jump scare','Cursed','Poltergeist','Creepy clown','Banshee'],
+  Villains: ['Dracula','Darth Vader','Joker','Voldemort','The Wicked Witch','Hannibal Lecter','Maleficent','Sauron','Thanos','Cruella','Scar','Captain Hook','Napoleon','Cleopatra','Genghis Khan','Julius Caesar','Blackbeard','Rasputin','Bonnie and Clyde','Al Capone','Vlad the Impaler','Attila the Hun','King Henry VIII','Marie Antoinette'],
+  afterDark:['First kiss','Walk of shame','Wingman','Swipe right','Booty call','Blind date','Friendzone','Hangover','One night stand','Speed dating','Third wheel','Hickey','Strip poker','Lap dance','Pole dancing','Twerking','Pillow talk','Netflix and chill','Ex texting at 2am','Tinder date','Awkward morning after','Slow dance','Bachelorette party','Skinny dipping','Spin the bottle']
 };
 
 var selectedCat = 'random';
 var selectedSec = 60;
 var onlyMine = false;
+var adultEnabled = false;
+var adultConfirmed = false;
 var score = 0;
 var wordPool = [];
 var wordIdx = 0;
@@ -196,21 +212,62 @@ var roundResults = [];
 var timerInterval = null;
 var timeLeft = 0;
 
-// Pre-select from URL param
+// Pre-select from URL params
 var urlParams = new URLSearchParams(window.location.search);
 var urlCat = urlParams.get('cat') || 'random';
+var urlAdult = urlParams.get('adult') === 'true';
+
+// If adult was pre-enabled from lobby, auto-confirm the gate
+if (urlAdult) { adultEnabled = true; adultConfirmed = true; }
+// Safety: if URL requests afterDark but adult not confirmed, use random
+if (urlCat === 'afterDark' && !adultConfirmed) urlCat = 'random';
 if (COUCH_WORDS[urlCat]) selectedCat = urlCat;
 
-// Init category buttons
-document.querySelectorAll('.cat-btn').forEach(function(btn) {
-  var isMatch = btn.dataset.cat === selectedCat || (selectedCat === 'random' && btn.dataset.cat === 'random');
-  if (isMatch) btn.classList.add('selected');
+function toggleAdult() {
+  if (!adultEnabled) {
+    if (!confirm('These words are for adults (18+). Continue?')) return;
+    adultEnabled = true; adultConfirmed = true;
+    document.getElementById('adultTogglePill').classList.add('on');
+    document.getElementById('afterDarkBtn').style.display = 'block';
+    // Re-register the afterDark button
+    registerCatBtn(document.querySelector('#afterDarkBtn .cat-btn'));
+  } else {
+    adultEnabled = false;
+    document.getElementById('adultTogglePill').classList.remove('on');
+    document.getElementById('afterDarkBtn').style.display = 'none';
+    if (selectedCat === 'afterDark') { selectedCat = 'random'; refreshSelected(); }
+  }
+}
+
+function refreshSelected() {
+  document.querySelectorAll('.cat-btn').forEach(function(b){
+    b.classList.toggle('selected', b.dataset.cat === selectedCat);
+  });
+}
+
+function registerCatBtn(btn) {
+  if (!btn) return;
   btn.addEventListener('click', function() {
     document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('selected'); });
     btn.classList.add('selected');
     selectedCat = btn.dataset.cat;
   });
+}
+
+// Init category buttons
+document.querySelectorAll('.cat-btn').forEach(function(btn) {
+  var isMatch = btn.dataset.cat === selectedCat || (selectedCat === 'random' && btn.dataset.cat === 'random');
+  if (isMatch) btn.classList.add('selected');
+  registerCatBtn(btn);
 });
+
+// Init adult state from URL param
+if (adultEnabled) {
+  document.getElementById('adultTogglePill').classList.add('on');
+  document.getElementById('afterDarkBtn').style.display = 'block';
+  registerCatBtn(document.querySelector('#afterDarkBtn .cat-btn'));
+  if (selectedCat === 'afterDark') refreshSelected();
+}
 
 // Timer picker
 document.querySelectorAll('.timer-opt').forEach(function(btn) {
@@ -230,11 +287,17 @@ function buildWordPool() {
   var custom = document.getElementById('customWordsArea').value
     .split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
   if (onlyMine && custom.length > 0) return shuffle(custom);
+  // Gate afterDark
+  var cat = selectedCat;
+  if (cat === 'afterDark' && !adultEnabled) cat = 'random';
   var base = [];
-  if (selectedCat === 'random') {
-    Object.values(COUCH_WORDS).forEach(function(arr){ base = base.concat(arr); });
+  if (cat === 'random') {
+    Object.keys(COUCH_WORDS).forEach(function(k) {
+      if (k === 'afterDark' && !adultEnabled) return;
+      base = base.concat(COUCH_WORDS[k]);
+    });
   } else {
-    base = (COUCH_WORDS[selectedCat] || []).slice();
+    base = (COUCH_WORDS[cat] || []).slice();
   }
   if (custom.length > 0) base = base.concat(custom);
   return shuffle(base);
@@ -260,7 +323,8 @@ function startRound() {
   wordIdx = 0; score = 0; roundResults = []; timeLeft = selectedSec;
 
   document.getElementById('scoreDisplay').textContent = '0';
-  var label = selectedCat === 'random' ? '🎲 Mixed' : selectedCat;
+  var catLabels = {random:'🎲 Mixed',Movies:'🎬 Movies',Animals:'🐾 Animals',Actions:'🏃 Actions',People:'🧙 People',Objects:'📦 Objects',Sports:'⚽ Sports',Hard:'🧠 Hard Words',Spooky:'👻 Spooky',Villains:'😈 Villains & History',afterDark:'🔞 After Dark'};
+  var label = catLabels[selectedCat] || selectedCat;
   if (onlyMine) label = '✏️ Custom';
   document.getElementById('catPill').textContent = label;
   var td = document.getElementById('timerDisplay');

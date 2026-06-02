@@ -839,7 +839,11 @@ const CHARADES_WORDS = {
         'Titanic', 'Avatar', 'Frozen', 'Jaws', 'Star Wars', 'The Matrix', 'Jurassic Park',
         'Spider-Man', 'Batman', 'Harry Potter', 'Finding Nemo', 'Toy Story', 'Shrek',
         'The Lion King', 'Avengers', 'Inception', 'Forrest Gump', 'Rocky', 'E.T.',
-        'Ghostbusters', 'Indiana Jones', 'Back to the Future', 'Terminator', 'Alien'
+        'Ghostbusters', 'Indiana Jones', 'Back to the Future', 'Terminator', 'Alien',
+        'The Godfather', 'Pulp Fiction', 'Gladiator', 'Top Gun', 'Home Alone', 'Up', 'Joker',
+        'Barbie', 'Oppenheimer', 'The Dark Knight', 'Pirates of the Caribbean', 'Twilight',
+        'The Hunger Games', 'Mean Girls', 'Deadpool', 'Frozen II', 'Encanto', 'John Wick',
+        'Mission Impossible', 'Fast and Furious'
     ],
     actions: [
         'Swimming', 'Dancing', 'Cooking', 'Sleeping', 'Crying', 'Laughing', 'Running',
@@ -866,15 +870,45 @@ const CHARADES_WORDS = {
         'Birthday party', 'Wedding', 'Dentist visit', 'Job interview', 'First date',
         'Zombie', 'Superhero', 'Robot', 'Alien', 'Ghost', 'Vampire', 'Werewolf',
         'Baby', 'Old person', 'Drunk person', 'Ninja', 'Cowboy', 'Pirate'
+    ],
+    hard: [
+        'Photosynthesis', 'Procrastination', 'Claustrophobia', 'Bureaucracy', 'Déjà vu',
+        'Mortgage', 'Inflation', 'Gravity', 'Evolution', 'Democracy', 'Algorithm', 'Nostalgia',
+        'Quarantine', 'Hypnosis', 'Telepathy', 'Camouflage', 'Avalanche', 'Eclipse', 'Mirage',
+        'Karma', 'Insomnia', 'Allergy', 'Vertigo', 'Static electricity', 'Time travel',
+        'Black hole', 'Boomerang', 'Origami', 'Acupuncture', 'Ventriloquist'
+    ],
+    spooky: [
+        'Haunted house', 'Zombie', 'Werewolf', 'Vampire', 'Witch', 'Ghost', 'Frankenstein',
+        'Mummy', 'Grim reaper', 'Possessed doll', 'Séance', 'Ouija board', 'Black cat',
+        'Full moon', 'Graveyard', 'Skeleton', 'Demon', 'Exorcism', 'Headless horseman',
+        'Bloody Mary', 'Jump scare', 'Cursed', 'Poltergeist', 'Creepy clown', 'Banshee'
+    ],
+    villainsAndHistory: [
+        'Dracula', 'Darth Vader', 'Joker', 'Voldemort', 'The Wicked Witch', 'Hannibal Lecter',
+        'Maleficent', 'Sauron', 'Thanos', 'Cruella', 'Scar', 'Captain Hook', 'Napoleon',
+        'Cleopatra', 'Genghis Khan', 'Julius Caesar', 'Blackbeard', 'Jack the Ripper',
+        'Rasputin', 'Bonnie and Clyde', 'Al Capone', 'Vlad the Impaler', 'Attila the Hun',
+        'King Henry VIII', 'Marie Antoinette'
+    ],
+    afterDark: [
+        'First kiss', 'Walk of shame', 'Wingman', 'Swipe right', 'Booty call', 'Blind date',
+        'Friendzone', 'Hangover', 'One night stand', 'Speed dating', 'Third wheel',
+        'Hickey', 'Strip poker', 'Lap dance', 'Pole dancing', 'Twerking', 'Pillow talk',
+        'Netflix and chill', 'Ex texting at 2am', 'Tinder date', 'Awkward morning after',
+        'Slow dance', 'Bachelorette party', 'Skinny dipping', 'Spin the bottle'
     ]
 };
 
-function initCharadesGame(room, category = 'random', mode = 'classic') {
+function initCharadesGame(room, category = 'random', mode = 'classic', adult = false) {
     // mode: 'classic' (one actor) or 'headsup' (phone on forehead style)
+    // adult: gate for afterDark — never served when false
+    if (category === 'afterDark' && !adult) category = 'random';
+
     let wordPool = [];
-    
-    if (category === 'mixed' || !CHARADES_WORDS[category]) {
-        Object.values(CHARADES_WORDS).forEach(words => {
+    if (category === 'mixed' || category === 'random' || !CHARADES_WORDS[category]) {
+        Object.entries(CHARADES_WORDS).forEach(([key, words]) => {
+            if (key === 'afterDark' && !adult) return; // skip adult unless gated
             wordPool = [...wordPool, ...words];
         });
     } else {

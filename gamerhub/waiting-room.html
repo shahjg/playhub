@@ -415,7 +415,8 @@ const GAMES = {
         displayName: 'CHARADES', tagline: 'Act it out - no talking!', theme: 'theme-charades', minPlayers: 4, maxPlayers: 20, isPartyGame: false, backUrl: '/squad-games.html', gameFile: '/games/squad/charades.html',
         howToPlay: '<h3>🎭 The Classic Acting Game</h3><p>Act out words using only gestures - no sounds!</p><h3>🎮 Rules</h3><ul><li>No speaking or sounds</li><li>No pointing at objects</li><li>No mouthing words</li></ul><h3>📜 Classic Gestures</h3><ul><li>📖 Book: Mime opening book</li><li>🎬 Movie: Mime camera cranking</li><li>✋ Words: Hold up fingers for count</li></ul><div class="tip-box">💡 <strong>Couch Mode:</strong> Pass device around - actor turns away while others see word!</div>',
         settings: [
-            { id: 'category', type: 'select', label: 'Category', options: [{value:'random',text:'🎲 Random'},{value:'movies',text:'🎬 Movies'},{value:'actions',text:'🏃 Actions'},{value:'animals',text:'🐾 Animals'}]},
+            { id: 'category', type: 'select', label: 'Category', options: [{value:'random',text:'🎲 Random'},{value:'movies',text:'🎬 Movies'},{value:'actions',text:'🏃 Actions'},{value:'animals',text:'🐾 Animals'},{value:'objects',text:'📦 Objects'},{value:'celebrities',text:'⭐ Celebrities'},{value:'hard',text:'🧠 Hard Words'},{value:'spooky',text:'👻 Spooky'},{value:'villainsAndHistory',text:'😈 Villains & History'}]},
+            { id: 'adult', type: 'select', label: '18+ Words', options: [{value:'false',text:'🔒 Off (family friendly)'},{value:'true',text:'🔞 On (include After Dark)'}]},
             { id: 'mode', type: 'select', label: 'Mode', options: [{value:'teams',text:'👥 Teams'},{value:'couch',text:'🛋️ Couch Mode'}]},
             { id: 'timer', type: 'select', label: 'Turn', options: [{value:'60',text:'60s'},{value:'90',text:'90s'},{value:'120',text:'2 min'}]}
         ]
@@ -715,6 +716,25 @@ function renderSettings() {
             updateStartButton(currentRoom ? currentRoom.players.length : 1);
         });
     }
+    // Wire 18+ adult toggle for charades: show/hide afterDark category option
+    if (gameType === 'charades' || gameType === 'heads-up') {
+        var adultSel = document.getElementById('setting-adult');
+        var catSel2 = document.getElementById('setting-category');
+        function syncAfterDark() {
+            if (!adultSel || !catSel2) return;
+            var isAdult = adultSel.value === 'true';
+            var existing = catSel2.querySelector('option[value="afterDark"]');
+            if (isAdult && !existing) {
+                var opt = document.createElement('option');
+                opt.value = 'afterDark'; opt.textContent = '🔞 After Dark';
+                catSel2.appendChild(opt);
+            } else if (!isAdult && existing) {
+                if (catSel2.value === 'afterDark') catSel2.value = 'random';
+                existing.remove();
+            }
+        }
+        if (adultSel) { adultSel.addEventListener('change', syncAfterDark); syncAfterDark(); }
+    }
     // Wire custom locations UI for spyfall
     if (gameType === 'spyfall') {
         var catSel = document.getElementById('setting-category');
@@ -936,7 +956,9 @@ document.getElementById('start-btn').onclick = function() {
     if (isCouchMode()) {
         var catEl = document.getElementById('setting-category');
         var cat = catEl ? catEl.value : 'random';
-        window.location.href = '/games/squad/charades-couch.html?game=' + gameType + '&cat=' + encodeURIComponent(cat);
+        var adultEl = document.getElementById('setting-adult');
+        var adultVal = adultEl ? adultEl.value : 'false';
+        window.location.href = '/games/squad/charades-couch.html?game=' + gameType + '&cat=' + encodeURIComponent(cat) + '&adult=' + adultVal;
         return;
     }
     console.log('Start button clicked, socket connected:', socket.connected);
