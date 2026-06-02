@@ -3969,6 +3969,10 @@ socket.on('mostlikelyto-vote', (data) => {
                 if (currentRoom.gameType === 'fake-artist' && currentRoom.gameData) {
                   additionalSquadGames.handleFakeArtistPlayerLeave(currentRoom, player.playerName, io);
                 }
+                // Unblock broken pictionary if the leaver hadn't submitted yet
+                if (currentRoom.gameType === 'broken-pictionary' && currentRoom.gameData) {
+                  additionalSquadGames.handleBPPlayerLeave(currentRoom, player.playerName, io);
+                }
               }
             }
             

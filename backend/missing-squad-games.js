@@ -346,63 +346,6 @@ function endPunchlineGame(room, io) {
   io.to(room.code).emit('punchline-game-over', { winner: sortedScores[0].name, finalScores: sortedScores });
 }
 
-// BROKEN PICTIONARY
-const BP_WORDS = ['Elephant','Pizza','Rocket','Superhero','Dancing','Surfing','Birthday','Fireworks','Camping','Robot','Dinosaur','Castle','Pirate','Mermaid','Volcano','Treehouse','Rainbow','Spaceship','Unicorn','Dragon'];
-
-function initBrokenPictionaryGame(room, io) {
-  room.gameState = 'playing';
-  const shuffledWords = [...BP_WORDS].sort(() => Math.random() - 0.5);
-  room.gameData = { chains: {}, currentStep: 1, totalSteps: room.players.length, phase: 'drawing', playerOrder: [...room.players].sort(() => Math.random() - 0.5), submitted: {} };
-  room.gameData.playerOrder.forEach((p, i) => {
-    const word = shuffledWords[i % shuffledWords.length];
-    room.gameData.chains[p.id] = [{ type: 'word', content: word, author: 'system' }];
-    io.to(p.id).emit('bp-draw', { prompt: word, step: 1, totalSteps: room.gameData.totalSteps, timeLimit: 60 });
-  });
-}
-
-function handleBPSubmitDrawing(room, playerId, drawing, io) {
-  if (room.gameData.submitted[playerId]) return;
-  room.gameData.submitted[playerId] = true;
-  const playerIndex = room.gameData.playerOrder.findIndex(p => p.id === playerId);
-  const chainIndex = (playerIndex - room.gameData.currentStep + 1 + room.gameData.totalSteps) % room.gameData.totalSteps;
-  const chainOwner = room.gameData.playerOrder[chainIndex];
-  room.gameData.chains[chainOwner.id].push({ type: 'drawing', content: drawing, author: playerId });
-  checkBPStepComplete(room, io);
-}
-
-function handleBPSubmitGuess(room, playerId, guess, io) {
-  if (room.gameData.submitted[playerId]) return;
-  room.gameData.submitted[playerId] = true;
-  const playerIndex = room.gameData.playerOrder.findIndex(p => p.id === playerId);
-  const chainIndex = (playerIndex - room.gameData.currentStep + 1 + room.gameData.totalSteps) % room.gameData.totalSteps;
-  const chainOwner = room.gameData.playerOrder[chainIndex];
-  room.gameData.chains[chainOwner.id].push({ type: 'word', content: guess, author: playerId });
-  checkBPStepComplete(room, io);
-}
-
-function checkBPStepComplete(room, io) {
-  if (Object.keys(room.gameData.submitted).length < room.players.length) return;
-  room.gameData.currentStep++; room.gameData.submitted = {};
-  if (room.gameData.currentStep > room.gameData.totalSteps) { endBrokenPictionaryGame(room, io); return; }
-  const isDrawingStep = room.gameData.currentStep % 2 === 1;
-  room.gameData.playerOrder.forEach((p, pIdx) => {
-    const chainIndex = (pIdx - room.gameData.currentStep + 1 + room.gameData.totalSteps) % room.gameData.totalSteps;
-    const chainOwner = room.gameData.playerOrder[chainIndex];
-    const chain = room.gameData.chains[chainOwner.id], lastItem = chain[chain.length - 1];
-    if (isDrawingStep) io.to(p.id).emit('bp-draw', { prompt: lastItem.content, step: room.gameData.currentStep, totalSteps: room.gameData.totalSteps, timeLimit: 60 });
-    else io.to(p.id).emit('bp-guess', { drawing: lastItem.content, step: room.gameData.currentStep, totalSteps: room.gameData.totalSteps, timeLimit: 45 });
-  });
-}
-
-function endBrokenPictionaryGame(room, io) {
-  room.gameState = 'ended';
-  const chains = Object.entries(room.gameData.chains).map(([ownerId, chain]) => ({
-    owner: room.players.find(p => p.id === ownerId)?.name, originalWord: chain[0].content, finalGuess: chain[chain.length - 1].content,
-    steps: chain.map(item => ({ type: item.type, content: item.content, author: item.author === 'system' ? 'System' : room.players.find(p => p.id === item.author)?.name }))
-  }));
-  io.to(room.code).emit('bp-game-over', { chains });
-}
-
 // DOODLE DUEL
 const DD_PROMPTS = ['A cat wearing a hat','An angry pizza','A robot dancing','A sad cloud','A superhero potato','A sleepy sun','A confused octopus','A fancy penguin','A singing tree','A nervous ghost','A tired coffee cup','A happy volcano'];
 
@@ -620,10 +563,6 @@ function setupMissingSquadGameHandlers(io, socket, rooms, players) {
   socket.on('punchline-vote', ({ roomCode, answerIndex }) => { const room = rooms.get(roomCode); if (room?.gameData) handlePunchlineVote(room, socket.id, answerIndex, io); });
   socket.on('punchline-next', ({ roomCode }) => { const room = rooms.get(roomCode); if (room?.gameData) startPunchlineRound(room, io); });
   
-  socket.on('bp-start', ({ roomCode }) => { const room = rooms.get(roomCode); if (room) initBrokenPictionaryGame(room, io); });
-  socket.on('bp-submit-drawing', ({ roomCode, drawing }) => { const room = rooms.get(roomCode); if (room?.gameData) handleBPSubmitDrawing(room, socket.id, drawing, io); });
-  socket.on('bp-submit-guess', ({ roomCode, guess }) => { const room = rooms.get(roomCode); if (room?.gameData) handleBPSubmitGuess(room, socket.id, guess, io); });
-  
   socket.on('dd-start', ({ roomCode }) => { const room = rooms.get(roomCode); if (room) initDoodleDuelGame(room, io); });
   socket.on('dd-submit-drawing', ({ roomCode, drawing }) => { const room = rooms.get(roomCode); if (room?.gameData) handleDDSubmitDrawing(room, socket.id, drawing, io); });
   socket.on('dd-submit-fake', ({ roomCode, drawing }) => { const room = rooms.get(roomCode); if (room?.gameData) handleDDSubmitFake(room, socket.id, drawing, io); });
@@ -650,7 +589,6 @@ module.exports = {
   initWavelengthGame, startWavelengthRound, handleWavelengthClue, handleWavelengthGuess, calculateWavelengthResults, endWavelengthGame,
   initNPATGame, startNPATRound, handleNPATSubmit, calculateNPATResults, endNPATGame,
   initPunchlineGame, startPunchlineRound, handlePunchlineAnswer, startPunchlineVoting, handlePunchlineVote, calculatePunchlineResults, endPunchlineGame,
-  initBrokenPictionaryGame, handleBPSubmitDrawing, handleBPSubmitGuess, checkBPStepComplete, endBrokenPictionaryGame,
   initDoodleDuelGame, startDoodleDuelRound, handleDDSubmitDrawing, handleDDSubmitFake, handleDDVote, calculateDDResults, endDoodleDuelGame,
   initTwoTruthsGame, startTwoTruthsRound, handleTwoTruthsSubmit, handleTwoTruthsVote, calculateTwoTruthsResults, endTwoTruthsGame,
   initCelebrityGame, handleCelebritySubmitWords, startCelebrityRound, startCelebrityTurn, handleCelebrityCorrect, handleCelebritySkip, handleCelebrityTimeUp, endCelebrityRound, endCelebrityGame,

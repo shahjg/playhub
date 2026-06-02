@@ -522,150 +522,193 @@ function handleFakeArtistPlayerLeave(room, playerName, io) {
 
 // ==================== BROKEN PICTIONARY ====================
 
+function clearBPTimer(gd) {
+  if (gd.phaseTimer) { clearTimeout(gd.phaseTimer); gd.phaseTimer = null; }
+}
+
+// Returns the chain owner name for a player at position playerIndex given the current step
+function bpChainOwner(room, playerIndex) {
+  const gd = room.gameData;
+  const offset = gd.currentStep - 1;
+  const prevIndex = (playerIndex - offset + room.players.length) % room.players.length;
+  return room.players[prevIndex].name;
+}
+
+// Auto-complete the current phase with placeholders for anyone who hasn't submitted
+function bpAutoComplete(room, io) {
+  const gd = room.gameData;
+  if (!['writing','drawing','guessing'].includes(gd.phase)) return;
+  room.players.forEach((p, i) => {
+    if (gd.submittedPlayers.has(p.name)) return;
+    if (gd.phase === 'writing') {
+      const placeholder = '(no prompt)';
+      gd.prompts[p.name] = placeholder;
+      const chain = gd.chains[p.name];
+      if (chain) chain.push({ type: 'text', content: placeholder, player: p.name });
+    } else if (gd.phase === 'drawing') {
+      const chainOwner = bpChainOwner(room, i);
+      const chain = gd.chains[chainOwner];
+      if (chain) chain.push({ type: 'drawing', content: '', player: p.name });
+    } else if (gd.phase === 'guessing') {
+      const chainOwner = bpChainOwner(room, i);
+      const chain = gd.chains[chainOwner];
+      if (chain) chain.push({ type: 'text', content: '(no guess)', player: p.name });
+    }
+    gd.submittedPlayers.add(p.name);
+  });
+  checkBPCompletion(room, io);
+}
+
+// Re-check after any submission or disconnect; advances phase when all connected players have submitted
+function checkBPCompletion(room, io) {
+  const gd = room.gameData;
+  const connected = room.players.length;
+  if (gd.submittedPlayers.size < connected) return; // not everyone done yet
+  clearBPTimer(gd);
+  io.to(room.code).emit('bp-waiting', { message: `All done! Moving on...` });
+  if (gd.phase === 'writing') {
+    startBrokenPictionaryDrawPhase(room, io);
+  } else if (gd.phase === 'drawing') {
+    if (gd.currentStep < gd.totalSteps) startBrokenPictionaryGuessPhase(room, io);
+    else startBrokenPictionaryResults(room, io);
+  } else if (gd.phase === 'guessing') {
+    if (gd.currentStep < gd.totalSteps) startBrokenPictionaryDrawPhase(room, io);
+    else startBrokenPictionaryResults(room, io);
+  }
+}
+
 function initBrokenPictionaryGame(room) {
   room.gameData = {
     words: [...BP_WORDS].sort(() => Math.random() - 0.5),
-    chains: {}, // playerName -> [{ type: 'text'|'drawing', content, player }]
-    prompts: {}, // playerName -> initial prompt
+    chains: {},
+    prompts: {},
     currentStep: 0,
     totalSteps: room.players.length,
     phase: 'writing',
-    submittedCount: 0,
-    chainIndex: 0, // For viewing chains at end
-    rotations: [] // Track chain rotation order
+    submittedPlayers: new Set(),
+    chainIndex: 0,
+    phaseTimer: null
   };
-  
-  // Initialize chains and rotation
-  room.players.forEach((p, i) => {
-    room.gameData.chains[p.name] = [];
-    room.gameData.rotations.push(p.name);
-  });
+  room.players.forEach(p => { room.gameData.chains[p.name] = []; });
 }
 
 function startBrokenPictionaryWritePhase(room, io) {
   const gd = room.gameData;
+  clearBPTimer(gd);
   gd.phase = 'writing';
-  gd.submittedCount = 0;
+  gd.submittedPlayers = new Set();
   gd.currentStep = 1;
-  
-  io.to(room.code).emit('bp-write', {
-    timeLimit: 45
-  });
+  io.to(room.code).emit('bp-write', { timeLimit: 45 });
+  gd.phaseTimer = setTimeout(() => bpAutoComplete(room, io), 50000); // 45s + 5s buffer
 }
 
 function handleBPSubmitPrompt(room, playerName, prompt, io) {
   const gd = room.gameData;
   if (gd.phase !== 'writing') return;
-  
+  if (gd.submittedPlayers.has(playerName)) return; // dedup
   gd.prompts[playerName] = prompt;
-  gd.chains[playerName].push({ type: 'text', content: prompt, player: playerName });
-  gd.submittedCount++;
-  
+  const chain = gd.chains[playerName];
+  if (chain) chain.push({ type: 'text', content: prompt, player: playerName });
+  gd.submittedPlayers.add(playerName);
   io.to(room.code).emit('bp-waiting', {
-    message: `Waiting for others... (${gd.submittedCount}/${room.players.length})`
+    message: `Waiting for others... (${gd.submittedPlayers.size}/${room.players.length})`
   });
-  
-  if (gd.submittedCount >= room.players.length) {
-    startBrokenPictionaryDrawPhase(room, io);
-  }
+  checkBPCompletion(room, io);
 }
 
 function startBrokenPictionaryDrawPhase(room, io) {
   const gd = room.gameData;
+  clearBPTimer(gd);
   gd.phase = 'drawing';
   gd.currentStep++;
-  gd.submittedCount = 0;
-  
-  // Rotate chains - each player draws the previous player's prompt
+  gd.submittedPlayers = new Set();
+  // BUG 2 FIX: use consistent offset = currentStep-1 (matches handleBPSubmitDrawing)
   room.players.forEach((p, i) => {
-    const prevIndex = (i - 1 + room.players.length) % room.players.length;
-    const prevPlayer = room.players[prevIndex].name;
-    const chain = gd.chains[prevPlayer];
-    const lastItem = chain[chain.length - 1];
-    
+    const chainOwner = bpChainOwner(room, i);
+    const chain = gd.chains[chainOwner];
+    const lastItem = chain && chain.length > 0 ? chain[chain.length - 1] : null;
     io.to(p.id).emit('bp-draw', {
-      prompt: lastItem.content,
+      prompt: lastItem ? lastItem.content : '(draw anything)',
       step: gd.currentStep,
       totalSteps: gd.totalSteps,
       timeLimit: 60
     });
   });
+  gd.phaseTimer = setTimeout(() => bpAutoComplete(room, io), 65000); // 60s + 5s buffer
 }
 
 function handleBPSubmitDrawing(room, socketId, playerName, drawing, io) {
   const gd = room.gameData;
   if (gd.phase !== 'drawing') return;
-  
-  // Find which chain this player is working on
+  if (gd.submittedPlayers.has(playerName)) return; // dedup
   const playerIndex = room.players.findIndex(p => p.name === playerName);
-  const prevIndex = (playerIndex - (gd.currentStep - 1) + room.players.length) % room.players.length;
-  const chainOwner = room.players[prevIndex].name;
-  
-  gd.chains[chainOwner].push({ type: 'drawing', content: drawing, player: playerName });
-  gd.submittedCount++;
-  
+  const chainOwner = bpChainOwner(room, playerIndex);
+  const chain = gd.chains[chainOwner];
+  if (chain) chain.push({ type: 'drawing', content: drawing, player: playerName });
+  gd.submittedPlayers.add(playerName);
   io.to(socketId).emit('bp-waiting', {
-    message: `Waiting for others... (${gd.submittedCount}/${room.players.length})`
+    message: `Waiting for others... (${gd.submittedPlayers.size}/${room.players.length})`
   });
-  
-  if (gd.submittedCount >= room.players.length) {
-    // Check if we need more steps
-    if (gd.currentStep < gd.totalSteps) {
-      startBrokenPictionaryGuessPhase(room, io);
-    } else {
-      startBrokenPictionaryResults(room, io);
-    }
-  }
+  checkBPCompletion(room, io);
 }
 
 function startBrokenPictionaryGuessPhase(room, io) {
   const gd = room.gameData;
+  clearBPTimer(gd);
   gd.phase = 'guessing';
   gd.currentStep++;
-  gd.submittedCount = 0;
-  
-  // Rotate chains - each player guesses based on the drawing
+  gd.submittedPlayers = new Set();
   room.players.forEach((p, i) => {
-    const offset = gd.currentStep - 1;
-    const prevIndex = (i - offset + room.players.length) % room.players.length;
-    const chainOwner = room.players[prevIndex].name;
+    const chainOwner = bpChainOwner(room, i);
     const chain = gd.chains[chainOwner];
-    const lastItem = chain[chain.length - 1];
-    
+    const lastItem = chain && chain.length > 0 ? chain[chain.length - 1] : null;
     io.to(p.id).emit('bp-guess', {
-      drawing: lastItem.content,
+      drawing: lastItem ? lastItem.content : '',
       step: gd.currentStep,
       totalSteps: gd.totalSteps,
       timeLimit: 30
     });
   });
+  gd.phaseTimer = setTimeout(() => bpAutoComplete(room, io), 35000); // 30s + 5s buffer
 }
 
 function handleBPSubmitGuess(room, socketId, playerName, guess, io) {
   const gd = room.gameData;
   if (gd.phase !== 'guessing') return;
-  
-  // Find which chain this player is working on
+  if (gd.submittedPlayers.has(playerName)) return; // dedup
   const playerIndex = room.players.findIndex(p => p.name === playerName);
-  const offset = gd.currentStep - 1;
-  const prevIndex = (playerIndex - offset + room.players.length) % room.players.length;
-  const chainOwner = room.players[prevIndex].name;
-  
-  gd.chains[chainOwner].push({ type: 'text', content: guess, player: playerName });
-  gd.submittedCount++;
-  
+  const chainOwner = bpChainOwner(room, playerIndex);
+  const chain = gd.chains[chainOwner];
+  if (chain) chain.push({ type: 'text', content: guess, player: playerName });
+  gd.submittedPlayers.add(playerName);
   io.to(socketId).emit('bp-waiting', {
-    message: `Waiting for others... (${gd.submittedCount}/${room.players.length})`
+    message: `Waiting for others... (${gd.submittedPlayers.size}/${room.players.length})`
   });
-  
-  if (gd.submittedCount >= room.players.length) {
-    // Check if we need more steps
-    if (gd.currentStep < gd.totalSteps) {
-      startBrokenPictionaryDrawPhase(room, io);
-    } else {
-      startBrokenPictionaryResults(room, io);
+  checkBPCompletion(room, io);
+}
+
+// Called by server.js disconnect handler — re-check if phase can now complete
+function handleBPPlayerLeave(room, playerName, io) {
+  const gd = room.gameData;
+  if (!gd || !['writing','drawing','guessing'].includes(gd.phase)) return;
+  // If leaver hadn't submitted, file a placeholder so their slot isn't blocking
+  if (!gd.submittedPlayers.has(playerName)) {
+    const playerIndex = room.players.findIndex(p => p.name === playerName);
+    if (gd.phase === 'writing') {
+      const chain = gd.chains[playerName];
+      if (chain) chain.push({ type: 'text', content: '(no prompt)', player: playerName });
+    } else if (gd.phase === 'drawing' && playerIndex !== -1) {
+      const chainOwner = bpChainOwner(room, playerIndex);
+      const chain = gd.chains[chainOwner];
+      if (chain) chain.push({ type: 'drawing', content: '', player: playerName });
+    } else if (gd.phase === 'guessing' && playerIndex !== -1) {
+      const chainOwner = bpChainOwner(room, playerIndex);
+      const chain = gd.chains[chainOwner];
+      if (chain) chain.push({ type: 'text', content: '(no guess)', player: playerName });
     }
+    gd.submittedPlayers.add(playerName);
   }
+  checkBPCompletion(room, io);
 }
 
 function startBrokenPictionaryResults(room, io) {
@@ -1467,6 +1510,7 @@ module.exports = {
   handleBPSubmitDrawing,
   handleBPSubmitGuess,
   handleBPNextChain,
+  handleBPPlayerLeave,
   
   // Power Struggle
   initPowerStruggleGame,
