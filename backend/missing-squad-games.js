@@ -48,58 +48,125 @@ function startAvalonTeamSelect(room, io) {
   io.to(room.code).emit('avalon-team-select', { quest: room.gameData.currentQuest, leader: leader.name, teamSize, rejections: room.gameData.rejections });
 }
 
+function avalonSafeLeader(room) {
+  // Guard leaderIndex against a shrunken player list
+  const gd = room.gameData;
+  if (room.players.length === 0) return null;
+  gd.leaderIndex = gd.leaderIndex % room.players.length;
+  return room.players[gd.leaderIndex];
+}
+
+function avalonResolveTeamVote(room, io) {
+  const gd = room.gameData;
+  if (gd.teamVoteTimer) { clearTimeout(gd.teamVoteTimer); gd.teamVoteTimer = null; }
+  const total = room.players.length;
+  const approves = Object.values(gd.teamVotes).filter(v => v === 'approve').length;
+  // Missing votes count as reject
+  const rejects = total - approves;
+  if (approves > rejects) {
+    gd.phase = 'quest'; gd.questVotes = {};
+    io.to(room.code).emit('avalon-quest', { team: gd.selectedTeam, quest: gd.currentQuest });
+    // Quest vote timer — treat missing as 'success' so disconnect can't stall quest
+    gd.questVoteTimer = setTimeout(() => {
+      if (gd.phase === 'quest') avalonResolveQuestVote(room, io);
+    }, 60000);
+  } else {
+    gd.rejections++;
+    io.to(room.code).emit('avalon-team-rejected', { approves, rejects, rejections: gd.rejections });
+    if (gd.rejections >= 5) { endAvalonGame(room, 'evil', 'Five team rejections', io); return; }
+    gd.leaderIndex = (gd.leaderIndex + 1) % room.players.length;
+    setTimeout(() => startAvalonTeamSelect(room, io), 2000);
+  }
+}
+
 function handleAvalonProposeTeam(room, team, io) {
-  room.gameData.selectedTeam = team; room.gameData.phase = 'team-vote'; room.gameData.teamVotes = {};
-  io.to(room.code).emit('avalon-team-vote', { team, leader: room.players[room.gameData.leaderIndex].name });
+  const gd = room.gameData;
+  gd.selectedTeam = team; gd.phase = 'team-vote'; gd.teamVotes = {};
+  const leader = avalonSafeLeader(room);
+  io.to(room.code).emit('avalon-team-vote', { team, leader: leader?.name || '?' });
+  // 45s vote timer — treat missing votes as reject
+  if (gd.teamVoteTimer) clearTimeout(gd.teamVoteTimer);
+  gd.teamVoteTimer = setTimeout(() => {
+    if (gd.phase === 'team-vote') avalonResolveTeamVote(room, io);
+  }, 45000);
 }
 
 function handleAvalonVote(room, playerId, vote, io) {
-  room.gameData.teamVotes[playerId] = vote;
-  if (Object.keys(room.gameData.teamVotes).length === room.players.length) {
-    const approves = Object.values(room.gameData.teamVotes).filter(v => v === 'approve').length;
-    if (approves > room.players.length - approves) {
-      room.gameData.phase = 'quest'; room.gameData.questVotes = {};
-      io.to(room.code).emit('avalon-quest', { team: room.gameData.selectedTeam, quest: room.gameData.currentQuest });
-    } else {
-      room.gameData.rejections++;
-      io.to(room.code).emit('avalon-team-rejected', { approves, rejects: room.players.length - approves, rejections: room.gameData.rejections });
-      if (room.gameData.rejections >= 5) { endAvalonGame(room, 'evil', 'Five team rejections', io); return; }
-      room.gameData.leaderIndex = (room.gameData.leaderIndex + 1) % room.players.length;
-      setTimeout(() => startAvalonTeamSelect(room, io), 2000);
-    }
+  const gd = room.gameData;
+  if (gd.phase !== 'team-vote') return;
+  gd.teamVotes[playerId] = vote;
+  // Compare against currently connected players (room.players shrinks on disconnect)
+  if (Object.keys(gd.teamVotes).filter(id => room.players.some(p => p.id === id)).length >= room.players.length) {
+    avalonResolveTeamVote(room, io);
+  }
+}
+
+function avalonResolveQuestVote(room, io) {
+  const gd = room.gameData;
+  if (gd.questVoteTimer) { clearTimeout(gd.questVoteTimer); gd.questVoteTimer = null; }
+  const connectedTeamIds = room.players.filter(p => gd.selectedTeam.includes(p.name)).map(p => p.id);
+  // Missing quest votes → treat as 'success'
+  const failVotes = connectedTeamIds.filter(id => gd.questVotes[id] === 'fail').length;
+  const failsNeeded = (gd.currentQuest === 3 && room.players.length >= 7) ? 2 : 1;
+  const success = failVotes < failsNeeded;
+  gd.questResults.push(success ? 'success' : 'fail');
+  gd.rejections = 0;
+  io.to(room.code).emit('avalon-quest-result', { success, fails: failVotes, successes: connectedTeamIds.length - failVotes, results: gd.questResults });
+  const goodWins = gd.questResults.filter(r => r === 'success').length;
+  const evilWins = gd.questResults.filter(r => r === 'fail').length;
+  if (goodWins >= 3) {
+    // BUG 1 FIX — enter assassination phase; win is PENDING the assassin's guess
+    gd.phase = 'assassinate';
+    const assassin = room.players.find(p => p.id === gd.assassinId);
+    const candidates = room.players.filter(p => gd.assignments[p.id]?.team === 'good').map(p => p.name);
+    io.to(room.code).emit('avalon-assassinate', { assassin: assassin?.name || '?', candidates });
+    // 45s timer — if assassin doesn't guess, Good wins by default
+    gd.assassinTimer = setTimeout(() => {
+      if (gd.phase === 'assassinate') endAvalonGame(room, 'good', 'Assassin ran out of time', io);
+    }, 45000);
+  } else if (evilWins >= 3) {
+    endAvalonGame(room, 'evil', 'Three failed quests', io);
+  } else {
+    gd.currentQuest++;
+    gd.leaderIndex = (gd.leaderIndex + 1) % room.players.length;
+    setTimeout(() => startAvalonTeamSelect(room, io), 3000);
   }
 }
 
 function handleAvalonQuestVote(room, playerId, vote, io) {
-  // Only allow team members to vote on the quest
-  const teamIds = room.players.filter(p => room.gameData.selectedTeam.includes(p.name)).map(p => p.id);
-  if (!teamIds.includes(playerId)) return;
+  const gd = room.gameData;
+  if (gd.phase !== 'quest') return;
+  const connectedTeamIds = room.players.filter(p => gd.selectedTeam.includes(p.name)).map(p => p.id);
+  if (!connectedTeamIds.includes(playerId)) return;
   // Good players can only vote success
-  const assignment = room.gameData.assignments[playerId];
-  if (assignment && assignment.team === 'good' && vote === 'fail') vote = 'success';
-  room.gameData.questVotes[playerId] = vote;
-  if (teamIds.filter(id => room.gameData.questVotes[id]).length === teamIds.length) {
-    const fails = teamIds.filter(id => room.gameData.questVotes[id] === 'fail').length;
-    const failsNeeded = (room.gameData.currentQuest === 3 && room.players.length >= 7) ? 2 : 1;
-    const success = fails < failsNeeded;
-    room.gameData.questResults.push(success ? 'success' : 'fail');
-    room.gameData.rejections = 0;
-    io.to(room.code).emit('avalon-quest-result', { success, fails, successes: teamIds.length - fails, results: room.gameData.questResults });
-    const goodWins = room.gameData.questResults.filter(r => r === 'success').length;
-    const evilWins = room.gameData.questResults.filter(r => r === 'fail').length;
-    if (goodWins >= 3) endAvalonGame(room, 'good', 'Three successful quests', io);
-    else if (evilWins >= 3) endAvalonGame(room, 'evil', 'Three failed quests', io);
-    else {
-      room.gameData.currentQuest++;
-      room.gameData.leaderIndex = (room.gameData.leaderIndex + 1) % room.players.length;
-      setTimeout(() => startAvalonTeamSelect(room, io), 3000);
-    }
-  }
+  const assignment = gd.assignments[playerId];
+  if (assignment?.team === 'good' && vote === 'fail') vote = 'success';
+  gd.questVotes[playerId] = vote;
+  const voted = connectedTeamIds.filter(id => gd.questVotes[id]);
+  if (voted.length >= connectedTeamIds.length) avalonResolveQuestVote(room, io);
+}
+
+function handleAvalonAssassinate(room, socketId, targetName, io) {
+  const gd = room.gameData;
+  if (gd.phase !== 'assassinate') return;
+  // Only the assassin may call this
+  const caller = room.players.find(p => p.id === socketId);
+  if (!caller || caller.id !== gd.assassinId) return;
+  if (gd.assassinTimer) { clearTimeout(gd.assassinTimer); gd.assassinTimer = null; }
+  const target = room.players.find(p => p.name === targetName);
+  const isMerlin = target && target.id === gd.merlinId;
+  endAvalonGame(room, isMerlin ? 'evil' : 'good',
+    isMerlin ? `Assassin found Merlin (${targetName})!` : `Assassin missed — ${targetName} was not Merlin!`, io);
 }
 
 function endAvalonGame(room, winner, reason, io) {
+  const gd = room.gameData;
+  // Clear any pending timers
+  if (gd.teamVoteTimer)  { clearTimeout(gd.teamVoteTimer);  gd.teamVoteTimer  = null; }
+  if (gd.questVoteTimer) { clearTimeout(gd.questVoteTimer); gd.questVoteTimer = null; }
+  if (gd.assassinTimer)  { clearTimeout(gd.assassinTimer);  gd.assassinTimer  = null; }
   room.gameState = 'ended';
-  io.to(room.code).emit('avalon-game-over', { winner, reason, roles: Object.fromEntries(room.players.map(p => [p.name, room.gameData.assignments[p.id]])) });
+  io.to(room.code).emit('avalon-game-over', { winner, reason, roles: Object.fromEntries(room.players.map(p => [p.name, gd.assignments[p.id]])) });
 }
 
 // INSIDER
@@ -540,6 +607,7 @@ function setupMissingSquadGameHandlers(io, socket, rooms, players) {
   socket.on('avalon-propose-team', ({ roomCode, team }) => { const room = rooms.get(roomCode); if (room?.gameData) handleAvalonProposeTeam(room, team, io); });
   socket.on('avalon-vote', ({ roomCode, vote }) => { const room = rooms.get(roomCode); if (room?.gameData) handleAvalonVote(room, socket.id, vote, io); });
   socket.on('avalon-quest-vote', ({ roomCode, vote }) => { const room = rooms.get(roomCode); if (room?.gameData) handleAvalonQuestVote(room, socket.id, vote, io); });
+  socket.on('avalon-assassinate', ({ roomCode, target }) => { const room = rooms.get(roomCode); if (room?.gameData) handleAvalonAssassinate(room, socket.id, target, io); });
   socket.on('avalon-next', ({ roomCode }) => { const room = rooms.get(roomCode); if (room?.gameData) startAvalonTeamSelect(room, io); });
   
   socket.on('insider-start', ({ roomCode }) => { const room = rooms.get(roomCode); if (room) initInsiderGame(room, io); });
@@ -584,7 +652,7 @@ function setupMissingSquadGameHandlers(io, socket, rooms, players) {
 }
 
 module.exports = {
-  initAvalonGame, startAvalonTeamSelect, handleAvalonProposeTeam, handleAvalonVote, handleAvalonQuestVote, endAvalonGame,
+  initAvalonGame, startAvalonTeamSelect, handleAvalonProposeTeam, handleAvalonVote, handleAvalonQuestVote, handleAvalonAssassinate, endAvalonGame,
   initInsiderGame, handleInsiderGuess, handleInsiderTimeout, handleInsiderVote, endInsiderGame,
   initWavelengthGame, startWavelengthRound, handleWavelengthClue, handleWavelengthGuess, calculateWavelengthResults, endWavelengthGame,
   initNPATGame, startNPATRound, handleNPATSubmit, calculateNPATResults, endNPATGame,
