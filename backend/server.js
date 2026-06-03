@@ -2625,15 +2625,9 @@ io.on('connection', (socket) => {
         squadGames.initWordBombGame(room, difficulty || 'medium');
     } else if (room.gameType === 'ludo') {
         squadGames.initLudoGame(room);
-        // Send initial state to all players
         setTimeout(() => {
-            io.to(roomCode).emit('ludo-state', {
-                pieces: room.gameData.pieces,
-                playerColors: room.gameData.playerColors,
-                currentPlayer: room.players[room.gameData.currentTurnIndex].name,
-                phase: 'roll'
-            });
-        }, 100);
+            io.to(roomCode).emit('ludo-state', squadGames.getLudoState(room));
+        }, 300);
     } else if (room.gameType === 'charades') {
         squadGames.initCharadesGame(room, category || 'random', 'classic');
     } else if (room.gameType === 'heads-up') {
