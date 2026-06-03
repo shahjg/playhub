@@ -1145,9 +1145,12 @@ function endCharadesGame(room, io) {
     console.log(`Charades game ended in room ${room.code}. Winner: ${finalLeaderboard[0]?.name}`);
 }
 
-// ============================================
-// SECRET ROLES (AVALON) - Advanced Social Deduction
-// ============================================
+// NOTE: Avalon (Secret Roles), Fake Artist, and Most Likely To were removed from
+// this file. Their single live implementations live in:
+//   Avalon       → missing-squad-games.js   (initAvalonGame, socket: avalon-*)
+//   Fake Artist  → additional-squad-games.js (initFakeArtistGame, socket: fakeartist-*)
+//   Most Likely  → additional-squad-games.js (initMostLikelyToGame, socket: mlt-*)
+// Duplicate handlers here caused socket-event double-firing and state corruption.
 
 const AVALON_ROLES = {
     good: ['Merlin', 'Percival', 'Loyal Servant', 'Loyal Servant', 'Loyal Servant'],
@@ -2124,31 +2127,7 @@ module.exports = {
     endCharadesGame,
     CHARADES_WORDS,
     
-    // Avalon (Secret Roles)
-    initAvalonGame,
-    getAvalonPublicState,
-    startAvalonTeamProposal,
-    handleAvalonTeamProposal,
-    handleAvalonTeamVote,
-    handleAvalonQuestVote,
-    handleAvalonAssassination,
-    endAvalonGame,
-    
-    // Fake Artist
-    initFakeArtistGame,
-    startFakeArtistRound,
-    startFakeArtistDrawing,
-    handleFakeArtistDraw,
-    handleFakeArtistVote,
-    handleFakeArtistWordGuess,
-    endFakeArtistGame,
-    
-    // Most Likely To
-    initMostLikelyToGame,
-    startMostLikelyToRound,
-    handleMostLikelyToVote,
-    calculateMostLikelyToResults,
-    advanceMostLikelyToRound,
-    endMostLikelyToGame,
-    MOST_LIKELY_TO_QUESTIONS
+    // NOTE: Avalon, Fake Artist, and Most Likely To are intentionally NOT exported here.
+    // Their single live implementations are in missing-squad-games.js and
+    // additional-squad-games.js. Exporting the dead copies here caused name collisions.
 };

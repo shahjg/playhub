@@ -298,46 +298,61 @@ const NPAT_LETTERS = 'ABCDEFGHIJKLMNOPRSTW'.split('');
 
 function initNPATGame(room, io) {
   room.gameState = 'playing';
-  room.gameData = { round: 1, maxRounds: 5, letter: null, answers: {}, scores: {}, phase: 'playing', timeLimit: 60, categories: ['Name','Place','Animal','Thing'], usedLetters: [] };
+  room.gameData = { round: 1, maxRounds: 5, letter: null, answers: {}, scores: {}, phase: 'playing', timeLimit: 60, categories: ['Name','Place','Animal','Thing'], usedLetters: [], roundTimer: null };
   room.players.forEach(p => room.gameData.scores[p.id] = 0);
   startNPATRound(room, io);
 }
 
 function startNPATRound(room, io) {
-  const availableLetters = NPAT_LETTERS.filter(l => !room.gameData.usedLetters.includes(l));
+  const gd = room.gameData;
+  if (gd.roundTimer) { clearTimeout(gd.roundTimer); gd.roundTimer = null; }
+  const availableLetters = NPAT_LETTERS.filter(l => !gd.usedLetters.includes(l));
   const letter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
-  room.gameData.letter = letter; room.gameData.answers = {}; room.gameData.usedLetters.push(letter); room.gameData.phase = 'playing';
-  io.to(room.code).emit('npat-round', { round: room.gameData.round, maxRounds: room.gameData.maxRounds, letter, categories: room.gameData.categories, timeLimit: room.gameData.timeLimit });
+  gd.letter = letter; gd.answers = {}; gd.usedLetters.push(letter); gd.phase = 'playing';
+  io.to(room.code).emit('npat-round', { round: gd.round, maxRounds: gd.maxRounds, letter, categories: gd.categories, timeLimit: gd.timeLimit });
+  // Server-side timer: auto-resolve on expiry so idle/disconnected players can't hang the round
+  gd.roundTimer = setTimeout(() => {
+    if (gd.phase === 'playing') calculateNPATResults(room, io);
+  }, gd.timeLimit * 1000 + 3000); // +3s buffer for network lag
 }
 
 function handleNPATSubmit(room, playerId, answers, io) {
-  room.gameData.answers[playerId] = answers;
-  if (Object.keys(room.gameData.answers).length >= room.players.length) calculateNPATResults(room, io);
+  const gd = room.gameData;
+  if (gd.phase !== 'playing') return;
+  gd.answers[playerId] = answers;
+  // Compare against currently connected players so a disconnect can't hang the round
+  if (Object.keys(gd.answers).filter(id => room.players.some(p => p.id === id)).length >= room.players.length) {
+    calculateNPATResults(room, io);
+  }
 }
 
 function calculateNPATResults(room, io) {
-  const letter = room.gameData.letter.toLowerCase(), results = [];
+  const gd = room.gameData;
+  if (gd.roundTimer) { clearTimeout(gd.roundTimer); gd.roundTimer = null; }
+  if (gd.phase !== 'playing') return; // guard against double-fire from timer + last submit
+  gd.phase = 'results';
+  const letter = gd.letter.toLowerCase(), results = [];
   room.players.forEach(player => {
-    const playerAnswers = room.gameData.answers[player.id] || {};
+    const playerAnswers = gd.answers[player.id] || {};
     let roundScore = 0;
     const answerResults = [];
-    room.gameData.categories.forEach(cat => {
+    gd.categories.forEach(cat => {
       const answer = (playerAnswers[cat] || '').trim();
       let points = 0, valid = false;
       if (answer && answer.toLowerCase().startsWith(letter)) {
         valid = true;
-        const otherAnswers = room.players.filter(p => p.id !== player.id).map(p => (room.gameData.answers[p.id]?.[cat] || '').toLowerCase().trim());
+        const otherAnswers = room.players.filter(p => p.id !== player.id).map(p => (gd.answers[p.id]?.[cat] || '').toLowerCase().trim());
         points = otherAnswers.includes(answer.toLowerCase()) ? 5 : 10;
       }
       roundScore += points;
       answerResults.push({ category: cat, answer, points, valid });
     });
-    room.gameData.scores[player.id] = (room.gameData.scores[player.id] || 0) + roundScore;
-    results.push({ name: player.name, answers: answerResults, roundScore, totalScore: room.gameData.scores[player.id] });
+    gd.scores[player.id] = (gd.scores[player.id] || 0) + roundScore;
+    results.push({ name: player.name, answers: answerResults, roundScore, totalScore: gd.scores[player.id] });
   });
-  io.to(room.code).emit('npat-results', { letter: room.gameData.letter, results, round: room.gameData.round });
-  room.gameData.round++;
-  if (room.gameData.round > room.gameData.maxRounds) endNPATGame(room, io);
+  io.to(room.code).emit('npat-results', { letter: gd.letter, results, round: gd.round });
+  gd.round++;
+  if (gd.round > gd.maxRounds) endNPATGame(room, io);
 }
 
 function endNPATGame(room, io) {
